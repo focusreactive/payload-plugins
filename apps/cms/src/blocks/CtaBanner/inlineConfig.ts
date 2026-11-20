@@ -6,8 +6,8 @@ export const CtaBannerInlineBlock: Block = {
   fields: ctaBannerFields,
   interfaceName: "CtaBannerInline",
   labels: {
-    plural: { en: "CTA Banners", es: "Banners CTA" },
-    singular: { en: "CTA Banner", es: "Banner CTA" },
+    plural: { en: "Call-to-action banners", es: "Banners de llamada a la acción" },
+    singular: { en: "Call-to-action banner", es: "Banner de llamada a la acción" },
   },
   slug: "ctaBannerInline",
 };

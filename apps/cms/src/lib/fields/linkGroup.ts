@@ -25,6 +25,10 @@ export const linkGroup: LinkGroupType = ({ appearances, defaultValue, overrides 
       }),
     ],
     label: { en: "Links", es: "Enlaces" },
+    labels: {
+      plural: { en: "Links", es: "Enlaces" },
+      singular: { en: "Link", es: "Enlace" },
+    },
     name: "links",
     type: "array",
     ...(defaultValue !== undefined && { defaultValue }),

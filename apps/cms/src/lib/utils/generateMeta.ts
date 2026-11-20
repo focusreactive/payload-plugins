@@ -53,7 +53,6 @@ export const generateMeta = async (args: {
 
   const titleParts = titlePartsOf(settings);
   const { siteName } = titleParts;
-  const ogSiteName = stripMarkers(settings?.seo?.og?.siteName) || siteName;
   const defaultDescription = stripMarkers(settings?.seo?.defaultDescription);
   const settingsOgDescription = stripMarkers(settings?.seo?.og?.description);
   const metaDescription = stripMarkers(doc?.meta?.description);
@@ -154,7 +153,7 @@ export const generateMeta = async (args: {
           ]
         : undefined,
       locale: getOpenGraphLocale(locale),
-      siteName: ogSiteName,
+      siteName,
       title: ogTitle,
       ...(isArticle
         ? { type: "article", ...(publishedTime ? { publishedTime } : {}) }

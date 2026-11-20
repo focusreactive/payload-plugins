@@ -32,8 +32,8 @@ export const appearanceOptions: Record<LinkAppearances, Option> = {
   },
   ghost: {
     label: {
-      en: "Ghost",
-      es: "Fantasma",
+      en: "Subtle (no background)",
+      es: "Sutil (sin fondo)",
     },
     value: "ghost",
   },
@@ -74,6 +74,10 @@ export const link: LinkType = ({
               width: "50%",
             },
             defaultValue: "reference",
+            label: {
+              en: "Link to",
+              es: "Enlazar a",
+            },
             name: "type",
             options: [
               {
@@ -85,8 +89,8 @@ export const link: LinkType = ({
               },
               {
                 label: {
-                  en: "External URL",
-                  es: "URL externa",
+                  en: "Web address (URL)",
+                  es: "Dirección web (URL)",
                 },
                 value: "custom",
               },
@@ -131,8 +135,8 @@ export const link: LinkType = ({
         condition: (_, siblingData) => siblingData?.type === "reference",
       },
       label: {
-        en: "Document to link to",
-        es: "Documento al que enlazar",
+        en: "Page or post",
+        es: "Página o publicación",
       },
       name: "reference",
       relationTo: ["page", BLOG_CONFIG.collection],
@@ -145,8 +149,8 @@ export const link: LinkType = ({
         condition: (_, siblingData) => siblingData?.type === "custom",
       },
       label: {
-        en: "Custom URL",
-        es: "URL personalizada",
+        en: "Web address (URL)",
+        es: "Dirección web (URL)",
       },
       name: "url",
       required,
@@ -159,8 +163,8 @@ export const link: LinkType = ({
       },
       ...(customPageDbName ? { dbName: customPageDbName } : {}),
       label: {
-        en: "Custom Page",
-        es: "Página personalizada",
+        en: "Built-in page",
+        es: "Página integrada",
       },
       name: "customPage",
       options: Object.entries(CUSTOM_PAGES_CONFIG).map(([key, entry]) => ({
@@ -181,8 +185,8 @@ export const link: LinkType = ({
             width: "50%",
           },
           label: {
-            en: "Label",
-            es: "Etiqueta",
+            en: "Link text",
+            es: "Texto del enlace",
           },
           localized: true,
           name: "label",
@@ -211,6 +215,10 @@ export const link: LinkType = ({
 
     linkResult.fields.push({
       defaultValue: "default",
+      label: {
+        en: "Button style",
+        es: "Estilo del botón",
+      },
       name: "appearance",
       options: appearanceOptionsToUse,
       type: "select",

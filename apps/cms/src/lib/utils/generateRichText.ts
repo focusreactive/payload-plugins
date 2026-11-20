@@ -62,6 +62,10 @@ export function generateRichText(preset: RichTextPreset = "default", options?: O
               fields: ({ defaultFields }) => [
                 ...defaultFields,
                 {
+                  label: {
+                    en: "Link attributes for search engines (advanced)",
+                    es: "Atributos del enlace para buscadores (avanzado)",
+                  },
                   name: "rel",
                   options: ["noopener", "noreferrer", "nofollow"],
                   type: "select",
@@ -75,18 +79,18 @@ export function generateRichText(preset: RichTextPreset = "default", options?: O
                   fields: [
                     {
                       defaultValue: "1/1",
-                      label: { en: "Aspect Ratio", es: "Relación de aspecto" },
+                      label: { en: "Image shape", es: "Forma de la imagen" },
                       name: "aspectRatio",
                       options: [
-                        { label: { en: "16/9", es: "16/9" }, value: "16/9" },
-                        { label: { en: "3/2", es: "3/2" }, value: "3/2" },
-                        { label: { en: "4/3", es: "4/3" }, value: "4/3" },
-                        { label: { en: "1/1", es: "1/1" }, value: "1/1" },
-                        { label: { en: "9/16", es: "9/16" }, value: "9/16" },
-                        { label: { en: "1/2", es: "1/2" }, value: "1/2" },
-                        { label: { en: "4/1", es: "4/1" }, value: "4/1" },
-                        { label: { en: "3/1", es: "3/1" }, value: "3/1" },
-                        { label: { en: "Auto", es: "Auto" }, value: "auto" },
+                        { label: { en: "Wide (16:9)", es: "Panorámica (16:9)" }, value: "16/9" },
+                        { label: { en: "Landscape (3:2)", es: "Horizontal (3:2)" }, value: "3/2" },
+                        { label: { en: "Classic (4:3)", es: "Clásica (4:3)" }, value: "4/3" },
+                        { label: { en: "Square (1:1)", es: "Cuadrada (1:1)" }, value: "1/1" },
+                        { label: { en: "Tall (9:16)", es: "Vertical (9:16)" }, value: "9/16" },
+                        { label: { en: "Portrait (1:2)", es: "Retrato (1:2)" }, value: "1/2" },
+                        { label: { en: "Banner (4:1)", es: "Banner (4:1)" }, value: "4/1" },
+                        { label: { en: "Strip (3:1)", es: "Franja (3:1)" }, value: "3/1" },
+                        { label: { en: "Original shape", es: "Forma original" }, value: "auto" },
                       ],
                       type: "select",
                     },

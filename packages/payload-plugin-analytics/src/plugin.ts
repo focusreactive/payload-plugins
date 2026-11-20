@@ -11,41 +11,47 @@ import { resolveLayout } from "./services/layout/resolveLayout";
 const MEASUREMENT_ID_RE = /^G-[A-Z0-9]+$/u;
 const PREFIX = `[${PLUGIN_NAME}]`;
 
+/** Why the GA4 config cannot be used, or undefined when it is complete. */
+function ga4ConfigProblem(ga4: AnalyticsPluginConfig["ga4"] | undefined): string | undefined {
+  if (!ga4) return "ga4 config is missing";
+
+  if (!MEASUREMENT_ID_RE.test(ga4.measurementId ?? "")) {
+    return `ga4.measurementId "${ga4.measurementId ?? ""}" is not a valid GA4 ID (expected G-XXXXXXX, likely GA4_MEASUREMENT_ID not set)`;
+  }
+
+  if (!ga4.propertyId) return "ga4.propertyId is missing (likely GA4_PROPERTY_ID not set)";
+
+  if (!ga4.serviceAccount?.clientEmail || !ga4.serviceAccount?.privateKey) {
+    return "ga4.serviceAccount.{ clientEmail, privateKey } missing (likely GA4_CLIENT_EMAIL / GA4_PRIVATE_KEY not set)";
+  }
+
+  return undefined;
+}
+
 export const analyticsPlugin =
   (config: AnalyticsPluginConfig): Plugin =>
   (incomingConfig: Config): Config => {
     if (config.disabled) return incomingConfig;
 
-    if (!config.ga4) {
-      console.warn(`${PREFIX} Disabled: ga4 config is missing. Plugin not registered.`);
-      return incomingConfig;
-    }
+    const { resolved, registry } = resolveLayout(config);
+    const adminOptions = {
+      adminRegistry: config.leadActions?.adminRegistry,
+      registry,
+      sessionsTabComponent: resolved.sessionsTabComponent,
+    };
 
-    if (!MEASUREMENT_ID_RE.test(config.ga4.measurementId ?? "")) {
+    const problem = ga4ConfigProblem(config.ga4);
+    if (problem) {
+      // Credentials usually come from env vars, so the admin components stay registered (they hide
+      // themselves while the plugin is not configured). Otherwise `payload generate:importmap` run
+      // without GA4 env vars drops them, and a deployment that has the vars cannot render them.
       console.warn(
-        `${PREFIX} Disabled: ga4.measurementId "${config.ga4.measurementId ?? ""}" is not a valid GA4 ID (expected G-XXXXXXX, likely GA4_MEASUREMENT_ID not set). Plugin not registered.`
+        `${PREFIX} Disabled: ${problem}. Endpoints not registered; the admin view stays hidden.`
       );
-      return incomingConfig;
-    }
-
-    if (!config.ga4.propertyId) {
-      console.warn(
-        `${PREFIX} Disabled: ga4.propertyId is missing (likely GA4_PROPERTY_ID not set). Plugin not registered.`
-      );
-      return incomingConfig;
-    }
-
-    const serviceAccount = config.ga4.serviceAccount;
-    if (!serviceAccount?.clientEmail || !serviceAccount?.privateKey) {
-      console.warn(
-        `${PREFIX} Disabled: ga4.serviceAccount.{ clientEmail, privateKey } missing (likely GA4_CLIENT_EMAIL / GA4_PRIVATE_KEY not set). Plugin not registered.`
-      );
-      return incomingConfig;
+      return overrideAdmin(incomingConfig, adminOptions);
     }
 
     setPluginConfig(config);
-
-    const { resolved, registry } = resolveLayout(config);
     setResolvedLayout(resolved, registry);
 
     if (config.mocks === true) {
@@ -70,10 +76,6 @@ export const analyticsPlugin =
         },
         endpoints: [...(incomingConfig.endpoints ?? []), ...buildEndpoints(config, registry)],
       },
-      {
-        adminRegistry: config.leadActions?.adminRegistry,
-        registry,
-        sessionsTabComponent: resolved.sessionsTabComponent,
-      }
+      adminOptions
     );
   };

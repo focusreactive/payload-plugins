@@ -11,7 +11,6 @@ import {
   createLivePreviewEditComponents,
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
-import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import { anyone, author, editor, or, user, superAdmin } from "@/lib/access";
 import {
   createLocalizedDefault,
@@ -111,10 +110,10 @@ export const Posts: CollectionConfig<"posts"> = {
               type: "textarea",
             },
             {
-              defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
+              defaultValue: async () => getDefaultMediaId(),
               label: {
-                en: "Hero Image",
-                es: "Imagen de la cabecera",
+                en: "Cover image",
+                es: "Imagen de portada",
               },
               name: "heroImage",
               relationTo: "media",
@@ -193,8 +192,8 @@ export const Posts: CollectionConfig<"posts"> = {
       },
       index: true,
       label: {
-        en: "Published At",
-        es: "Publicado el",
+        en: "Publish date",
+        es: "Fecha de publicación",
       },
       name: "publishedAt",
       type: "date",
@@ -253,7 +252,7 @@ export const Posts: CollectionConfig<"posts"> = {
       }),
       hasMany: true,
       label: {
-        en: "Related Posts",
+        en: "Related posts",
         es: "Publicaciones relacionadas",
       },
       maxRows: 3,

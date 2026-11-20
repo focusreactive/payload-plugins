@@ -16,7 +16,11 @@ const fields: Field[] = [
       initCollapsed: true,
     },
     fields: (link() as GroupField).fields,
-    label: { en: "Actions", es: "Acciones" },
+    label: { en: "Buttons", es: "Botones" },
+    labels: {
+      plural: { en: "Buttons", es: "Botones" },
+      singular: { en: "Button", es: "Botón" },
+    },
     localized: true,
     maxRows: 2,
     minRows: 1,
@@ -31,8 +35,8 @@ export const CtaBandBlock: Block = injectSection({
   interfaceName: "CtaBandBlock",
   ...getBlockPreviewImage("CTA Band"),
   labels: {
-    plural: { en: "CTA Bands", es: "Bandas CTA" },
-    singular: { en: "CTA Band", es: "Banda CTA" },
+    plural: { en: "Calls to action", es: "Llamadas a la acción" },
+    singular: { en: "Call to action", es: "Llamada a la acción" },
   },
   fields,
 });

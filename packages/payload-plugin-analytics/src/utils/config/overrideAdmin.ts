@@ -56,7 +56,7 @@ export function overrideAdmin(incomingConfig: Config, options: OverrideAdminOpti
         },
         actions: [
           ...(incomingConfig.admin?.components?.actions ?? []),
-          getComponentPath("components/AnalyticsView/AnalyticsHeaderLink"),
+          getComponentPath("components/AnalyticsView/AnalyticsHeaderAction"),
         ],
       },
     },

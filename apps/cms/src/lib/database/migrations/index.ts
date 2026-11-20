@@ -42,6 +42,7 @@ import * as migration_20261112_171504_add_autosave_to_live_preview_collections f
 import * as migration_20261117_123529_add_autosave_to_header_footer from './20261117_123529_add_autosave_to_header_footer';
 import * as migration_20261120_104646_add_editor_role from './20261120_104646_add_editor_role';
 import * as migration_20261120_111344_post_sections from './20261120_111344_post_sections';
+import * as migration_20261120_123232_editor_friendly_choices from './20261120_123232_editor_friendly_choices';
 
 export const migrations = [
   {
@@ -262,6 +263,11 @@ export const migrations = [
   {
     up: migration_20261120_111344_post_sections.up,
     down: migration_20261120_111344_post_sections.down,
-    name: '20261120_111344_post_sections'
+    name: '20261120_111344_post_sections',
+  },
+  {
+    up: migration_20261120_123232_editor_friendly_choices.up,
+    down: migration_20261120_123232_editor_friendly_choices.down,
+    name: '20261120_123232_editor_friendly_choices'
   },
 ];

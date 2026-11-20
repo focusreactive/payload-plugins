@@ -157,7 +157,7 @@ export const mcpPluginConfig = mcpPlugin({
     },
     media: {
       description:
-        "Media library of uploaded files (images and documents). Each item has localized alt text, an optional rich-text caption, platform-default flags, and generated image sizes. Use this collection to read, create, update or delete media.",
+        "Media library of uploaded files (images and documents). Each item has localized alt text, an optional rich-text caption, an `isDefaultImage` checkbox (the image used wherever none was picked), and generated image sizes. Use this collection to read, create, update or delete media.",
       enabled: {
         create: true,
         delete: true,

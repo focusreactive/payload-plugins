@@ -239,9 +239,9 @@ export interface Media {
     [k: string]: unknown;
   } | null;
   /**
-   * Use this file as default when no image is selected.
+   * Shown wherever an image is needed but none was picked (e.g. a new header logo, hero or post image). Tick it on one image only.
    */
-  defaultFor?: 'platform_default'[] | null;
+  isDefaultImage?: boolean | null;
   prefix?: string | null;
   _objectKey?: string | null;
   folder?: (number | null) | FolderInterface;
@@ -372,9 +372,6 @@ export interface Page {
   )[];
   meta?: {
     title?: string | null;
-    /**
-     * Image used when sharing this page on social media.
-     */
     image?: (number | null) | Media;
     description?: string | null;
     robots?: ('index' | 'noindex') | null;
@@ -417,6 +414,9 @@ export interface Page {
  */
 export interface Header {
   id: number;
+  /**
+   * Internal name, shown only in the admin.
+   */
   name?: string | null;
   logo: number | Media;
   navItems?:
@@ -552,9 +552,6 @@ export interface Post {
     | null;
   meta?: {
     title?: string | null;
-    /**
-     * Image used when sharing this page on social media.
-     */
     image?: (number | null) | Media;
     description?: string | null;
     robots?: ('index' | 'noindex') | null;
@@ -623,7 +620,7 @@ export interface ContentBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -679,7 +676,7 @@ export interface FaqBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -713,7 +710,7 @@ export interface TestimonialsListBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -746,7 +743,13 @@ export interface Testimonial {
  */
 export interface CardsGridBlock {
   heading?: SectionHeadingFields;
-  columns?: number | null;
+  /**
+   * On wide screens. Phones always show one card per row.
+   */
+  columns?: ('1' | '2' | '3' | '4') | null;
+  alignVariant?: ('left' | 'center' | 'right') | null;
+  rounded?: ('none' | 'large') | null;
+  backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
   items: {
     icon?:
       | (
@@ -776,7 +779,7 @@ export interface CardsGridBlock {
     description?: string | null;
     image?: {
       image?: (number | null) | Media;
-      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
+      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | 'auto') | null;
     };
     link?: {
       type?: ('reference' | 'custom' | 'customPage') | null;
@@ -795,9 +798,6 @@ export interface CardsGridBlock {
       label?: string | null;
       appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
     };
-    alignVariant?: ('left' | 'center' | 'right') | null;
-    rounded?: ('none' | 'large') | null;
-    backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
     id?: string | null;
   }[];
   section?: {
@@ -807,7 +807,7 @@ export interface CardsGridBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -825,7 +825,7 @@ export interface CardsGridBlock {
  */
 export interface CarouselBlock {
   heading?: SectionHeadingFields;
-  effect?: ('slide' | 'fade' | 'cube' | 'flip' | 'coverflow' | 'cards') | null;
+  effect?: ('slide' | 'fade') | null;
   slides: {
     image: {
       image: number | Media;
@@ -854,7 +854,7 @@ export interface CarouselBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -902,7 +902,7 @@ export interface LogosBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -923,7 +923,7 @@ export interface ChartBlock {
   title: string;
   subtitle?: string | null;
   /**
-   * Each range becomes a tab. The first range is shown by default.
+   * Each time period gets its own tab above the chart. Visitors see the first one first.
    */
   ranges: {
     label: string;
@@ -941,7 +941,7 @@ export interface ChartBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -984,7 +984,7 @@ export interface CtaBandBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -1012,7 +1012,7 @@ export interface NewsletterBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -1041,7 +1041,7 @@ export interface StatsBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -1066,7 +1066,7 @@ export interface RawHtmlBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -1110,6 +1110,9 @@ export interface Author {
  */
 export interface Footer {
   id: number;
+  /**
+   * Internal name, shown only in the admin.
+   */
   name: string;
   logo: number | Media;
   description?: string | null;
@@ -1193,7 +1196,7 @@ export interface HeroBlock {
     | null;
   image?: {
     image?: (number | null) | Media;
-    aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
+    aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | 'auto') | null;
   };
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
@@ -1202,7 +1205,7 @@ export interface HeroBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -1220,7 +1223,7 @@ export interface HeroBlock {
  */
 export interface GlobalSectionSlotBlock {
   /**
-   * Editing the global block updates every page that uses it.
+   * Changes to a reusable section show up on every page that uses it.
    */
   reference: number | GlobalBlock;
   _hidden?: boolean | null;
@@ -1274,7 +1277,7 @@ export interface DocumentEmbedding {
 export interface Redirect {
   id: number;
   /**
-   * Latin letters, numbers, / - _ . ~ only. No spaces. Stored as lowercase with leading slash.
+   * The old address, e.g. /old-page. Letters, numbers and / - _ . ~ only, no spaces.
    */
   from: string;
   to?: {
@@ -1291,11 +1294,11 @@ export interface Redirect {
     url?: string | null;
   };
   /**
-   * Choose the redirect type. 307 - temporary, 308 - permanent.
+   * 307 = temporary (the old address comes back later), 308 = permanent (best for SEO when a page has moved for good).
    */
   type: '307' | '308';
   /**
-   * Whether the redirect is active.
+   * Turn off to pause this redirect without deleting it.
    */
   isActive: boolean;
   updatedAt: string;
@@ -1362,7 +1365,7 @@ export interface Preset {
           | null;
         image?: {
           image?: (number | null) | Media;
-          aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
+          aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | 'auto') | null;
         };
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
@@ -1371,7 +1374,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1429,7 +1432,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1469,7 +1472,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1499,7 +1502,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1513,7 +1516,13 @@ export interface Preset {
       }
     | {
         heading?: SectionHeadingFields;
-        columns?: number | null;
+        /**
+         * On wide screens. Phones always show one card per row.
+         */
+        columns?: ('1' | '2' | '3' | '4') | null;
+        alignVariant?: ('left' | 'center' | 'right') | null;
+        rounded?: ('none' | 'large') | null;
+        backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
         items: {
           icon?:
             | (
@@ -1543,7 +1552,7 @@ export interface Preset {
           description?: string | null;
           image?: {
             image?: (number | null) | Media;
-            aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
+            aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | 'auto') | null;
           };
           link?: {
             type?: ('reference' | 'custom' | 'customPage') | null;
@@ -1562,9 +1571,6 @@ export interface Preset {
             label?: string | null;
             appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
           };
-          alignVariant?: ('left' | 'center' | 'right') | null;
-          rounded?: ('none' | 'large') | null;
-          backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
           id?: string | null;
         }[];
         section?: {
@@ -1574,7 +1580,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1588,7 +1594,7 @@ export interface Preset {
       }
     | {
         heading?: SectionHeadingFields;
-        effect?: ('slide' | 'fade' | 'cube' | 'flip' | 'coverflow' | 'cards') | null;
+        effect?: ('slide' | 'fade') | null;
         slides: {
           image: {
             image: number | Media;
@@ -1617,7 +1623,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1661,7 +1667,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1678,7 +1684,7 @@ export interface Preset {
         title: string;
         subtitle?: string | null;
         /**
-         * Each range becomes a tab. The first range is shown by default.
+         * Each time period gets its own tab above the chart. Visitors see the first one first.
          */
         ranges: {
           label: string;
@@ -1696,7 +1702,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1735,7 +1741,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1759,7 +1765,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1784,7 +1790,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1805,7 +1811,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1819,7 +1825,7 @@ export interface Preset {
       }
     | {
         /**
-         * Editing the global block updates every page that uses it.
+         * Changes to a reusable section show up on every page that uses it.
          */
         reference: number | GlobalBlock;
         _hidden?: boolean | null;
@@ -2369,7 +2375,7 @@ export interface UsersSelect<T extends boolean = true> {
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
   caption?: T;
-  defaultFor?: T;
+  isDefaultImage?: T;
   prefix?: T;
   _objectKey?: T;
   folder?: T;
@@ -2681,6 +2687,9 @@ export interface TestimonialsListBlockSelect<T extends boolean = true> {
 export interface CardsGridBlockSelect<T extends boolean = true> {
   heading?: T | SectionHeadingFieldsSelect<T>;
   columns?: T;
+  alignVariant?: T;
+  rounded?: T;
+  backgroundColor?: T;
   items?:
     | T
     | {
@@ -2704,9 +2713,6 @@ export interface CardsGridBlockSelect<T extends boolean = true> {
               label?: T;
               appearance?: T;
             };
-        alignVariant?: T;
-        rounded?: T;
-        backgroundColor?: T;
         id?: T;
       };
   section?:
@@ -3410,6 +3416,9 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               heading?: T | SectionHeadingFieldsSelect<T>;
               columns?: T;
+              alignVariant?: T;
+              rounded?: T;
+              backgroundColor?: T;
               items?:
                 | T
                 | {
@@ -3433,9 +3442,6 @@ export interface PresetsSelect<T extends boolean = true> {
                           label?: T;
                           appearance?: T;
                         };
-                    alignVariant?: T;
-                    rounded?: T;
-                    backgroundColor?: T;
                     id?: T;
                   };
               section?:
@@ -3949,9 +3955,8 @@ export interface SiteSetting {
     defaultDescription?: string | null;
     og?: {
       title?: string | null;
-      siteName?: string | null;
       /**
-       * Leave empty to use the default meta description.
+       * Leave empty to reuse the default description in search results.
        */
       description?: string | null;
       image?: (number | null) | Media;
@@ -3979,9 +3984,6 @@ export interface SiteSetting {
     relatedPostsLabel: string;
     meta?: {
       title?: string | null;
-      /**
-       * Image used when sharing this page on social media.
-       */
       image?: (number | null) | Media;
       description?: string | null;
       robots?: ('index' | 'noindex') | null;
@@ -4038,7 +4040,6 @@ export interface SiteSettingsSelect<T extends boolean = true> {
           | T
           | {
               title?: T;
-              siteName?: T;
               description?: T;
               image?: T;
             };
@@ -4142,7 +4143,13 @@ export interface TaskSchedulePublish {
  * via the `definition` "CardsGridInlineBlock".
  */
 export interface CardsGridInlineBlock {
-  columns?: number | null;
+  /**
+   * On wide screens. Phones always show one card per row.
+   */
+  columns?: ('1' | '2' | '3' | '4') | null;
+  alignVariant?: ('left' | 'center' | 'right') | null;
+  rounded?: ('none' | 'large') | null;
+  backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
   items: {
     icon?:
       | (
@@ -4172,7 +4179,7 @@ export interface CardsGridInlineBlock {
     description?: string | null;
     image?: {
       image?: (number | null) | Media;
-      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
+      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | 'auto') | null;
     };
     link?: {
       type?: ('reference' | 'custom' | 'customPage') | null;
@@ -4191,9 +4198,6 @@ export interface CardsGridInlineBlock {
       label?: string | null;
       appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
     };
-    alignVariant?: ('left' | 'center' | 'right') | null;
-    rounded?: ('none' | 'large') | null;
-    backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
     id?: string | null;
   }[];
   id?: string | null;
@@ -4238,10 +4242,23 @@ export interface LogosInlineBlock {
  * via the `definition` "CodeInlineBlock".
  */
 export interface CodeInlineBlock {
-  /**
-   * Lowercase language id, e.g. typescript, bash.
-   */
-  language?: string | null;
+  language?:
+    | (
+        | 'typescript'
+        | 'javascript'
+        | 'tsx'
+        | 'jsx'
+        | 'json'
+        | 'bash'
+        | 'html'
+        | 'css'
+        | 'python'
+        | 'sql'
+        | 'yaml'
+        | 'markdown'
+        | 'plaintext'
+      )
+    | null;
   code: string;
   id?: string | null;
   blockName?: string | null;
@@ -4252,10 +4269,8 @@ export interface CodeInlineBlock {
  * via the `definition` "CtaBannerInline".
  */
 export interface CtaBannerInline {
-  eyebrow?: string | null;
+  heading?: SectionHeadingFields;
   variant?: ('default' | 'accent' | 'dark') | null;
-  heading?: string | null;
-  description?: string | null;
   actions?:
     | {
         type?: ('reference' | 'custom' | 'customPage') | null;

@@ -14,7 +14,7 @@ export const logosFields: Field[] = [
           en: "Trusted by 4,000+ teams in rhythm",
           es: "Con la confianza de más de 4.000 equipos en sintonía",
         }),
-        label: { en: "Label", es: "Etiqueta" },
+        label: { en: "Text above the logos", es: "Texto sobre los logos" },
         localized: true,
         name: "label",
         type: "text",
@@ -36,7 +36,11 @@ export const logosFields: Field[] = [
   {
     admin: { initCollapsed: true },
     fields: [imageField("image", { withAspectRatio: false }), link({ appearances: false })],
-    label: { en: "Logo Items", es: "Logos" },
+    label: { en: "Logos", es: "Logos" },
+    labels: {
+      plural: { en: "Logos", es: "Logos" },
+      singular: { en: "Logo", es: "Logo" },
+    },
     localized: true,
     minRows: 1,
     name: "items",

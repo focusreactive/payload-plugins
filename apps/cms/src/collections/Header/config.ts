@@ -1,6 +1,5 @@
 import type { CollectionConfig, GroupField } from "payload";
 
-import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import { anyone, or, user, superAdmin } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
@@ -32,14 +31,21 @@ export const Header: CollectionConfig<"header"> = {
   },
   fields: [
     {
-      admin: { position: "sidebar" },
-      defaultValue: createLocalizedDefault({ en: "Header", es: "Header" }),
-      localized: true,
+      admin: {
+        description: {
+          en: "Internal name, shown only in the admin.",
+          es: "Nombre interno, solo visible en el panel.",
+        },
+        position: "sidebar",
+      },
+      defaultValue: "Header",
+      label: { en: "Name", es: "Nombre" },
       name: "name",
       type: "text",
     },
     {
-      defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
+      defaultValue: async () => getDefaultMediaId(),
+      label: { en: "Logo", es: "Logo" },
       name: "logo",
       relationTo: "media",
       required: true,
@@ -68,7 +74,7 @@ export const Header: CollectionConfig<"header"> = {
           fields: [
             {
               admin: { width: "60%" },
-              label: { en: "Label", es: "Etiqueta" },
+              label: { en: "Menu text", es: "Texto del menú" },
               localized: true,
               name: "label",
               required: true,
@@ -77,11 +83,11 @@ export const Header: CollectionConfig<"header"> = {
             {
               admin: { width: "40%" },
               defaultValue: "link",
-              label: { en: "Type", es: "Tipo" },
+              label: { en: "Opens", es: "Abre" },
               name: "type",
               options: [
-                { label: { en: "Link", es: "Enlace" }, value: "link" },
-                { label: { en: "Dropdown", es: "Desplegable" }, value: "dropdown" },
+                { label: { en: "A link", es: "Un enlace" }, value: "link" },
+                { label: { en: "A dropdown menu", es: "Un menú desplegable" }, value: "dropdown" },
               ],
               required: true,
               type: "select",
@@ -102,7 +108,7 @@ export const Header: CollectionConfig<"header"> = {
               fields: [
                 {
                   defaultValue: false,
-                  label: { en: "Enabled", es: "Habilitado" },
+                  label: { en: "Show a featured card", es: "Mostrar una tarjeta destacada" },
                   name: "enabled",
                   type: "checkbox",
                 },
@@ -112,7 +118,7 @@ export const Header: CollectionConfig<"header"> = {
                   fields: [
                     {
                       admin: { width: "40%" },
-                      label: { en: "Eyebrow", es: "Antetítulo" },
+                      label: { en: "Label above title", es: "Texto sobre el título" },
                       localized: true,
                       name: "eyebrow",
                       type: "text",
@@ -176,6 +182,10 @@ export const Header: CollectionConfig<"header"> = {
                 }),
               ],
               label: { en: "Menu links", es: "Enlaces del menú" },
+              labels: {
+                plural: { en: "Links", es: "Enlaces" },
+                singular: { en: "Link", es: "Enlace" },
+              },
               minRows: 1,
               name: "links",
               type: "array",
@@ -186,6 +196,11 @@ export const Header: CollectionConfig<"header"> = {
           type: "group",
         },
       ],
+      label: { en: "Menu items", es: "Elementos del menú" },
+      labels: {
+        plural: { en: "Menu items", es: "Elementos del menú" },
+        singular: { en: "Menu item", es: "Elemento del menú" },
+      },
       localized: true,
       maxRows: 6,
       name: "navItems",
@@ -194,7 +209,11 @@ export const Header: CollectionConfig<"header"> = {
     {
       admin: { initCollapsed: true },
       fields: (link() as GroupField).fields,
-      label: { en: "Actions", es: "Acciones" },
+      label: { en: "Buttons", es: "Botones" },
+      labels: {
+        plural: { en: "Buttons", es: "Botones" },
+        singular: { en: "Button", es: "Botón" },
+      },
       localized: true,
       maxRows: 2,
       name: "actions",
@@ -207,11 +226,11 @@ export const Header: CollectionConfig<"header"> = {
   labels: {
     plural: {
       en: "Headers",
-      es: "Headers",
+      es: "Cabeceras",
     },
     singular: {
       en: "Header",
-      es: "Header",
+      es: "Cabecera",
     },
   },
   slug: "header",

@@ -48,7 +48,9 @@ export function Footer({
               {brand.logo ? <Media {...toLogoMediaProps(brand.logo)} /> : brand.label}
             </NextLink>
             {description ? (
-              <p className="text-muted-foreground mt-4 max-w-[30ch] text-small">{description}</p>
+              <p className="text-muted-foreground mt-4 max-w-[30ch] whitespace-pre-line text-small">
+                {description}
+              </p>
             ) : null}
           </div>
 

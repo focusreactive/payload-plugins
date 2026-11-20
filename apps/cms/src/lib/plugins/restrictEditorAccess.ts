@@ -123,8 +123,11 @@ const restrictCollection = <T extends Pick<CollectionConfig, "access" | "admin">
  *
  * Runs after every other plugin, so collections and globals that plugins add are covered too.
  * The folders collection, which Payload only adds while sanitizing, is covered through
- * `folders.collectionOverrides`. Payload's other internal collections (preferences, locked
- * documents, migrations, jobs, kv) are created later still and keep Payload's own access.
+ * `folders.collectionOverrides`. Payload's other internal collections are created later still
+ * and keep Payload's own access: migrations and kv have no REST access at all (`endpoints: false`
+ * / every operation denied), preferences are scoped to their owner, locked documents must stay
+ * open to every signed-in user (the admin's "take over" and unlock call them over REST), and the
+ * jobs endpoints are restricted through `jobs.access` in payload.config.ts.
  */
 export const restrictEditorAccess = ({
   collections,

@@ -45,19 +45,22 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
         {
           admin: { width: "50%" },
           label: {
-            en: "Position",
-            es: "Posición",
+            en: "Job title",
+            es: "Cargo",
           },
           localized: true,
           name: "position",
           type: "text",
         },
         {
-          admin: { width: "50%" },
+          admin: {
+            components: { Field: "/components/admin/StarRatingField#StarRatingField" },
+            width: "50%",
+          },
           defaultValue: 5,
           label: {
-            en: "Rating (1-5)",
-            es: "Calificación (1-5)",
+            en: "Rating",
+            es: "Calificación",
           },
           max: 5,
           min: 1,
@@ -68,8 +71,8 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
     },
     {
       label: {
-        en: "Avatar",
-        es: "Avatar",
+        en: "Photo",
+        es: "Foto",
       },
       name: "avatar",
       relationTo: "media",
@@ -77,8 +80,8 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
     },
     {
       label: {
-        en: "Review",
-        es: "Reseña",
+        en: "Quote",
+        es: "Cita",
       },
       localized: true,
       name: "content",

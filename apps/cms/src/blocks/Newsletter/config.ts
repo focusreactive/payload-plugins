@@ -19,7 +19,7 @@ const fields: Field[] = [
       {
         admin: { width: "50%" },
         defaultValue: createLocalizedDefault({ en: "you@team.com", es: "tu@equipo.com" }),
-        label: { en: "Input placeholder", es: "Marcador del campo" },
+        label: { en: "Hint inside the email field", es: "Texto de ayuda del campo de email" },
         localized: true,
         name: "inputPlaceholder",
         required: true,
@@ -28,7 +28,7 @@ const fields: Field[] = [
       {
         admin: { width: "50%" },
         defaultValue: createLocalizedDefault({ en: "Subscribe", es: "Suscribirse" }),
-        label: { en: "Button label", es: "Etiqueta del botón" },
+        label: { en: "Button text", es: "Texto del botón" },
         localized: true,
         name: "buttonLabel",
         required: true,
@@ -41,7 +41,7 @@ const fields: Field[] = [
       en: "No spam. Unsubscribe anytime.",
       es: "Sin spam. Cancela cuando quieras.",
     }),
-    label: { en: "Disclaimer", es: "Aviso" },
+    label: { en: "Small print", es: "Letra pequeña" },
     localized: true,
     name: "disclaimer",
     type: "text",
@@ -53,8 +53,8 @@ export const NewsletterBlock: Block = injectSection({
   interfaceName: "NewsletterBlock",
   ...getBlockPreviewImage("Newsletter"),
   labels: {
-    plural: { en: "Newsletters", es: "Boletines" },
-    singular: { en: "Newsletter", es: "Boletín" },
+    plural: { en: "Newsletter signups", es: "Suscripciones al boletín" },
+    singular: { en: "Newsletter signup", es: "Suscripción al boletín" },
   },
   fields,
 });

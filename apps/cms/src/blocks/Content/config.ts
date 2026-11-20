@@ -1,7 +1,6 @@
 import type { Block, Field, GroupField } from "payload";
 
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
-import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
 import { createLocalizedRichText } from "@/lib/utils/createLocalizedDefault";
 import { generateRichText } from "@/lib/utils/generateRichText";
@@ -39,7 +38,7 @@ const fields: Field[] = [
     type: "select",
   },
   {
-    defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
+    defaultValue: async () => getDefaultMediaId(),
     label: {
       en: "Image",
       es: "Imagen",
@@ -53,8 +52,8 @@ const fields: Field[] = [
     defaultValue: createLocalizedRichText(DEFAULT_VALUES.richText.content),
     editor: generateRichText(),
     label: {
-      en: "Content",
-      es: "Contenido",
+      en: "Text",
+      es: "Texto",
     },
     localized: true,
     name: "content",
@@ -67,7 +66,11 @@ const fields: Field[] = [
       initCollapsed: true,
     },
     fields: (link() as GroupField).fields,
-    label: { en: "Actions", es: "Acciones" },
+    label: { en: "Buttons", es: "Botones" },
+    labels: {
+      plural: { en: "Buttons", es: "Botones" },
+      singular: { en: "Button", es: "Botón" },
+    },
     localized: true,
     maxRows: 2,
     name: "actions",
@@ -81,12 +84,12 @@ export const ContentBlock: Block = injectSection({
   ...getBlockPreviewImage("Content Section"),
   labels: {
     plural: {
-      en: "Content Sections",
-      es: "Secciones de Contenido",
+      en: "Text and image",
+      es: "Texto e imagen",
     },
     singular: {
-      en: "Content Section",
-      es: "Sección de Contenido",
+      en: "Text and image",
+      es: "Texto e imagen",
     },
   },
   fields,

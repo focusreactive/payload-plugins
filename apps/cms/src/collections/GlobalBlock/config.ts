@@ -6,7 +6,6 @@ import {
   createLivePreviewEditComponents,
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
-import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { ADMIN_GROUPS } from "@/lib/config/adminGroups";
 import { createStandalonePreview } from "@/lib/utils/standalonePreview";
 
@@ -39,8 +38,8 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
         },
         position: "sidebar",
       },
-      defaultValue: createLocalizedDefault({ en: "Global section", es: "Sección global" }),
-      localized: true,
+      defaultValue: "Reusable section",
+      label: { en: "Name", es: "Nombre" },
       name: "title",
       required: true,
       type: "text",
@@ -53,6 +52,7 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
         initCollapsed: true,
       },
       blocks: contentBlocks,
+      label: { en: "Section", es: "Sección" },
       localized: true,
       maxRows: 1,
       minRows: 1,
@@ -66,8 +66,8 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
     beforeDelete: [preventDeleteIfReferenced],
   },
   labels: {
-    plural: { en: "Global sections", es: "Secciones globales" },
-    singular: { en: "Global section", es: "Sección global" },
+    plural: { en: "Reusable sections", es: "Secciones reutilizables" },
+    singular: { en: "Reusable section", es: "Sección reutilizable" },
   },
   slug: "globalBlock",
   versions: createLivePreviewVersions(),

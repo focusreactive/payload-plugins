@@ -18,6 +18,7 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
                 {
                   admin: { width: "50%" },
                   defaultValue: async () => getSoleRelationId("header"),
+                  label: { en: "Header", es: "Cabecera" },
                   name: "header",
                   relationTo: "header",
                   type: "relationship",
@@ -25,6 +26,7 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
                 {
                   admin: { width: "50%" },
                   defaultValue: async () => getSoleRelationId("footer"),
+                  label: { en: "Footer", es: "Pie de página" },
                   name: "footer",
                   relationTo: "footer",
                   type: "relationship",
@@ -35,7 +37,7 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
             {
               admin: { initCollapsed: true },
               blocks: heroBlocks,
-              label: { en: "Hero", es: "Hero" },
+              label: { en: "Hero banner", es: "Cabecera" },
               localized: true,
               maxRows: 1,
               minRows: 1,

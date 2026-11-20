@@ -66,6 +66,7 @@ export const Page: CollectionConfig<"page"> = {
   },
   fields: [
     {
+      label: { en: "Title", es: "Título" },
       localized: true,
       name: "title",
       required: true,
