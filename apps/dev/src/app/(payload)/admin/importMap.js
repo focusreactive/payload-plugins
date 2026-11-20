@@ -1,4 +1,5 @@
 import { FieldCommentLabel as FieldCommentLabel_d1361f235be9df6e08bfd730fe68e7c8 } from '@focus-reactive/payload-plugin-comments/components/FieldCommentLabel'
+import { DocumentReferences as DocumentReferences_36adeb9849e8ba12c8cd0e226bcd468f } from '@focus-reactive/payload-plugin-relations-graph/client'
 import { default as default_5be4c9505bfab4c66724e4ccadfc9b28 } from '@focus-reactive/payload-plugin-translator/client/widgets/translate-field-control/ui/TranslateFieldControl'
 import { BlockLabelServerWrapper as BlockLabelServerWrapper_ad8f8fdcc54c2df5d561bf1e2721dc58 } from '@focus-reactive/payload-plugin-presets/rsc'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -42,6 +43,7 @@ import { SectionVisibilityLabel as SectionVisibilityLabel_c7986ed929437589fcd462
 /** @type import('payload').ImportMap */
 export const importMap = {
   "@focus-reactive/payload-plugin-comments/components/FieldCommentLabel#FieldCommentLabel": FieldCommentLabel_d1361f235be9df6e08bfd730fe68e7c8,
+  "@focus-reactive/payload-plugin-relations-graph/client#DocumentReferences": DocumentReferences_36adeb9849e8ba12c8cd0e226bcd468f,
   "@focus-reactive/payload-plugin-translator/client/widgets/translate-field-control/ui/TranslateFieldControl#default": default_5be4c9505bfab4c66724e4ccadfc9b28,
   "@focus-reactive/payload-plugin-presets/rsc#BlockLabelServerWrapper": BlockLabelServerWrapper_ad8f8fdcc54c2df5d561bf1e2721dc58,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,

@@ -1,6 +1,7 @@
 import { getAccessResults } from "payload";
 import type { Endpoint, PayloadRequest } from "payload";
 
+import { toMarkdown } from "./graph/toMarkdown.js";
 import { toMermaid } from "./graph/toMermaid.js";
 import { ENDPOINT_BASE } from "./lib/constants.js";
 import { getVisibleGraph } from "./lib/getVisibleGraph.js";
@@ -12,7 +13,10 @@ export const denyUnlessAllowed = async (req: PayloadRequest): Promise<Response |
   return allowed ? null : Response.json({ error: "Forbidden" }, { status: 403 });
 };
 
-/** `GET /api/relations-graph` — the graph as JSON, or as Mermaid with `?format=mermaid`. */
+/**
+ * `GET /api/relations-graph` — the graph as JSON, as Mermaid with `?format=mermaid`, or as a
+ * markdown brief for AI agents with `?format=markdown`.
+ */
 export const graphEndpoint: Endpoint = {
   handler: async (req) => {
     const denied = await denyUnlessAllowed(req);
@@ -23,9 +27,15 @@ export const graphEndpoint: Endpoint = {
     const permissions = await getAccessResults({ req });
     const graph = getVisibleGraph(req, permissions);
 
-    if (req.searchParams?.get("format") === "mermaid") {
+    const format = req.searchParams?.get("format");
+    if (format === "mermaid") {
       return new Response(toMermaid(graph), {
         headers: { "Content-Type": "text/plain; charset=utf-8" },
+      });
+    }
+    if (format === "markdown") {
+      return new Response(toMarkdown(graph), {
+        headers: { "Content-Type": "text/markdown; charset=utf-8" },
       });
     }
     return Response.json(graph);
