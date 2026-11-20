@@ -6,13 +6,44 @@ import {
 } from "./constants.js";
 import { clipUnderCovers, measureCovers } from "./covers.js";
 
+export type TargetBox = Pick<DOMRect, "left" | "top" | "right" | "bottom" | "width" | "height">;
+
+const MAX_MEASURED_DESCENDANTS = 64;
+
+/**
+ * The box a target takes on screen. A wrapper around a `fill` image (absolutely positioned inside
+ * a parent that gives it its size) has no height of its own, so it is measured by what it holds:
+ * without that its frame and badge would never show, though a click on the image still opens it.
+ */
+export const boxOfTarget = (target: HTMLElement): TargetBox => {
+  const own = target.getBoundingClientRect();
+  if (own.width > 0 && own.height > 0) return own;
+
+  let left = Infinity;
+  let top = Infinity;
+  let right = -Infinity;
+  let bottom = -Infinity;
+  const descendants = target.querySelectorAll("*");
+  const count = Math.min(descendants.length, MAX_MEASURED_DESCENDANTS);
+  for (let index = 0; index < count; index += 1) {
+    const rect = (descendants[index] as Element).getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) continue;
+    left = Math.min(left, rect.left);
+    top = Math.min(top, rect.top);
+    right = Math.max(right, rect.right);
+    bottom = Math.max(bottom, rect.bottom);
+  }
+  if (left === Infinity) return own;
+  return { bottom, height: bottom - top, left, right, top, width: right - left };
+};
+
 export const placeFrame = (
   box: HTMLElement,
   target: HTMLElement,
   borderWidth: number,
   covers: ReadonlyMap<Element, DOMRect> = measureCovers()
 ): void => {
-  const rect = target.getBoundingClientRect();
+  const rect = boxOfTarget(target);
   const hidden = rect.width === 0 && rect.height === 0;
   box.style.display = hidden ? "none" : "block";
   if (hidden) return;

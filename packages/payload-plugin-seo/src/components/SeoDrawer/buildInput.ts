@@ -33,6 +33,8 @@ export interface BuildInputArgs {
   keyphrases: KeyphraseInput[];
   fields: SeoFieldPaths;
   site: { name: string; baseUrl: string };
+  /** Public path from the collection's preview path resolver, if the app registered one. */
+  path?: string;
 }
 
 export function buildInput({
@@ -42,12 +44,14 @@ export function buildInput({
   keyphrases,
   fields,
   site,
+  path,
 }: BuildInputArgs): AnalysisInput {
   const title = valueAt(values, fields.seoTitle) || valueAt(values, "title");
 
   return {
     title,
     slug: valueAt(values, fields.slug ?? "slug"),
+    ...(path ? { path } : {}),
     description: valueAt(values, fields.metaDescription),
     contentHtml,
     keyphrase: keyphrases[0]?.text ?? "",

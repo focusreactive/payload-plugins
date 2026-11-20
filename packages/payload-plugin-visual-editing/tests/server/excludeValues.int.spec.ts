@@ -19,12 +19,19 @@ describe("isUrl", () => {
     expect(isUrl(value)).toBe(true);
   });
 
-  it.each(["hello", "80%", "state-of-the-art", "example.com", "#fragment"])(
-    "rejects %s",
-    (value) => {
-      expect(isUrl(value)).toBe(false);
-    }
-  );
+  it.each([
+    "hello",
+    "80%",
+    "state-of-the-art",
+    "example.com",
+    "#fragment",
+    "New: Insights 2.0",
+    "Note: prices exclude VAT",
+    "Step 1: sign up",
+    "/ month",
+  ])("rejects %s", (value) => {
+    expect(isUrl(value)).toBe(false);
+  });
 });
 
 describe("isSlug", () => {

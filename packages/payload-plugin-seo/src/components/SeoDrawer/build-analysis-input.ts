@@ -17,6 +17,7 @@ import type {
   ContentHelpers,
   ExtractContext,
   ExtractToolkit,
+  PreviewPathResolver,
   SeoFieldPaths,
 } from "../../types/config";
 import { buildInput } from "./buildInput";
@@ -32,6 +33,7 @@ export interface BuildAnalysisInputArgs {
   fields: SeoFieldPaths;
   site: { name: string; baseUrl: string };
   extractor?: ContentExtractor;
+  previewPath?: PreviewPathResolver;
 }
 
 export async function buildAnalysisInput(args: BuildAnalysisInputArgs): Promise<AnalysisInput> {
@@ -45,7 +47,21 @@ export async function buildAnalysisInput(args: BuildAnalysisInputArgs): Promise<
     keyphrases: args.keyphrases,
     fields: args.fields,
     site: args.site,
+    path: await resolvePreviewPath(args),
   });
+}
+
+async function resolvePreviewPath(args: BuildAnalysisInputArgs): Promise<string | undefined> {
+  if (!args.previewPath) return undefined;
+
+  try {
+    const path = await args.previewPath(args.values, { locale: args.payloadLocale });
+    if (typeof path !== "string" || path === "") return undefined;
+    return path.startsWith("/") ? path : `/${path}`;
+  } catch (error) {
+    console.error("[payload-plugin-seo] the preview path resolver threw", error);
+    return undefined;
+  }
 }
 
 async function extractIntermediateRepresentation(

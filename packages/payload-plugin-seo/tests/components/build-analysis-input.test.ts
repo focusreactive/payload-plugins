@@ -18,6 +18,49 @@ describe("buildAnalysisInput", () => {
     expect(out.has.content).toBe(false);
   });
 
+  it("takes the public path from the preview path resolver, with the editing locale", async () => {
+    const previewPath = vi.fn(
+      (values: Record<string, unknown>, ctx: { locale?: string }) =>
+        `${ctx.locale}/services/${String(values.slug)}`
+    );
+    const out = await buildAnalysisInput({
+      values: { slug: "web" },
+      locale: "es",
+      payloadLocale: "es",
+      keyphrases: [],
+      fields: {},
+      site: { name: "S", baseUrl: "https://x.com" },
+      previewPath,
+    });
+    expect(previewPath).toHaveBeenCalledWith({ slug: "web" }, { locale: "es" });
+    expect(out.path).toBe("/es/services/web");
+    expect(out.slug).toBe("web");
+  });
+
+  it("falls back to the slug when the resolver returns nothing or throws", async () => {
+    const args = {
+      values: { slug: "web" },
+      locale: "en",
+      payloadLocale: "en",
+      keyphrases: [],
+      fields: {},
+      site: { name: "S", baseUrl: "" },
+    };
+    const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    expect((await buildAnalysisInput({ ...args, previewPath: () => null })).path).toBeUndefined();
+    expect(
+      (
+        await buildAnalysisInput({
+          ...args,
+          previewPath: () => {
+            throw new Error("boom");
+          },
+        })
+      ).path
+    ).toBeUndefined();
+    errors.mockRestore();
+  });
+
   it("serializes the extractor's IR into contentHtml and sets has.content", async () => {
     const extractor: ContentExtractor = vi.fn(
       async (): Promise<ContentNode[]> => [{ type: "heading", level: 1, text: "Reg" }]

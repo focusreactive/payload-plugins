@@ -27,6 +27,22 @@ export interface ResolveUrlArgs {
 
 export type ResolveUrl = (args: ResolveUrlArgs) => string | null | Promise<string | null>;
 
+export interface PreviewPathContext {
+  /** Locale the document is edited in, e.g. `es`. */
+  locale?: string;
+}
+
+/**
+ * Runs in the browser on the unsaved form values and returns the public path of the document
+ * (e.g. `/es/services/web`, `/blog/my-post`), shown after `site.baseUrl` in the search-result
+ * preview. Return `null` or `undefined` to fall back to `/<slug>`. It may return a promise (to read
+ * a parent document, for example); it runs on every analysis, so cache what it fetches.
+ */
+export type PreviewPathResolver = (
+  values: Record<string, unknown>,
+  ctx: PreviewPathContext
+) => string | null | undefined | Promise<string | null | undefined>;
+
 export interface SeoCollectionConfig {
   slug: string;
   fields?: SeoFieldPaths;
