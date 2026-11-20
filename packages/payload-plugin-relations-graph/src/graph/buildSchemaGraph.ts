@@ -229,9 +229,10 @@ export const buildSchemaGraph = (
   }
   if (includeGlobals) {
     for (const entity of config.globals ?? []) {
-      if (!excluded.has(entity.slug)) {
-        entities.push({ entity, kind: "global" });
+      if (excluded.has(entity.slug) || (!includeHidden && entity.admin?.hidden === true)) {
+        continue;
       }
+      entities.push({ entity, kind: "global" });
     }
   }
 

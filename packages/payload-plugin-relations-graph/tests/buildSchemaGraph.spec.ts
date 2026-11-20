@@ -318,3 +318,25 @@ describe("buildSchemaGraph", () => {
     });
   });
 });
+
+describe("hidden globals", () => {
+  const hiddenConfig = {
+    collections: [{ fields: [], slug: "posts" }],
+    globals: [
+      { admin: { hidden: true }, fields: [], slug: "internal" },
+      { fields: [], slug: "header" },
+    ],
+  };
+
+  it("leaves hidden globals out by default", () => {
+    const ids = buildSchemaGraph(hiddenConfig).nodes.map((node) => node.id);
+    expect(ids).toEqual(["collection:posts", "global:header"]);
+  });
+
+  it("includes them with includeHidden", () => {
+    const ids = buildSchemaGraph(hiddenConfig, { includeHidden: true }).nodes.map(
+      (node) => node.id
+    );
+    expect(ids).toContain("global:internal");
+  });
+});

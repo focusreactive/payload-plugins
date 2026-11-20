@@ -17,6 +17,7 @@ const groupByField = (edges: GraphEdge[], slugs: Map<string, string>): FieldRela
     const existing = fields.get(key);
     if (existing) {
       existing.targets.push(target);
+      existing.targets.sort();
     } else {
       fields.set(key, { edge, targets: [target] });
     }
@@ -45,7 +46,7 @@ const describeNode = (node: GraphNode): string =>
     node.upload ? "upload (files)" : undefined,
     node.auth ? "auth (users who log in)" : undefined,
     node.versions ? "versions/drafts" : undefined,
-    `${node.fieldCount} fields`,
+    `${node.fieldCount} ${node.fieldCount === 1 ? "field" : "fields"}`,
   ]
     .filter(Boolean)
     .join(", ");

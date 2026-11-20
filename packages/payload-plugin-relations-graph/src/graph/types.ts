@@ -51,6 +51,6 @@ export interface BuildSchemaGraphOptions {
   exclude?: string[];
   /** Include globals as nodes. Default `true`. */
   includeGlobals?: boolean;
-  /** Include collections flagged `admin.hidden`. Default `false`. */
+  /** Include collections and globals flagged `admin.hidden`. Default `false`. */
   includeHidden?: boolean;
 }

@@ -12,7 +12,7 @@ export interface RelationsGraphOptions {
   exclude?: string[];
   /** Show globals as nodes. Default `true`. */
   includeGlobals?: boolean;
-  /** Show collections flagged `admin.hidden` (usually plugin internals). Default `false`. */
+  /** Show collections and globals flagged `admin.hidden` (usually plugin internals). Default `false`. */
   includeHidden?: boolean;
   /**
    * Content-model health checks and live data statistics (document counts, relation fill

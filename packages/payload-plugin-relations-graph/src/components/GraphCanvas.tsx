@@ -403,7 +403,8 @@ export const GraphCanvas = ({
         <div className="list-header__title-and-actions">
           <h1 className="list-header__title">{title}</h1>
           <span className="rg__summary">
-            {collections} collections{globals > 0 ? ` · ${globals} globals` : ""} ·{" "}
+            {collections} {collections === 1 ? "collection" : "collections"}
+            {globals > 0 ? ` · ${globals} ${globals === 1 ? "global" : "globals"}` : ""} ·{" "}
             {visible.edges.length} relations
           </span>
         </div>
