@@ -37,6 +37,9 @@ import { RelationsGraphNavLink as RelationsGraphNavLink_36adeb9849e8ba12c8cd0e22
 import { CommentsProviderWrapper as CommentsProviderWrapper_bc62ec20ac2037360812e296d7662f4a } from '@focus-reactive/payload-plugin-comments/providers/CommentsProviderWrapper'
 import { default as default_5668654bc04fc84f784cb30b290f6f3d } from '@focus-reactive/payload-plugin-translator/client/app/cache/CacheProvider'
 import { RelationsGraphView as RelationsGraphView_a0c09475185225d944f38a68e37b1419 } from '@focus-reactive/payload-plugin-relations-graph/rsc'
+import { CountWidget as CountWidget_ab51434633c8836695308e859e66e007 } from '../../../components/dashboard/CountWidget'
+import { OverviewWidget as OverviewWidget_9ed2da0611c304c059b8d7e76df42427 } from '../../../components/dashboard/OverviewWidget'
+import { RecentWidget as RecentWidget_532d011f2d8f20ccf32c39fb78acfa58 } from '../../../components/dashboard/RecentWidget'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 import { SectionVisibilityLabel as SectionVisibilityLabel_c7986ed929437589fcd4621e9f64a5d3 } from '@/lib/section-visibility/SectionVisibilityLabel'
 
@@ -81,6 +84,9 @@ export const importMap = {
   "@focus-reactive/payload-plugin-comments/providers/CommentsProviderWrapper#CommentsProviderWrapper": CommentsProviderWrapper_bc62ec20ac2037360812e296d7662f4a,
   "@focus-reactive/payload-plugin-translator/client/app/cache/CacheProvider#default": default_5668654bc04fc84f784cb30b290f6f3d,
   "@focus-reactive/payload-plugin-relations-graph/rsc#RelationsGraphView": RelationsGraphView_a0c09475185225d944f38a68e37b1419,
+  "/components/dashboard/CountWidget#CountWidget": CountWidget_ab51434633c8836695308e859e66e007,
+  "/components/dashboard/OverviewWidget#OverviewWidget": OverviewWidget_9ed2da0611c304c059b8d7e76df42427,
+  "/components/dashboard/RecentWidget#RecentWidget": RecentWidget_532d011f2d8f20ccf32c39fb78acfa58,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1,
   "@/lib/section-visibility/SectionVisibilityLabel#SectionVisibilityLabel": SectionVisibilityLabel_c7986ed929437589fcd4621e9f64a5d3
 }

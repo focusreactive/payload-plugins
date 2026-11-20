@@ -128,6 +128,9 @@ export interface Config {
   };
   locale: 'en' | 'de' | 'fr' | 'es';
   widgets: {
+    count: CountWidget;
+    overview: OverviewWidget;
+    recent: RecentWidget;
     collections: CollectionsWidget;
   };
   user: User;
@@ -1543,6 +1546,55 @@ export interface _AbManifestSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "count_widget".
+ */
+export interface CountWidget {
+  data?: {
+    collection: 'media' | 'pages' | 'articles' | 'authors' | 'categories' | 'playground';
+    /**
+     * Leave empty to build the heading from the settings below.
+     */
+    label?: string | null;
+    /**
+     * Only applies to collections with drafts enabled.
+     */
+    status?: ('any' | 'draft' | 'published') | null;
+    period?: ('all' | '1' | '7' | '30') | null;
+    dateField?: ('updatedAt' | 'createdAt') | null;
+    field?: string | null;
+    value?: string | null;
+  };
+  width: 'x-small' | 'small' | 'medium';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "overview_widget".
+ */
+export interface OverviewWidget {
+  data?: {
+    /**
+     * Leave empty to list every collection.
+     */
+    collections?: ('media' | 'pages' | 'articles' | 'authors' | 'categories' | 'playground')[] | null;
+  };
+  width: 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "recent_widget".
+ */
+export interface RecentWidget {
+  data?: {
+    /**
+     * Leave empty to watch every collection.
+     */
+    collections?: ('media' | 'pages' | 'articles' | 'authors' | 'categories' | 'playground')[] | null;
+    limit?: number | null;
+  };
+  width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

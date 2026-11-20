@@ -28,6 +28,7 @@ import { Playground } from "./collections/Playground";
 import { Users } from "./collections/Users";
 import { Header } from "./globals/Header";
 import { abAdapter } from "./lib/ab-testing/dbAdapter";
+import { dashboardConfig } from "./lib/dashboard/config";
 import { resolveDbAdapter } from "./lib/database/resolveAdapter";
 import { loggingLifecycle } from "./lib/translator/lifecycleLogging";
 import {
@@ -38,8 +39,15 @@ import {
 
 const baseDir = path.dirname(fileURLToPath(import.meta.url));
 
+const contentCollections = [Users, Media, Pages, Articles, Authors, Categories, Playground];
+
 export default buildConfig({
   admin: {
+    dashboard: dashboardConfig(
+      contentCollections
+        .filter((collection) => !collection.auth)
+        .map((collection) => ({ label: collection.slug, value: collection.slug }))
+    ),
     importMap: {
       baseDir,
     },
@@ -51,7 +59,7 @@ export default buildConfig({
     },
     user: Users.slug,
   },
-  collections: [Users, Media, Pages, Articles, Authors, Categories, Playground],
+  collections: contentCollections,
   db: resolveDbAdapter(),
   jobs: {
     deleteJobOnComplete: false,
