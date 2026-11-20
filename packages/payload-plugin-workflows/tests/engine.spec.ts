@@ -1,0 +1,1202 @@
+import { describe, expect, it } from "vitest";
+
+import { WorkflowError } from "../src/engine/errors.js";
+import { abort, fire, patchFields, start } from "../src/engine/operations.js";
+import { CASCADE_LIMIT, settle } from "../src/engine/settle.js";
+import { createWorkflowSimulator } from "../src/engine/simulator.js";
+import { validateParams } from "../src/engine/params.js";
+import { view } from "../src/engine/view.js";
+import type {
+  ActivityDef,
+  Caller,
+  Env,
+  InstanceState,
+  StageDef,
+  WorkflowDefinition,
+} from "../src/types.js";
+import { NOW, author, editor, editorialReview } from "./fixtures.js";
+
+const env = (over: Partial<Env> = {}): Env => ({ doc: null, now: NOW, ...over });
+const caller = (id: string, roles: string[] = []): Caller => ({
+  actor: { id, collection: "users", via: "api" },
+  roles,
+});
+
+const codeOf = (fn: () => unknown): string | undefined => {
+  try {
+    fn();
+  } catch (error) {
+    if (error instanceof WorkflowError) {
+      return error.code;
+    }
+    throw error;
+  }
+  return undefined;
+};
+
+const historyTypes = (state: InstanceState) =>
+  state.history.map((entry) =>
+    entry.type === "action"
+      ? `action:${entry.activity}/${entry.action}${entry.auto ? "(auto)" : ""}`
+      : entry.type === "transition"
+        ? `transition:${entry.from}->${entry.to}`
+        : entry.type === "effect"
+          ? `effect:${entry.effect}:${entry.status}`
+          : entry.type
+  );
+
+const otherEditor = { user: "u-other", roles: ["editor"] };
+
+const filteredDef = (wanted: boolean): WorkflowDefinition => ({
+  name: "filtered",
+  collections: ["pages"],
+  initialStage: "a",
+  stages: [
+    {
+      name: "a",
+      activities: [
+        {
+          name: "legal",
+          filter: ({ doc }) => doc?.sensitive === wanted,
+          actions: [{ name: "ok", status: "done" }],
+        },
+        { name: "copy", actions: [{ name: "ok", status: "done" }] },
+      ],
+      transitions: [{ name: "next", to: "b" }],
+    },
+    { name: "b" },
+  ],
+});
+
+const guardedDef = (unless: () => boolean): WorkflowDefinition => ({
+  name: "g",
+  collections: ["pages"],
+  initialStage: "a",
+  stages: [
+    {
+      name: "a",
+      guards: [{ name: "hold", operations: ["update"], unless }],
+      activities: [{ name: "w", actions: [{ name: "ok", status: "done" }] }],
+      transitions: [{ name: "n", to: "b" }],
+    },
+    { name: "b" },
+  ],
+});
+
+describe("editorial review end to end", () => {
+  it("runs submit -> claim -> reject -> back to drafting -> submit -> approve -> completed", () => {
+    const sim = createWorkflowSimulator(editorialReview, { now: NOW });
+    expect(sim.state.stage).toBe("drafting");
+    expect(sim.state.activities).toEqual({ write: { status: "active" } });
+
+    sim.fire("write", "submit", author);
+    expect(sim.state.stage).toBe("review");
+    // `reset` fired on entry.
+    expect(sim.state.fired).toEqual(["review/reset"]);
+
+    sim.fire("review", "claim", editor);
+    expect(sim.state.fields.reviewer).toBe("u-editor");
+    expect(sim.state.stage).toBe("review");
+
+    sim.fire("review", "reject", { ...editor, params: { reason: "Too long" } });
+    expect(sim.state.stage).toBe("drafting");
+    expect(sim.state.fields).toMatchObject({ decision: "rejected", reason: "Too long" });
+    expect(sim.state.activities).toEqual({ write: { status: "active" } });
+    expect(sim.state.fired).toEqual([]);
+
+    sim.fire("write", "submit", author);
+    expect(sim.state.stage).toBe("review");
+    // `reset` fired again on re-entry and cleared the previous decision.
+    expect(sim.state.fields.decision).toBeUndefined();
+    expect(sim.state.fields.reason).toBeUndefined();
+    // The reviewer is still held, so nobody else may act.
+    expect(
+      sim.view(otherEditor).activities[0]?.actions.find((a) => a.name === "approve")?.allowed
+    ).toBe(false);
+
+    sim.fire("review", "approve", editor);
+    expect(sim.state.status).toBe("completed");
+    expect(sim.state.stage).toBe("approved");
+    expect(sim.state.completedAt).toBe(NOW.toISOString());
+    expect(sim.effects).toEqual([{ name: "notify-author", activity: "review", action: "approve" }]);
+    expect(historyTypes(sim.state)).toEqual([
+      "started",
+      "action:write/submit",
+      "transition:drafting->review",
+      "action:review/reset(auto)",
+      "action:review/claim",
+      "action:review/reject",
+      "transition:review->drafting",
+      "action:write/submit",
+      "transition:drafting->review",
+      "action:review/reset(auto)",
+      "action:review/approve",
+      "effect:notify-author:queued",
+      "transition:review->approved",
+      "completed",
+    ]);
+    const reject = sim.state.history.find((e) => e.type === "action" && e.action === "reject");
+    expect(reject).toMatchObject({ params: { reason: "Too long" }, actor: { id: "u-editor" } });
+  });
+});
+
+describe("auto actions", () => {
+  const def: WorkflowDefinition = {
+    name: "auto",
+    collections: ["pages"],
+    initialStage: "a",
+    fields: [
+      { name: "count", type: "number", initialValue: 0 },
+      { name: "go", type: "boolean" },
+    ],
+    stages: [
+      {
+        name: "a",
+        activities: [
+          {
+            name: "work",
+            actions: [
+              {
+                name: "bump",
+                when: () => true,
+                set: ({ fields }) => ({ count: Number(fields.count) + 1 }),
+              },
+              { name: "late", when: ({ fields }) => fields.go === true, set: { go: null } },
+              { name: "finish", status: "done" },
+              { name: "redo", status: "done" },
+            ],
+          },
+        ],
+        transitions: [{ name: "next", to: "b" }],
+      },
+      {
+        name: "b",
+        activities: [{ name: "work", actions: [{ name: "back", status: "done" }] }],
+        transitions: [{ name: "again", to: "a" }],
+      },
+    ],
+  };
+
+  it("fires once per stage visit and again after re-entry", () => {
+    const sim = createWorkflowSimulator(def, { now: NOW });
+    expect(sim.state.fields.count).toBe(1);
+    sim.advance(new Date(NOW.getTime() + 1000));
+    sim.setDoc({ any: true });
+    expect(sim.state.fields.count).toBe(1);
+    sim.fire("work", "finish");
+    expect(sim.state.stage).toBe("b");
+    sim.fire("work", "back");
+    expect(sim.state.stage).toBe("a");
+    expect(sim.state.fields.count).toBe(2);
+  });
+
+  it("fires when its condition becomes true later, then not again", () => {
+    const sim = createWorkflowSimulator(def, { now: NOW });
+    expect(sim.state.fired).toEqual(["work/bump"]);
+    sim.patch({ go: true });
+    expect(sim.state.fired).toEqual(["work/bump", "work/late"]);
+    expect(sim.state.fields.go).toBeUndefined();
+    sim.patch({ go: true });
+    expect(sim.state.fields.go).toBe(true);
+  });
+
+  it("is not callable", () => {
+    const sim = createWorkflowSimulator(def, { now: NOW });
+    expect(codeOf(() => sim.fire("work", "bump"))).toBe("not-callable");
+    expect(sim.view().activities[0]?.actions.map((a) => a.name)).toEqual(["finish", "redo"]);
+  });
+
+  it("does not fire on an activity that is already resolved", () => {
+    const resolved: WorkflowDefinition = {
+      name: "resolved",
+      collections: ["pages"],
+      initialStage: "a",
+      fields: [
+        { name: "flag", type: "boolean" },
+        { name: "seen", type: "boolean" },
+      ],
+      stages: [
+        {
+          name: "a",
+          activities: [
+            {
+              name: "one",
+              actions: [
+                { name: "done", status: "done" },
+                { name: "auto", when: ({ fields }) => fields.flag === true, set: { seen: true } },
+              ],
+            },
+            { name: "two", actions: [{ name: "done", status: "done" }] },
+          ],
+          transitions: [{ name: "next", to: "b" }],
+        },
+        { name: "b" },
+      ],
+    };
+    const sim = createWorkflowSimulator(resolved, { now: NOW });
+    sim.fire("one", "done");
+    sim.patch({ flag: true });
+    expect(sim.state.fields.seen).toBeUndefined();
+  });
+});
+
+describe("transitions", () => {
+  it("takes the first open transition in declaration order", () => {
+    const def: WorkflowDefinition = {
+      name: "order",
+      collections: ["pages"],
+      initialStage: "a",
+      stages: [
+        {
+          name: "a",
+          activities: [{ name: "w", actions: [{ name: "ok", status: "done" }] }],
+          transitions: [
+            { name: "first", to: "b" },
+            { name: "second", to: "c", when: () => true },
+          ],
+        },
+        { name: "b" },
+        { name: "c" },
+      ],
+    };
+    const sim = createWorkflowSimulator(def, { now: NOW });
+    // `second` is open from the start and wins over the not-yet-open default of `first`.
+    expect(sim.state.stage).toBe("c");
+
+    const def2: WorkflowDefinition = {
+      ...def,
+      stages: [
+        {
+          name: "a",
+          activities: [{ name: "w", actions: [{ name: "ok", status: "done" }] }],
+          transitions: [
+            { name: "first", to: "b", when: () => true },
+            { name: "second", to: "c", when: () => true },
+          ],
+        },
+        { name: "b" },
+        { name: "c" },
+      ],
+    };
+    expect(createWorkflowSimulator(def2, { now: NOW }).state.stage).toBe("b");
+  });
+
+  it("does not count a failed activity as done", () => {
+    const def: WorkflowDefinition = {
+      name: "failing",
+      collections: ["pages"],
+      initialStage: "a",
+      stages: [
+        {
+          name: "a",
+          activities: [
+            {
+              name: "w",
+              actions: [
+                { name: "fail", status: "failed" },
+                { name: "ok", status: "done" },
+              ],
+            },
+          ],
+          transitions: [
+            { name: "next", to: "b" },
+            { name: "failed", to: "c", when: ({ anyActivityFailed }) => anyActivityFailed },
+          ],
+        },
+        { name: "b" },
+        { name: "c" },
+      ],
+    };
+    const sim = createWorkflowSimulator(def, { now: NOW });
+    sim.fire("w", "fail");
+    expect(sim.state.stage).toBe("c");
+  });
+});
+
+describe("activity filter", () => {
+  it("skips an activity whose filter is false at stage entry; skipped counts as done", () => {
+    const sim = createWorkflowSimulator(filteredDef(true), { now: NOW, doc: { sensitive: false } });
+    expect(sim.state.activities.legal).toEqual({ status: "skipped", at: NOW.toISOString() });
+    expect(codeOf(() => sim.fire("legal", "ok"))).toBe("activity-not-active");
+    sim.fire("copy", "ok");
+    expect(sim.state.status).toBe("completed");
+  });
+
+  it("keeps an activity whose filter is true", () => {
+    const sim = createWorkflowSimulator(filteredDef(true), { now: NOW, doc: { sensitive: true } });
+    expect(sim.state.activities.legal?.status).toBe("active");
+    sim.fire("copy", "ok");
+    expect(sim.state.stage).toBe("a");
+  });
+
+  it("is evaluated once at entry, not again when the doc changes", () => {
+    const sim = createWorkflowSimulator(filteredDef(true), { now: NOW, doc: { sensitive: false } });
+    sim.setDoc({ sensitive: true });
+    expect(sim.state.activities.legal?.status).toBe("skipped");
+  });
+});
+
+describe("assignment and availability", () => {
+  const def: WorkflowDefinition = {
+    name: "assign",
+    collections: ["pages"],
+    initialStage: "a",
+    fields: [{ name: "owner", type: "user", input: true }],
+    stages: [
+      {
+        name: "a",
+        activities: [
+          {
+            name: "pooled",
+            assignee: "owner",
+            roles: ["editor"],
+            actions: [
+              { name: "do", status: "done" },
+              { name: "legalOnly", roles: ["legal"] },
+              { name: "filtered", filter: ({ assigned, roles }) => assigned && roles.length > 1 },
+            ],
+          },
+          { name: "open", actions: [{ name: "do", status: "done" }] },
+          { name: "byField", assignee: "owner", actions: [{ name: "do", status: "done" }] },
+        ],
+        transitions: [{ name: "next", to: "b" }],
+      },
+      { name: "b" },
+    ],
+  };
+  const allowed = (state: InstanceState, who: Caller, activity: string, action: string) =>
+    view(def, state, who, env())
+      .activities.find((a) => a.name === activity)
+      ?.actions.find((a) => a.name === action)?.allowed;
+
+  it("pool by role when the assignee field is empty; everyone when neither is declared", () => {
+    const { state } = start(def, { actor: { system: true } }, env());
+    expect(allowed(state, caller("x", ["editor"]), "pooled", "do")).toBe(true);
+    expect(allowed(state, caller("x", []), "pooled", "do")).toBe(false);
+    expect(allowed(state, caller("x", []), "open", "do")).toBe(true);
+    expect(allowed(state, caller("x", []), "byField", "do")).toBe(true);
+  });
+
+  it("a held assignee shadows the pool", () => {
+    const { state } = start(def, { actor: { system: true }, fields: { owner: "u1" } }, env());
+    expect(allowed(state, caller("u1", []), "pooled", "do")).toBe(true);
+    expect(allowed(state, caller("u2", ["editor"]), "pooled", "do")).toBe(false);
+    expect(allowed(state, caller("u2", []), "byField", "do")).toBe(false);
+    const v = view(def, state, caller("u2", ["editor"]), env());
+    expect(v.activities[0]?.assignee).toBe("u1");
+    expect(v.waitingOn).toEqual({ users: ["u1"], roles: [] });
+  });
+
+  it("action roles and filter narrow the default, never widen it", () => {
+    const { state } = start(def, { actor: { system: true } }, env());
+    expect(allowed(state, caller("x", ["legal"]), "pooled", "legalOnly")).toBe(false);
+    expect(allowed(state, caller("x", ["editor"]), "pooled", "legalOnly")).toBe(false);
+    expect(allowed(state, caller("x", ["editor", "legal"]), "pooled", "legalOnly")).toBe(true);
+    expect(allowed(state, caller("x", ["editor"]), "pooled", "filtered")).toBe(false);
+    expect(allowed(state, caller("x", ["editor", "y"]), "pooled", "filtered")).toBe(true);
+  });
+
+  it("waitingOn lists roles of unheld activities and drops resolved ones", () => {
+    const { state } = start(def, { actor: { system: true } }, env());
+    expect(view(def, state, caller("x"), env()).waitingOn).toEqual({
+      users: [],
+      roles: ["editor"],
+    });
+    const after = fire(
+      def,
+      state,
+      { activity: "pooled", action: "do" },
+      caller("x", ["editor"]),
+      env()
+    );
+    expect(view(def, after.state, caller("x"), env()).waitingOn).toEqual({ users: [], roles: [] });
+  });
+});
+
+describe("fire rejections", () => {
+  const base = () => start(editorialReview, { actor: { system: true } }, env()).state;
+  const inReview = () =>
+    fire(editorialReview, base(), { activity: "write", action: "submit" }, caller("a"), env())
+      .state;
+
+  it("instance-not-active", () => {
+    const aborted = abort(editorialReview, base(), { actor: { system: true } }, env()).state;
+    expect(
+      codeOf(() =>
+        fire(editorialReview, aborted, { activity: "write", action: "submit" }, caller("a"), env())
+      )
+    ).toBe("instance-not-active");
+  });
+
+  it("unknown-stage when the definition changed under the instance", () => {
+    const stuck = { ...base(), stage: "gone" };
+    expect(
+      codeOf(() =>
+        fire(editorialReview, stuck, { activity: "write", action: "submit" }, caller("a"), env())
+      )
+    ).toBe("unknown-stage");
+    const v = view(editorialReview, stuck, caller("a"), env());
+    expect(v.stuck).toBe("unknown-stage");
+    expect(v.activities).toEqual([]);
+    expect(settle(editorialReview, stuck, env()).state).toBe(stuck);
+    expect(abort(editorialReview, stuck, { actor: { system: true } }, env()).state.status).toBe(
+      "aborted"
+    );
+  });
+
+  it("unknown-activity, unknown-action, not-callable", () => {
+    const state = inReview();
+    expect(
+      codeOf(() =>
+        fire(editorialReview, state, { activity: "nope", action: "x" }, caller("a"), env())
+      )
+    ).toBe("unknown-activity");
+    expect(
+      codeOf(() =>
+        fire(editorialReview, state, { activity: "review", action: "nope" }, caller("a"), env())
+      )
+    ).toBe("unknown-action");
+    expect(
+      codeOf(() =>
+        fire(editorialReview, state, { activity: "review", action: "reset" }, caller("a"), env())
+      )
+    ).toBe("not-callable");
+  });
+
+  it("activity-not-active", () => {
+    const def: WorkflowDefinition = {
+      name: "two",
+      collections: ["pages"],
+      initialStage: "a",
+      stages: [
+        {
+          name: "a",
+          activities: [
+            { name: "x", actions: [{ name: "ok", status: "done" }] },
+            { name: "y", actions: [{ name: "ok", status: "done" }] },
+          ],
+          transitions: [{ name: "next", to: "b" }],
+        },
+        { name: "b" },
+      ],
+    };
+    const once = fire(
+      def,
+      start(def, { actor: { system: true } }, env()).state,
+      { activity: "x", action: "ok" },
+      caller("a"),
+      env()
+    );
+    expect(
+      codeOf(() => fire(def, once.state, { activity: "x", action: "ok" }, caller("a"), env()))
+    ).toBe("activity-not-active");
+  });
+
+  it("not-allowed", () => {
+    const state = inReview();
+    const error = (() => {
+      try {
+        fire(editorialReview, state, { activity: "review", action: "approve" }, caller("a"), env());
+      } catch (caught) {
+        return caught as WorkflowError;
+      }
+      return null;
+    })();
+    expect(error?.code).toBe("not-allowed");
+    expect(error?.message).toBe('Requires one of the roles "editor".');
+  });
+
+  it("invalid-params: missing required, wrong type, undeclared", () => {
+    const state = inReview();
+    const ed = caller("e", ["editor"]);
+    expect(
+      codeOf(() =>
+        fire(editorialReview, state, { activity: "review", action: "reject" }, ed, env())
+      )
+    ).toBe("invalid-params");
+    expect(
+      codeOf(() =>
+        fire(
+          editorialReview,
+          state,
+          { activity: "review", action: "reject", params: { reason: 3 } },
+          ed,
+          env()
+        )
+      )
+    ).toBe("invalid-params");
+    expect(
+      codeOf(() =>
+        fire(
+          editorialReview,
+          state,
+          { activity: "review", action: "approve", params: { extra: 1 } },
+          ed,
+          env()
+        )
+      )
+    ).toBe("invalid-params");
+  });
+
+  it("checks in the documented order: not-allowed before invalid-params", () => {
+    const state = inReview();
+    expect(
+      codeOf(() =>
+        fire(editorialReview, state, { activity: "review", action: "reject" }, caller("a"), env())
+      )
+    ).toBe("not-allowed");
+  });
+
+  it("invalid-patch when a set function writes an undeclared field", () => {
+    const def: WorkflowDefinition = {
+      name: "bad-set",
+      collections: ["pages"],
+      initialStage: "a",
+      stages: [
+        {
+          name: "a",
+          activities: [
+            { name: "w", actions: [{ name: "ok", status: "done", set: () => ({ nope: 1 }) }] },
+          ],
+          transitions: [{ name: "n", to: "b" }],
+        },
+        { name: "b" },
+      ],
+    };
+    const state = start(def, { actor: { system: true } }, env()).state;
+    expect(
+      codeOf(() => fire(def, state, { activity: "w", action: "ok" }, caller("a"), env()))
+    ).toBe("invalid-patch");
+  });
+
+  it("condition-error when a condition throws; nothing changes", () => {
+    const def: WorkflowDefinition = {
+      name: "throws",
+      collections: ["pages"],
+      initialStage: "a",
+      stages: [
+        {
+          name: "a",
+          activities: [{ name: "w", actions: [{ name: "ok", status: "done" }] }],
+          transitions: [
+            {
+              name: "n",
+              to: "b",
+              when: ({ activities }) => {
+                if (activities.w === "done") {
+                  throw new Error("boom");
+                }
+                return false;
+              },
+            },
+          ],
+        },
+        { name: "b" },
+      ],
+    };
+    const state = start(def, { actor: { system: true } }, env()).state;
+    const before = structuredClone(state);
+    expect(
+      codeOf(() => fire(def, state, { activity: "w", action: "ok" }, caller("a"), env()))
+    ).toBe("condition-error");
+    expect(state).toEqual(before);
+  });
+});
+
+describe("params", () => {
+  const def: WorkflowDefinition = {
+    name: "params",
+    collections: ["pages"],
+    initialStage: "a",
+    fields: [{ name: "out", type: "json" }],
+    stages: [
+      {
+        name: "a",
+        activities: [
+          {
+            name: "w",
+            actions: [
+              {
+                name: "go",
+                status: "done",
+                params: [
+                  { name: "n", type: "number" },
+                  { name: "b", type: "boolean" },
+                  { name: "d", type: "date" },
+                  { name: "s", type: "select", options: ["x", { label: "Why", value: "y" }] },
+                ],
+                set: ({ params }) => ({ out: params }),
+              },
+            ],
+          },
+        ],
+        transitions: [{ name: "n", to: "b" }],
+      },
+      { name: "b" },
+    ],
+  };
+  const go = (params: Record<string, unknown>) =>
+    codeOf(() =>
+      fire(
+        def,
+        start(def, { actor: { system: true } }, env()).state,
+        { activity: "w", action: "go", params },
+        caller("a"),
+        env()
+      )
+    );
+
+  it("accepts every type", () => {
+    expect(go({ n: 1, b: false, d: "2026-01-02", s: "y" })).toBeUndefined();
+    const result = fire(
+      def,
+      start(def, { actor: { system: true } }, env()).state,
+      { activity: "w", action: "go", params: { n: 1, s: "x", d: "" } },
+      caller("a"),
+      env()
+    );
+    expect(result.state.fields.out).toEqual({ n: 1, s: "x" });
+  });
+
+  it.each([
+    [{ n: "1" }],
+    [{ n: Number.NaN }],
+    [{ b: "true" }],
+    [{ d: "not a date" }],
+    [{ s: "z" }],
+  ])("rejects %j", (params) => {
+    expect(go(params)).toBe("invalid-params");
+  });
+});
+
+describe("view and fire agree", () => {
+  it("every action shown allowed fires, every action shown disallowed is refused", () => {
+    const callers = [
+      caller("u-editor", ["editor"]),
+      caller("u-other", ["editor"]),
+      caller("nobody"),
+      caller("u-author"),
+    ];
+    const states: InstanceState[] = [];
+    const sim = createWorkflowSimulator(editorialReview, { now: NOW });
+    states.push(sim.state);
+    sim.fire("write", "submit", author);
+    states.push(sim.state);
+    sim.fire("review", "claim", editor);
+    states.push(sim.state);
+    states.push(abort(editorialReview, sim.state, { actor: { system: true } }, env()).state);
+    let checked = 0;
+    for (const state of states) {
+      for (const who of callers) {
+        const v = view(editorialReview, state, who, env());
+        for (const activity of v.activities) {
+          for (const action of activity.actions) {
+            const params = action.params.length > 0 ? { reason: "because" } : undefined;
+            const code = codeOf(() =>
+              fire(
+                editorialReview,
+                state,
+                { activity: activity.name, action: action.name, params },
+                who,
+                env()
+              )
+            );
+            expect(code === undefined, `${activity.name}/${action.name} for ${who.actor.id}`).toBe(
+              action.allowed
+            );
+            if (!action.allowed) {
+              expect(action.reason).toBeTruthy();
+            }
+            checked += 1;
+          }
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(20);
+  });
+});
+
+describe("guards", () => {
+  it("are listed only while the instance holds in their stage", () => {
+    const sim = createWorkflowSimulator(editorialReview, { now: NOW });
+    expect(sim.view().guards).toEqual([]);
+    sim.fire("write", "submit", author);
+    expect(sim.view().guards).toEqual([
+      {
+        name: "hold-publish",
+        title: "Publishing is held until review is approved",
+        operations: ["publish"],
+      },
+    ]);
+    sim.fire("review", "approve", editor);
+    expect(sim.view().guards).toEqual([]);
+  });
+
+  it("an `unless` that is true lifts the guard; one that throws keeps it", () => {
+    expect(createWorkflowSimulator(guardedDef(() => true)).view().guards).toEqual([]);
+    expect(
+      createWorkflowSimulator(
+        guardedDef(() => {
+          throw new Error("x");
+        })
+      ).view().guards
+    ).toHaveLength(1);
+  });
+
+  it("are not listed for an aborted instance", () => {
+    const sim = createWorkflowSimulator(editorialReview, { now: NOW });
+    sim.fire("write", "submit", author);
+    sim.abort("stop");
+    expect(sim.view().guards).toEqual([]);
+  });
+});
+
+describe("cascade limit", () => {
+  it("throws cascade-limit on a definition that loops forever", () => {
+    const def: WorkflowDefinition = {
+      name: "loop",
+      collections: ["pages"],
+      initialStage: "a",
+      stages: [
+        { name: "a", transitions: [{ name: "go", to: "b", when: () => true }] },
+        { name: "b", transitions: [{ name: "back", to: "a", when: () => true }] },
+      ],
+    };
+    expect(codeOf(() => start(def, { actor: { system: true } }, env()))).toBe("cascade-limit");
+    expect(CASCADE_LIMIT).toBe(50);
+  });
+});
+
+describe("now-based conditions via settle", () => {
+  const def: WorkflowDefinition = {
+    name: "timer",
+    collections: ["pages"],
+    initialStage: "waiting",
+    fields: [{ name: "due", type: "date", initialValue: "2026-01-02T00:00:00.000Z" }],
+    stages: [
+      {
+        name: "waiting",
+        transitions: [
+          {
+            name: "expire",
+            to: "expired",
+            when: ({ fields, now }) => now >= new Date(String(fields.due)),
+          },
+        ],
+      },
+      { name: "expired" },
+    ],
+  };
+
+  it("does nothing before the time, returning the same reference, and moves after", () => {
+    const { state } = start(def, { actor: { system: true } }, env());
+    const same = settle(def, state, env());
+    expect(same.state).toBe(state);
+    const later = settle(def, state, env({ now: new Date("2026-01-03T00:00:00.000Z") }));
+    expect(later.state.stage).toBe("expired");
+    expect(later.state.status).toBe("completed");
+  });
+
+  it("via the simulator's advance", () => {
+    const sim = createWorkflowSimulator(def, { now: NOW });
+    sim.advance(new Date("2026-01-05T00:00:00.000Z"));
+    expect(sim.state.status).toBe("completed");
+  });
+});
+
+describe("doc-based conditions", () => {
+  it("settle with a fresh doc moves the run", () => {
+    const def: WorkflowDefinition = {
+      name: "pub",
+      collections: ["pages"],
+      initialStage: "a",
+      stages: [
+        {
+          name: "a",
+          transitions: [{ name: "pub", to: "b", when: ({ doc }) => doc?._status === "published" }],
+        },
+        { name: "b" },
+      ],
+    };
+    const sim = createWorkflowSimulator(def, { doc: { _status: "draft" } });
+    expect(sim.state.stage).toBe("a");
+    sim.setDoc({ _status: "published" });
+    expect(sim.state.status).toBe("completed");
+  });
+});
+
+describe("patchFields", () => {
+  it("writes declared fields, unsets with null, and settles", () => {
+    const sim = createWorkflowSimulator(editorialReview, { now: NOW });
+    sim.fire("write", "submit", author);
+    sim.patch({ reviewer: "u-bot" });
+    expect(sim.state.fields.reviewer).toBe("u-bot");
+    sim.patch({ decision: "approved" });
+    expect(sim.state.status).toBe("completed");
+  });
+
+  it("rejects undeclared fields and inactive instances", () => {
+    const { state } = start(editorialReview, { actor: { system: true } }, env());
+    expect(codeOf(() => patchFields(editorialReview, state, { nope: 1 }, env()))).toBe(
+      "invalid-patch"
+    );
+    const aborted = abort(editorialReview, state, { actor: { system: true } }, env()).state;
+    expect(codeOf(() => patchFields(editorialReview, aborted, { reviewer: "x" }, env()))).toBe(
+      "instance-not-active"
+    );
+  });
+});
+
+describe("start", () => {
+  const startable: WorkflowDefinition = {
+    ...editorialReview,
+    fields: [
+      { name: "reviewer", type: "user", input: true },
+      { name: "decision", type: "string" },
+      { name: "reason", type: "text" },
+      { name: "priority", type: "number", initialValue: 3 },
+    ],
+  };
+
+  it("applies initial values then provided fields, and rejects undeclared ones", () => {
+    expect(
+      start(startable, { actor: { system: true }, fields: { reviewer: "u1" } }, env()).state.fields
+    ).toEqual({
+      priority: 3,
+      reviewer: "u1",
+    });
+    expect(
+      codeOf(() => start(startable, { actor: { system: true }, fields: { nope: 1 } }, env()))
+    ).toBe("invalid-patch");
+  });
+
+  it("accepts only fields declared with `input: true` from the caller; initialValue seeds any", () => {
+    for (const fields of [
+      { decision: "approved" },
+      { priority: 1 },
+      { reviewer: "u1", reason: "x" },
+    ]) {
+      expect(codeOf(() => start(startable, { actor: { system: true }, fields }, env()))).toBe(
+        "invalid-patch"
+      );
+    }
+    // The editorial review declares no input field: a caller cannot pre-approve it.
+    expect(
+      codeOf(() =>
+        start(editorialReview, { actor: { system: true }, fields: { decision: "approved" } }, env())
+      )
+    ).toBe("invalid-patch");
+    expect(start(startable, { actor: { system: true } }, env()).state.fields).toEqual({
+      priority: 3,
+    });
+  });
+
+  it("type-checks input fields", () => {
+    expect(
+      codeOf(() => start(startable, { actor: { system: true }, fields: { reviewer: {} } }, env()))
+    ).toBe("invalid-patch");
+    expect(
+      start(startable, { actor: { system: true }, fields: { reviewer: 7 } }, env()).state.fields
+        .reviewer
+    ).toBe("7");
+  });
+
+  it("records who started it", () => {
+    const { state } = start(
+      editorialReview,
+      { actor: { id: "u1", collection: "users", via: "admin" } },
+      env()
+    );
+    expect(state.history[0]).toEqual({
+      at: NOW.toISOString(),
+      actor: { id: "u1", collection: "users", via: "admin" },
+      type: "started",
+      stage: "drafting",
+    });
+    expect(state.startedAt).toBe(NOW.toISOString());
+  });
+});
+
+describe("abort", () => {
+  it("ends the run with a reason and cannot abort twice", () => {
+    const { state } = start(editorialReview, { actor: { system: true } }, env());
+    const aborted = abort(
+      editorialReview,
+      state,
+      { reason: "Subject deleted", actor: { system: true } },
+      env()
+    ).state;
+    expect(aborted.status).toBe("aborted");
+    expect(aborted.completedAt).toBe(NOW.toISOString());
+    expect(aborted.history.at(-1)).toMatchObject({ type: "aborted", reason: "Subject deleted" });
+    expect(codeOf(() => abort(editorialReview, aborted, { actor: { system: true } }, env()))).toBe(
+      "instance-not-active"
+    );
+  });
+});
+
+describe("immutability", () => {
+  it("never mutates the input state", () => {
+    const { state } = start(editorialReview, { actor: { system: true } }, env());
+    const frozen = structuredClone(state);
+    const review = fire(
+      editorialReview,
+      state,
+      { activity: "write", action: "submit" },
+      caller("a"),
+      env()
+    ).state;
+    expect(state).toEqual(frozen);
+    const reviewCopy = structuredClone(review);
+    fire(
+      editorialReview,
+      review,
+      { activity: "review", action: "claim" },
+      caller("e", ["editor"]),
+      env()
+    );
+    fire(
+      editorialReview,
+      review,
+      { activity: "review", action: "reject", params: { reason: "r" } },
+      caller("e", ["editor"]),
+      env()
+    );
+    patchFields(editorialReview, review, { decision: "approved" }, env());
+    abort(editorialReview, review, { actor: { system: true } }, env());
+    settle(editorialReview, review, env({ now: new Date() }));
+    view(editorialReview, review, caller("e", ["editor"]), env()).fields.decision = "mutated";
+    expect(review).toEqual(reviewCopy);
+  });
+});
+
+describe("field types", () => {
+  const typed: WorkflowDefinition = {
+    name: "typed",
+    collections: ["pages"],
+    initialStage: "a",
+    fields: [
+      { name: "s", type: "string" },
+      { name: "t", type: "text" },
+      { name: "n", type: "number" },
+      { name: "b", type: "boolean" },
+      { name: "d", type: "date" },
+      { name: "u", type: "user" },
+      { name: "j", type: "json" },
+    ],
+    stages: [
+      {
+        name: "a",
+        activities: [
+          {
+            name: "work",
+            actions: [
+              { name: "finish", status: "done" },
+              {
+                name: "write",
+                params: [{ name: "value", type: "text" }],
+                set: ({ params }) => ({ n: params.value }),
+              },
+            ],
+          },
+        ],
+        transitions: [{ name: "next", to: "b" }],
+      },
+      { name: "b" },
+    ],
+  };
+  const base = () => start(typed, { actor: { system: true } }, env()).state;
+  const patchCode = (patch: Record<string, unknown>) =>
+    codeOf(() => patchFields(typed, base(), patch, env()));
+
+  it("accepts a value of each type and stores a numeric user id as a string", () => {
+    const { state } = patchFields(
+      typed,
+      base(),
+      {
+        s: "a",
+        t: "long",
+        n: 1.5,
+        b: false,
+        d: "2026-01-01T00:00:00.000Z",
+        u: 42,
+        j: { nested: [1, "x", null] },
+      },
+      env()
+    );
+    expect(state.fields).toEqual({
+      s: "a",
+      t: "long",
+      n: 1.5,
+      b: false,
+      d: "2026-01-01T00:00:00.000Z",
+      u: "42",
+      j: { nested: [1, "x", null] },
+    });
+    expect(
+      patchFields(typed, state, { s: null, u: undefined }, env()).state.fields
+    ).not.toHaveProperty("s");
+  });
+
+  it.each([
+    [{ s: 1 }],
+    [{ t: false }],
+    [{ n: "1" }],
+    [{ n: Number.NaN }],
+    [{ n: Number.POSITIVE_INFINITY }],
+    [{ b: "true" }],
+    [{ d: "not a date" }],
+    [{ d: 1_700_000_000_000 }],
+    [{ u: { id: 1 } }],
+    [{ j: () => 1 }],
+    [{ j: 10n }],
+  ])("rejects %o as invalid-patch, naming the field", (patch) => {
+    expect(patchCode(patch)).toBe("invalid-patch");
+    const name = Object.keys(patch)[0] as string;
+    expect(() => patchFields(typed, base(), patch, env())).toThrow(`field "${name}"`);
+  });
+
+  it("checks an action's set too", () => {
+    expect(
+      codeOf(() =>
+        fire(
+          typed,
+          base(),
+          { activity: "work", action: "write", params: { value: "x" } },
+          caller("u"),
+          env()
+        )
+      )
+    ).toBe("invalid-patch");
+  });
+});
+
+describe("definition drift", () => {
+  const before: WorkflowDefinition = {
+    name: "drift",
+    collections: ["pages"],
+    initialStage: "a",
+    stages: [
+      {
+        name: "a",
+        activities: [
+          { name: "keep", actions: [{ name: "do", status: "done" }] },
+          { name: "gone", actions: [{ name: "do", status: "done" }] },
+        ],
+        transitions: [{ name: "next", to: "b" }],
+      },
+      { name: "b" },
+    ],
+  };
+
+  it("an activity removed from code no longer blocks the default transition", () => {
+    const entered = start(before, { actor: { system: true } }, env()).state;
+    const after: WorkflowDefinition = {
+      ...before,
+      stages: [
+        {
+          ...(before.stages[0] as StageDef),
+          activities: [before.stages[0]?.activities?.[0] as ActivityDef],
+        },
+        { name: "b" },
+      ],
+    };
+    const moved = fire(after, entered, { activity: "keep", action: "do" }, caller("u"), env());
+    expect(moved.state.status).toBe("completed");
+  });
+
+  it("an activity added after stage entry is active, actionable and waited on", () => {
+    const withRoles: WorkflowDefinition = {
+      ...before,
+      stages: [
+        {
+          ...(before.stages[0] as StageDef),
+          activities: [before.stages[0]?.activities?.[0] as ActivityDef],
+        },
+        { name: "b" },
+      ],
+    };
+    const entered = start(withRoles, { actor: { system: true } }, env()).state;
+    const added: WorkflowDefinition = {
+      ...withRoles,
+      stages: [
+        {
+          ...(withRoles.stages[0] as StageDef),
+          activities: [
+            withRoles.stages[0]?.activities?.[0] as ActivityDef,
+            { name: "legal", roles: ["legal"], actions: [{ name: "ok", status: "done" }] },
+          ],
+        },
+        { name: "b" },
+      ],
+    };
+    const done = fire(added, entered, { activity: "keep", action: "do" }, caller("u"), env()).state;
+    // Without "legal" counted, finishing "keep" would have completed the run.
+    expect(done.status).toBe("active");
+    const seen = view(added, done, caller("l", ["legal"]), env());
+    expect(seen.activities.find((a) => a.name === "legal")?.status).toBe("active");
+    expect(seen.activities.find((a) => a.name === "legal")?.actions[0]?.allowed).toBe(true);
+    expect(seen.waitingOn.roles).toEqual(["legal"]);
+    const finished = fire(
+      added,
+      done,
+      { activity: "legal", action: "ok" },
+      caller("l", ["legal"]),
+      env()
+    );
+    expect(finished.state.status).toBe("completed");
+  });
+
+  it("an auto action of an added activity fires", () => {
+    const entered = start(before, { actor: { system: true } }, env()).state;
+    const added: WorkflowDefinition = {
+      ...before,
+      stages: [
+        {
+          ...(before.stages[0] as StageDef),
+          activities: [
+            ...(before.stages[0]?.activities ?? []),
+            { name: "auto", actions: [{ name: "go", when: () => true, status: "done" }] },
+          ],
+        },
+        { name: "b" },
+      ],
+    };
+    expect(settle(added, entered, env()).state.activities.auto?.status).toBe("done");
+  });
+});
+
+describe("params read own properties only", () => {
+  it("does not read Object.prototype members as param values", () => {
+    expect(
+      validateParams(
+        [
+          { name: "toString", type: "string" },
+          { name: "constructor", type: "string" },
+        ],
+        {}
+      )
+    ).toEqual({});
+    expect(
+      codeOf(() => validateParams([{ name: "valueOf", type: "string", required: true }], {}))
+    ).toBe("invalid-params");
+  });
+});
+
+describe("why an action is not allowed (reasonCode)", () => {
+  it("tells the action's own filter apart from assignment and roles", () => {
+    const sim = createWorkflowSimulator(editorialReview, { now: NOW });
+    sim.fire("write", "submit", author);
+    sim.fire("review", "claim", editor);
+    const actions = (who: { user: string; roles: string[] }) =>
+      Object.fromEntries(
+        sim.view(who).activities[0]?.actions.map((a) => [a.name, a.reasonCode ?? "allowed"]) ?? []
+      );
+    expect(actions(editor)).toEqual({ claim: "filter", approve: "allowed", reject: "allowed" });
+    expect(actions(otherEditor)).toEqual({
+      claim: "assignment",
+      approve: "assignment",
+      reject: "assignment",
+    });
+  });
+});

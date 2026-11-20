@@ -33,6 +33,7 @@ To add an individual plugin to an existing Payload project, see the install comm
 | [`@focus-reactive/payload-plugin-netlify-deploy`](./packages/payload-plugin-netlify-deploy) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-netlify-deploy)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-netlify-deploy) | Netlify deploy plugin — build, preview and publish Netlify sites from the admin, with the live build log |
 | [`@focus-reactive/payload-plugin-visual-editing`](./packages/payload-plugin-visual-editing) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-visual-editing)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-visual-editing) | Visual editing plugin — click-to-edit overlays on your Next.js frontend that deep-link into the admin field |
 | [`@focus-reactive/payload-plugin-stacked-editing`](./packages/payload-plugin-stacked-editing) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-stacked-editing)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-stacked-editing) | Stacked editing plugin - nested blocks and arrays open in layered panels with breadcrumbs, built on Payload drawers |
+| [`@focus-reactive/payload-plugin-workflows`](./packages/payload-plugin-workflows) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-workflows)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-workflows) | Workflows plugin — editorial stages, actions, guards and effects defined in code, run by editors and agents alike |
 
 
 ## A/B Testing Plugin for Payload CMS
@@ -198,6 +199,20 @@ bun add @focus-reactive/payload-plugin-stacked-editing
 
 - Package: [`@focus-reactive/payload-plugin-stacked-editing`](./packages/payload-plugin-stacked-editing)
 - [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-stacked-editing)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-stacked-editing)
+
+## Workflows Plugin for Payload CMS
+
+The editorial process as code, next to the content: stages, activities, actions, guards and effects in TypeScript, a port of Sanity Workflows. Editors move a document through it from a sidebar panel, with a stage stepper, the actions they may take and a readable history. A Workflows view lists what waits on them, with a board per workflow. Guards hold publishing for every writer until review is done, and agents move runs with the same operations and permissions as people.
+
+```bash
+npm install @focus-reactive/payload-plugin-workflows
+yarn add @focus-reactive/payload-plugin-workflows
+pnpm add @focus-reactive/payload-plugin-workflows
+bun add @focus-reactive/payload-plugin-workflows
+```
+
+- Package: [`@focus-reactive/payload-plugin-workflows`](./packages/payload-plugin-workflows)
+- [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-workflows)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-workflows)
 
 ## Run Demo Locally
 

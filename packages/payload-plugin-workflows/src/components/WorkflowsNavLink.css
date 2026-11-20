@@ -1,0 +1,4 @@
+/* The nav entry reuses Payload's `nav__link` classes; this only places it after the groups. */
+.workflows-nav {
+  margin-top: calc(var(--base) / 2);
+}

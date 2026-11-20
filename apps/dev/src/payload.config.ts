@@ -14,6 +14,7 @@ import {
 } from "@focus-reactive/payload-plugin-translator";
 import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
 import { seoPlugin } from "@focus-reactive/payload-plugin-seo";
+import { workflowsPlugin } from "@focus-reactive/payload-plugin-workflows";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { buildConfig } from "payload";
 import sharp from "sharp";
@@ -24,6 +25,7 @@ import { Pages } from "./collections/Pages";
 import { Playground } from "./collections/Playground";
 import { Users } from "./collections/Users";
 import { Header } from "./globals/Header";
+import { editorialReview, notifyAuthor } from "./workflows/editorialReview";
 import { abAdapter } from "./lib/ab-testing/dbAdapter";
 import { resolveDbAdapter } from "./lib/database/resolveAdapter";
 import { loggingLifecycle } from "./lib/translator/lifecycleLogging";
@@ -173,6 +175,10 @@ export default buildConfig({
       },
       supportedLocales: ["en", "de", "fr", "es"],
       keyphraseIndex: false,
+    }),
+    workflowsPlugin({
+      workflows: [editorialReview],
+      effects: { "notify-author": notifyAuthor },
     }),
   ],
   secret: process.env.PAYLOAD_SECRET || "",

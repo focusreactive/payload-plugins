@@ -77,6 +77,7 @@ export interface Config {
     comments: Comment;
     'comment-reads': CommentRead;
     'translator-provenance': TranslatorProvenance;
+    'workflow-instances': WorkflowInstance;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -95,6 +96,7 @@ export interface Config {
     comments: CommentsSelect<false> | CommentsSelect<true>;
     'comment-reads': CommentReadsSelect<false> | CommentReadsSelect<true>;
     'translator-provenance': TranslatorProvenanceSelect<false> | TranslatorProvenanceSelect<true>;
+    'workflow-instances': WorkflowInstancesSelect<false> | WorkflowInstancesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -126,6 +128,8 @@ export interface Config {
   jobs: {
     tasks: {
       translate_document: TaskTranslateDocument;
+      workflowEffect: TaskWorkflowEffect;
+      workflowTick: TaskWorkflowTick;
       schedulePublish: TaskSchedulePublish;
       inline: {
         input: unknown;
@@ -753,6 +757,61 @@ export interface TranslatorProvenance {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "workflow-instances".
+ */
+export interface WorkflowInstance {
+  id: number;
+  workflow: string;
+  subjectCollection: string;
+  subjectId: string;
+  stage: string;
+  status: 'active' | 'completed' | 'aborted';
+  fields?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  activities?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  fired?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  history?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  assignedUsers?: string[] | null;
+  assignedRoles?: string[] | null;
+  revision: number;
+  activeKey: string;
+  completedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -820,7 +879,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'translate_document' | 'schedulePublish';
+        taskSlug: 'inline' | 'translate_document' | 'workflowEffect' | 'workflowTick' | 'schedulePublish';
         taskID: string;
         input?:
           | {
@@ -854,7 +913,7 @@ export interface PayloadJob {
       }[]
     | null;
   workflowSlug?: 'translate_document_locales' | null;
-  taskSlug?: ('inline' | 'translate_document' | 'schedulePublish') | null;
+  taskSlug?: ('inline' | 'translate_document' | 'workflowEffect' | 'workflowTick' | 'schedulePublish') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -907,6 +966,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'translator-provenance';
         value: number | TranslatorProvenance;
+      } | null)
+    | ({
+        relationTo: 'workflow-instances';
+        value: number | WorkflowInstance;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1304,6 +1367,28 @@ export interface TranslatorProvenanceSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "workflow-instances_select".
+ */
+export interface WorkflowInstancesSelect<T extends boolean = true> {
+  workflow?: T;
+  subjectCollection?: T;
+  subjectId?: T;
+  stage?: T;
+  status?: T;
+  fields?: T;
+  activities?: T;
+  fired?: T;
+  history?: T;
+  assignedUsers?: T;
+  assignedRoles?: T;
+  revision?: T;
+  activeKey?: T;
+  completedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -1464,6 +1549,27 @@ export interface TaskTranslateDocument {
     strategy: string;
     publish_on_translation?: boolean | null;
   };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskWorkflowEffect".
+ */
+export interface TaskWorkflowEffect {
+  input: {
+    instanceId: string;
+    effect: string;
+    activity: string;
+    action: string;
+  };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskWorkflowTick".
+ */
+export interface TaskWorkflowTick {
+  input?: unknown;
   output?: unknown;
 }
 /**
