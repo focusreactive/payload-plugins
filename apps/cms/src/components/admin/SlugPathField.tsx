@@ -33,8 +33,7 @@ const PARENT_FIELD = "parent";
 
 /**
  * Prefixes longer than this (in characters) no longer fit beside the input in the
- * sidebar without squeezing the editable slug. They move to their own line above the
- * input, wrapping at "/" so the whole path stays readable, and the addon shrinks to "…/".
+ * sidebar without squeezing the editable slug, so the addon shrinks to "…/".
  */
 const INLINE_PREFIX_MAX_LENGTH = 18;
 
@@ -146,7 +145,8 @@ export const SlugPathField = ({
     slug: value,
   });
   const prefix = isParentLoading ? `${preview.prefix}…/` : preview.prefix;
-  const prefixTitle = isParentLoading ? getTranslation(TEXT.loadingParent, i18n) : prefix;
+  // Hovering the prefix or the slug shows the whole path; long prefixes collapse to "…/".
+  const fullPathTitle = isParentLoading ? getTranslation(TEXT.loadingParent, i18n) : preview.path;
   const isLongPrefix = prefix.length > INLINE_PREFIX_MAX_LENGTH;
   const liveUrl = value ? `${siteUrl}${preview.path}` : undefined;
   const openPageLabel = getTranslation(TEXT.openPage, i18n);
@@ -194,54 +194,42 @@ export const SlugPathField = ({
           </a>
         ) : null}
       </div>
-      {isLongPrefix ? (
-        <p className="slug-path-field__full-prefix" title={prefixTitle}>
-          {prefix.split("/").map((segment, index, segments) => (
-            // oxlint-disable-next-line no-array-index-key -- path segments are positional
-            <span key={index}>
-              {segment}
-              {index < segments.length - 1 ? "/" : null}
-              {index < segments.length - 1 ? <wbr /> : null}
-            </span>
-          ))}
-        </p>
-      ) : null}
-      <TextInput
-        AfterInput={
-          isReadOnly ? undefined : (
-            <div className="slug-field-component__actions">
-              {isLocked ? null : (
+      <div title={fullPathTitle}>
+        <TextInput
+          AfterInput={
+            isReadOnly ? undefined : (
+              <div className="slug-field-component__actions">
+                {isLocked ? null : (
+                  <Button
+                    buttonStyle="none"
+                    className="lock-button"
+                    id={`field-${fieldPath}-generate`}
+                    onClick={handleGenerate}
+                  >
+                    {t("authentication:generate")}
+                  </Button>
+                )}
                 <Button
                   buttonStyle="none"
                   className="lock-button"
-                  id={`field-${fieldPath}-generate`}
-                  onClick={handleGenerate}
+                  id={`field-${fieldPath}-lock`}
+                  onClick={toggleLock}
                 >
-                  {t("authentication:generate")}
+                  {isLocked ? t("general:unlock") : t("general:lock")}
                 </Button>
-              )}
-              <Button
-                buttonStyle="none"
-                className="lock-button"
-                id={`field-${fieldPath}-lock`}
-                onClick={toggleLock}
-              >
-                {isLocked ? t("general:unlock") : t("general:lock")}
-              </Button>
-            </div>
-          )
-        }
-        BeforeInput={
-          <span className="slug-path-field__prefix" title={prefixTitle}>
-            {isLongPrefix ? "…/" : prefix}
-          </span>
-        }
-        onChange={setValue}
-        path={fieldPath}
-        readOnly={isReadOnly || isLocked}
-        showError={showError}
-        value={value}
-      />
+              </div>
+            )
+          }
+          BeforeInput={
+            <span className="slug-path-field__prefix">{isLongPrefix ? "…/" : prefix}</span>
+          }
+          onChange={setValue}
+          path={fieldPath}
+          readOnly={isReadOnly || isLocked}
+          showError={showError}
+          value={value}
+        />
+      </div>
       {preview.isHome ? (
         <FieldDescription
           description={`${getTranslation(TEXT.homeDescription, i18n)} ${preview.path}`}
