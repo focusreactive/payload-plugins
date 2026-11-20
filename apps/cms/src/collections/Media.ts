@@ -68,6 +68,7 @@ export const Media: CollectionConfig<"media"> = {
           en: "Use this file as default when no image is selected.",
           es: "Usar este archivo por defecto cuando no se seleccione ninguna imagen.",
         },
+        position: "sidebar",
       },
       hasMany: true,
       name: "defaultFor",

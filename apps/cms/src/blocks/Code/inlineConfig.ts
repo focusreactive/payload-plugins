@@ -7,8 +7,8 @@ export const CodeInlineBlock: Block = {
       type: "text",
       admin: {
         description: {
-          en: "Language hint (e.g. typescript, bash). Used for the syntax class.",
-          es: "Pista de lenguaje (p. ej. typescript, bash). Se usa para la clase de sintaxis.",
+          en: "Lowercase language id, e.g. typescript, bash.",
+          es: "Id del lenguaje en minúsculas, p. ej. typescript, bash.",
         },
       },
       label: { en: "Language", es: "Lenguaje" },

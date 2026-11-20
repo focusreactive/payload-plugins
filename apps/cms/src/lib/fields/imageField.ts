@@ -1,4 +1,4 @@
-import type { GroupField } from "payload";
+import type { GroupField, UploadField } from "payload";
 
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
@@ -23,32 +23,38 @@ export function imageField(
     withAspectRatio = true,
   }: { withDefaultMedia?: boolean; required?: boolean; withAspectRatio?: boolean } = {}
 ): GroupField {
+  const imageUpload: UploadField = {
+    label: { en: "Image File", es: "Archivo de imagen" },
+    name: "image",
+    relationTo: "media",
+    required,
+    type: "upload",
+    ...(withDefaultMedia
+      ? {
+          defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
+        }
+      : {}),
+  };
+
   return {
-    fields: [
-      {
-        label: { en: "Image File", es: "Archivo de imagen" },
-        name: "image",
-        relationTo: "media",
-        required,
-        type: "upload",
-        ...(withDefaultMedia
-          ? {
-              defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
-            }
-          : {}),
-      },
-      ...(withAspectRatio
-        ? [
-            {
-              defaultValue: "1/1",
-              label: { en: "Aspect Ratio", es: "Relación de aspecto" },
-              name: "aspectRatio",
-              options: aspectRatioOptions,
-              type: "select" as const,
-            },
-          ]
-        : []),
-    ],
+    fields: withAspectRatio
+      ? [
+          {
+            fields: [
+              { ...imageUpload, admin: { width: "50%" } },
+              {
+                admin: { width: "50%" },
+                defaultValue: "1/1",
+                label: { en: "Aspect Ratio", es: "Relación de aspecto" },
+                name: "aspectRatio",
+                options: aspectRatioOptions,
+                type: "select",
+              },
+            ],
+            type: "row",
+          },
+        ]
+      : [imageUpload],
     label: { en: "Image", es: "Imagen" },
     name,
     type: "group",

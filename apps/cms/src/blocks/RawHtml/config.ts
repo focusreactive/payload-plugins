@@ -15,12 +15,6 @@ const fields: Field[] = [
     type: "ui",
   },
   {
-    admin: {
-      description: {
-        en: "Raw HTML rendered as-is on the page. Use for embeds and one-off markup.",
-        es: "HTML sin procesar que se renderiza tal cual en la página. Úsalo para embeds y marcado puntual.",
-      },
-    },
     defaultValue: createLocalizedDefault({
       en: "<p>Hello from Raw HTML</p>",
       es: "<p>Hola desde HTML sin procesar</p>",

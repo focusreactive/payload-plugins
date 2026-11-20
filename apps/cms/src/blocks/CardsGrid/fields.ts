@@ -27,13 +27,7 @@ export const cardsGridFields: Field[] = [
         type: "row",
         fields: [
           {
-            admin: {
-              width: "40%",
-              description: {
-                en: "Optional icon shown in a tinted tile",
-                es: "Icono opcional en un mosaico tintado",
-              },
-            },
+            admin: { width: "40%" },
             label: { en: "Icon", es: "Icono" },
             name: "icon",
             options: CARD_ICONS.map((icon) => ({ label: icon, value: icon })),

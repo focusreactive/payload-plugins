@@ -31,24 +31,13 @@ export const Header: CollectionConfig<"header"> = {
   },
   fields: [
     {
-      admin: {
-        description: {
-          en: "The name of the header",
-          es: "El nombre del header",
-        },
-      },
+      admin: { position: "sidebar" },
       defaultValue: createLocalizedDefault({ en: "Header", es: "Header" }),
       localized: true,
       name: "name",
       type: "text",
     },
     {
-      admin: {
-        description: {
-          en: "The logo to display in the header",
-          es: "El logo a mostrar en el header",
-        },
-      },
       defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
       name: "logo",
       relationTo: "media",

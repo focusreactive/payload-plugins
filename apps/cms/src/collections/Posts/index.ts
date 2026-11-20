@@ -141,12 +141,6 @@ export const Posts: CollectionConfig<"posts"> = {
               type: "richText",
             },
             {
-              admin: {
-                description: {
-                  en: "Optional FAQ shown after the article body.",
-                  es: "FAQ opcional mostrado tras el cuerpo del artículo.",
-                },
-              },
               fields: [
                 sectionHeadingField(),
                 {
@@ -180,8 +174,8 @@ export const Posts: CollectionConfig<"posts"> = {
             {
               admin: {
                 description: {
-                  en: "Optional CTA band shown at the end of the post. Hidden when the heading is empty.",
-                  es: "Banda CTA opcional al final de la publicación. Oculta si el encabezado está vacío.",
+                  en: "Hidden on the site when the heading title is empty.",
+                  es: "Se oculta en el sitio si el título del encabezado está vacío.",
                 },
               },
               fields: [
@@ -251,10 +245,6 @@ export const Posts: CollectionConfig<"posts"> = {
       admin: {
         position: "sidebar",
         readOnly: true,
-        description: {
-          en: "Estimated reading time in minutes. Auto-calculated from the content on save.",
-          es: "Tiempo de lectura estimado en minutos. Se calcula automáticamente al guardar.",
-        },
       },
       label: {
         en: "Reading Time (min)",
@@ -295,8 +285,8 @@ export const Posts: CollectionConfig<"posts"> = {
     {
       admin: {
         description: {
-          en: "Select up to 3 related posts. If fewer than 3 are selected, additional posts from the same categories will be shown automatically based on publish date.",
-          es: "Selecciona hasta 3 publicaciones relacionadas. Si se seleccionan menos de 3, se mostrarán automáticamente publicaciones adicionales de las mismas categorías según la fecha de publicación.",
+          en: "Up to 3 are shown. Empty slots are filled with the latest posts from the same categories.",
+          es: "Se muestran hasta 3. Los huecos se rellenan con las publicaciones más recientes de las mismas categorías.",
         },
         position: "sidebar",
       },
