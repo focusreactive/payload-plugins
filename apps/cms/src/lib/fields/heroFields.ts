@@ -20,7 +20,7 @@ export const heroFields: Field[] = [
     label: { en: "Variant", es: "Variante" },
     name: "variant",
     options: [
-      { label: { en: "Showcase window", es: "Ventana de producto" }, value: "showcase" },
+      { label: { en: "Background artwork", es: "Fondo con imagen" }, value: "showcase" },
       { label: { en: "Centered", es: "Centrado" }, value: "centered" },
     ],
     required: true,
@@ -40,12 +40,12 @@ export const heroFields: Field[] = [
     },
     defaultValue: createLocalizedDefault({
       en: [
-        { ...defaultHeroLinkItem("Start free"), appearance: "accent" as const },
-        { ...defaultHeroLinkItem("Watch the tour"), appearance: "outline" as const },
+        { ...defaultHeroLinkItem("Start free"), appearance: "default" as const },
+        { ...defaultHeroLinkItem("Watch the tour"), appearance: "link" as const },
       ],
       es: [
-        { ...defaultHeroLinkItem("Comenzar gratis"), appearance: "accent" as const },
-        { ...defaultHeroLinkItem("Ver el tour"), appearance: "outline" as const },
+        { ...defaultHeroLinkItem("Comenzar gratis"), appearance: "default" as const },
+        { ...defaultHeroLinkItem("Ver el tour"), appearance: "link" as const },
       ],
     }),
     fields: (link() as GroupField).fields,

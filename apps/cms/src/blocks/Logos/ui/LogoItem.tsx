@@ -1,5 +1,6 @@
 import { cn } from "@/components/utils";
 import { Media } from "@/components/media";
+import { ButtonVariant } from "@/components/button/types";
 import { Link } from "@/components/link";
 import type { ILogoItem } from "./types";
 
@@ -21,11 +22,8 @@ export default function LogoItem({ image, link }: ILogoItem) {
     return (
       <Link
         {...link}
-        className={cn(
-          link?.className,
-          "mx-auto h-full",
-          "bg-transparent hover:bg-transparent focus:bg-transparent px-0 py-0"
-        )}
+        variant={ButtonVariant.Default}
+        className={cn(link?.className, "mx-auto h-full !p-0")}
       >
         {mediaEl}
       </Link>

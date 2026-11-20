@@ -40,6 +40,7 @@ import * as migration_20261028_134825_dedicated_page_hero from './20261028_13482
 import * as migration_20261106_113418_add_seo_keyphrases from './20261106_113418_add_seo_keyphrases';
 import * as migration_20261112_171504_add_autosave_to_live_preview_collections from './20261112_171504_add_autosave_to_live_preview_collections';
 import * as migration_20261117_123529_add_autosave_to_header_footer from './20261117_123529_add_autosave_to_header_footer';
+import * as migration_20261120_165555_redesign_content_layout_footer_socials from './20261120_165555_redesign_content_layout_footer_socials';
 
 export const migrations = [
   {
@@ -251,5 +252,10 @@ export const migrations = [
     up: migration_20261117_123529_add_autosave_to_header_footer.up,
     down: migration_20261117_123529_add_autosave_to_header_footer.down,
     name: '20261117_123529_add_autosave_to_header_footer',
+  },
+  {
+    up: migration_20261120_165555_redesign_content_layout_footer_socials.up,
+    down: migration_20261120_165555_redesign_content_layout_footer_socials.down,
+    name: '20261120_165555_redesign_content_layout_footer_socials'
   },
 ];

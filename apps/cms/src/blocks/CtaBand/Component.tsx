@@ -8,7 +8,7 @@ export const CtaBandBlockComponent: React.FC<CtaBandBlock> = ({
   section,
   id,
 }) => (
-  <SectionContainer sectionData={{ ...section, id }}>
-    <CtaBandSection heading={heading} actions={actions} theme={section?.theme} />
+  <SectionContainer sectionData={{ paddingY: "large", ...section, id }}>
+    <CtaBandSection heading={heading} actions={actions} />
   </SectionContainer>
 );

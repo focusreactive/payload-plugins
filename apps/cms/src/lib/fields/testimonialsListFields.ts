@@ -46,15 +46,15 @@ export const testimonialsListFields: Field[] = [
   {
     admin: {
       description: {
-        en: "The duration of the animation in seconds. Default is 60 seconds.",
-        es: "La duración de la animación en segundos. Por defecto es 60 segundos.",
+        en: "Seconds the slider takes to auto-advance through every testimonial. 0 turns autoplay off.",
+        es: "Segundos que tarda el carrusel en recorrer todos los testimonios. 0 desactiva la reproducción automática.",
       },
       placeholder: "60",
     },
     defaultValue: 60,
     label: {
-      en: "Animation duration (seconds)",
-      es: "Duración de la animación (segundos)",
+      en: "Autoplay cycle (seconds)",
+      es: "Ciclo de reproducción automática (segundos)",
     },
     name: "duration",
     type: "number",

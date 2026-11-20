@@ -5,6 +5,7 @@ import { anyone, or, user, superAdmin } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { link } from "@/lib/fields/link";
+import { SOCIAL_PLATFORMS, SOCIAL_PLATFORM_LABELS } from "@/components/SocialIcon/platforms";
 import {
   createLivePreviewEditComponents,
   createLivePreviewVersions,
@@ -162,14 +163,53 @@ export const Footer: CollectionConfig<"footer"> = {
     },
     {
       admin: {
+        components: { RowLabel: "@/components/admin/RowLabel#RowLabel" },
+        description: {
+          en: "Icons shown in the bottom-right corner of the footer",
+          es: "Iconos que se muestran en la esquina inferior derecha del footer",
+        },
+        initCollapsed: true,
+      },
+      fields: [
+        {
+          type: "row",
+          fields: [
+            {
+              admin: { width: "40%" },
+              label: { en: "Platform", es: "Plataforma" },
+              name: "platform",
+              options: SOCIAL_PLATFORMS.map((platform) => ({
+                label: SOCIAL_PLATFORM_LABELS[platform],
+                value: platform,
+              })),
+              required: true,
+              type: "select",
+            },
+            {
+              admin: { width: "60%" },
+              label: { en: "URL", es: "URL" },
+              name: "url",
+              required: true,
+              type: "text",
+            },
+          ],
+        },
+      ],
+      label: { en: "Social links", es: "Redes sociales" },
+      maxRows: 8,
+      name: "socialLinks",
+      type: "array",
+    },
+    {
+      admin: {
         description: {
           en: "Copyright text shown at the bottom",
           es: "Texto de copyright al pie",
         },
       },
       defaultValue: createLocalizedDefault({
-        en: "© 2026 Cadence Labs, Inc.",
-        es: "© 2026 Cadence Labs, Inc.",
+        en: "© 2026 Cadence (The Netherlands)",
+        es: "© 2026 Cadence (Países Bajos)",
       }),
       localized: true,
       name: "copyrightText",

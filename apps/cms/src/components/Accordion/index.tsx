@@ -16,6 +16,8 @@ interface AccordionProps {
   className?: string;
   defaultOpenId?: string | null;
   triggerHeadingLevel?: HeadingLevel;
+  /** Show the "01, 02, …" counter in front of each trigger. */
+  numbered?: boolean;
 }
 
 export function Accordion({
@@ -23,58 +25,85 @@ export function Accordion({
   className,
   defaultOpenId = null,
   triggerHeadingLevel,
+  numbered = true,
 }: AccordionProps) {
   const [openId, setOpenId] = useState<string | null>(defaultOpenId);
 
   return (
-    <div className={cn("border-t border-border", className)}>
-      {items.map((item) => {
+    <div className={cn("flex flex-col", className)}>
+      {items.map((item, index) => {
         const isOpen = openId === item.id;
         const trigger = (
           <button
             type="button"
             id={`accordion-trigger-${item.id}`}
-            className="flex w-full items-center justify-between gap-6 py-6 text-left transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            className="group flex w-full items-start gap-4 py-6 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:gap-6 md:py-8"
             onClick={() => setOpenId(isOpen ? null : item.id)}
             aria-expanded={isOpen}
             aria-controls={`accordion-panel-${item.id}`}
           >
-            <span className="font-display text-[1.3rem] font-semibold leading-tight tracking-tight text-foreground transition-colors [button:hover_>_&]:text-primary">
+            {numbered && (
+              <span
+                aria-hidden="true"
+                className="w-8 shrink-0 text-h-item font-normal italic text-faint-foreground md:w-10"
+              >
+                {String(index + 1).padStart(2, "0")}
+              </span>
+            )}
+            <span className="flex-1 text-h-item text-foreground transition-opacity duration-150 group-hover:opacity-70">
               {item.trigger}
             </span>
             <span
               aria-hidden="true"
-              className="relative flex size-6 shrink-0 items-center justify-center"
+              className="relative mt-0.5 flex size-6 shrink-0 items-center justify-center text-foreground"
             >
-              <span className="absolute h-0.5 w-[18px] rounded-sm bg-primary transition-transform duration-[280ms] ease-out" />
+              <span className="absolute h-px w-4 bg-current" />
               <span
                 className={cn(
-                  "absolute h-[18px] w-0.5 rounded-sm bg-primary transition-transform duration-[280ms] ease-out",
+                  "absolute h-4 w-px bg-current transition-transform duration-[280ms] ease-out motion-reduce:transition-none",
                   isOpen && "scale-y-0"
                 )}
               />
             </span>
           </button>
         );
-
         const Heading = triggerHeadingLevel ? (`h${triggerHeadingLevel}` as const) : null;
-
         return (
-          <div key={item.id} className="border-b border-border">
-            {Heading ? <Heading className="m-0">{trigger}</Heading> : trigger}
+          <div
+            key={item.id}
+            className={cn(
+              "transition-[padding] duration-[320ms] ease-out motion-reduce:transition-none",
+              isOpen && "pb-6"
+            )}
+          >
             <div
-              id={`accordion-panel-${item.id}`}
-              role="region"
-              aria-labelledby={`accordion-trigger-${item.id}`}
-              inert={isOpen ? undefined : true}
               className={cn(
-                "grid transition-[grid-template-rows,opacity] duration-[320ms] ease-out",
-                isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                "border-t transition-[background-color,border-color] duration-[320ms] ease-out motion-reduce:transition-none",
+                isOpen
+                  ? "rounded-xl border-border-strong bg-panel-gradient px-4 md:px-8"
+                  : "mx-4 border-border md:mx-8"
               )}
             >
-              <div className="min-h-0 overflow-hidden">
-                <div className="pb-6 pr-12 text-[0.98rem] leading-relaxed text-muted-foreground">
-                  {item.content}
+              {Heading ? <Heading className="m-0">{trigger}</Heading> : trigger}
+              <div
+                id={`accordion-panel-${item.id}`}
+                role="region"
+                aria-labelledby={`accordion-trigger-${item.id}`}
+                inert={isOpen ? undefined : true}
+                className={cn(
+                  "grid transition-[grid-template-rows,opacity] duration-[320ms] ease-out motion-reduce:transition-none",
+                  isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                )}
+              >
+                <div className="min-h-0 overflow-hidden">
+                  <div
+                    className={cn(
+                      "pb-8 pr-10 text-body-lg text-muted-foreground md:pb-10 [&_p]:text-[length:inherit] [&_p]:leading-[inherit] [&_p]:text-inherit",
+                      numbered && "pl-12 md:pl-16"
+                    )}
+                  >
+                    {item.content}
+                  </div>
                 </div>
               </div>
             </div>

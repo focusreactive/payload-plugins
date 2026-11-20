@@ -8,9 +8,9 @@ export function Logos({ items, alignVariant, label }: ILogosProps) {
   const align = alignVariant ?? AlignVariant.Center;
 
   return (
-    <div className="flex flex-col items-center gap-7">
+    <div className="flex flex-col items-center gap-10">
       {label ? (
-        <Eyebrow tone="muted" prefix="none">
+        <Eyebrow tone="muted" size="sm" className="text-overline">
           {label}
         </Eyebrow>
       ) : null}
@@ -29,7 +29,7 @@ export function Logos({ items, alignVariant, label }: ILogosProps) {
           <div
             key={i}
             className={cn(
-              "h-6 opacity-60 grayscale transition-[opacity,filter]",
+              "h-6 opacity-50 brightness-0 invert transition-opacity",
               "motion-safe:duration-200 motion-safe:[transition-timing-function:var(--ease-out)]",
               "hover:opacity-100",
               "sm:h-7.5"

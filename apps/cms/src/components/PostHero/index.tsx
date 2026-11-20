@@ -45,7 +45,7 @@ export async function PostHero({ post, locale }: PostHeroProps) {
           <div className="mb-[26px]">
             <Link
               href={BLOG_CONFIG.basePath}
-              className="inline-flex items-center gap-2 text-[0.95rem] font-semibold text-foreground transition-colors hover:text-primary motion-reduce:transition-none"
+              className="inline-flex items-center gap-2 text-small font-medium capitalize text-foreground transition-opacity hover:opacity-70 motion-reduce:transition-none"
             >
               <span aria-hidden>←</span> {t("backToJournal")}
             </Link>
@@ -85,7 +85,7 @@ export async function PostHero({ post, locale }: PostHeroProps) {
       {heroImage && (
         <section>
           <div className="mx-auto w-full max-w-containerMaxW px-containerBase">
-            <div className="relative aspect-[21/9] w-full overflow-hidden rounded-lg bg-surface-muted">
+            <div className="relative aspect-[21/9] w-full overflow-hidden rounded-xl border border-border bg-surface-muted">
               <NextImage
                 src={heroImage.url ?? "/empty-placeholder.jpg"}
                 alt={heroImage.alt ?? ""}
