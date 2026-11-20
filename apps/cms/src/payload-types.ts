@@ -353,6 +353,8 @@ export interface Page {
   id: number;
   _abPassPercentage?: number | null;
   title: string;
+  header?: (number | null) | Header;
+  footer?: (number | null) | Footer;
   hero: HeroBlock[];
   blocks: (
     | ContentBlock
@@ -368,8 +370,6 @@ export interface Page {
     | RawHtmlBlock
     | GlobalSectionSlotBlock
   )[];
-  header?: (number | null) | Header;
-  footer?: (number | null) | Footer;
   meta?: {
     title?: string | null;
     image?: (number | null) | Media;
@@ -410,15 +410,83 @@ export interface Page {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "HeroBlock".
+ * via the `definition` "header".
  */
-export interface HeroBlock {
-  heading?: SectionHeadingFields;
-  variant: 'showcase' | 'centered';
-  image?: {
-    image?: (number | null) | Media;
-    aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '3/4' | 'auto') | null;
-  };
+export interface Header {
+  id: number;
+  /**
+   * Internal name, shown only in the admin.
+   */
+  name?: string | null;
+  logo: number | Media;
+  navItems?:
+    | {
+        label: string;
+        type: 'link' | 'dropdown';
+        link?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          newTab?: boolean | null;
+        };
+        dropdown?: {
+          featured?: {
+            enabled?: boolean | null;
+            eyebrow?: string | null;
+            title?: string | null;
+            description?: string | null;
+            link?: {
+              label?: string | null;
+              type?: ('reference' | 'custom' | 'customPage') | null;
+              reference?:
+                | ({
+                    relationTo: 'page';
+                    value: number | Page;
+                  } | null)
+                | ({
+                    relationTo: 'posts';
+                    value: number | Post;
+                  } | null);
+              url?: string | null;
+              customPage?: ('blog' | 'search') | null;
+              newTab?: boolean | null;
+            };
+          };
+          links?:
+            | {
+                title: string;
+                description?: string | null;
+                link?: {
+                  type?: ('reference' | 'custom' | 'customPage') | null;
+                  reference?:
+                    | ({
+                        relationTo: 'page';
+                        value: number | Page;
+                      } | null)
+                    | ({
+                        relationTo: 'posts';
+                        value: number | Post;
+                      } | null);
+                  url?: string | null;
+                  customPage?: ('blog' | 'search') | null;
+                  newTab?: boolean | null;
+                };
+                id?: string | null;
+              }[]
+            | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
   actions?:
     | {
         link: {
@@ -441,36 +509,9 @@ export interface HeroBlock {
         id?: string | null;
       }[]
     | null;
-  section?: {
-    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
-    maxWidth?: ('none' | 'base') | null;
-    paddingY?: ('none' | 'base' | 'large') | null;
-    paddingX?: ('none' | 'base') | null;
-    background?: {
-      /**
-       * Pick an image or video from the "Background" folder.
-       */
-      media?: (number | null) | Media;
-      overlay?: ('black' | 'white') | null;
-      opacity?: number | null;
-    };
-  };
-  _hidden?: boolean | null;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'hero';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "SectionHeadingFields".
- */
-export interface SectionHeadingFields {
-  eyebrow?: string | null;
-  /**
-   * Wrap a word in *asterisks* to accent it in the brand colour.
-   */
-  title?: string | null;
-  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -594,6 +635,18 @@ export interface ContentBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'content';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SectionHeadingFields".
+ */
+export interface SectionHeadingFields {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  title?: string | null;
+  description?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1059,152 +1112,6 @@ export interface Author {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "GlobalSectionSlotBlock".
- */
-export interface GlobalSectionSlotBlock {
-  /**
-   * Changes to a reusable section show up on every page that uses it.
-   */
-  reference: number | GlobalBlock;
-  _hidden?: boolean | null;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'globalSectionSlot';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "globalBlock".
- */
-export interface GlobalBlock {
-  id: number;
-  /**
-   * Internal name, shown only in the admin.
-   */
-  title: string;
-  block: (
-    | ContentBlock
-    | FaqBlock
-    | TestimonialsListBlock
-    | CardsGridBlock
-    | CarouselBlock
-    | LogosBlock
-    | ChartBlock
-    | CtaBandBlock
-    | NewsletterBlock
-    | StatsBlock
-    | RawHtmlBlock
-  )[];
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "header".
- */
-export interface Header {
-  id: number;
-  /**
-   * Internal name, shown only in the admin.
-   */
-  name?: string | null;
-  logo: number | Media;
-  navItems?:
-    | {
-        label: string;
-        type: 'link' | 'dropdown';
-        link?: {
-          type?: ('reference' | 'custom' | 'customPage') | null;
-          reference?:
-            | ({
-                relationTo: 'page';
-                value: number | Page;
-              } | null)
-            | ({
-                relationTo: 'posts';
-                value: number | Post;
-              } | null);
-          url?: string | null;
-          customPage?: ('blog' | 'search') | null;
-          newTab?: boolean | null;
-        };
-        dropdown?: {
-          featured?: {
-            enabled?: boolean | null;
-            eyebrow?: string | null;
-            title?: string | null;
-            description?: string | null;
-            link?: {
-              label?: string | null;
-              type?: ('reference' | 'custom' | 'customPage') | null;
-              reference?:
-                | ({
-                    relationTo: 'page';
-                    value: number | Page;
-                  } | null)
-                | ({
-                    relationTo: 'posts';
-                    value: number | Post;
-                  } | null);
-              url?: string | null;
-              customPage?: ('blog' | 'search') | null;
-              newTab?: boolean | null;
-            };
-          };
-          links?:
-            | {
-                title: string;
-                description?: string | null;
-                link?: {
-                  type?: ('reference' | 'custom' | 'customPage') | null;
-                  reference?:
-                    | ({
-                        relationTo: 'page';
-                        value: number | Page;
-                      } | null)
-                    | ({
-                        relationTo: 'posts';
-                        value: number | Post;
-                      } | null);
-                  url?: string | null;
-                  customPage?: ('blog' | 'search') | null;
-                  newTab?: boolean | null;
-                };
-                id?: string | null;
-              }[]
-            | null;
-        };
-        id?: string | null;
-      }[]
-    | null;
-  actions?:
-    | {
-        link: {
-          label: string;
-          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
-          type?: ('reference' | 'custom' | 'customPage') | null;
-          reference?:
-            | ({
-                relationTo: 'page';
-                value: number | Page;
-              } | null)
-            | ({
-                relationTo: 'posts';
-                value: number | Post;
-              } | null);
-          url?: string | null;
-          customPage?: ('blog' | 'search') | null;
-          newTab?: boolean | null;
-        };
-        id?: string | null;
-      }[]
-    | null;
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "footer".
  */
 export interface Footer {
@@ -1262,6 +1169,99 @@ export interface Footer {
       }[]
     | null;
   copyrightText?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroBlock".
+ */
+export interface HeroBlock {
+  heading?: SectionHeadingFields;
+  variant: 'showcase' | 'centered';
+  image?: {
+    image?: (number | null) | Media;
+    aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '3/4' | 'auto') | null;
+  };
+  actions?:
+    | {
+        link: {
+          label: string;
+          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          newTab?: boolean | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Pick an image or video from the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'hero';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "GlobalSectionSlotBlock".
+ */
+export interface GlobalSectionSlotBlock {
+  /**
+   * Changes to a reusable section show up on every page that uses it.
+   */
+  reference: number | GlobalBlock;
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'globalSectionSlot';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "globalBlock".
+ */
+export interface GlobalBlock {
+  id: number;
+  /**
+   * Internal name, shown only in the admin.
+   */
+  title: string;
+  block: (
+    | ContentBlock
+    | FaqBlock
+    | TestimonialsListBlock
+    | CardsGridBlock
+    | CarouselBlock
+    | LogosBlock
+    | ChartBlock
+    | CtaBandBlock
+    | NewsletterBlock
+    | StatsBlock
+    | RawHtmlBlock
+  )[];
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -2486,6 +2486,8 @@ export interface MediaSelect<T extends boolean = true> {
 export interface PageSelect<T extends boolean = true> {
   _abPassPercentage?: T;
   title?: T;
+  header?: T;
+  footer?: T;
   hero?:
     | T
     | {
@@ -2507,8 +2509,6 @@ export interface PageSelect<T extends boolean = true> {
         rawHtml?: T | RawHtmlBlockSelect<T>;
         globalSectionSlot?: T | GlobalSectionSlotBlockSelect<T>;
       };
-  header?: T;
-  footer?: T;
   meta?:
     | T
     | {
