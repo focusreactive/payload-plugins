@@ -132,6 +132,11 @@ export interface AnalysisResult {
 export interface AnalysisInput {
   title: string;
   slug: string;
+  /**
+   * Public path of the document (e.g. `/es/services/web`) from the collection's registered
+   * preview path resolver. Without one the search-result preview shows `/<slug>`.
+   */
+  path?: string;
   description: string;
   contentHtml: string;
   keyphrase: string;

@@ -3,7 +3,7 @@
 import { useAllFormFields, useConfig, useDebounce, useLocale } from "@payloadcms/ui";
 import { reduceFieldsToValues } from "payload/shared";
 import { useCallback, useMemo, useRef } from "react";
-import { resolveContentExtractor } from "../../content/registry";
+import { resolveContentExtractor, resolvePreviewPathResolver } from "../../content/registry";
 import type { AnalysisInput, KeyphraseInput } from "../../engine/types/analysis";
 import type { SeoFieldPaths } from "../../types/config";
 import { buildAnalysisInput } from "./build-analysis-input";
@@ -30,7 +30,7 @@ export interface UseLiveDocumentResult {
 }
 
 export function useLiveDocument({
-  collectionSlug: _collectionSlug,
+  collectionSlug,
   fields,
   site,
   keyphrases,
@@ -70,6 +70,7 @@ export function useLiveDocument({
     site,
     extractContentPath,
     apiRoute,
+    collectionSlug,
   });
   liveRef.current = {
     formFields,
@@ -81,6 +82,7 @@ export function useLiveDocument({
     site,
     extractContentPath,
     apiRoute,
+    collectionSlug,
   };
 
   const getInput = useCallback(
@@ -107,6 +109,7 @@ export function useLiveDocument({
         fields: s.fields,
         site: s.site,
         extractor,
+        previewPath: resolvePreviewPathResolver(s.collectionSlug),
       });
     },
     []

@@ -17,6 +17,7 @@ vi.mock("@payloadcms/ui", () => ({
 }));
 vi.mock("../../src/content/registry", () => ({
   resolveContentExtractor: () => undefined,
+  resolvePreviewPathResolver: () => undefined,
 }));
 vi.mock("../../src/components/SeoDrawer/languagePacks", () => ({
   ensureLanguagePack: () => Promise.resolve(),

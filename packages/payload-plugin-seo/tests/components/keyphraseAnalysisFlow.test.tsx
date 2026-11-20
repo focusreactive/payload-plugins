@@ -27,6 +27,7 @@ vi.mock("@payloadcms/ui", () => ({
 
 vi.mock("../../src/content/registry", () => ({
   resolveContentExtractor: () => () => Promise.resolve([]),
+  resolvePreviewPathResolver: () => undefined,
 }));
 
 // getInput echoes the current focus text into input.keyphrase (like the real build).
