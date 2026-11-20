@@ -53,11 +53,14 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
           type: "text",
         },
         {
-          admin: { width: "50%" },
+          admin: {
+            components: { Field: "/components/admin/StarRatingField#StarRatingField" },
+            width: "50%",
+          },
           defaultValue: 5,
           label: {
-            en: "Rating (1-5)",
-            es: "Calificación (1-5)",
+            en: "Rating",
+            es: "Calificación",
           },
           max: 5,
           min: 1,

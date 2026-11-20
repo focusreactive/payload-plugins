@@ -239,9 +239,9 @@ export interface Media {
     [k: string]: unknown;
   } | null;
   /**
-   * Use this file as default when no image is selected.
+   * Shown wherever an image is needed but none was picked (e.g. a new header logo, hero or post image). Tick it on one image only.
    */
-  defaultFor?: 'platform_default'[] | null;
+  isDefaultImage?: boolean | null;
   prefix?: string | null;
   _objectKey?: string | null;
   folder?: (number | null) | FolderInterface;
@@ -417,6 +417,9 @@ export interface Page {
  */
 export interface Header {
   id: number;
+  /**
+   * Internal name, shown only in the admin.
+   */
   name?: string | null;
   logo: number | Media;
   navItems?:
@@ -746,7 +749,13 @@ export interface Testimonial {
  */
 export interface CardsGridBlock {
   heading?: SectionHeadingFields;
-  columns?: number | null;
+  /**
+   * Cards per row on wide screens. Phones always show one per row.
+   */
+  columns?: ('1' | '2' | '3' | '4') | null;
+  alignVariant?: ('left' | 'center' | 'right') | null;
+  rounded?: ('none' | 'large') | null;
+  backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
   items: {
     icon?:
       | (
@@ -776,7 +785,7 @@ export interface CardsGridBlock {
     description?: string | null;
     image?: {
       image?: (number | null) | Media;
-      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
+      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | 'auto') | null;
     };
     link?: {
       type?: ('reference' | 'custom' | 'customPage') | null;
@@ -795,9 +804,6 @@ export interface CardsGridBlock {
       label?: string | null;
       appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
     };
-    alignVariant?: ('left' | 'center' | 'right') | null;
-    rounded?: ('none' | 'large') | null;
-    backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
     id?: string | null;
   }[];
   section?: {
@@ -825,7 +831,7 @@ export interface CardsGridBlock {
  */
 export interface CarouselBlock {
   heading?: SectionHeadingFields;
-  effect?: ('slide' | 'fade' | 'cube' | 'flip' | 'coverflow' | 'cards') | null;
+  effect?: ('slide' | 'fade') | null;
   slides: {
     image: {
       image: number | Media;
@@ -1110,6 +1116,9 @@ export interface Author {
  */
 export interface Footer {
   id: number;
+  /**
+   * Internal name, shown only in the admin.
+   */
   name: string;
   logo: number | Media;
   description?: string | null;
@@ -1193,7 +1202,7 @@ export interface HeroBlock {
     | null;
   image?: {
     image?: (number | null) | Media;
-    aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
+    aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | 'auto') | null;
   };
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
@@ -1362,7 +1371,7 @@ export interface Preset {
           | null;
         image?: {
           image?: (number | null) | Media;
-          aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
+          aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | 'auto') | null;
         };
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
@@ -1513,7 +1522,13 @@ export interface Preset {
       }
     | {
         heading?: SectionHeadingFields;
-        columns?: number | null;
+        /**
+         * Cards per row on wide screens. Phones always show one per row.
+         */
+        columns?: ('1' | '2' | '3' | '4') | null;
+        alignVariant?: ('left' | 'center' | 'right') | null;
+        rounded?: ('none' | 'large') | null;
+        backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
         items: {
           icon?:
             | (
@@ -1543,7 +1558,7 @@ export interface Preset {
           description?: string | null;
           image?: {
             image?: (number | null) | Media;
-            aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
+            aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | 'auto') | null;
           };
           link?: {
             type?: ('reference' | 'custom' | 'customPage') | null;
@@ -1562,9 +1577,6 @@ export interface Preset {
             label?: string | null;
             appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
           };
-          alignVariant?: ('left' | 'center' | 'right') | null;
-          rounded?: ('none' | 'large') | null;
-          backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
           id?: string | null;
         }[];
         section?: {
@@ -1588,7 +1600,7 @@ export interface Preset {
       }
     | {
         heading?: SectionHeadingFields;
-        effect?: ('slide' | 'fade' | 'cube' | 'flip' | 'coverflow' | 'cards') | null;
+        effect?: ('slide' | 'fade') | null;
         slides: {
           image: {
             image: number | Media;
@@ -2369,7 +2381,7 @@ export interface UsersSelect<T extends boolean = true> {
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
   caption?: T;
-  defaultFor?: T;
+  isDefaultImage?: T;
   prefix?: T;
   _objectKey?: T;
   folder?: T;
@@ -2681,6 +2693,9 @@ export interface TestimonialsListBlockSelect<T extends boolean = true> {
 export interface CardsGridBlockSelect<T extends boolean = true> {
   heading?: T | SectionHeadingFieldsSelect<T>;
   columns?: T;
+  alignVariant?: T;
+  rounded?: T;
+  backgroundColor?: T;
   items?:
     | T
     | {
@@ -2704,9 +2719,6 @@ export interface CardsGridBlockSelect<T extends boolean = true> {
               label?: T;
               appearance?: T;
             };
-        alignVariant?: T;
-        rounded?: T;
-        backgroundColor?: T;
         id?: T;
       };
   section?:
@@ -3410,6 +3422,9 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               heading?: T | SectionHeadingFieldsSelect<T>;
               columns?: T;
+              alignVariant?: T;
+              rounded?: T;
+              backgroundColor?: T;
               items?:
                 | T
                 | {
@@ -3433,9 +3448,6 @@ export interface PresetsSelect<T extends boolean = true> {
                           label?: T;
                           appearance?: T;
                         };
-                    alignVariant?: T;
-                    rounded?: T;
-                    backgroundColor?: T;
                     id?: T;
                   };
               section?:
@@ -3949,7 +3961,6 @@ export interface SiteSetting {
     defaultDescription?: string | null;
     og?: {
       title?: string | null;
-      siteName?: string | null;
       /**
        * Leave empty to use the default meta description.
        */
@@ -4038,7 +4049,6 @@ export interface SiteSettingsSelect<T extends boolean = true> {
           | T
           | {
               title?: T;
-              siteName?: T;
               description?: T;
               image?: T;
             };
@@ -4142,7 +4152,13 @@ export interface TaskSchedulePublish {
  * via the `definition` "CardsGridInlineBlock".
  */
 export interface CardsGridInlineBlock {
-  columns?: number | null;
+  /**
+   * Cards per row on wide screens. Phones always show one per row.
+   */
+  columns?: ('1' | '2' | '3' | '4') | null;
+  alignVariant?: ('left' | 'center' | 'right') | null;
+  rounded?: ('none' | 'large') | null;
+  backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
   items: {
     icon?:
       | (
@@ -4172,7 +4188,7 @@ export interface CardsGridInlineBlock {
     description?: string | null;
     image?: {
       image?: (number | null) | Media;
-      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
+      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | 'auto') | null;
     };
     link?: {
       type?: ('reference' | 'custom' | 'customPage') | null;
@@ -4191,9 +4207,6 @@ export interface CardsGridInlineBlock {
       label?: string | null;
       appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
     };
-    alignVariant?: ('left' | 'center' | 'right') | null;
-    rounded?: ('none' | 'large') | null;
-    backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
     id?: string | null;
   }[];
   id?: string | null;
@@ -4238,10 +4251,23 @@ export interface LogosInlineBlock {
  * via the `definition` "CodeInlineBlock".
  */
 export interface CodeInlineBlock {
-  /**
-   * Lowercase language id, e.g. typescript, bash.
-   */
-  language?: string | null;
+  language?:
+    | (
+        | 'typescript'
+        | 'javascript'
+        | 'tsx'
+        | 'jsx'
+        | 'json'
+        | 'bash'
+        | 'html'
+        | 'css'
+        | 'python'
+        | 'sql'
+        | 'yaml'
+        | 'markdown'
+        | 'plaintext'
+      )
+    | null;
   code: string;
   id?: string | null;
   blockName?: string | null;
@@ -4252,10 +4278,8 @@ export interface CodeInlineBlock {
  * via the `definition` "CtaBannerInline".
  */
 export interface CtaBannerInline {
-  eyebrow?: string | null;
+  heading?: SectionHeadingFields;
   variant?: ('default' | 'accent' | 'dark') | null;
-  heading?: string | null;
-  description?: string | null;
   actions?:
     | {
         type?: ('reference' | 'custom' | 'customPage') | null;

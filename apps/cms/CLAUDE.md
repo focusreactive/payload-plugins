@@ -52,7 +52,7 @@ src/
 │   ├── database/              #   Postgres adapter + migrations
 │   ├── search/                #   pgvector semantic search
 │   ├── config/                #   i18n, blog, customPages
-│   ├── constants/             #   default values, media defaults
+│   ├── constants/             #   default values
 │   ├── i18n/                  #   next-intl integration
 │   ├── context/               #   React contexts + providers
 │   ├── adapters/              #   prop-prep adapters (image / link / richText / section)

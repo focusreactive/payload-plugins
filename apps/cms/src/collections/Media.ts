@@ -66,23 +66,15 @@ export const Media: CollectionConfig<"media"> = {
     {
       admin: {
         description: {
-          en: "Use this file as default when no image is selected.",
-          es: "Usar este archivo por defecto cuando no se seleccione ninguna imagen.",
+          en: "Shown wherever an image is needed but none was picked (e.g. a new header logo, hero or post image). Tick it on one image only.",
+          es: "Se muestra donde hace falta una imagen y no se eligió ninguna (p. ej. el logo de una cabecera nueva, un hero o la imagen de un post). Márcala solo en una imagen.",
         },
         position: "sidebar",
       },
-      hasMany: true,
-      name: "defaultFor",
-      options: [
-        {
-          label: {
-            en: "Default image for the platform (logo, blocks, sections)",
-            es: "Imagen por defecto de la plataforma (logo, bloques, secciones)",
-          },
-          value: "platform_default",
-        },
-      ],
-      type: "select",
+      defaultValue: false,
+      label: { en: "Use as the default image", es: "Usar como imagen por defecto" },
+      name: "isDefaultImage",
+      type: "checkbox",
     },
   ],
   defaultPopulate: {

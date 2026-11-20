@@ -1,6 +1,6 @@
 import { SectionHeading } from "@/components/SectionHeading";
 import { CardsGrid } from "./ui";
-import type { IDefaultCardProps } from "./ui/types";
+import type { ICardContent } from "./ui/types";
 import {
   Activity,
   BarChart3,
@@ -31,6 +31,7 @@ import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import type { CardsGridBlock } from "@/payload-types";
 
+import { prepareCardsGridSettings } from "./gridSettings";
 import type { CardIcon } from "./icons";
 
 const ICON_MAP: Record<CardIcon, React.ReactElement> = {
@@ -59,24 +60,21 @@ const ICON_MAP: Record<CardIcon, React.ReactElement> = {
 export async function CardsGridBlockComponent({
   heading,
   items,
-  columns,
   section,
   id,
+  ...settings
 }: CardsGridBlock) {
   const locale = await resolveLocale();
 
-  const cards: IDefaultCardProps[] = (items ?? []).map((item) => {
+  const cards: ICardContent[] = (items ?? []).map((item) => {
     const iconKey = item.icon as CardIcon | null | undefined;
     const icon = iconKey ? (ICON_MAP[iconKey] ?? null) : undefined;
 
     return {
-      alignVariant: (item.alignVariant as IDefaultCardProps["alignVariant"]) ?? "center",
-      backgroundColor: (item.backgroundColor as IDefaultCardProps["backgroundColor"]) ?? "none",
       description: item.description ?? undefined,
       icon,
       image: prepareMediaProps(item.image ?? null),
       link: prepareLinkProps(item.link, locale),
-      rounded: (item.rounded as IDefaultCardProps["rounded"]) ?? "none",
       title: item.title,
     };
   });
@@ -84,7 +82,7 @@ export async function CardsGridBlockComponent({
   return (
     <SectionContainer sectionData={{ ...section, id }}>
       <SectionHeading {...heading} className="mb-12" />
-      <CardsGrid items={cards} columns={columns ?? 3} />
+      <CardsGrid items={cards} {...prepareCardsGridSettings(settings)} />
     </SectionContainer>
   );
 }

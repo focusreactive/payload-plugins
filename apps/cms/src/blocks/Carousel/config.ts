@@ -10,15 +10,11 @@ const fields: Field[] = [
   sectionHeadingField(),
   {
     defaultValue: "slide",
-    label: { en: "Effect", es: "Efecto" },
+    label: { en: "Transition", es: "Transición" },
     name: "effect",
     options: [
-      { label: "Slide", value: "slide" },
-      { label: "Fade", value: "fade" },
-      { label: "Cube", value: "cube" },
-      { label: "Flip", value: "flip" },
-      { label: "Coverflow", value: "coverflow" },
-      { label: "Cards", value: "cards" },
+      { label: { en: "Slide", es: "Deslizar" }, value: "slide" },
+      { label: { en: "Fade", es: "Fundido" }, value: "fade" },
     ],
     type: "select",
   },

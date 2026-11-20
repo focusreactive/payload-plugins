@@ -1,18 +1,18 @@
 import type { GroupField, UploadField } from "payload";
 
-import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 
+/**
+ * The crops editors actually need. Stored values stay the CSS `aspect-ratio` strings the
+ * frontend understands (`ImageAspectRatio`); removed ratios (9/16, 1/2, 4/1, 3/1) were migrated
+ * to the nearest kept one in `20261120_123232_editor_friendly_choices`.
+ */
 const aspectRatioOptions = [
-  { label: { en: "16/9", es: "16/9" }, value: "16/9" },
-  { label: { en: "3/2", es: "3/2" }, value: "3/2" },
-  { label: { en: "4/3", es: "4/3" }, value: "4/3" },
-  { label: { en: "1/1", es: "1/1" }, value: "1/1" },
-  { label: { en: "9/16", es: "9/16" }, value: "9/16" },
-  { label: { en: "1/2", es: "1/2" }, value: "1/2" },
-  { label: { en: "4/1", es: "4/1" }, value: "4/1" },
-  { label: { en: "3/1", es: "3/1" }, value: "3/1" },
-  { label: { en: "Auto", es: "Auto" }, value: "auto" },
+  { label: { en: "Widescreen (16:9)", es: "Panorámica (16:9)" }, value: "16/9" },
+  { label: { en: "Photo (3:2)", es: "Foto (3:2)" }, value: "3/2" },
+  { label: { en: "Standard (4:3)", es: "Estándar (4:3)" }, value: "4/3" },
+  { label: { en: "Square (1:1)", es: "Cuadrada (1:1)" }, value: "1/1" },
+  { label: { en: "Original shape", es: "Forma original" }, value: "auto" },
 ];
 
 export function imageField(
@@ -31,7 +31,7 @@ export function imageField(
     type: "upload",
     ...(withDefaultMedia
       ? {
-          defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
+          defaultValue: async () => getDefaultMediaId(),
         }
       : {}),
   };

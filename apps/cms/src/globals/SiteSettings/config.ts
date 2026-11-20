@@ -152,35 +152,13 @@ export const SiteSettings: GlobalConfig = {
               },
               fields: [
                 {
-                  type: "row",
-                  fields: [
-                    {
-                      name: "title",
-                      type: "text",
-                      label: {
-                        en: "Default OG Title",
-                        es: "Título de respaldo de Open Graph",
-                      },
-                      admin: { width: "50%" },
-                      localized: true,
-                    },
-                    {
-                      name: "siteName",
-                      type: "text",
-                      label: {
-                        en: "OG Site Name",
-                        es: "Nombre del sitio de Open Graph",
-                      },
-                      admin: {
-                        width: "50%",
-                        placeholder: {
-                          en: "Leave empty to use Site Name",
-                          es: "Dejar vacío para usar el nombre del sitio",
-                        },
-                      },
-                      localized: true,
-                    },
-                  ],
+                  name: "title",
+                  type: "text",
+                  label: {
+                    en: "Default OG Title",
+                    es: "Título de respaldo de Open Graph",
+                  },
+                  localized: true,
                 },
                 {
                   name: "description",
@@ -236,7 +214,6 @@ export const SiteSettings: GlobalConfig = {
                           es: "@yoursite",
                         },
                       },
-                      localized: true,
                     },
                     {
                       name: "creator",
@@ -252,7 +229,6 @@ export const SiteSettings: GlobalConfig = {
                           es: "@author",
                         },
                       },
-                      localized: true,
                     },
                     {
                       name: "card",

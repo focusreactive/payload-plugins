@@ -1,6 +1,5 @@
 import type { CollectionConfig, GroupField } from "payload";
 
-import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import { anyone, or, user, superAdmin } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
@@ -32,14 +31,19 @@ export const Header: CollectionConfig<"header"> = {
   },
   fields: [
     {
-      admin: { position: "sidebar" },
-      defaultValue: createLocalizedDefault({ en: "Header", es: "Header" }),
-      localized: true,
+      admin: {
+        description: {
+          en: "Internal name, shown only in the admin.",
+          es: "Nombre interno, solo visible en el panel.",
+        },
+        position: "sidebar",
+      },
+      defaultValue: "Header",
       name: "name",
       type: "text",
     },
     {
-      defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
+      defaultValue: async () => getDefaultMediaId(),
       name: "logo",
       relationTo: "media",
       required: true,

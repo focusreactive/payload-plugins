@@ -16,8 +16,6 @@ const eyebrowToneByVariant: Record<CtaBannerVariant, EyebrowTone> = {
 
 export const CtaBannerInlineComponent: React.FC<CtaBannerInline> = ({
   actions,
-  description,
-  eyebrow,
   heading,
   variant,
 }) => {
@@ -46,10 +44,8 @@ export const CtaBannerInlineComponent: React.FC<CtaBannerInline> = ({
         </TrackLeadAction>
       ))}
       heading={{
-        description,
-        eyebrow,
+        ...heading,
         eyebrowTone: eyebrowToneByVariant[resolvedVariant],
-        title: heading,
       }}
       variant={resolvedVariant}
     />

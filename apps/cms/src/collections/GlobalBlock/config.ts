@@ -6,7 +6,6 @@ import {
   createLivePreviewEditComponents,
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
-import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { ADMIN_GROUPS } from "@/lib/config/adminGroups";
 import { createStandalonePreview } from "@/lib/utils/standalonePreview";
 
@@ -39,8 +38,7 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
         },
         position: "sidebar",
       },
-      defaultValue: createLocalizedDefault({ en: "Global section", es: "Sección global" }),
-      localized: true,
+      defaultValue: "Global section",
       name: "title",
       required: true,
       type: "text",

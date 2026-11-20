@@ -1,7 +1,6 @@
 import type { Block, Field, GroupField } from "payload";
 
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
-import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
 import { createLocalizedRichText } from "@/lib/utils/createLocalizedDefault";
 import { generateRichText } from "@/lib/utils/generateRichText";
@@ -39,7 +38,7 @@ const fields: Field[] = [
     type: "select",
   },
   {
-    defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
+    defaultValue: async () => getDefaultMediaId(),
     label: {
       en: "Image",
       es: "Imagen",

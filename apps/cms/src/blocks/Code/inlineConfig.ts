@@ -1,17 +1,15 @@
 import type { Block } from "payload";
 
+import { CODE_LANGUAGES, DEFAULT_CODE_LANGUAGE } from "./languages";
+
 export const CodeInlineBlock: Block = {
   fields: [
     {
       name: "language",
-      type: "text",
-      admin: {
-        description: {
-          en: "Lowercase language id, e.g. typescript, bash.",
-          es: "Id del lenguaje en minúsculas, p. ej. typescript, bash.",
-        },
-      },
+      type: "select",
+      defaultValue: DEFAULT_CODE_LANGUAGE,
       label: { en: "Language", es: "Lenguaje" },
+      options: CODE_LANGUAGES.map(({ label, value }) => ({ label, value })),
     },
     {
       name: "code",
