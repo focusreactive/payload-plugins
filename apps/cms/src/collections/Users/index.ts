@@ -56,12 +56,6 @@ export const Users: CollectionConfig<"users"> = {
   auth: true,
   fields: [
     {
-      admin: {
-        description: {
-          en: "The name of the user",
-          es: "El nombre del usuario",
-        },
-      },
       defaultValue: "",
       label: {
         en: "Name",

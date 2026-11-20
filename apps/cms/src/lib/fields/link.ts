@@ -122,9 +122,12 @@ export const link: LinkType = ({
     type: "group",
   };
 
+  const sharesRowWithLabel = disableLabel ? {} : { width: "50%" };
+
   const linkTypes: Field[] = [
     {
       admin: {
+        ...sharesRowWithLabel,
         condition: (_, siblingData) => siblingData?.type === "reference",
       },
       label: {
@@ -138,6 +141,7 @@ export const link: LinkType = ({
     },
     {
       admin: {
+        ...sharesRowWithLabel,
         condition: (_, siblingData) => siblingData?.type === "custom",
       },
       label: {
@@ -150,6 +154,7 @@ export const link: LinkType = ({
     },
     {
       admin: {
+        ...sharesRowWithLabel,
         condition: (_, siblingData) => siblingData?.type === "customPage",
       },
       ...(customPageDbName ? { dbName: customPageDbName } : {}),
@@ -168,14 +173,6 @@ export const link: LinkType = ({
   ];
 
   if (!disableLabel) {
-    linkTypes.map((linkType) => ({
-      ...linkType,
-      admin: {
-        ...linkType.admin,
-        width: "50%",
-      },
-    }));
-
     linkResult.fields.push({
       fields: [
         ...linkTypes,
@@ -213,12 +210,6 @@ export const link: LinkType = ({
     }
 
     linkResult.fields.push({
-      admin: {
-        description: {
-          en: "Choose how the link should be rendered.",
-          es: "Elige cómo se debe renderizar el enlace.",
-        },
-      },
       defaultValue: "default",
       name: "appearance",
       options: appearanceOptionsToUse,

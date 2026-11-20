@@ -15,8 +15,8 @@ export const GlobalSectionSlotBlock: Block = withSectionVisibility({
     {
       admin: {
         description: {
-          en: "Pick a global block to embed. Editing that block updates every page using it.",
-          es: "Elige un bloque global para insertar. Editarlo actualiza todas las páginas que lo usan.",
+          en: "Editing the global block updates every page that uses it.",
+          es: "Editar el bloque global actualiza todas las páginas que lo usan.",
         },
       },
       name: "reference",

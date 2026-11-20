@@ -14,13 +14,7 @@ export const ctaBannerFields: Field[] = [
         type: "text",
       },
       {
-        admin: {
-          description: {
-            en: "Visual emphasis of the banner.",
-            es: "Énfasis visual del banner.",
-          },
-          width: "50%",
-        },
+        admin: { width: "50%" },
         defaultValue: "default",
         label: { en: "Variant", es: "Variante" },
         name: "variant",

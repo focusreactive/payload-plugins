@@ -194,9 +194,6 @@ export interface PayloadMcpApiKeyAuthOperations {
  */
 export interface User {
   id: number;
-  /**
-   * The name of the user
-   */
   name: string;
   /**
    * The role of the user
@@ -358,21 +355,9 @@ export interface FolderInterface {
 export interface Page {
   id: number;
   _abPassPercentage?: number | null;
-  /**
-   * The title of the page
-   */
   title: string;
-  /**
-   * The header to display on the page
-   */
   header?: (number | null) | Header;
-  /**
-   * The page's main heading (H1). Every page has exactly one hero.
-   */
   hero: HeroBlock[];
-  /**
-   * Page sections below the hero. Section titles render as H2.
-   */
   blocks: (
     | ContentBlock
     | FaqBlock
@@ -387,9 +372,6 @@ export interface Page {
     | RawHtmlBlock
     | GlobalSectionSlotBlock
   )[];
-  /**
-   * The footer to display on the page
-   */
   footer?: (number | null) | Footer;
   meta?: {
     title?: string | null;
@@ -441,13 +423,7 @@ export interface Page {
  */
 export interface Header {
   id: number;
-  /**
-   * The name of the header
-   */
   name?: string | null;
-  /**
-   * The logo to display in the header
-   */
   logo: number | Media;
   navItems?:
     | {
@@ -533,9 +509,6 @@ export interface Header {
         url?: string | null;
         customPage?: ('blog' | 'search') | null;
         label: string;
-        /**
-         * Choose how the link should be rendered.
-         */
         appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
         id?: string | null;
       }[]
@@ -568,9 +541,6 @@ export interface Post {
     };
     [k: string]: unknown;
   };
-  /**
-   * Optional FAQ shown after the article body.
-   */
   faq?: {
     heading?: SectionHeadingFields;
     items?:
@@ -596,7 +566,7 @@ export interface Post {
       | null;
   };
   /**
-   * Optional CTA band shown at the end of the post. Hidden when the heading is empty.
+   * Hidden on the site when the heading title is empty.
    */
   cta?: {
     heading?: SectionHeadingFields;
@@ -616,9 +586,6 @@ export interface Post {
           url?: string | null;
           customPage?: ('blog' | 'search') | null;
           label: string;
-          /**
-           * Choose how the link should be rendered.
-           */
           appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
           id?: string | null;
         }[]
@@ -642,14 +609,11 @@ export interface Post {
   generateSlug?: boolean | null;
   slug: string;
   publishedAt?: string | null;
-  /**
-   * Estimated reading time in minutes. Auto-calculated from the content on save.
-   */
   readingTime?: number | null;
   categories: (number | Category)[];
   authors: (number | Author)[];
   /**
-   * Select up to 3 related posts. If fewer than 3 are selected, additional posts from the same categories will be shown automatically based on publish date.
+   * Up to 3 are shown. Empty slots are filled with the latest posts from the same categories.
    */
   relatedPosts?: (number | Post)[] | null;
   updatedAt: string;
@@ -689,9 +653,6 @@ export interface Category {
  */
 export interface Author {
   id: number;
-  /**
-   * The name of the author
-   */
   name: string;
   avatar?: (number | null) | Media;
   updatedAt: string;
@@ -720,9 +681,6 @@ export interface HeroBlock {
         url?: string | null;
         customPage?: ('blog' | 'search') | null;
         label: string;
-        /**
-         * Choose how the link should be rendered.
-         */
         appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
         id?: string | null;
       }[]
@@ -742,9 +700,6 @@ export interface HeroBlock {
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -792,9 +747,6 @@ export interface ContentBlock {
         url?: string | null;
         customPage?: ('blog' | 'search') | null;
         label: string;
-        /**
-         * Choose how the link should be rendered.
-         */
         appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
         id?: string | null;
       }[]
@@ -810,9 +762,6 @@ export interface ContentBlock {
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -857,9 +806,6 @@ export interface FaqBlock {
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -882,9 +828,6 @@ export interface TestimonialsListBlock {
     | null;
   showRating?: boolean | null;
   showAvatar?: boolean | null;
-  /**
-   * The duration of the animation in seconds. Default is 60 seconds.
-   */
   duration?: number | null;
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
@@ -897,9 +840,6 @@ export interface TestimonialsListBlock {
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -931,9 +871,6 @@ export interface CardsGridBlock {
   heading?: SectionHeadingFields;
   columns?: number | null;
   items: {
-    /**
-     * Optional icon shown in a tinted tile
-     */
     icon?:
       | (
           | 'map'
@@ -979,9 +916,6 @@ export interface CardsGridBlock {
       url?: string | null;
       customPage?: ('blog' | 'search') | null;
       label?: string | null;
-      /**
-       * Choose how the link should be rendered.
-       */
       appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
     };
     alignVariant?: ('left' | 'center' | 'right') | null;
@@ -1000,9 +934,6 @@ export interface CardsGridBlock {
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -1050,9 +981,6 @@ export interface CarouselBlock {
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -1101,9 +1029,6 @@ export interface LogosBlock {
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -1143,9 +1068,6 @@ export interface ChartBlock {
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -1175,9 +1097,6 @@ export interface CtaBandBlock {
     url?: string | null;
     customPage?: ('blog' | 'search') | null;
     label: string;
-    /**
-     * Choose how the link should be rendered.
-     */
     appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
     id?: string | null;
   }[];
@@ -1192,9 +1111,6 @@ export interface CtaBandBlock {
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -1223,9 +1139,6 @@ export interface NewsletterBlock {
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -1255,9 +1168,6 @@ export interface StatsBlock {
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -1271,9 +1181,6 @@ export interface StatsBlock {
  * via the `definition` "RawHtmlBlock".
  */
 export interface RawHtmlBlock {
-  /**
-   * Raw HTML rendered as-is on the page. Use for embeds and one-off markup.
-   */
   html: string;
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
@@ -1286,9 +1193,6 @@ export interface RawHtmlBlock {
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -1303,7 +1207,7 @@ export interface RawHtmlBlock {
  */
 export interface GlobalSectionSlotBlock {
   /**
-   * Pick a global block to embed. Editing that block updates every page using it.
+   * Editing the global block updates every page that uses it.
    */
   reference: number | GlobalBlock;
   _hidden?: boolean | null;
@@ -1318,12 +1222,9 @@ export interface GlobalSectionSlotBlock {
 export interface GlobalBlock {
   id: number;
   /**
-   * Internal name to identify this global block in the picker.
+   * Internal name, shown only in the admin.
    */
   title: string;
-  /**
-   * The single block this global represents. Edit once, reuse on any page.
-   */
   block: (
     | ContentBlock
     | FaqBlock
@@ -1347,13 +1248,7 @@ export interface GlobalBlock {
  */
 export interface Footer {
   id: number;
-  /**
-   * The name of the footer
-   */
   name: string;
-  /**
-   * The logo to display in the footer
-   */
   logo: number | Media;
   description?: string | null;
   linkGroups?:
@@ -1402,9 +1297,6 @@ export interface Footer {
         id?: string | null;
       }[]
     | null;
-  /**
-   * Copyright text shown at the bottom
-   */
   copyrightText?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -1511,9 +1403,6 @@ export interface Preset {
               url?: string | null;
               customPage?: ('blog' | 'search') | null;
               label: string;
-              /**
-               * Choose how the link should be rendered.
-               */
               appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
               id?: string | null;
             }[]
@@ -1533,9 +1422,6 @@ export interface Preset {
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -1579,9 +1465,6 @@ export interface Preset {
               url?: string | null;
               customPage?: ('blog' | 'search') | null;
               label: string;
-              /**
-               * Choose how the link should be rendered.
-               */
               appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
               id?: string | null;
             }[]
@@ -1597,9 +1480,6 @@ export interface Preset {
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -1640,9 +1520,6 @@ export interface Preset {
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -1661,9 +1538,6 @@ export interface Preset {
           | null;
         showRating?: boolean | null;
         showAvatar?: boolean | null;
-        /**
-         * The duration of the animation in seconds. Default is 60 seconds.
-         */
         duration?: number | null;
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
@@ -1676,9 +1550,6 @@ export interface Preset {
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -1691,9 +1562,6 @@ export interface Preset {
         heading?: SectionHeadingFields;
         columns?: number | null;
         items: {
-          /**
-           * Optional icon shown in a tinted tile
-           */
           icon?:
             | (
                 | 'map'
@@ -1739,9 +1607,6 @@ export interface Preset {
             url?: string | null;
             customPage?: ('blog' | 'search') | null;
             label?: string | null;
-            /**
-             * Choose how the link should be rendered.
-             */
             appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
           };
           alignVariant?: ('left' | 'center' | 'right') | null;
@@ -1760,9 +1625,6 @@ export interface Preset {
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -1806,9 +1668,6 @@ export interface Preset {
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -1853,9 +1712,6 @@ export interface Preset {
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -1891,9 +1747,6 @@ export interface Preset {
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -1919,9 +1772,6 @@ export interface Preset {
           url?: string | null;
           customPage?: ('blog' | 'search') | null;
           label: string;
-          /**
-           * Choose how the link should be rendered.
-           */
           appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
           id?: string | null;
         }[];
@@ -1936,9 +1786,6 @@ export interface Preset {
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -1963,9 +1810,6 @@ export interface Preset {
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -1991,9 +1835,6 @@ export interface Preset {
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -2003,9 +1844,6 @@ export interface Preset {
         blockType: 'stats';
       }
     | {
-        /**
-         * Raw HTML rendered as-is on the page. Use for embeds and one-off markup.
-         */
         html: string;
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
@@ -2018,9 +1856,6 @@ export interface Preset {
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -2031,7 +1866,7 @@ export interface Preset {
       }
     | {
         /**
-         * Pick a global block to embed. Editing that block updates every page using it.
+         * Editing the global block updates every page that uses it.
          */
         reference: number | GlobalBlock;
         _hidden?: boolean | null;
@@ -4157,64 +3992,34 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 export interface SiteSetting {
   id: number;
   general?: {
-    /**
-     * The name of your website
-     */
     siteName?: string | null;
   };
   adminPanel?: {
     /**
-     * Logo displayed in the admin panel sidebar (recommended: SVG or PNG, ~150x40px)
+     * SVG or PNG, ~150×40px.
      */
     logo?: (number | null) | Media;
     /**
-     * Icon displayed when sidebar is collapsed (recommended: SVG or PNG, 32x32px)
+     * Shown when the sidebar is collapsed. SVG or PNG, 32×32px.
      */
     icon?: (number | null) | Media;
   };
   seo?: {
-    /**
-     * Character used to separate page title from site name
-     */
     titleSeparator?: ('|' | '-' | '•') | null;
-    /**
-     * Text added after separator (defaults to Site Name if empty)
-     */
     titleSuffix?: string | null;
-    /**
-     * Fallback description when page has no description
-     */
     defaultDescription?: string | null;
     og?: {
-      /**
-       * Fallback title for Open Graph when page has no title
-       */
       title?: string | null;
-      /**
-       * Site name for Open Graph. Defaults to Site Name if empty
-       */
       siteName?: string | null;
       /**
-       * Fallback description for Open Graph (uses Meta Description if empty)
+       * Leave empty to use the default meta description.
        */
       description?: string | null;
-      /**
-       * Fallback image for social media sharing
-       */
       image?: (number | null) | Media;
     };
     x?: {
-      /**
-       * Twitter/X username for the website (e.g., @yoursite)
-       */
       site?: string | null;
-      /**
-       * Default Twitter/X username for content creator (e.g., @author)
-       */
       creator?: string | null;
-      /**
-       * Type of Twitter Card to display
-       */
       card?: ('summary_large_image' | 'summary') | null;
     };
   };
@@ -4403,9 +4208,6 @@ export interface TaskSchedulePublish {
 export interface CardsGridInlineBlock {
   columns?: number | null;
   items: {
-    /**
-     * Optional icon shown in a tinted tile
-     */
     icon?:
       | (
           | 'map'
@@ -4451,9 +4253,6 @@ export interface CardsGridInlineBlock {
       url?: string | null;
       customPage?: ('blog' | 'search') | null;
       label?: string | null;
-      /**
-       * Choose how the link should be rendered.
-       */
       appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
     };
     alignVariant?: ('left' | 'center' | 'right') | null;
@@ -4504,7 +4303,7 @@ export interface LogosInlineBlock {
  */
 export interface CodeInlineBlock {
   /**
-   * Language hint (e.g. typescript, bash). Used for the syntax class.
+   * Lowercase language id, e.g. typescript, bash.
    */
   language?: string | null;
   code: string;
@@ -4518,9 +4317,6 @@ export interface CodeInlineBlock {
  */
 export interface CtaBannerInline {
   eyebrow?: string | null;
-  /**
-   * Visual emphasis of the banner.
-   */
   variant?: ('default' | 'accent' | 'dark') | null;
   heading?: string | null;
   description?: string | null;
@@ -4540,9 +4336,6 @@ export interface CtaBannerInline {
         url?: string | null;
         customPage?: ('blog' | 'search') | null;
         label: string;
-        /**
-         * Choose how the link should be rendered.
-         */
         appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
         id?: string | null;
       }[]

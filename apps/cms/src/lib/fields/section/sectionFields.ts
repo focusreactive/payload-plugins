@@ -106,10 +106,6 @@ export const sectionFields: GroupField = {
               admin: {
                 width: "50%",
                 condition: (_, siblingData) => !!siblingData?.overlay,
-                description: {
-                  en: "0 = transparent, 100 = fully opaque",
-                  es: "0 = transparente, 100 = completamente opaco",
-                },
               },
             },
           ],

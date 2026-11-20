@@ -31,12 +31,7 @@ export const Footer: CollectionConfig<"footer"> = {
   },
   fields: [
     {
-      admin: {
-        description: {
-          en: "The name of the footer",
-          es: "El nombre del footer",
-        },
-      },
+      admin: { position: "sidebar" },
       defaultValue: createLocalizedDefault({
         en: "Footer",
         es: "Pie de página",
@@ -46,23 +41,24 @@ export const Footer: CollectionConfig<"footer"> = {
       type: "text",
     },
     {
-      admin: {
-        description: {
-          en: "The logo to display in the footer",
-          es: "El logo a mostrar en el footer",
+      fields: [
+        {
+          admin: { width: "50%" },
+          defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
+          name: "logo",
+          relationTo: "media",
+          required: true,
+          type: "upload",
         },
-      },
-      defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
-      name: "logo",
-      relationTo: "media",
-      required: true,
-      type: "upload",
-    },
-    {
-      label: { en: "Description", es: "Descripción" },
-      localized: true,
-      name: "description",
-      type: "text",
+        {
+          admin: { width: "50%" },
+          label: { en: "Description", es: "Descripción" },
+          localized: true,
+          name: "description",
+          type: "text",
+        },
+      ],
+      type: "row",
     },
     {
       admin: {
@@ -161,12 +157,6 @@ export const Footer: CollectionConfig<"footer"> = {
       type: "array",
     },
     {
-      admin: {
-        description: {
-          en: "Copyright text shown at the bottom",
-          es: "Texto de copyright al pie",
-        },
-      },
       defaultValue: createLocalizedDefault({
         en: "© 2026 Cadence Labs, Inc.",
         es: "© 2026 Cadence Labs, Inc.",

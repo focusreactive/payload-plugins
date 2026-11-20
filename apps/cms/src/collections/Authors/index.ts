@@ -19,25 +19,26 @@ export const Authors: CollectionConfig<"authors"> = {
   },
   fields: [
     {
-      admin: {
-        description: {
-          en: "The name of the author",
-          es: "El nombre del autor",
+      fields: [
+        {
+          admin: { width: "50%" },
+          label: {
+            en: "Name",
+            es: "Nombre",
+          },
+          name: "name",
+          required: true,
+          type: "text",
         },
-      },
-      label: {
-        en: "Name",
-        es: "Nombre",
-      },
-      name: "name",
-      required: true,
-      type: "text",
-    },
-    {
-      label: { en: "Avatar", es: "Avatar" },
-      name: "avatar",
-      relationTo: "media",
-      type: "upload",
+        {
+          admin: { width: "50%" },
+          label: { en: "Avatar", es: "Avatar" },
+          name: "avatar",
+          relationTo: "media",
+          type: "upload",
+        },
+      ],
+      type: "row",
     },
   ],
   labels: {

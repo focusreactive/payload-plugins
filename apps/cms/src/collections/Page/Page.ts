@@ -65,12 +65,6 @@ export const Page: CollectionConfig<"page"> = {
   },
   fields: [
     {
-      admin: {
-        description: {
-          en: "The title of the page",
-          es: "El título de la página",
-        },
-      },
       localized: true,
       name: "title",
       required: true,

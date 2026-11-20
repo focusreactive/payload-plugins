@@ -26,12 +26,6 @@ export const SiteSettings: GlobalConfig = {
               defaultValue: createLocalizedDefault(
                 DEFAULT_VALUES.collections.siteSettings.siteName
               ),
-              admin: {
-                description: {
-                  en: "The name of your website",
-                  es: "El nombre de tu sitio web",
-                },
-              },
               localized: true,
             },
           ],
@@ -57,8 +51,8 @@ export const SiteSettings: GlobalConfig = {
                   admin: {
                     width: "50%",
                     description: {
-                      en: "Logo displayed in the admin panel sidebar (recommended: SVG or PNG, ~150x40px)",
-                      es: "Logo mostrado en la barra lateral del panel de administración (recomendado: SVG o PNG, ~150x40px)",
+                      en: "SVG or PNG, ~150×40px.",
+                      es: "SVG o PNG, ~150×40px.",
                     },
                   },
                 },
@@ -73,8 +67,8 @@ export const SiteSettings: GlobalConfig = {
                   admin: {
                     width: "50%",
                     description: {
-                      en: "Icon displayed when sidebar is collapsed (recommended: SVG or PNG, 32x32px)",
-                      es: "Icono mostrado cuando la barra lateral está colapsada (recomendado: SVG o PNG, 32x32px)",
+                      en: "Shown when the sidebar is collapsed. SVG or PNG, 32×32px.",
+                      es: "Se muestra con la barra lateral colapsada. SVG o PNG, 32×32px.",
                     },
                   },
                 },
@@ -112,13 +106,7 @@ export const SiteSettings: GlobalConfig = {
                         { label: { en: "- (dash)", es: "- (dash)" }, value: "-" },
                         { label: { en: "• (bullet)", es: "• (bullet)" }, value: "•" },
                       ],
-                      admin: {
-                        width: "50%",
-                        description: {
-                          en: "Character used to separate page title from site name",
-                          es: "Carácter usado para separar el título de la página del nombre del sitio",
-                        },
-                      },
+                      admin: { width: "50%" },
                     },
                     {
                       name: "titleSuffix",
@@ -129,10 +117,6 @@ export const SiteSettings: GlobalConfig = {
                       },
                       admin: {
                         width: "50%",
-                        description: {
-                          en: "Text added after separator (defaults to Site Name if empty)",
-                          es: "Texto agregado después del separador (por defecto el nombre del sitio si está vacío)",
-                        },
                         placeholder: {
                           en: "Leave empty to use Site Name",
                           es: "Dejar vacío para usar el nombre del sitio",
@@ -151,12 +135,6 @@ export const SiteSettings: GlobalConfig = {
                   label: {
                     en: "Default Meta Description",
                     es: "Descripción de meta de respaldo",
-                  },
-                  admin: {
-                    description: {
-                      en: "Fallback description when page has no description",
-                      es: "Descripción de respaldo cuando la página no tiene descripción",
-                    },
                   },
                   defaultValue: createLocalizedDefault(
                     DEFAULT_VALUES.collections.siteSettings.defaultDescription
@@ -183,13 +161,7 @@ export const SiteSettings: GlobalConfig = {
                         en: "Default OG Title",
                         es: "Título de respaldo de Open Graph",
                       },
-                      admin: {
-                        width: "50%",
-                        description: {
-                          en: "Fallback title for Open Graph when page has no title",
-                          es: "Título de respaldo para Open Graph cuando la página no tiene título",
-                        },
-                      },
+                      admin: { width: "50%" },
                       localized: true,
                     },
                     {
@@ -201,10 +173,6 @@ export const SiteSettings: GlobalConfig = {
                       },
                       admin: {
                         width: "50%",
-                        description: {
-                          en: "Site name for Open Graph. Defaults to Site Name if empty",
-                          es: "Nombre del sitio para Open Graph. Por defecto el nombre del sitio si está vacío",
-                        },
                         placeholder: {
                           en: "Leave empty to use Site Name",
                           es: "Dejar vacío para usar el nombre del sitio",
@@ -223,8 +191,8 @@ export const SiteSettings: GlobalConfig = {
                   },
                   admin: {
                     description: {
-                      en: "Fallback description for Open Graph (uses Meta Description if empty)",
-                      es: "Descripción de respaldo para Open Graph (usa la descripción meta si está vacía)",
+                      en: "Leave empty to use the default meta description.",
+                      es: "Déjalo vacío para usar la descripción meta por defecto.",
                     },
                   },
                   localized: true,
@@ -239,12 +207,6 @@ export const SiteSettings: GlobalConfig = {
                   label: {
                     en: "Default OG Image",
                     es: "Imagen de respaldo de Open Graph",
-                  },
-                  admin: {
-                    description: {
-                      en: "Fallback image for social media sharing",
-                      es: "Imagen de respaldo para compartir en redes sociales",
-                    },
                   },
                 },
               ],
@@ -269,10 +231,6 @@ export const SiteSettings: GlobalConfig = {
                       },
                       admin: {
                         width: "33%",
-                        description: {
-                          en: "Twitter/X username for the website (e.g., @yoursite)",
-                          es: "Nombre de usuario de Twitter/X para el sitio web (ej., @yoursite)",
-                        },
                         placeholder: {
                           en: "@yoursite",
                           es: "@yoursite",
@@ -289,10 +247,6 @@ export const SiteSettings: GlobalConfig = {
                       },
                       admin: {
                         width: "33%",
-                        description: {
-                          en: "Default Twitter/X username for content creator (e.g., @author)",
-                          es: "Nombre de usuario de Twitter/X de respaldo para el creador de contenido (ej., @author)",
-                        },
                         placeholder: {
                           en: "@author",
                           es: "@author",
@@ -321,13 +275,7 @@ export const SiteSettings: GlobalConfig = {
                           value: "summary",
                         },
                       ],
-                      admin: {
-                        width: "34%",
-                        description: {
-                          en: "Type of Twitter Card to display",
-                          es: "Tipo de tarjeta de Twitter a mostrar",
-                        },
-                      },
+                      admin: { width: "34%" },
                     },
                   ],
                 },
