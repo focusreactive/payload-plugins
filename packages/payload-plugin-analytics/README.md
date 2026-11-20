@@ -348,7 +348,7 @@ interface Ga4Config {
 }
 ```
 
-Validation at `buildConfig` time: `measurementId` must match `^G-[A-Z0-9]+$`, `propertyId` is required, and a warning is logged if the service-account credentials are missing.
+Validation at `buildConfig` time: `measurementId` must match `^G-[A-Z0-9]+$`, `propertyId` and the service-account credentials are required. If any of them is missing or invalid, a warning is logged and the data endpoints are not registered. The admin view and header link stay registered but hidden (the view answers 404), so `payload generate:importmap` produces the same import map with or without the GA4 env vars. `disabled: true` skips the plugin entirely.
 
 ### LeadActionsPluginConfig
 
