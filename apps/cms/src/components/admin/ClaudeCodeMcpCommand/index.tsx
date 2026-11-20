@@ -16,16 +16,56 @@ const MCP_ENDPOINT_PATH = "/mcp";
 
 const KEY_PLACEHOLDER = "<YOUR_API_KEY>";
 
+type PersistedKeyState =
+  /** The stored key was revealed. */
+  | { status: "revealed"; apiKey: string }
+  /** A key is stored but the reveal endpoint refused it (e.g. not the key's owner). */
+  | { status: "refused" }
+  /** No key is stored on the document. */
+  | { status: "none" };
+
+interface PersistedKeyResult {
+  /** Which document version (`id` + `lastUpdateTime`) this result belongs to. */
+  requestKey: string;
+  state: PersistedKeyState;
+}
+
+async function fetchPersistedKeyState(
+  baseURL: string,
+  signal: AbortSignal
+): Promise<PersistedKeyState> {
+  // Enabled by `auth.useAPIKey.reveal` on the collection (see lib/plugins/mcp).
+  // 403 → caller may not reveal this key, 404 → no key stored (or not readable).
+  const revealResponse = await fetch(`${baseURL}/api-key/reveal`, {
+    credentials: "include",
+    method: "POST",
+    signal,
+  });
+  if (revealResponse.ok) {
+    const { apiKey }: { apiKey?: unknown } = await revealResponse.json();
+    if (typeof apiKey === "string" && apiKey.length > 0) {
+      return { apiKey, status: "revealed" };
+    }
+  }
+
+  // Refused: tell "no key" apart from "key exists but can't be revealed".
+  const docResponse = await fetch(`${baseURL}?depth=0`, { credentials: "include", signal });
+  if (!docResponse.ok) {
+    return { status: "none" };
+  }
+  const doc: { hasAPIKey?: boolean } = await docResponse.json();
+  return doc.hasAPIKey === true ? { status: "refused" } : { status: "none" };
+}
+
 /**
  * Renders under the auth "API Key" field of the MCP API Keys collection.
  *
- * The plain key only exists client-side right after "Generate new API key" on an
- * unsaved document (it lives in form state at `apiKey`). Payload stores it
- * encrypted with `read: () => false`, so after save / reload only `hasAPIKey` is
- * known and the command falls back to a placeholder. Regenerating a key on an
- * already-saved document keeps the new key inside Payload's own APIKey component
- * state (it is never written to form state), so that case shows the placeholder too
- * while Payload displays the new key right above.
+ * Right after "Generate new API key" on an unsaved document the plain key lives in
+ * form state (`apiKey`). Once saved, Payload stores it encrypted, so the key is read
+ * back through Payload's reveal endpoint whenever the document loads or changes
+ * (generate / regenerate / revoke bump `lastUpdateTime`). Fetching on mount — not on
+ * copy — keeps the displayed command and the copied one identical. The placeholder
+ * is only used when a stored key exists but the reveal call is refused.
  */
 export const ClaudeCodeMcpCommand: React.FC = () => {
   const {
@@ -33,9 +73,9 @@ export const ClaudeCodeMcpCommand: React.FC = () => {
       routes: { api: apiRoute },
     },
   } = useConfig();
-  const { collectionSlug, data, id, lastUpdateTime } = useDocumentInfo();
+  const { collectionSlug, id, lastUpdateTime } = useDocumentInfo();
 
-  const apiKey = useFormFields(([fields]) => {
+  const formKey = useFormFields(([fields]) => {
     const value = fields?.apiKey?.value;
     return typeof value === "string" && value.length > 0 ? value : null;
   });
@@ -47,39 +87,38 @@ export const ClaudeCodeMcpCommand: React.FC = () => {
     setOrigin(window.location.origin);
   }, []);
 
-  // Generating / revoking a key on a saved document PATCHes it directly and bumps
-  // `lastUpdateTime`, but neither form state nor the PATCH response carry `hasAPIKey`,
-  // so re-read it from the REST API whenever the document changes.
-  const [hasPersistedKey, setHasPersistedKey] = useState(data?.hasAPIKey === true);
+  const requestKey = `${String(id)}:${String(lastUpdateTime)}`;
+  const [persisted, setPersisted] = useState<PersistedKeyResult | null>(null);
   useEffect(() => {
     if (!id || !collectionSlug) {
       return;
     }
 
     const controller = new AbortController();
-    const refresh = async () => {
+    const baseURL = `${apiRoute}/${collectionSlug}/${encodeURIComponent(String(id))}`;
+    const load = async () => {
       try {
-        const response = await fetch(
-          `${apiRoute}/${collectionSlug}/${encodeURIComponent(String(id))}?depth=0`,
-          { credentials: "include", signal: controller.signal }
-        );
-        if (!response.ok) {
-          return;
-        }
-        const doc: { hasAPIKey?: boolean } = await response.json();
-        setHasPersistedKey(doc.hasAPIKey === true);
+        const state = await fetchPersistedKeyState(baseURL, controller.signal);
+        setPersisted({ requestKey, state });
       } catch (error) {
         if (!controller.signal.aborted) {
-          console.error("Failed to refresh API key state", error);
+          console.error("Failed to load the MCP API key", error);
+          setPersisted({ requestKey, state: { status: "refused" } });
         }
       }
     };
 
-    void refresh();
+    void load();
     return () => controller.abort();
-  }, [apiRoute, collectionSlug, id, lastUpdateTime]);
+  }, [apiRoute, collectionSlug, id, requestKey]);
 
-  if (!apiKey && !hasPersistedKey) {
+  // Results for an older document version are stale (e.g. the key was regenerated).
+  const persistedState = persisted?.requestKey === requestKey ? persisted.state : null;
+  const revealedKey = persistedState?.status === "revealed" ? persistedState.apiKey : null;
+  const apiKey = formKey ?? revealedKey;
+  const isRefused = !apiKey && persistedState?.status === "refused";
+
+  if (!apiKey && !isRefused) {
     return null;
   }
 
@@ -112,11 +151,11 @@ export const ClaudeCodeMcpCommand: React.FC = () => {
       >
         {command}
       </pre>
-      {apiKey ? null : (
+      {isRefused ? (
         <div className="field-description">
-          Replace {KEY_PLACEHOLDER} with this key; it is only shown right after generating it.
+          Only the key&apos;s owner can reveal it. Replace {KEY_PLACEHOLDER} with the key.
         </div>
-      )}
+      ) : null}
     </div>
   );
 };

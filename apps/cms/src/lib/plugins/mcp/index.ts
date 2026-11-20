@@ -228,6 +228,14 @@ export const mcpPluginConfig = mcpPlugin({
   overrideApiKeyCollection: (collection) => ({
     ...collection,
     admin: { ...collection.admin, defaultColumns: ["label", "user", "updatedAt"] },
+    // `reveal` mounts Payload's `POST /api/payload-mcp-api-keys/:id/api-key/reveal`
+    // so the stored (encrypted) key can be shown again after save. The endpoint runs
+    // the collection's read + update access, which the MCP plugin restricts to the
+    // key's own user, so only the owner can reveal a key (admins included).
+    auth: {
+      ...(typeof collection.auth === "object" ? collection.auth : {}),
+      useAPIKey: { reveal: true },
+    },
     fields: [
       {
         name: "claudeCodeCommand",
