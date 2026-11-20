@@ -1,5 +1,6 @@
 "use client";
 
+import { Button, Pill, SearchIcon } from "@payloadcms/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 
@@ -398,64 +399,72 @@ export const GraphCanvas = ({
         {GRAPH_CSS}
       </style>
 
-      <div className="rg__header">
-        <h1 className="rg__title">{title}</h1>
-        <span className="rg__summary">
-          {collections} collections{globals > 0 ? ` · ${globals} globals` : ""} ·{" "}
-          {visible.edges.length} relations
-        </span>
-        <div className="rg__toolbar">
+      <header className="list-header rg__header">
+        <div className="list-header__title-and-actions">
+          <h1 className="list-header__title">{title}</h1>
+          <span className="rg__summary">
+            {collections} collections{globals > 0 ? ` · ${globals} globals` : ""} ·{" "}
+            {visible.edges.length} relations
+          </span>
+        </div>
+      </header>
+
+      <div className="search-bar rg__controls">
+        <SearchIcon />
+        <div className="search-filter">
           <input
             aria-label="Find a collection"
-            className="rg__search"
+            className="search-filter__input"
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Find a collection…"
             type="search"
             value={query}
           />
+        </div>
+        <div className="search-bar__actions rg__actions">
           {hasGlobals ? (
-            <button
-              aria-pressed={showGlobals}
-              className="rg__btn"
+            <Pill
+              aria-checked={showGlobals}
+              className="rg__toggle"
               onClick={() => setShowGlobals((value) => !value)}
-              type="button"
+              pillStyle={showGlobals ? "dark" : "light"}
+              size="small"
             >
               Globals
-            </button>
+            </Pill>
           ) : null}
           {hasUploads ? (
-            <button
-              aria-pressed={showUploads}
-              className="rg__btn"
+            <Pill
+              aria-checked={showUploads}
+              className="rg__toggle"
               onClick={() => setShowUploads((value) => !value)}
-              type="button"
+              pillStyle={showUploads ? "dark" : "light"}
+              size="small"
             >
               Uploads
-            </button>
+            </Pill>
           ) : null}
-          <button className="rg__btn" onClick={resetLayout} type="button">
-            Reset layout
-          </button>
           {insights ? (
             <>
-              <button
-                aria-busy={statsState.status === "loading"}
-                aria-pressed={dataOn}
-                className="rg__btn"
+              <Pill
+                aria-checked={dataOn}
+                aria-label="Data: overlay live document counts and how often each relation is set"
+                className="rg__toggle"
                 onClick={toggleData}
-                title="Overlay live document counts and how often each relation is set"
-                type="button"
+                pillStyle={dataOn ? "dark" : "light"}
+                size="small"
               >
                 {statsState.status === "loading" ? "Data…" : "Data"}
-              </button>
-              <button
-                aria-pressed={insightsOpen}
-                className="rg__btn"
+              </Pill>
+              <Pill
+                aria-expanded={insightsOpen}
+                className="rg__toggle"
                 onClick={() => {
                   setInsightsOpen((value) => !value);
                   setSelected(null);
                 }}
-                type="button"
+                pillStyle={insightsOpen ? "dark" : "light"}
+                size="small"
               >
                 Insights
                 {findings.length > 0 ? (
@@ -465,20 +474,30 @@ export const GraphCanvas = ({
                     {findings.length}
                   </span>
                 ) : null}
-              </button>
+              </Pill>
             </>
           ) : null}
-          <button className="rg__btn" onClick={() => copy("mermaid")} type="button">
+          <span aria-hidden="true" className="rg__divider" />
+          <Pill className="rg__toggle" onClick={resetLayout} pillStyle="light" size="small">
+            Reset layout
+          </Pill>
+          <Pill
+            className="rg__toggle"
+            onClick={() => void copy("mermaid")}
+            pillStyle="light"
+            size="small"
+          >
             {copied === "mermaid" ? "Copied" : "Copy as Mermaid"}
-          </button>
-          <button
-            className="rg__btn"
-            onClick={() => copy("ai")}
-            title="Copy a markdown brief of the content model for an AI assistant's prompt"
-            type="button"
+          </Pill>
+          <Pill
+            aria-label="Copy for AI: a markdown brief of the content model for an AI assistant's prompt"
+            className="rg__toggle"
+            onClick={() => void copy("ai")}
+            pillStyle="light"
+            size="small"
           >
             {copied === "ai" ? "Copied" : "Copy for AI"}
-          </button>
+          </Pill>
         </div>
       </div>
 
@@ -657,32 +676,32 @@ export const GraphCanvas = ({
             </span>
             <span className="rg__legend-item">[ ] has many</span>
             {shownStats ? (
-              <span className="rg__legend-item">
-                thicker line · % = share of documents with it set
-              </span>
+              <span className="rg__legend-item">line weight, % = documents with it set</span>
             ) : null}
           </div>
 
           <div className="rg__zoom">
-            <button
+            <Button
               aria-label="Zoom out"
-              className="rg__btn"
+              buttonStyle="subtle"
+              margin={false}
               onClick={() => zoomBy(1 / 1.25)}
-              type="button"
+              size="small"
             >
               −
-            </button>
-            <button
+            </Button>
+            <Button
               aria-label="Zoom in"
-              className="rg__btn"
+              buttonStyle="subtle"
+              margin={false}
               onClick={() => zoomBy(1.25)}
-              type="button"
+              size="small"
             >
               +
-            </button>
-            <button className="rg__btn" onClick={() => fit(positions)} type="button">
+            </Button>
+            <Button buttonStyle="subtle" margin={false} onClick={() => fit(positions)} size="small">
               Fit
-            </button>
+            </Button>
           </div>
         </div>
 

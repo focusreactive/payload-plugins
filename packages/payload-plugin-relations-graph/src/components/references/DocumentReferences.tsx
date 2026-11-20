@@ -1,8 +1,19 @@
 "use client";
 
-import { Drawer, Link, useConfig, useDocumentInfo, useDrawerSlug, useModal } from "@payloadcms/ui";
+import {
+  Banner,
+  Button,
+  Drawer,
+  Link,
+  Pill,
+  ShimmerEffect,
+  useConfig,
+  useDocumentInfo,
+  useDrawerSlug,
+  useModal,
+} from "@payloadcms/ui";
 import { formatAdminURL } from "payload/shared";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { ReferenceGroup, ReferencesResult } from "../../features/references/types.js";
 import { ENDPOINT_BASE } from "../../lib/constants.js";
@@ -105,13 +116,7 @@ export const DocumentReferences = ({ limit = 10 }: { limit?: number }) => {
   }
 
   const total = state.status === "ready" ? state.result.total : 0;
-  const triggerClass = [
-    "rg-refs__trigger",
-    total > 0 ? "rg-refs__trigger--used" : "",
-    state.status === "error" ? "rg-refs__trigger--error" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const sections = state.status === "ready" ? groupBySource(state.result.groups) : [];
 
   const docHref = (group: ReferenceGroup, docId: number | string): string =>
     formatAdminURL({
@@ -122,133 +127,156 @@ export const DocumentReferences = ({ limit = 10 }: { limit?: number }) => {
           : `/collections/${group.source.slug}/${encodeURIComponent(String(docId))}`,
     });
 
+  const summary = (): string => {
+    if (state.status === "loading") {
+      return "Looking for references…";
+    }
+    if (state.status === "error") {
+      return "References could not be loaded.";
+    }
+    return total > 0
+      ? `${plural(total, "reference", "references")} across ${plural(sections.length, "source", "sources")}.`
+      : "Nothing references this document.";
+  };
+
   return (
     <>
       <style href="payload-relations-graph-references" precedence="default">
         {REFERENCES_CSS}
       </style>
-      <button
-        aria-haspopup="dialog"
-        className={triggerClass}
+      <Button
+        buttonStyle="secondary"
+        className="rg-refs__trigger"
+        extraButtonProps={{ "aria-haspopup": "dialog" }}
+        margin={false}
         onClick={() => openModal(drawerSlug)}
-        title={
-          state.status === "error"
-            ? `Could not load references: ${state.message}`
-            : "Documents that reference this one"
+        size="medium"
+        tooltip={
+          state.status === "error" ? `Could not load references: ${state.message}` : undefined
         }
-        type="button"
       >
-        <span aria-hidden="true" className="rg-refs__dot" />
         Used in <span className="rg-refs__count">{triggerLabel(state)}</span>
-      </button>
+      </Button>
       <Drawer slug={drawerSlug} title="Where is this used?">
         <div className="rg-refs">
           <div className="rg-refs__toolbar">
-            <p className="rg-refs__summary">
-              {state.status === "loading" && "Looking for references…"}
-              {state.status === "error" && `Could not load references: ${state.message}`}
-              {state.status === "ready" &&
-                (total > 0
-                  ? `${plural(total, "reference", "references")} across ${plural(
-                      groupBySource(state.result.groups).length,
-                      "source",
-                      "sources"
-                    )}.`
-                  : "Nothing references this document.")}
-            </p>
-            <button
-              className="rg-refs__refresh"
+            <p className="rg-refs__summary">{summary()}</p>
+            <Button
+              buttonStyle="secondary"
               disabled={state.status === "loading"}
+              margin={false}
               onClick={() => void load()}
-              type="button"
+              size="small"
             >
               Refresh
-            </button>
+            </Button>
           </div>
 
-          {state.status === "ready" && state.result.groups.length === 0 && (
-            <p className="rg-refs__empty">
-              No other document or global points at this one through a relationship or upload field
-              you can read.
-            </p>
+          {state.status === "loading" && (
+            <div className="rg-refs__loading">
+              <ShimmerEffect height={40} />
+              <ShimmerEffect animationDelay="120ms" height={40} />
+              <ShimmerEffect animationDelay="240ms" height={40} />
+            </div>
           )}
 
-          {state.status === "ready" &&
-            groupBySource(state.result.groups).map((section) => {
-              const [first] = section.groups;
-              if (!first) {
-                return null;
-              }
-              return (
-                <section className="rg-refs__source" key={section.key}>
-                  <h3 className="rg-refs__source-head">
-                    {first.source.label}
-                    {first.source.kind === "global" && (
-                      <span className="rg-refs__badge">Global</span>
-                    )}
-                  </h3>
-                  {section.groups.map((group) => {
-                    const more = group.totalDocs - group.docs.length;
-                    return (
-                      <div className="rg-refs__field" key={group.field.path}>
-                        <div className="rg-refs__field-head">
-                          <code className="rg-refs__path">{group.field.path}</code>
-                          {group.field.type === "upload" && (
-                            <span className="rg-refs__badge">upload</span>
-                          )}
-                          {group.field.hasMany && <span className="rg-refs__badge">has many</span>}
-                          {group.field.polymorphic && (
-                            <span className="rg-refs__badge">polymorphic</span>
-                          )}
-                          {group.field.localized && (
-                            <span className="rg-refs__badge">localized</span>
-                          )}
-                          {!group.error && first.source.kind === "collection" && (
-                            <span className="rg-refs__field-count">
-                              {group.approximate ? "at least " : ""}
-                              {plural(group.totalDocs, "document", "documents")}
-                            </span>
-                          )}
-                        </div>
-                        {group.error ? (
-                          <p className="rg-refs__error">
-                            Could not check this field: {group.error}
-                          </p>
-                        ) : (
-                          <ul className="rg-refs__docs">
-                            {group.docs.map((doc) => (
-                              <li className="rg-refs__doc" key={String(doc.id)}>
-                                <Link href={docHref(group, doc.id)} prefetch={false}>
-                                  {doc.title}
-                                </Link>
-                                {doc.draftOnly && (
-                                  <span
-                                    className="rg-refs__badge rg-refs__badge--draft"
-                                    title="Only the latest draft references this document"
-                                  >
-                                    draft only
-                                  </span>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                        {more > 0 && (
-                          <p className="rg-refs__more">
-                            {group.approximate ? `At least ${more} more` : `+${more} more`}
-                          </p>
-                        )}
-                        {group.partial && (
-                          <p className="rg-refs__note">
-                            Only part of this collection was checked; there may be more.
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </section>
-              );
-            })}
+          {state.status === "error" && <Banner type="error">{state.message}</Banner>}
+
+          {state.status === "ready" && sections.length === 0 && (
+            <Banner type="default">
+              No other document or global points at this one through a relationship or upload field
+              you can read.
+            </Banner>
+          )}
+
+          {sections.map((section) => {
+            const [first] = section.groups;
+            if (!first) {
+              return null;
+            }
+            const sectionTotal = section.groups.reduce((sum, group) => sum + group.totalDocs, 0);
+            return (
+              <section className="rg-refs__source" key={section.key}>
+                <h3 className="rg-refs__source-head">
+                  {first.source.label}
+                  {first.source.kind === "global" && (
+                    <Pill pillStyle="light-gray" size="small">
+                      Global
+                    </Pill>
+                  )}
+                  <Pill pillStyle="light-gray" size="small">
+                    {sectionTotal}
+                  </Pill>
+                </h3>
+                {section.groups
+                  .filter((group) => group.error)
+                  .map((group) => (
+                    <Banner key={group.field.path} type="error">
+                      Could not check <code className="rg-refs__path">{group.field.path}</code>:{" "}
+                      {group.error}
+                    </Banner>
+                  ))}
+                {section.groups
+                  .filter((group) => group.partial)
+                  .map((group) => (
+                    <Banner key={group.field.path} type="warning">
+                      Only part of {first.source.label} was checked for{" "}
+                      <code className="rg-refs__path">{group.field.path}</code>; there may be more.
+                    </Banner>
+                  ))}
+                {section.groups.some((group) => group.docs.length > 0) && (
+                  <div className="table">
+                    <table cellPadding={0} cellSpacing={0}>
+                      <thead>
+                        <tr>
+                          <th className="rg-refs__col-doc">
+                            {first.source.kind === "global" ? "Global" : "Document"}
+                          </th>
+                          <th>Field</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {section.groups.map((group) => {
+                          const more = group.totalDocs - group.docs.length;
+                          return (
+                            <Fragment key={group.field.path}>
+                              {group.docs.map((doc) => (
+                                <tr key={`${group.field.path}:${String(doc.id)}`}>
+                                  <td>
+                                    <span className="rg-refs__doc">
+                                      <Link href={docHref(group, doc.id)} prefetch={false}>
+                                        {doc.title}
+                                      </Link>
+                                      {doc.draftOnly && (
+                                        <Pill pillStyle="warning" size="small">
+                                          Draft only
+                                        </Pill>
+                                      )}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    <code className="rg-refs__path">{group.field.path}</code>
+                                  </td>
+                                </tr>
+                              ))}
+                              {more > 0 && (
+                                <tr>
+                                  <td className="rg-refs__more" colSpan={2}>
+                                    {group.approximate ? `At least ${more}` : `+${more}`} more via{" "}
+                                    <code className="rg-refs__path">{group.field.path}</code>
+                                  </td>
+                                </tr>
+                              )}
+                            </Fragment>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            );
+          })}
 
           <p className="rg-refs__footnote">
             Checks relationship and upload fields in every locale, published and latest draft. Links

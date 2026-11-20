@@ -1,5 +1,7 @@
 "use client";
 
+import { Banner, ShimmerEffect, XIcon } from "@payloadcms/ui";
+
 import type { Finding } from "../features/insights/types.js";
 
 export type StatsState =
@@ -40,30 +42,38 @@ export const InsightsPanel = ({
   <aside aria-label="Insights" className="rg__panel rg__insights">
     <div className="rg__panel-head">
       <h3>Insights</h3>
-      <button aria-label="Close insights" className="rg__icon-btn" onClick={onClose} type="button">
-        ×
+      <button aria-label="Close insights" className="rg__close" onClick={onClose} type="button">
+        <XIcon />
       </button>
     </div>
     <p className="rg__muted rg__insights-intro">Click a finding to highlight it on the graph.</p>
 
-    {stats.status === "ready" ? null : (
-      <div className="rg__callout">
-        {stats.status === "loading" ? (
-          <span>Checking live data…</span>
-        ) : (
-          <>
-            <span>
-              {stats.status === "error"
-                ? `Live data could not be loaded: ${stats.message}`
-                : "Add findings from the actual content: unreferenced files, empty or unused relations."}
-            </span>
-            <button className="rg__btn rg__btn--small" onClick={onLoadData} type="button">
-              {stats.status === "error" ? "Retry" : "Check live data"}
-            </button>
-          </>
-        )}
+    {stats.status === "loading" ? (
+      <div className="rg__loading">
+        <ShimmerEffect height="56px" />
+        <span className="rg__muted rg__small">Checking live data…</span>
       </div>
-    )}
+    ) : null}
+    {stats.status === "idle" ? (
+      <Banner type="info">
+        <span className="rg__banner">
+          Add findings from the actual content: unreferenced files, empty or unused relations.
+          <button className="rg__link-btn" onClick={onLoadData} type="button">
+            Check live data
+          </button>
+        </span>
+      </Banner>
+    ) : null}
+    {stats.status === "error" ? (
+      <Banner type="error">
+        <span className="rg__banner">
+          Live data could not be loaded: {stats.message}
+          <button className="rg__link-btn" onClick={onLoadData} type="button">
+            Retry
+          </button>
+        </span>
+      </Banner>
+    ) : null}
 
     {findings.length === 0 ? <p className="rg__muted">Nothing to report.</p> : null}
 

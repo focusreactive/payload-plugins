@@ -1,6 +1,6 @@
 "use client";
 
-import { Link } from "@payloadcms/ui";
+import { Link, Pill } from "@payloadcms/ui";
 import { formatAdminURL } from "payload/shared";
 
 import type { RelationsStats } from "../features/insights/types.js";
@@ -146,9 +146,9 @@ export const NodePanel = ({ adminRoute, graph, node, onBack, onSelect, stats }: 
       <div className="rg__panel-slug">{node.slug}</div>
       <div className="rg__badges">
         {badges.map((badge) => (
-          <span className="rg__badge" key={badge}>
+          <Pill key={badge} pillStyle="light-gray" size="small">
             {badge}
-          </span>
+          </Pill>
         ))}
       </div>
       {stats ? <DataSummary node={node} stats={stats} /> : null}
