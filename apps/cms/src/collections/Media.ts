@@ -45,8 +45,8 @@ export const Media: CollectionConfig<"media"> = {
   fields: [
     {
       label: {
-        en: "Alt",
-        es: "Alt",
+        en: "Image description (alt text)",
+        es: "Descripción de la imagen (texto alternativo)",
       },
       localized: true,
       name: "alt",
@@ -57,7 +57,7 @@ export const Media: CollectionConfig<"media"> = {
       editor: generateRichText(),
       label: {
         en: "Caption",
-        es: "Descripción",
+        es: "Pie de foto",
       },
       localized: true,
       name: "caption",
@@ -72,7 +72,7 @@ export const Media: CollectionConfig<"media"> = {
         position: "sidebar",
       },
       defaultValue: false,
-      label: { en: "Use as the default image", es: "Usar como imagen por defecto" },
+      label: { en: "Use as default", es: "Usar por defecto" },
       name: "isDefaultImage",
       type: "checkbox",
     },

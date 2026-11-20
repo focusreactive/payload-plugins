@@ -17,6 +17,18 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+// Without usable GA4 credentials the plugin adds no endpoints, but keeps its admin components
+// registered so the generated import map does not depend on env vars.
+const expectAdminComponentsOnly = (out: Config) => {
+  expect(out.endpoints ?? []).toHaveLength(0);
+  expect((out.admin?.components?.views as Record<string, { path?: string }>)?.analytics?.path).toBe(
+    "/analytics"
+  );
+  expect(out.admin?.components?.actions).toEqual([
+    "@focus-reactive/payload-plugin-analytics/components/AnalyticsView/AnalyticsHeaderAction#default",
+  ]);
+};
+
 describe("analyticsPlugin", () => {
   it("happy path — adds 10 endpoints to incoming config", () => {
     const out = analyticsPlugin(validConfig)(incoming);
@@ -35,7 +47,7 @@ describe("analyticsPlugin", () => {
       ...validConfig,
       ga4: { ...validConfig.ga4, measurementId: "invalid" },
     })(incoming);
-    expect(out).toBe(incoming);
+    expectAdminComponentsOnly(out);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("not a valid GA4 ID"));
   });
 
@@ -45,24 +57,35 @@ describe("analyticsPlugin", () => {
       ...validConfig,
       ga4: { ...validConfig.ga4, propertyId: "" },
     })(incoming);
-    expect(out).toBe(incoming);
+    expectAdminComponentsOnly(out);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("propertyId is missing"));
   });
 
   it("warns on missing serviceAccount fields but does not throw", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    analyticsPlugin({
+    const out = analyticsPlugin({
       ...validConfig,
       ga4: { ...validConfig.ga4, serviceAccount: { clientEmail: "", privateKey: "" } },
     })(incoming);
+    expectAdminComponentsOnly(out);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("serviceAccount"));
   });
 
   it("warns and disables when ga4 is missing entirely (and disabled is not set)", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const out = analyticsPlugin({} as AnalyticsPluginConfig)(incoming);
-    expect(out).toBe(incoming);
+    expectAdminComponentsOnly(out);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("ga4 config is missing"));
+  });
+});
+
+describe("analyticsPlugin import map stability", () => {
+  it("registers the same admin components with and without GA4 credentials", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const withGa4 = analyticsPlugin(validConfig)({} as Config);
+    const withoutGa4 = analyticsPlugin({ ...validConfig, ga4: undefined } as never)({} as Config);
+    expect(withoutGa4.admin?.components).toEqual(withGa4.admin?.components);
+    expect(withoutGa4.admin?.dependencies).toEqual(withGa4.admin?.dependencies);
   });
 });
 

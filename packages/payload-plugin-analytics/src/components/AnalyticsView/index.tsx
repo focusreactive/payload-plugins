@@ -5,9 +5,11 @@ import type { AdminViewServerProps } from "payload";
 import { DefaultTemplate } from "@payloadcms/next/templates";
 import { Gutter } from "@payloadcms/ui";
 import { getFromImportMap } from "payload/shared";
+import { notFound } from "next/navigation";
 import SetAnalyticsStepNav from "./SetAnalyticsStepNav";
 import { AnalyticsShell } from "./AnalyticsShell";
 import { getResolvedBlockRegistry, getResolvedLayout, getPluginConfig } from "../../config";
+import { canViewAnalytics } from "../../utils/access/canViewAnalytics";
 import { BUILTIN_LEAD_ACTIONS_BLOCK_IDS, BUILTIN_OVERVIEW_BLOCK_IDS } from "../../constants/layout";
 
 const BUILTIN_BLOCK_IDS = new Set<string>([
@@ -15,13 +17,15 @@ const BUILTIN_BLOCK_IDS = new Set<string>([
   ...BUILTIN_LEAD_ACTIONS_BLOCK_IDS,
 ]);
 
-export default function AnalyticsView({
+export default async function AnalyticsView({
   initPageResult,
   params,
   searchParams,
 }: AdminViewServerProps) {
   const { req, permissions, locale, visibleEntities } = initPageResult;
   const { i18n, payload, user } = req;
+
+  if (!(await canViewAnalytics(req))) notFound();
 
   const viewActions = [...(payload.config.admin?.components?.actions ?? [])].reverse();
   const title = i18n.t("analytics:title" as never);

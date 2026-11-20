@@ -8,9 +8,9 @@ import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
  * to the nearest kept one in `20261120_123232_editor_friendly_choices`.
  */
 const aspectRatioOptions = [
-  { label: { en: "Widescreen (16:9)", es: "Panorámica (16:9)" }, value: "16/9" },
-  { label: { en: "Photo (3:2)", es: "Foto (3:2)" }, value: "3/2" },
-  { label: { en: "Standard (4:3)", es: "Estándar (4:3)" }, value: "4/3" },
+  { label: { en: "Wide (16:9)", es: "Panorámica (16:9)" }, value: "16/9" },
+  { label: { en: "Landscape (3:2)", es: "Horizontal (3:2)" }, value: "3/2" },
+  { label: { en: "Classic (4:3)", es: "Clásica (4:3)" }, value: "4/3" },
   { label: { en: "Square (1:1)", es: "Cuadrada (1:1)" }, value: "1/1" },
   { label: { en: "Original shape", es: "Forma original" }, value: "auto" },
 ];
@@ -24,7 +24,7 @@ export function imageField(
   }: { withDefaultMedia?: boolean; required?: boolean; withAspectRatio?: boolean } = {}
 ): GroupField {
   const imageUpload: UploadField = {
-    label: { en: "Image File", es: "Archivo de imagen" },
+    label: { en: "Image file", es: "Archivo de imagen" },
     name: "image",
     relationTo: "media",
     required,
@@ -45,7 +45,7 @@ export function imageField(
               {
                 admin: { width: "50%" },
                 defaultValue: "1/1",
-                label: { en: "Aspect Ratio", es: "Relación de aspecto" },
+                label: { en: "Image shape", es: "Forma de la imagen" },
                 name: "aspectRatio",
                 options: aspectRatioOptions,
                 type: "select",

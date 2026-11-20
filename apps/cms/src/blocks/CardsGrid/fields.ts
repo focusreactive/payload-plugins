@@ -16,8 +16,8 @@ export const cardsGridFields: Field[] = [
       {
         admin: {
           description: {
-            en: "Cards per row on wide screens. Phones always show one per row.",
-            es: "Tarjetas por fila en pantallas anchas. En móviles siempre se muestra una por fila.",
+            en: "On wide screens. Phones always show one card per row.",
+            es: "En pantallas anchas. En móviles siempre se muestra una tarjeta por fila.",
           },
           width: "25%",
         },
@@ -30,7 +30,7 @@ export const cardsGridFields: Field[] = [
       {
         admin: { width: "25%" },
         defaultValue: "center",
-        label: { en: "Card text alignment", es: "Alineación del texto" },
+        label: { en: "Card alignment", es: "Alineación de las tarjetas" },
         name: "alignVariant",
         options: [
           { label: { en: "Left", es: "Izquierda" }, value: "left" },
@@ -42,25 +42,25 @@ export const cardsGridFields: Field[] = [
       {
         admin: { width: "25%" },
         defaultValue: "none",
-        label: { en: "Card corners", es: "Esquinas de las tarjetas" },
+        label: { en: "Rounded corners", es: "Bordes redondeados" },
         name: "rounded",
         options: [
-          { label: { en: "Standard", es: "Estándar" }, value: "none" },
-          { label: { en: "Extra rounded", es: "Más redondeadas" }, value: "large" },
+          { label: { en: "None", es: "Ninguno" }, value: "none" },
+          { label: { en: "Large", es: "Grande" }, value: "large" },
         ],
         type: "select",
       },
       {
         admin: { width: "25%" },
         defaultValue: "none",
-        label: { en: "Card background", es: "Fondo de las tarjetas" },
+        label: { en: "Card background color", es: "Color de fondo de las tarjetas" },
         name: "backgroundColor",
         options: [
           { label: { en: "None", es: "Ninguno" }, value: "none" },
           { label: { en: "Light", es: "Claro" }, value: "light" },
           { label: { en: "Dark", es: "Oscuro" }, value: "dark" },
-          { label: { en: "Light Gray", es: "Gris claro" }, value: "light-gray" },
-          { label: { en: "Dark Gray", es: "Gris oscuro" }, value: "dark-gray" },
+          { label: { en: "Light gray", es: "Gris claro" }, value: "light-gray" },
+          { label: { en: "Dark gray", es: "Gris oscuro" }, value: "dark-gray" },
           { label: { en: "Gradient", es: "Gradiente" }, value: "gradient-2" },
         ],
         type: "select",
@@ -105,6 +105,10 @@ export const cardsGridFields: Field[] = [
       link({ required: false }),
     ],
     label: { en: "Cards", es: "Tarjetas" },
+    labels: {
+      plural: { en: "Cards", es: "Tarjetas" },
+      singular: { en: "Card", es: "Tarjeta" },
+    },
     localized: true,
     minRows: 1,
     name: "items",

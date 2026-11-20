@@ -35,14 +35,14 @@ const fields: Field[] = [
   {
     admin: {
       description: {
-        en: "Each range becomes a tab. The first range is shown by default.",
-        es: "Cada rango se convierte en una pestaña. El primero se muestra por defecto.",
+        en: "Each time period gets its own tab above the chart. Visitors see the first one first.",
+        es: "Cada periodo tiene su propia pestaña encima del gráfico. Los visitantes ven primero el primero.",
       },
       initCollapsed: true,
     },
     fields: [
       {
-        label: { en: "Label", es: "Etiqueta" },
+        label: { en: "Tab name", es: "Nombre de la pestaña" },
         localized: true,
         name: "label",
         required: true,
@@ -56,7 +56,7 @@ const fields: Field[] = [
             fields: [
               {
                 admin: { width: "50%" },
-                label: { en: "Label", es: "Etiqueta" },
+                label: { en: "Point name", es: "Nombre del punto" },
                 localized: true,
                 name: "label",
                 required: true,
@@ -73,13 +73,21 @@ const fields: Field[] = [
           },
         ],
         label: { en: "Data points", es: "Puntos de datos" },
+        labels: {
+          plural: { en: "Data points", es: "Puntos de datos" },
+          singular: { en: "Data point", es: "Punto de datos" },
+        },
         minRows: 2,
         name: "dataPoints",
         required: true,
         type: "array",
       },
     ],
-    label: { en: "Time ranges", es: "Rangos de tiempo" },
+    label: { en: "Time periods", es: "Periodos" },
+    labels: {
+      plural: { en: "Time periods", es: "Periodos" },
+      singular: { en: "Time period", es: "Periodo" },
+    },
     minRows: 1,
     name: "ranges",
     required: true,

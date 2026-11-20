@@ -8,7 +8,7 @@ export const CodeInlineBlock: Block = {
       name: "language",
       type: "select",
       defaultValue: DEFAULT_CODE_LANGUAGE,
-      label: { en: "Language", es: "Lenguaje" },
+      label: { en: "Programming language", es: "Lenguaje de programación" },
       options: CODE_LANGUAGES.map(({ label, value }) => ({ label, value })),
     },
     {
@@ -20,8 +20,8 @@ export const CodeInlineBlock: Block = {
   ],
   interfaceName: "CodeInlineBlock",
   labels: {
-    plural: { en: "Code Blocks", es: "Bloques de código" },
-    singular: { en: "Code", es: "Código" },
+    plural: { en: "Code snippets", es: "Fragmentos de código" },
+    singular: { en: "Code snippet", es: "Fragmento de código" },
   },
   slug: "codeInline",
 };

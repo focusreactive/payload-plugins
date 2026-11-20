@@ -17,11 +17,14 @@ const defaultHeroLinkItem = (label: string) => ({
 export const heroFields: Field[] = [
   {
     defaultValue: "showcase",
-    label: { en: "Variant", es: "Variante" },
+    label: { en: "Layout", es: "Diseño" },
     name: "variant",
     options: [
-      { label: { en: "Showcase window", es: "Ventana de producto" }, value: "showcase" },
-      { label: { en: "Centered", es: "Centrado" }, value: "centered" },
+      { label: { en: "Text with image", es: "Texto con imagen" }, value: "showcase" },
+      {
+        label: { en: "Centered text, no image", es: "Texto centrado, sin imagen" },
+        value: "centered",
+      },
     ],
     required: true,
     type: "select",
@@ -49,7 +52,11 @@ export const heroFields: Field[] = [
       ],
     }),
     fields: (link() as GroupField).fields,
-    label: { en: "Actions", es: "Acciones" },
+    label: { en: "Buttons", es: "Botones" },
+    labels: {
+      plural: { en: "Buttons", es: "Botones" },
+      singular: { en: "Button", es: "Botón" },
+    },
     localized: true,
     maxRows: 2,
     name: "actions",

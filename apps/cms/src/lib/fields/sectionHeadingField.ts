@@ -24,7 +24,7 @@ export function sectionHeadingField(defaults: SectionHeadingDefaults = {}): Grou
           {
             ...withLocalizedDefault(defaults.eyebrow),
             admin: { width: "40%" },
-            label: { en: "Eyebrow", es: "Antetítulo" },
+            label: { en: "Label above title", es: "Texto sobre el título" },
             localized: true,
             name: "eyebrow",
             type: "text",

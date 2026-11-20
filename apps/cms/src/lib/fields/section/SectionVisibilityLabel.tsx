@@ -1,29 +1,47 @@
 "use client";
 
-import { Pill, PopupList, SectionTitle, useField, useRowLabel } from "@payloadcms/ui";
+import { CardLabel } from "@focus-reactive/payload-plugin-stacked-editing/client";
+import { PopupList, useField, useRowLabel, useTranslation } from "@payloadcms/ui";
 import { EyeIcon } from "@payloadcms/ui/icons/Eye";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { HIDDEN_FIELD_NAME } from "./constants";
 
-const baseClass = "blocks-field";
+import { HIDDEN_FIELD_NAME } from "./constants";
+import { ReusableSectionName } from "./ReusableSectionName";
+
+const VISIBILITY_ACTION_LABELS = {
+  en: { hide: "Hide from page", show: "Show on page", hidden: "Hidden" },
+  es: { hide: "Ocultar de la página", show: "Mostrar en la página", hidden: "Oculta" },
+} as const;
+
+const REUSABLE_SECTION_BLOCK = "globalSectionSlot";
+
+const HIDDEN_BADGE_STYLE = {
+  alignSelf: "center",
+  border: "1px solid var(--theme-elevation-250)",
+  borderRadius: "var(--style-radius-s)",
+  color: "var(--theme-elevation-650)",
+  flexShrink: 0,
+  fontSize: "11px",
+  lineHeight: "18px",
+  marginLeft: "8px",
+  padding: "0 6px",
+} as const;
 
 interface RowData {
   blockType?: string;
-  blockName?: string;
   [key: string]: unknown;
 }
 
-function titleCase(input: string | undefined): string {
-  if (!input) {
-    return "Section";
-  }
-
-  return input.charAt(0).toUpperCase() + input.slice(1);
-}
-
+/**
+ * Row header for every page/post section: the stacked-editing preview card (number, thumbnail,
+ * a title read from the section's content, the section type underneath) plus the
+ * "Hide from page" / "Show on page" action in the row's `…` menu.
+ */
 export function SectionVisibilityLabel() {
-  const { data, path, rowNumber } = useRowLabel<RowData>();
+  const { data, path } = useRowLabel<RowData>();
+  const { i18n } = useTranslation();
+  const labels = i18n.language === "es" ? VISIBILITY_ACTION_LABELS.es : VISIBILITY_ACTION_LABELS.en;
   const { value, setValue } = useField<boolean>({
     path: `${path}.${HIDDEN_FIELD_NAME}`,
   });
@@ -129,19 +147,13 @@ export function SectionVisibilityLabel() {
 
   return (
     <span ref={anchorRef} style={{ display: "contents" }}>
-      <span className={`${baseClass}__block-number`}>
-        {String((rowNumber ?? 0) + 1).padStart(2, "0")}
-      </span>
+      <CardLabel />
 
-      <Pill
-        className={`${baseClass}__block-pill ${baseClass}__block-pill-${data?.blockType ?? ""}`}
-        pillStyle="white"
-        size="small"
-      >
-        {titleCase(data?.blockType)}
-      </Pill>
+      {data?.blockType === REUSABLE_SECTION_BLOCK ? (
+        <ReusableSectionName path={`${path}.reference`} />
+      ) : null}
 
-      <SectionTitle path={`${path}.blockName`} readOnly={false} />
+      {isHidden ? <span style={HIDDEN_BADGE_STYLE}>{labels.hidden}</span> : null}
 
       {portalContainer &&
         createPortal(
@@ -166,7 +178,7 @@ export function SectionVisibilityLabel() {
             >
               <EyeIcon active={!isHidden} className="section-visibility-icon" />
 
-              {isHidden ? "Show Section" : "Disable Section"}
+              {isHidden ? labels.show : labels.hide}
             </PopupList.Button>
           </div>,
           portalContainer

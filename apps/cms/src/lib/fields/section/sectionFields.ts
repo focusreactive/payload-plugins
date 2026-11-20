@@ -7,24 +7,24 @@ export const sectionFields: GroupField = {
       fields: [
         {
           admin: { width: "50%" },
-          label: { en: "Theme", es: "Tema" },
+          label: { en: "Color scheme", es: "Esquema de color" },
           name: "theme",
           options: [
             { label: { en: "Light", es: "Claro" }, value: "light" },
             { label: { en: "Dark", es: "Oscuro" }, value: "dark" },
-            { label: { en: "Light Gray", es: "Gris Claro" }, value: "light-gray" },
-            { label: { en: "Dark Gray", es: "Gris Oscuro" }, value: "dark-gray" },
+            { label: { en: "Light gray", es: "Gris claro" }, value: "light-gray" },
+            { label: { en: "Dark gray", es: "Gris oscuro" }, value: "dark-gray" },
           ],
           type: "select",
         },
         {
           admin: { width: "50%" },
           defaultValue: "base",
-          label: { en: "Max Width", es: "Ancho Máximo" },
+          label: { en: "Content width", es: "Ancho del contenido" },
           name: "maxWidth",
           options: [
-            { label: { en: "None", es: "Ninguno" }, value: "none" },
-            { label: { en: "Base", es: "Base" }, value: "base" },
+            { label: { en: "Full width", es: "Ancho completo" }, value: "none" },
+            { label: { en: "Standard", es: "Estándar" }, value: "base" },
           ],
           type: "select",
         },
@@ -36,11 +36,11 @@ export const sectionFields: GroupField = {
         {
           admin: { width: "50%" },
           defaultValue: "base",
-          label: { en: "Padding Y", es: "Relleno Vertical" },
+          label: { en: "Space above and below", es: "Espacio arriba y abajo" },
           name: "paddingY",
           options: [
             { label: { en: "None", es: "Ninguno" }, value: "none" },
-            { label: { en: "Base", es: "Base" }, value: "base" },
+            { label: { en: "Standard", es: "Estándar" }, value: "base" },
             { label: { en: "Large", es: "Grande" }, value: "large" },
           ],
           type: "select",
@@ -48,11 +48,11 @@ export const sectionFields: GroupField = {
         {
           admin: { width: "50%" },
           defaultValue: "base",
-          label: { en: "Padding X", es: "Relleno Horizontal" },
+          label: { en: "Space at the sides", es: "Espacio a los lados" },
           name: "paddingX",
           options: [
             { label: { en: "None", es: "Ninguno" }, value: "none" },
-            { label: { en: "Base", es: "Base" }, value: "base" },
+            { label: { en: "Standard", es: "Estándar" }, value: "base" },
           ],
           type: "select",
         },
@@ -63,8 +63,8 @@ export const sectionFields: GroupField = {
         {
           admin: {
             description: {
-              en: 'Upload an image or video. Use the "Background" folder.',
-              es: 'Sube una imagen o video. Usa la carpeta "Background".',
+              en: 'Pick an image or video from the "Background" folder.',
+              es: 'Elige una imagen o un video de la carpeta "Background".',
             },
           },
           filterOptions: () => ({
@@ -73,8 +73,8 @@ export const sectionFields: GroupField = {
             },
           }),
           label: {
-            en: "Background (Image or Video)",
-            es: "Fondo (Imagen o Video)",
+            en: "Background image or video",
+            es: "Imagen o video de fondo",
           },
           name: "media",
           relationTo: "media",
@@ -86,7 +86,7 @@ export const sectionFields: GroupField = {
               name: "overlay",
               type: "select",
               dbName: "sec_bg_ovrly",
-              label: { en: "Overlay Color", es: "Color de Capa" },
+              label: { en: "Tint over the background", es: "Velo sobre el fondo" },
               options: [
                 { label: { en: "Black", es: "Negro" }, value: "black" },
                 { label: { en: "White", es: "Blanco" }, value: "white" },
@@ -99,7 +99,7 @@ export const sectionFields: GroupField = {
             {
               name: "opacity",
               type: "number",
-              label: { en: "Overlay Opacity (%)", es: "Opacidad de Capa (%)" },
+              label: { en: "Tint strength (%)", es: "Intensidad del velo (%)" },
               min: 0,
               max: 100,
               defaultValue: 35,

@@ -29189,7 +29189,7 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": false,
-          "default": "'Global section'"
+          "default": "'Reusable section'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -33585,7 +33585,7 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": false,
-          "default": "'Global section'"
+          "default": "'Reusable section'"
         },
         "version_updated_at": {
           "name": "version_updated_at",

@@ -6,7 +6,7 @@ import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
 // - Carousel `effect` keeps slide/fade (cube/flip/coverflow/cards -> slide).
 // - imageField `aspectRatio` keeps 16/9, 3/2, 4/3, 1/1, auto (9/16 + 1/2 -> 1/1, 4/1 + 3/1 -> 16/9).
 // - Media `defaultFor` (hasMany select, one option) -> `isDefaultImage` checkbox.
-// - Header `name`, Global section `title`, Site settings `seo.x.site` / `seo.x.creator` stop being
+// - Header `name`, reusable (global) section `title`, Site settings `seo.x.site` / `seo.x.creator` stop being
 //   localized: the default-locale (en) value is kept, falling back to the first non-empty locale.
 // - Site settings `seo.og.siteName` is dropped; where a locale had no `general.siteName` but an OG
 //   site name, that name becomes the site name so the rendered og:site_name does not change.
@@ -522,11 +522,11 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "gsec_blocks_cards_grid" ADD COLUMN "align_variant" "enum_gsec_blocks_cards_grid_align_variant" DEFAULT 'center';
   ALTER TABLE "gsec_blocks_cards_grid" ADD COLUMN "rounded" "enum_gsec_blocks_cards_grid_rounded" DEFAULT 'none';
   ALTER TABLE "gsec_blocks_cards_grid" ADD COLUMN "background_color" "enum_gsec_blocks_cards_grid_background_color" DEFAULT 'none';
-  ALTER TABLE "gsec" ADD COLUMN "title" varchar DEFAULT 'Global section';
+  ALTER TABLE "gsec" ADD COLUMN "title" varchar DEFAULT 'Reusable section';
   ALTER TABLE "_gsec_v_blocks_cards_grid" ADD COLUMN "align_variant" "enum__gsec_v_blocks_cards_grid_align_variant" DEFAULT 'center';
   ALTER TABLE "_gsec_v_blocks_cards_grid" ADD COLUMN "rounded" "enum__gsec_v_blocks_cards_grid_rounded" DEFAULT 'none';
   ALTER TABLE "_gsec_v_blocks_cards_grid" ADD COLUMN "background_color" "enum__gsec_v_blocks_cards_grid_background_color" DEFAULT 'none';
-  ALTER TABLE "_gsec_v" ADD COLUMN "version_title" varchar DEFAULT 'Global section';
+  ALTER TABLE "_gsec_v" ADD COLUMN "version_title" varchar DEFAULT 'Reusable section';
   ALTER TABLE "presets_blocks_cards_grid" ADD COLUMN "align_variant" "enum_presets_blocks_cards_grid_align_variant" DEFAULT 'center';
   ALTER TABLE "presets_blocks_cards_grid" ADD COLUMN "rounded" "enum_presets_blocks_cards_grid_rounded" DEFAULT 'none';
   ALTER TABLE "presets_blocks_cards_grid" ADD COLUMN "background_color" "enum_presets_blocks_cards_grid_background_color" DEFAULT 'none';

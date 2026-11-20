@@ -32,7 +32,7 @@ export const Authors: CollectionConfig<"authors"> = {
         },
         {
           admin: { width: "50%" },
-          label: { en: "Avatar", es: "Avatar" },
+          label: { en: "Photo", es: "Foto" },
           name: "avatar",
           relationTo: "media",
           type: "upload",

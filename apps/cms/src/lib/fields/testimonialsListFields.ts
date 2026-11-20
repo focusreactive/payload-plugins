@@ -20,6 +20,10 @@ export const testimonialsListFields: Field[] = [
       },
     ],
     label: { en: "Testimonials", es: "Testimonios" },
+    labels: {
+      plural: { en: "Testimonials", es: "Testimonios" },
+      singular: { en: "Testimonial", es: "Testimonio" },
+    },
     minRows: 1,
     name: "testimonialItems",
     type: "array",
@@ -30,14 +34,14 @@ export const testimonialsListFields: Field[] = [
       {
         admin: { width: "50%" },
         defaultValue: true,
-        label: { en: "Show Rating", es: "Mostrar Calificación" },
+        label: { en: "Show star rating", es: "Mostrar valoración" },
         name: "showRating",
         type: "checkbox",
       },
       {
         admin: { width: "50%" },
         defaultValue: true,
-        label: { en: "Show Avatar", es: "Mostrar Avatar" },
+        label: { en: "Show photo", es: "Mostrar foto" },
         name: "showAvatar",
         type: "checkbox",
       },
@@ -49,8 +53,8 @@ export const testimonialsListFields: Field[] = [
     },
     defaultValue: 60,
     label: {
-      en: "Animation duration (seconds)",
-      es: "Duración de la animación (segundos)",
+      en: "Scroll speed (seconds per full loop)",
+      es: "Velocidad de desplazamiento (segundos por vuelta)",
     },
     name: "duration",
     type: "number",

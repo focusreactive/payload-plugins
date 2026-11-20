@@ -7,7 +7,7 @@ export const ctaBannerFields: Field[] = [
   sectionHeadingField(),
   {
     defaultValue: "default",
-    label: { en: "Variant", es: "Variante" },
+    label: { en: "Color style", es: "Estilo de color" },
     name: "variant",
     options: [
       { label: { en: "Default", es: "Predeterminado" }, value: "default" },
@@ -19,7 +19,11 @@ export const ctaBannerFields: Field[] = [
   {
     admin: { initCollapsed: true },
     fields: (link() as GroupField).fields,
-    label: { en: "Actions", es: "Acciones" },
+    label: { en: "Buttons", es: "Botones" },
+    labels: {
+      plural: { en: "Buttons", es: "Botones" },
+      singular: { en: "Button", es: "Botón" },
+    },
     localized: true,
     minRows: 1,
     name: "actions",

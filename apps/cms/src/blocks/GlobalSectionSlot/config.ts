@@ -6,19 +6,20 @@ import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
 export const GlobalSectionSlotBlock: Block = withSectionVisibility({
   slug: "globalSectionSlot",
   interfaceName: "GlobalSectionSlotBlock",
-  ...getBlockPreviewImage("Global section"),
+  ...getBlockPreviewImage("Reusable section"),
   labels: {
-    plural: { en: "Global sections", es: "Secciones globales" },
-    singular: { en: "Global section", es: "Sección global" },
+    plural: { en: "Reusable sections", es: "Secciones reutilizables" },
+    singular: { en: "Reusable section", es: "Sección reutilizable" },
   },
   fields: [
     {
       admin: {
         description: {
-          en: "Editing the global block updates every page that uses it.",
-          es: "Editar el bloque global actualiza todas las páginas que lo usan.",
+          en: "Changes to a reusable section show up on every page that uses it.",
+          es: "Los cambios en una sección reutilizable aparecen en todas las páginas que la usan.",
         },
       },
+      label: { en: "Reusable section", es: "Sección reutilizable" },
       name: "reference",
       relationTo: "globalBlock",
       required: true,
