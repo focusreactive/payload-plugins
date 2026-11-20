@@ -26,6 +26,7 @@ import serverExtractPageContent from "@/collections/Page/serverExtractPageConten
 import { Posts } from "@/collections/Posts";
 import serverExtractPostContent from "@/collections/Posts/serverExtractPostContent";
 import { Testimonials } from "@/collections/Testimonials";
+import { ADMIN_GROUPS } from "@/lib/config/adminGroups";
 import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
 import { resolveDocUrl } from "@/lib/contentExtraction/links";
 import { getMediaStoragePrefix } from "@/lib/storage/mediaStoragePrefix";
@@ -135,7 +136,7 @@ export const plugins: Plugin[] = [
   redirectsPlugin({
     collections: ["page", "posts"],
     overrides: {
-      admin: { group: "Settings" },
+      admin: { defaultColumns: ["from", "type", "isActive", "updatedAt"], group: "Settings" },
       // @ts-expect-error — `.map()` over the `Field` union returns spread object literals that TS
       // will not re-narrow to `Field`, so the callback's return type is not assignable to
       // `FieldsOverride`'s `Field[]`.
@@ -274,8 +275,9 @@ export const plugins: Plugin[] = [
     generateURL: (docs) => docs.reduce((url, doc) => `${url}/${doc.slug}`, ""),
   }),
 
-  // Before presetsPlugin, which wraps existing row labels.
-  stackedEditing({ collections: ["page", "posts"], globals: [] }),
+  // Every collection and global registered so far (app collections, redirects, SEO keyphrases,
+  // site-settings). Must stay before presetsPlugin, which wraps the block labels this sets.
+  stackedEditing(),
 
   presetsPlugin({
     labels: {
@@ -291,12 +293,16 @@ export const plugins: Plugin[] = [
       },
       admin: {
         defaultColumns: ["name", "preview", "presetBlock", "updatedAt"],
-        group: "Settings",
+        group: ADMIN_GROUPS.visualSections,
       },
       fields: (defaultFields: Field[]) => defaultFields.map(withBlockNameCell),
     },
     packageName: "@focus-reactive/payload-plugin-presets",
   }),
+
+  // `presets` only exists once presetsPlugin has run, so it gets its own pass. The plugin is
+  // idempotent: labels and `initCollapsed` already set by the first pass are kept.
+  stackedEditing({ collections: ["presets"], globals: [] }),
 
   commentsPlugin({
     collections: [

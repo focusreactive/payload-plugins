@@ -223,6 +223,10 @@ export const mcpPluginConfig = mcpPlugin({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ] as any,
   },
+  overrideApiKeyCollection: (collection) => ({
+    ...collection,
+    admin: { ...collection.admin, defaultColumns: ["label", "user", "updatedAt"] },
+  }),
   overrideAuth: async (req, getDefaultMcpAccessSettings) => {
     if (!isLocalDevMcpRequest(req)) {
       return getDefaultMcpAccessSettings();

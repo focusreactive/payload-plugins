@@ -10,7 +10,7 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
     update: or(superAdmin, user),
   },
   admin: {
-    defaultColumns: ["author", "company", "rating", "createdAt"],
+    defaultColumns: ["author", "company", "rating", "updatedAt"],
     group: "Content",
     useAsTitle: "author",
   },

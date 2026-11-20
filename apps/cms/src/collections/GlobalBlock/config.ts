@@ -7,6 +7,7 @@ import {
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
+import { ADMIN_GROUPS } from "@/lib/config/adminGroups";
 import { createStandalonePreview } from "@/lib/utils/standalonePreview";
 
 import { preventDeleteIfReferenced } from "./hooks/preventDeleteIfReferenced";
@@ -23,8 +24,8 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
     components: {
       edit: createLivePreviewEditComponents(),
     },
-    defaultColumns: ["title", "block", "updatedAt"],
-    group: "Global Components",
+    defaultColumns: ["title", "block", "_status", "updatedAt"],
+    group: ADMIN_GROUPS.visualSections,
     ...createStandalonePreview("globalBlock"),
     useAsTitle: "title",
   },
@@ -37,7 +38,7 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
           es: "Nombre interno para identificar este bloque global en el selector.",
         },
       },
-      defaultValue: createLocalizedDefault({ en: "Global Block", es: "Bloque Global" }),
+      defaultValue: createLocalizedDefault({ en: "Global section", es: "Sección global" }),
       localized: true,
       name: "title",
       required: true,
@@ -68,8 +69,8 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
     beforeDelete: [preventDeleteIfReferenced],
   },
   labels: {
-    plural: { en: "Global Blocks", es: "Bloques Globales" },
-    singular: { en: "Global Block", es: "Bloque Global" },
+    plural: { en: "Global sections", es: "Secciones globales" },
+    singular: { en: "Global section", es: "Sección global" },
   },
   slug: "globalBlock",
   versions: createLivePreviewVersions(),

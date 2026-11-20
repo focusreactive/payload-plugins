@@ -9,6 +9,7 @@ import {
   createLivePreviewEditComponents,
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
+import { ADMIN_GROUPS } from "@/lib/config/adminGroups";
 import { createStandalonePreview } from "@/lib/utils/standalonePreview";
 
 import { revalidateResourcesUsingHeader } from "./hooks/revalidateResourcesUsingHeader";
@@ -24,8 +25,8 @@ export const Header: CollectionConfig<"header"> = {
     components: {
       edit: createLivePreviewEditComponents(),
     },
-    defaultColumns: ["name", "logo"],
-    group: "Global Components",
+    defaultColumns: ["name", "logo", "_status", "updatedAt"],
+    group: ADMIN_GROUPS.visualSections,
     useAsTitle: "name",
     ...createStandalonePreview("header"),
   },

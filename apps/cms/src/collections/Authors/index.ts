@@ -10,7 +10,7 @@ export const Authors: CollectionConfig<"authors"> = {
     update: or(superAdmin, user, author, user),
   },
   admin: {
-    defaultColumns: ["name", "updatedAt"],
+    defaultColumns: ["name", "avatar", "updatedAt"],
     group: "Blog",
     pagination: {
       limits: [20, 50, 100],

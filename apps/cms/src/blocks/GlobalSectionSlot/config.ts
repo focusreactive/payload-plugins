@@ -6,10 +6,10 @@ import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
 export const GlobalSectionSlotBlock: Block = withSectionVisibility({
   slug: "globalSectionSlot",
   interfaceName: "GlobalSectionSlotBlock",
-  ...getBlockPreviewImage("Global Block"),
+  ...getBlockPreviewImage("Global section"),
   labels: {
-    plural: { en: "Global Blocks", es: "Bloques Globales" },
-    singular: { en: "Global Block", es: "Bloque Global" },
+    plural: { en: "Global sections", es: "Secciones globales" },
+    singular: { en: "Global section", es: "Sección global" },
   },
   fields: [
     {
