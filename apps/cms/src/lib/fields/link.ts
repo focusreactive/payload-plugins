@@ -78,22 +78,22 @@ export const link: LinkType = ({
             options: [
               {
                 label: {
-                  en: "Internal link",
-                  es: "Enlace interno",
+                  en: "Page or post",
+                  es: "Página o publicación",
                 },
                 value: "reference",
               },
               {
                 label: {
-                  en: "Custom URL",
-                  es: "URL personalizada",
+                  en: "External URL",
+                  es: "URL externa",
                 },
                 value: "custom",
               },
               {
                 label: {
-                  en: "Custom Page",
-                  es: "Página personalizada",
+                  en: "Built-in page",
+                  es: "Página integrada",
                 },
                 value: "customPage",
               },

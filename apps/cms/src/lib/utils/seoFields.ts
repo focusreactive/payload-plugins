@@ -32,18 +32,18 @@ export const generateSeoFields = ({
     generateOnPublish: generation,
   }),
   {
-    admin: {
-      description: {
-        en: "Allow search engines to index this page",
-        es: "Permite a los motores de búsqueda indexar esta página",
-      },
-    },
     defaultValue: robotsDefault,
     label: { en: "Robots", es: "Robots" },
     name: "robots",
     options: [
-      { label: { en: "Index", es: "Index" }, value: "index" },
-      { label: { en: "No Index", es: "No Index" }, value: "noindex" },
+      {
+        label: { en: "Show in search results", es: "Mostrar en los resultados de búsqueda" },
+        value: "index",
+      },
+      {
+        label: { en: "Hide from search results", es: "Ocultar de los resultados de búsqueda" },
+        value: "noindex",
+      },
     ],
     type: "select",
   },

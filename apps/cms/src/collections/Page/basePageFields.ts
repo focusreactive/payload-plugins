@@ -13,10 +13,24 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
         {
           fields: [
             {
-              defaultValue: async () => getSoleRelationId("header"),
-              name: "header",
-              relationTo: "header",
-              type: "relationship",
+              // Presentational only: header/footer keep their top-level data paths.
+              fields: [
+                {
+                  admin: { width: "50%" },
+                  defaultValue: async () => getSoleRelationId("header"),
+                  name: "header",
+                  relationTo: "header",
+                  type: "relationship",
+                },
+                {
+                  admin: { width: "50%" },
+                  defaultValue: async () => getSoleRelationId("footer"),
+                  name: "footer",
+                  relationTo: "footer",
+                  type: "relationship",
+                },
+              ],
+              type: "row",
             },
             {
               admin: { initCollapsed: true },
@@ -46,12 +60,6 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
                     blockType,
                   })),
               }),
-            },
-            {
-              defaultValue: async () => getSoleRelationId("footer"),
-              name: "footer",
-              relationTo: "footer",
-              type: "relationship",
             },
           ],
           label: { en: "Content", es: "Contenido" },

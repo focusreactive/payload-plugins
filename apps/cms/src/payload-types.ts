@@ -357,6 +357,7 @@ export interface Page {
   _abPassPercentage?: number | null;
   title: string;
   header?: (number | null) | Header;
+  footer?: (number | null) | Footer;
   hero: HeroBlock[];
   blocks: (
     | ContentBlock
@@ -372,7 +373,6 @@ export interface Page {
     | RawHtmlBlock
     | GlobalSectionSlotBlock
   )[];
-  footer?: (number | null) | Footer;
   meta?: {
     title?: string | null;
     /**
@@ -380,9 +380,6 @@ export interface Page {
      */
     image?: (number | null) | Media;
     description?: string | null;
-    /**
-     * Allow search engines to index this page
-     */
     robots?: ('index' | 'noindex') | null;
   };
   /**
@@ -598,9 +595,6 @@ export interface Post {
      */
     image?: (number | null) | Media;
     description?: string | null;
-    /**
-     * Allow search engines to index this page
-     */
     robots?: ('index' | 'noindex') | null;
   };
   /**
@@ -613,7 +607,7 @@ export interface Post {
   categories: (number | Category)[];
   authors: (number | Author)[];
   /**
-   * Up to 3 are shown. Empty slots are filled with the latest posts from the same categories.
+   * Pick up to 3. Empty slots are filled with the latest posts from the same categories.
    */
   relatedPosts?: (number | Post)[] | null;
   updatedAt: string;
@@ -657,6 +651,66 @@ export interface Author {
   avatar?: (number | null) | Media;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer".
+ */
+export interface Footer {
+  id: number;
+  name: string;
+  logo: number | Media;
+  description?: string | null;
+  linkGroups?:
+    | {
+        label: string;
+        links: {
+          link: {
+            type?: ('reference' | 'custom' | 'customPage') | null;
+            newTab?: boolean | null;
+            reference?:
+              | ({
+                  relationTo: 'page';
+                  value: number | Page;
+                } | null)
+              | ({
+                  relationTo: 'posts';
+                  value: number | Post;
+                } | null);
+            url?: string | null;
+            customPage?: ('blog' | 'search') | null;
+            label: string;
+          };
+          id?: string | null;
+        }[];
+        id?: string | null;
+      }[]
+    | null;
+  legalLinks?:
+    | {
+        link: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label: string;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  copyrightText?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1238,66 +1292,6 @@ export interface GlobalBlock {
     | StatsBlock
     | RawHtmlBlock
   )[];
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "footer".
- */
-export interface Footer {
-  id: number;
-  name: string;
-  logo: number | Media;
-  description?: string | null;
-  linkGroups?:
-    | {
-        label: string;
-        links: {
-          link: {
-            type?: ('reference' | 'custom' | 'customPage') | null;
-            newTab?: boolean | null;
-            reference?:
-              | ({
-                  relationTo: 'page';
-                  value: number | Page;
-                } | null)
-              | ({
-                  relationTo: 'posts';
-                  value: number | Post;
-                } | null);
-            url?: string | null;
-            customPage?: ('blog' | 'search') | null;
-            label: string;
-          };
-          id?: string | null;
-        }[];
-        id?: string | null;
-      }[]
-    | null;
-  legalLinks?:
-    | {
-        link: {
-          type?: ('reference' | 'custom' | 'customPage') | null;
-          newTab?: boolean | null;
-          reference?:
-            | ({
-                relationTo: 'page';
-                value: number | Page;
-              } | null)
-            | ({
-                relationTo: 'posts';
-                value: number | Post;
-              } | null);
-          url?: string | null;
-          customPage?: ('blog' | 'search') | null;
-          label: string;
-        };
-        id?: string | null;
-      }[]
-    | null;
-  copyrightText?: string | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -2514,6 +2508,7 @@ export interface PageSelect<T extends boolean = true> {
   _abPassPercentage?: T;
   title?: T;
   header?: T;
+  footer?: T;
   hero?:
     | T
     | {
@@ -2535,7 +2530,6 @@ export interface PageSelect<T extends boolean = true> {
         rawHtml?: T | RawHtmlBlockSelect<T>;
         globalSectionSlot?: T | GlobalSectionSlotBlockSelect<T>;
       };
-  footer?: T;
   meta?:
     | T
     | {
@@ -4025,19 +4019,19 @@ export interface SiteSetting {
   };
   notFound?: {
     header?: (number | null) | Header;
+    footer?: (number | null) | Footer;
     title?: string | null;
     description?: string | null;
-    footer?: (number | null) | Footer;
   };
   blog: {
     header?: (number | null) | Header;
+    footer?: (number | null) | Footer;
     eyebrow?: string | null;
     title: string;
     description: string;
     searchPlaceholder?: string | null;
     readMoreLabel: string;
     relatedPostsLabel: string;
-    footer?: (number | null) | Footer;
     meta?: {
       title?: string | null;
       /**
@@ -4045,9 +4039,6 @@ export interface SiteSetting {
        */
       image?: (number | null) | Media;
       description?: string | null;
-      /**
-       * Allow search engines to index this page
-       */
       robots?: ('index' | 'noindex') | null;
     };
   };
@@ -4118,21 +4109,21 @@ export interface SiteSettingsSelect<T extends boolean = true> {
     | T
     | {
         header?: T;
+        footer?: T;
         title?: T;
         description?: T;
-        footer?: T;
       };
   blog?:
     | T
     | {
         header?: T;
+        footer?: T;
         eyebrow?: T;
         title?: T;
         description?: T;
         searchPlaceholder?: T;
         readMoreLabel?: T;
         relatedPostsLabel?: T;
-        footer?: T;
         meta?:
           | T
           | {

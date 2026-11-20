@@ -92,7 +92,7 @@ export const cardsGridFields: Field[] = [
               },
               { label: { en: "Dark Gray", es: "Gris oscuro" }, value: "dark-gray" },
               {
-                label: { en: "Gradient 2", es: "Gradiente 2" },
+                label: { en: "Gradient", es: "Gradiente" },
                 value: "gradient-2",
               },
             ],

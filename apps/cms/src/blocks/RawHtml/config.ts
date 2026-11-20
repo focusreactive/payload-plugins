@@ -15,6 +15,7 @@ const fields: Field[] = [
     type: "ui",
   },
   {
+    admin: { language: "html" },
     defaultValue: createLocalizedDefault({
       en: "<p>Hello from Raw HTML</p>",
       es: "<p>Hola desde HTML sin procesar</p>",
@@ -23,7 +24,7 @@ const fields: Field[] = [
     localized: true,
     name: "html",
     required: true,
-    type: "textarea",
+    type: "code",
   },
 ];
 

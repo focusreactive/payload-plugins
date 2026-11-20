@@ -84,7 +84,10 @@ export const Page: CollectionConfig<"page"> = {
       }),
     }),
     createBreadcrumbsField("page", {
+      // Computed by nestedDocsPlugin from the parent chain; stays in form state, hooks,
+      // live preview and the list "URL" column, but editors never need to touch it.
       admin: {
+        hidden: true,
         position: "sidebar",
       },
       hooks: {
