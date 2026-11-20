@@ -33,6 +33,7 @@ To add an individual plugin to an existing Payload project, see the install comm
 | [`@focus-reactive/payload-plugin-netlify-deploy`](./packages/payload-plugin-netlify-deploy) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-netlify-deploy)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-netlify-deploy) | Netlify deploy plugin — build, preview and publish Netlify sites from the admin, with the live build log |
 | [`@focus-reactive/payload-plugin-visual-editing`](./packages/payload-plugin-visual-editing) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-visual-editing)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-visual-editing) | Visual editing plugin — click-to-edit overlays on your Next.js frontend that deep-link into the admin field |
 | [`@focus-reactive/payload-plugin-stacked-editing`](./packages/payload-plugin-stacked-editing) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-stacked-editing)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-stacked-editing) | Stacked editing plugin - nested blocks and arrays open in layered panels with breadcrumbs, built on Payload drawers |
+| [`@focus-reactive/payload-plugin-relations-graph`](./packages/payload-plugin-relations-graph) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-relations-graph)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-relations-graph) | Relations graph plugin - interactive diagram of how collections relate, where-used lookups and content-model insights |
 
 
 ## A/B Testing Plugin for Payload CMS
@@ -198,6 +199,19 @@ bun add @focus-reactive/payload-plugin-stacked-editing
 
 - Package: [`@focus-reactive/payload-plugin-stacked-editing`](./packages/payload-plugin-stacked-editing)
 - [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-stacked-editing)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-stacked-editing)
+
+## Relations Graph Plugin for Payload CMS
+
+See your content model as a graph. Every collection and global is a node, every relationship, upload and join field is an arrow, however deep it sits in groups, arrays or blocks. On top of the picture: a "Used in" lookup on every document, health checks for the model, and live numbers showing how the data actually uses each relation.
+
+```bash
+npm install @focus-reactive/payload-plugin-relations-graph
+yarn add @focus-reactive/payload-plugin-relations-graph
+pnpm add @focus-reactive/payload-plugin-relations-graph
+bun add @focus-reactive/payload-plugin-relations-graph
+```
+
+- Package: [`@focus-reactive/payload-plugin-relations-graph`](./packages/payload-plugin-relations-graph) (not yet published)
 
 ## Run Demo Locally
 

@@ -32,8 +32,10 @@ import { BlockLabelWithPresets as BlockLabelWithPresets_f0a4a6f21f15d606fa328a5e
 import { PresetAdminComponentPreview as PresetAdminComponentPreview_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { PresetAdminComponentCellWrapper as PresetAdminComponentCellWrapper_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { CommentsHeaderButton as CommentsHeaderButton_30d38dd40c31eff500900a16a2792204 } from '@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton'
+import { RelationsGraphNavLink as RelationsGraphNavLink_36adeb9849e8ba12c8cd0e226bcd468f } from '@focus-reactive/payload-plugin-relations-graph/client'
 import { CommentsProviderWrapper as CommentsProviderWrapper_bc62ec20ac2037360812e296d7662f4a } from '@focus-reactive/payload-plugin-comments/providers/CommentsProviderWrapper'
 import { default as default_5668654bc04fc84f784cb30b290f6f3d } from '@focus-reactive/payload-plugin-translator/client/app/cache/CacheProvider'
+import { RelationsGraphView as RelationsGraphView_a0c09475185225d944f38a68e37b1419 } from '@focus-reactive/payload-plugin-relations-graph/rsc'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 import { SectionVisibilityLabel as SectionVisibilityLabel_c7986ed929437589fcd4621e9f64a5d3 } from '@/lib/section-visibility/SectionVisibilityLabel'
 
@@ -73,8 +75,10 @@ export const importMap = {
   "@focus-reactive/payload-plugin-presets/client#PresetAdminComponentPreview": PresetAdminComponentPreview_f0a4a6f21f15d606fa328a5e35f17d11,
   "@focus-reactive/payload-plugin-presets/client#PresetAdminComponentCellWrapper": PresetAdminComponentCellWrapper_f0a4a6f21f15d606fa328a5e35f17d11,
   "@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton#CommentsHeaderButton": CommentsHeaderButton_30d38dd40c31eff500900a16a2792204,
+  "@focus-reactive/payload-plugin-relations-graph/client#RelationsGraphNavLink": RelationsGraphNavLink_36adeb9849e8ba12c8cd0e226bcd468f,
   "@focus-reactive/payload-plugin-comments/providers/CommentsProviderWrapper#CommentsProviderWrapper": CommentsProviderWrapper_bc62ec20ac2037360812e296d7662f4a,
   "@focus-reactive/payload-plugin-translator/client/app/cache/CacheProvider#default": default_5668654bc04fc84f784cb30b290f6f3d,
+  "@focus-reactive/payload-plugin-relations-graph/rsc#RelationsGraphView": RelationsGraphView_a0c09475185225d944f38a68e37b1419,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1,
   "@/lib/section-visibility/SectionVisibilityLabel#SectionVisibilityLabel": SectionVisibilityLabel_c7986ed929437589fcd4621e9f64a5d3
 }

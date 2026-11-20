@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { abTestingPlugin } from "@focus-reactive/payload-plugin-ab";
 import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
+import { relationsGraph } from "@focus-reactive/payload-plugin-relations-graph";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
 import {
   translatorPlugin,
@@ -19,6 +20,8 @@ import { buildConfig } from "payload";
 import sharp from "sharp";
 
 import { Articles } from "./collections/Articles";
+import { Authors } from "./collections/Authors";
+import { Categories } from "./collections/Categories";
 import { Media } from "./collections/Media";
 import { Pages } from "./collections/Pages";
 import { Playground } from "./collections/Playground";
@@ -48,7 +51,7 @@ export default buildConfig({
     },
     user: Users.slug,
   },
-  collections: [Users, Media, Pages, Articles, Playground],
+  collections: [Users, Media, Pages, Articles, Authors, Categories, Playground],
   db: resolveDbAdapter(),
   jobs: {
     deleteJobOnComplete: false,
@@ -81,6 +84,7 @@ export default buildConfig({
       storage: abAdapter,
     }),
     presetsPlugin(),
+    relationsGraph(),
     schedulePublicationPlugin({
       collections: ["pages", "users"],
       secret: "secret",

@@ -71,6 +71,8 @@ export interface Config {
     media: Media;
     pages: Page;
     articles: Article;
+    authors: Author;
+    categories: Category;
     playground: Playground;
     'ab-experiments': AbExperiment;
     presets: Preset;
@@ -83,12 +85,18 @@ export interface Config {
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    authors: {
+      articles: 'articles';
+    };
+  };
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     articles: ArticlesSelect<false> | ArticlesSelect<true>;
+    authors: AuthorsSelect<false> | AuthorsSelect<true>;
+    categories: CategoriesSelect<false> | CategoriesSelect<true>;
     playground: PlaygroundSelect<false> | PlaygroundSelect<true>;
     'ab-experiments': AbExperimentsSelect<false> | AbExperimentsSelect<true>;
     presets: PresetsSelect<false> | PresetsSelect<true>;
@@ -295,6 +303,48 @@ export interface Article {
     };
     [k: string]: unknown;
   } | null;
+  authors?: (number | Author)[] | null;
+  category?: (number | null) | Category;
+  cover?: (number | null) | Media;
+  related?:
+    | (
+        | {
+            relationTo: 'articles';
+            value: number | Article;
+          }
+        | {
+            relationTo: 'pages';
+            value: number | Page;
+          }
+      )[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "authors".
+ */
+export interface Author {
+  id: number;
+  name: string;
+  avatar?: (number | null) | Media;
+  articles?: {
+    docs?: (number | Article)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: number;
+  title: string;
+  parent?: (number | null) | Category;
   updatedAt: string;
   createdAt: string;
 }
@@ -885,6 +935,14 @@ export interface PayloadLockedDocument {
         value: number | Article;
       } | null)
     | ({
+        relationTo: 'authors';
+        value: number | Author;
+      } | null)
+    | ({
+        relationTo: 'categories';
+        value: number | Category;
+      } | null)
+    | ({
         relationTo: 'playground';
         value: number | Playground;
       } | null)
@@ -1047,6 +1105,31 @@ export interface PagesSelect<T extends boolean = true> {
 export interface ArticlesSelect<T extends boolean = true> {
   title?: T;
   content?: T;
+  authors?: T;
+  category?: T;
+  cover?: T;
+  related?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "authors_select".
+ */
+export interface AuthorsSelect<T extends boolean = true> {
+  name?: T;
+  avatar?: T;
+  articles?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories_select".
+ */
+export interface CategoriesSelect<T extends boolean = true> {
+  title?: T;
+  parent?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -21,5 +21,15 @@ export const Articles: CollectionConfig = {
       name: "content",
       type: "richText",
     }),
+    // Relations below feed the relations-graph plugin's demo (graph, where-used, insights).
+    { hasMany: true, name: "authors", relationTo: "authors", type: "relationship" },
+    { name: "category", relationTo: "categories", type: "relationship" },
+    { name: "cover", relationTo: "media", type: "upload" },
+    {
+      hasMany: true,
+      name: "related",
+      relationTo: ["articles", "pages"],
+      type: "relationship",
+    },
   ],
 };

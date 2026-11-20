@@ -26,6 +26,7 @@ packages/
   payload-plugin-netlify-deploy/      → @focus-reactive/payload-plugin-netlify-deploy (not yet published)
   payload-plugin-visual-editing/      → @focus-reactive/payload-plugin-visual-editing (published)
   payload-plugin-stacked-editing/     → @focus-reactive/payload-plugin-stacked-editing (published)
+  payload-plugin-relations-graph/     → @focus-reactive/payload-plugin-relations-graph (not yet published)
   ui/                                 → @repo/ui — shared React UI components (private)
   tailwind-config/                    → @repo/tailwind-config — shared Tailwind v4 config (private)
   typescript-config/                  → @repo/typescript-config (private)
