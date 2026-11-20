@@ -1,4 +1,12 @@
 .blocks-field-with-presets {
+  // Payload spaces fields with a margin on direct `.field-type` children of the form;
+  // this wrapper sits in between, so it has to carry that spacing itself.
+  margin-bottom: var(--spacing-field);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
   &__add-button {
     margin-top: calc(var(--base) * 0.5);
   }
