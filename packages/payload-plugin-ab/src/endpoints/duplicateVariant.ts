@@ -45,11 +45,18 @@ export const duplicateVariantHandler: PayloadHandler = async (req) => {
   }
 
   const originalSlug = (parentDoc[slugField] as string) ?? docId;
+  // A draft parent may legitimately hold content that only passes draft validation
+  // (e.g. an empty required upload). Duplicating it as a published doc would run full
+  // validation and fail, so the variant mirrors the parent's status: drafts stay
+  // drafts (as in Payload's own "Duplicate"), published parents keep producing
+  // published variants.
+  const isDraftParent = parentDoc._status === "draft";
 
   try {
     const newDoc = (await req.payload.duplicate({
       collection: collectionSlug as CollectionSlug,
       id: docId,
+      draft: isDraftParent,
       data: {
         [slugField]: `${originalSlug}--${nanoid()}`,
         [AB_VARIANT_OF_FIELD]: docId,
