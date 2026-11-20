@@ -1,5 +1,5 @@
 import type { GraphEdge, GraphNode, SchemaGraph } from "../../graph/types.js";
-import { fieldRef, sortFindings } from "./analyzeSchema.js";
+import { fieldRef, isInternalField, sortFindings } from "./analyzeSchema.js";
 import type { Finding, RelationsStats } from "./types.js";
 
 /** Below this many source documents, "never used" / "rarely used" is just an empty project. */
@@ -104,7 +104,7 @@ export const analyzeStats = (graph: SchemaGraph, stats: RelationsStats): Finding
     }
     const { filled, total } = edgeStats;
     const source = nodes.get(edge.source);
-    if (!source || source.kind !== "collection") {
+    if (!source || source.kind !== "collection" || isInternalField(edge)) {
       continue;
     }
     const docs = plural(

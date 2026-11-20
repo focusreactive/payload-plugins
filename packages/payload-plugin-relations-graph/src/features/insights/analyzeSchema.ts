@@ -21,13 +21,15 @@ export const fieldRef = (graph: SchemaGraph | Map<string, GraphNode>, edge: Grap
   return `${slug}.${edge.path}`;
 };
 
-const listText = (items: string[], max = 6): string =>
-  items.length > max
-    ? `${items.slice(0, max).join(", ")} and ${items.length - max} more`
-    : items.join(", ");
+const listText = (items: string[], max = 6): string => {
+  if (items.length > max) {
+    return `${items.slice(0, max).join(", ")} and ${items.length - max} more`;
+  }
+  return items.length > 1 ? `${items.slice(0, -1).join(", ")} and ${items.at(-1)}` : items.join("");
+};
 
 /** Internal plugin fields (`_abVariantOf`, `_status`…) are not part of the content model proper. */
-const isInternalField = (edge: GraphEdge): boolean =>
+export const isInternalField = (edge: GraphEdge): boolean =>
   edge.path.split(/[.[\]]/u).some((segment) => segment.startsWith("_"));
 
 const isStoredRelation = (edge: GraphEdge): boolean => edge.type !== "join";

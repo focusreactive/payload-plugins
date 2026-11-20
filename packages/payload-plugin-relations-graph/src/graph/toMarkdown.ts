@@ -94,7 +94,7 @@ export const toMarkdown = (graph: SchemaGraph): string => {
         `\`${slugs.get(edge.source) ?? edge.source}.${edge.path}\` (${edge.hasMany ? "many" : "one"})`
     );
     if (referrers.length > 0) {
-      lines.push(`- Referenced by: ${[...new Set(referrers)].join(", ")}`);
+      lines.push(`- Referenced by: ${[...new Set(referrers)].toSorted().join(", ")}`);
     }
   }
 
