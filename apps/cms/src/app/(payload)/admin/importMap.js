@@ -50,6 +50,7 @@ import { default as default_dfe4008080d895d460898c3a6155e9ba } from '../../../co
 import { default as default_91a09b539d3c86b0aebf520e7564ce08 } from '../../../components/admin/Logo'
 import { CommentsHeaderButton as CommentsHeaderButton_30d38dd40c31eff500900a16a2792204 } from '@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton'
 import { default as default_3fd776aeb7e4127cf324115b5226afbf } from '../../../components/admin/SSOButtons'
+import { RelationsGraphNavLink as RelationsGraphNavLink_36adeb9849e8ba12c8cd0e226bcd468f } from '@focus-reactive/payload-plugin-relations-graph/client'
 import { default as default_3da48296ca27cce2dd5904839611d77c } from '../../../lib/context/BeforeOpenDrawerWrapper'
 import { default as default_c0acd3f4d5b9577c4e185cd84f6b1b50 } from '../../../lib/context/SeoExtractorRegistrar'
 import { VercelBlobClientUploadHandler as VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e } from '@payloadcms/storage-vercel-blob/client'
@@ -57,6 +58,8 @@ import { SeoClientConfigProvider as SeoClientConfigProvider_f1e7cc56df4c13de864b
 import { CommentsProviderWrapper as CommentsProviderWrapper_bc62ec20ac2037360812e296d7662f4a } from '@focus-reactive/payload-plugin-comments/providers/CommentsProviderWrapper'
 import { default as default_5668654bc04fc84f784cb30b290f6f3d } from '@focus-reactive/payload-plugin-translator/client/app/cache/CacheProvider'
 import { VisualEditingBridgeProvider as VisualEditingBridgeProvider_ec3bc0b0b5b9a6c0c60998da34f40f5d } from '@focus-reactive/payload-plugin-visual-editing/admin'
+import { RelationsGraphView as RelationsGraphView_a0c09475185225d944f38a68e37b1419 } from '@focus-reactive/payload-plugin-relations-graph/rsc'
+import { RelationsGraphWidget as RelationsGraphWidget_a0c09475185225d944f38a68e37b1419 } from '@focus-reactive/payload-plugin-relations-graph/rsc'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 import { SectionVisibilityLabel as SectionVisibilityLabel_5f6b8b6dd39e89e57e0c331f9970bb73 } from '@/lib/fields/section/SectionVisibilityLabel'
 
@@ -114,6 +117,7 @@ export const importMap = {
   "/components/admin/Logo#default": default_91a09b539d3c86b0aebf520e7564ce08,
   "@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton#CommentsHeaderButton": CommentsHeaderButton_30d38dd40c31eff500900a16a2792204,
   "/components/admin/SSOButtons#default": default_3fd776aeb7e4127cf324115b5226afbf,
+  "@focus-reactive/payload-plugin-relations-graph/client#RelationsGraphNavLink": RelationsGraphNavLink_36adeb9849e8ba12c8cd0e226bcd468f,
   "/lib/context/BeforeOpenDrawerWrapper#default": default_3da48296ca27cce2dd5904839611d77c,
   "/lib/context/SeoExtractorRegistrar#default": default_c0acd3f4d5b9577c4e185cd84f6b1b50,
   "@payloadcms/storage-vercel-blob/client#VercelBlobClientUploadHandler": VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e,
@@ -121,6 +125,8 @@ export const importMap = {
   "@focus-reactive/payload-plugin-comments/providers/CommentsProviderWrapper#CommentsProviderWrapper": CommentsProviderWrapper_bc62ec20ac2037360812e296d7662f4a,
   "@focus-reactive/payload-plugin-translator/client/app/cache/CacheProvider#default": default_5668654bc04fc84f784cb30b290f6f3d,
   "@focus-reactive/payload-plugin-visual-editing/admin#VisualEditingBridgeProvider": VisualEditingBridgeProvider_ec3bc0b0b5b9a6c0c60998da34f40f5d,
+  "@focus-reactive/payload-plugin-relations-graph/rsc#RelationsGraphView": RelationsGraphView_a0c09475185225d944f38a68e37b1419,
+  "@focus-reactive/payload-plugin-relations-graph/rsc#RelationsGraphWidget": RelationsGraphWidget_a0c09475185225d944f38a68e37b1419,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1,
   "@/lib/fields/section/SectionVisibilityLabel#SectionVisibilityLabel": SectionVisibilityLabel_5f6b8b6dd39e89e57e0c331f9970bb73
 }

@@ -111,6 +111,7 @@ so a deeply nested field inside a block can overflow and make `payload migrate:c
 - `@focus-reactive/payload-plugin-scheduling` — scheduled publishing on serverless
 - `@focus-reactive/payload-plugin-translator` — AI translation (OpenAI provider)
 - `@focus-reactive/payload-plugin-ab` — A/B testing with middleware-driven variant rewrites
+- `@focus-reactive/payload-plugin-relations-graph` — content-model graph view + home dashboard widget (config-only; data features off)
 - MCP plugin — exposes content tools to AI agents
 
 A plugin's **app-side wiring** (config, adapters, provider components) lives under `src/lib/plugins/<name>/` — e.g. `lib/plugins/ab/` (middleware adapter, cookies, variant data) and `lib/plugins/analytics/` (GA4 provider). The published feature itself lives in the monorepo `packages/payload-plugin-<name>/`.

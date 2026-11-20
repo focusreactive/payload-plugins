@@ -138,6 +138,7 @@ export interface Config {
   };
   locale: 'en' | 'es';
   widgets: {
+    'relations-graph': RelationsGraphWidget;
     collections: CollectionsWidget;
   };
   user: User | PayloadMcpApiKey;
@@ -4351,6 +4352,17 @@ export interface _AbManifestSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "relations-graph_widget".
+ */
+export interface RelationsGraphWidget {
+  data?: {
+    globals?: boolean | null;
+    uploads?: boolean | null;
+  };
+  width: 'medium' | 'large' | 'x-large' | 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

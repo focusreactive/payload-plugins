@@ -1,3 +1,4 @@
+import { relationsGraphWidget } from "@focus-reactive/payload-plugin-relations-graph";
 import type { DashboardConfig, Option } from "payload";
 
 /**
@@ -30,6 +31,7 @@ export const dashboardConfig = (collectionOptions: Option[]): DashboardConfig =>
     },
     { widgetSlug: "overview", width: "medium" },
     { widgetSlug: "recent", width: "medium" },
+    relationsGraphWidget(),
     { widgetSlug: "collections", width: "full" },
   ],
   widgets: [

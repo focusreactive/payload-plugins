@@ -131,6 +131,7 @@ export interface Config {
     count: CountWidget;
     overview: OverviewWidget;
     recent: RecentWidget;
+    'relations-graph': RelationsGraphWidget;
     collections: CollectionsWidget;
   };
   user: User;
@@ -1595,6 +1596,17 @@ export interface RecentWidget {
     limit?: number | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "relations-graph_widget".
+ */
+export interface RelationsGraphWidget {
+  data?: {
+    globals?: boolean | null;
+    uploads?: boolean | null;
+  };
+  width: 'medium' | 'large' | 'x-large' | 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -1,3 +1,4 @@
+import { relationsGraphWidget } from "@focus-reactive/payload-plugin-relations-graph";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -35,6 +36,12 @@ export default buildConfig({
         Logo: "/components/admin/Logo",
       },
       providers: ["/lib/context/BeforeOpenDrawerWrapper", "/lib/context/SeoExtractorRegistrar"],
+    },
+    // Home page: Payload's collection cards, then the content-model graph. Users who have
+    // already rearranged their dashboard keep their own layout.
+    dashboard: {
+      defaultLayout: [{ widgetSlug: "collections", width: "full" }, relationsGraphWidget()],
+      widgets: [],
     },
     importMap: {
       baseDir,

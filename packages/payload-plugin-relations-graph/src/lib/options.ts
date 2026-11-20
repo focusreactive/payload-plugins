@@ -5,6 +5,7 @@ import { CUSTOM_KEY, DEFAULT_VIEW_PATH } from "./constants.js";
 
 export const resolveOptions = (options: RelationsGraphOptions): ResolvedRelationsGraphOptions => ({
   access: options.access ?? (({ req }) => Boolean(req.user)),
+  dashboardWidget: options.dashboardWidget ?? true,
   exclude: options.exclude ?? [],
   includeGlobals: options.includeGlobals ?? true,
   includeHidden: options.includeHidden ?? false,

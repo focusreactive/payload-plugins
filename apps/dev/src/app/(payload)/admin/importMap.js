@@ -40,6 +40,7 @@ import { RelationsGraphView as RelationsGraphView_a0c09475185225d944f38a68e37b14
 import { CountWidget as CountWidget_ab51434633c8836695308e859e66e007 } from '../../../components/dashboard/CountWidget'
 import { OverviewWidget as OverviewWidget_9ed2da0611c304c059b8d7e76df42427 } from '../../../components/dashboard/OverviewWidget'
 import { RecentWidget as RecentWidget_532d011f2d8f20ccf32c39fb78acfa58 } from '../../../components/dashboard/RecentWidget'
+import { RelationsGraphWidget as RelationsGraphWidget_a0c09475185225d944f38a68e37b1419 } from '@focus-reactive/payload-plugin-relations-graph/rsc'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 import { SectionVisibilityLabel as SectionVisibilityLabel_c7986ed929437589fcd4621e9f64a5d3 } from '@/lib/section-visibility/SectionVisibilityLabel'
 
@@ -87,6 +88,7 @@ export const importMap = {
   "/components/dashboard/CountWidget#CountWidget": CountWidget_ab51434633c8836695308e859e66e007,
   "/components/dashboard/OverviewWidget#OverviewWidget": OverviewWidget_9ed2da0611c304c059b8d7e76df42427,
   "/components/dashboard/RecentWidget#RecentWidget": RecentWidget_532d011f2d8f20ccf32c39fb78acfa58,
+  "@focus-reactive/payload-plugin-relations-graph/rsc#RelationsGraphWidget": RelationsGraphWidget_a0c09475185225d944f38a68e37b1419,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1,
   "@/lib/section-visibility/SectionVisibilityLabel#SectionVisibilityLabel": SectionVisibilityLabel_c7986ed929437589fcd4621e9f64a5d3
 }

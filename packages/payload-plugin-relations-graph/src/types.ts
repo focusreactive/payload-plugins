@@ -6,6 +6,13 @@ export interface RelationsGraphOptions {
    * Collections and globals the user cannot read are left out of the graph either way.
    */
   access?: (args: { req: PayloadRequest }) => boolean | Promise<boolean>;
+  /**
+   * Register a "Content model" widget for the admin home dashboard: the graph as a static
+   * picture, rendered on the server from the config with no database query. Editors can add
+   * it from the dashboard's widget menu; to show it by default put `relationsGraphWidget()`
+   * into `admin.dashboard.defaultLayout`. Default `true`.
+   */
+  dashboardWidget?: boolean;
   /** Set `false` to turn the plugin off without removing it from the config. */
   enabled?: boolean;
   /** Collection or global slugs to leave out of the graph. */
@@ -33,6 +40,7 @@ export interface RelationsGraphOptions {
 
 export interface ResolvedRelationsGraphOptions {
   access: NonNullable<RelationsGraphOptions["access"]>;
+  dashboardWidget: boolean;
   exclude: string[];
   includeGlobals: boolean;
   includeHidden: boolean;

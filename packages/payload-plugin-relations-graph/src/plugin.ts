@@ -3,7 +3,13 @@ import type { Config, Plugin } from "payload";
 import { graphEndpoint } from "./endpoints.js";
 import { insightsEndpoints } from "./features/insights/index.js";
 import { referencesEndpoints, withReferencesUI } from "./features/references/index.js";
-import { CUSTOM_KEY, NAV_LINK_COMPONENT, VIEW_COMPONENT } from "./lib/constants.js";
+import {
+  CUSTOM_KEY,
+  NAV_LINK_COMPONENT,
+  VIEW_COMPONENT,
+  WIDGET_COMPONENT,
+  WIDGET_SLUG,
+} from "./lib/constants.js";
 import { resolveOptions } from "./lib/options.js";
 import type { RelationsGraphOptions } from "./types.js";
 
@@ -34,6 +40,35 @@ export const relationsGraph =
             relationsGraph: { Component: VIEW_COMPONENT, exact: true, path: resolved.path },
           },
         },
+        dashboard: resolved.dashboardWidget
+          ? {
+              ...incoming.admin?.dashboard,
+              widgets: [
+                ...(incoming.admin?.dashboard?.widgets ?? []),
+                {
+                  Component: WIDGET_COMPONENT,
+                  fields: [
+                    {
+                      defaultValue: true,
+                      label: "Show globals",
+                      name: "globals",
+                      type: "checkbox",
+                    },
+                    {
+                      defaultValue: true,
+                      label: "Show upload collections",
+                      name: "uploads",
+                      type: "checkbox",
+                    },
+                  ],
+                  label: "Content model",
+                  maxWidth: "full",
+                  minWidth: "medium",
+                  slug: WIDGET_SLUG,
+                },
+              ],
+            }
+          : incoming.admin?.dashboard,
       },
       custom: { ...incoming.custom, [CUSTOM_KEY]: resolved },
       endpoints: [

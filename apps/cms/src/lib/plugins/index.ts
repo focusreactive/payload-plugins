@@ -2,6 +2,7 @@ import { abTestingPlugin } from "@focus-reactive/payload-plugin-ab";
 import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
 import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
+import { relationsGraph } from "@focus-reactive/payload-plugin-relations-graph";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
 import { seoPlugin as seoAnalysisPlugin } from "@focus-reactive/payload-plugin-seo";
 import { stackedEditing } from "@focus-reactive/payload-plugin-stacked-editing";
@@ -440,6 +441,11 @@ export const plugins: Plugin[] = [
     ],
     skipGlobals: ["site-settings"],
   }),
+
+  // Content-model graph: an admin view plus the "Content model" dashboard widget. Both are built
+  // from the config alone, with no database query. The data-backed extras ("Used in" lookups,
+  // insights and live statistics) stay off until they have been verified on Postgres.
+  relationsGraph({ insights: false, references: false }),
 
   mcpPluginConfig,
 

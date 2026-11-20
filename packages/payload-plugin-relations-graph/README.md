@@ -52,6 +52,7 @@ Open **Relations graph** in the admin nav, or go to `/admin/relations-graph`.
 | `exclude` | `[]` | Collection or global slugs to leave out. |
 | `includeGlobals` | `true` | Show globals as nodes. |
 | `includeHidden` | `false` | Show collections and globals flagged `admin.hidden` (usually plugin internals). |
+| `dashboardWidget` | `true` | Registers the **Content model** dashboard widget. |
 | `references` | `true` | The "Used in N" control. `false`, or a list of collection slugs to limit it. |
 | `insights` | `true` | Insights, the Data overlay and their endpoints. |
 
@@ -65,6 +66,34 @@ Collections and globals the current user cannot read are always left out, togeth
 - **Copy as Mermaid** copies a flowchart for docs, pull requests or Notion.
 
 Arrow styles: solid for relationships, grey for uploads, dashed for joins (the reverse side of a relation). `[ ]` marks "has many".
+
+## Dashboard widget
+
+The plugin registers a **Content model** widget for the admin home dashboard (Payload's `admin.dashboard`, experimental in Payload). It shows the graph as a static picture: rendered on the server from the config, with no database query and no client JavaScript. Each box links to its collection; **Open graph** leads to the interactive view.
+
+Editors can add it from the dashboard's widget menu. To show it by default:
+
+```ts
+import { relationsGraph, relationsGraphWidget } from "@focus-reactive/payload-plugin-relations-graph";
+
+export default buildConfig({
+  admin: {
+    dashboard: {
+      defaultLayout: [{ widgetSlug: "collections", width: "full" }, relationsGraphWidget()],
+      widgets: [],
+    },
+  },
+  plugins: [relationsGraph()],
+});
+```
+
+`relationsGraphWidget({ width, globals, uploads })` — `width` is `medium`, `large`, `x-large` or `full` (default); `globals` and `uploads` hide those boxes when `false`. Run `payload generate:types` after adding the plugin so the widget slug is typed. Users who have already rearranged their dashboard keep their own layout.
+
+To run only the config-based parts (graph view and widget, nothing that reads documents), turn the data features off:
+
+```ts
+relationsGraph({ insights: false, references: false });
+```
 
 ## Used in N
 

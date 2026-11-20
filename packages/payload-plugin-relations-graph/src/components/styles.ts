@@ -111,4 +111,10 @@ export const GRAPH_CSS = `
   .rg__stage { height: 60vh; }
   .rg__panel { flex: none; max-width: none; }
 }
+.rg--widget { height: 100%; gap: calc(var(--base) * 0.5); padding: 16px; background: var(--theme-elevation-50); border: 1px solid var(--theme-border-color); border-radius: var(--style-radius-m); }
+.rg__widget-header { display: flex; flex-wrap: wrap; align-items: baseline; gap: calc(var(--base) * 0.5); }
+.rg__widget-title { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.4; }
+.rg__widget-link { margin-inline-start: auto; font-size: 13px; }
+.rg__widget-svg { display: block; width: 100%; flex: 1 1 auto; min-height: 320px; max-height: 560px; border: 1px solid var(--rg-border); border-radius: var(--style-radius-s); background: var(--theme-bg, var(--theme-elevation-0)); }
+.rg--widget .rg__node:hover .rg__node-box { stroke: var(--theme-text); }
 `;

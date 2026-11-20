@@ -8,3 +8,7 @@ export const DEFAULT_VIEW_PATH = "/relations-graph";
 export const VIEW_COMPONENT = `${PACKAGE_NAME}/rsc#RelationsGraphView`;
 export const NAV_LINK_COMPONENT = `${PACKAGE_NAME}/client#RelationsGraphNavLink`;
 export const REFERENCES_COMPONENT = `${PACKAGE_NAME}/client#DocumentReferences`;
+
+export const WIDGET_COMPONENT = `${PACKAGE_NAME}/rsc#RelationsGraphWidget`;
+/** Slug of the dashboard widget; use it in `admin.dashboard.defaultLayout`. */
+export const WIDGET_SLUG = "relations-graph" as const;
