@@ -29,7 +29,8 @@ import { BlocksFieldWithPresets as BlocksFieldWithPresets_f0a4a6f21f15d606fa328a
 import { CardLabel as CardLabel_b0003c36efb35c4a253ed9ddf319648b } from '@focus-reactive/payload-plugin-stacked-editing/client'
 import { CopyAiPromptButton as CopyAiPromptButton_9694d9e75b2ba68d2307fd533ed819ca } from '@/components/admin/CopyAiPromptButton'
 import { SeoField as SeoField_8b0de638b8c4dbaba7d1d35a3b22b14d } from '@focus-reactive/payload-plugin-seo/components/SeoField'
-import { SlugField as SlugField_2b8867833a34864a02ddf429b0728a40 } from '@payloadcms/next/client'
+import { SlugPathField as SlugPathField_cc6389c4123bbec0747cfcb35d74a74e } from '../../../components/admin/SlugPathField'
+import { PublicUrlCell as PublicUrlCell_b683313868dec7a246ac9ca278dea5c3 } from '../../../components/admin/PublicUrlCell'
 import { VariantsField as VariantsField_1e5bf2338fb8c7d4f6284f3e67c93951 } from '@focus-reactive/payload-plugin-ab/admin/VariantsField'
 import { default as default_5a9e6bfe3379b31c0258f532ec5399fb } from '@focus-reactive/payload-plugin-translator/client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.server'
 import { PreserveAutosaveEdits as PreserveAutosaveEdits_39eb0920977e9164f764a165b8c797cc } from '../../../components/admin/PreserveAutosaveEdits'
@@ -40,6 +41,7 @@ import { PreviewPageBridge as PreviewPageBridge_ec3bc0b0b5b9a6c0c60998da34f40f5d
 import { OpenFormAnnouncer as OpenFormAnnouncer_ec3bc0b0b5b9a6c0c60998da34f40f5d } from '@focus-reactive/payload-plugin-visual-editing/admin'
 import { InstantPreviewBroadcaster as InstantPreviewBroadcaster_ec3bc0b0b5b9a6c0c60998da34f40f5d } from '@focus-reactive/payload-plugin-visual-editing/admin'
 import { VisualPreviewButton as VisualPreviewButton_809e4dae2cde944461a83ddb2ad7664d } from '../../../components/admin/VisualPreviewButton'
+import { SlugField as SlugField_2b8867833a34864a02ddf429b0728a40 } from '@payloadcms/next/client'
 import { BlocksFeatureClient as BlocksFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { RowLabelGroupName as RowLabelGroupName_7f4fa5fc68fb5a0a92393f6444a57fbd } from '@/components/admin/RowLabel'
 import { BlockNameCell as BlockNameCell_cc45cff47f16a104c7146a801d6e52ae } from '../../../components/admin/BlockNameCell'
@@ -93,7 +95,8 @@ export const importMap = {
   "@focus-reactive/payload-plugin-stacked-editing/client#CardLabel": CardLabel_b0003c36efb35c4a253ed9ddf319648b,
   "@/components/admin/CopyAiPromptButton#CopyAiPromptButton": CopyAiPromptButton_9694d9e75b2ba68d2307fd533ed819ca,
   "@focus-reactive/payload-plugin-seo/components/SeoField#SeoField": SeoField_8b0de638b8c4dbaba7d1d35a3b22b14d,
-  "@payloadcms/next/client#SlugField": SlugField_2b8867833a34864a02ddf429b0728a40,
+  "/components/admin/SlugPathField#SlugPathField": SlugPathField_cc6389c4123bbec0747cfcb35d74a74e,
+  "/components/admin/PublicUrlCell#PublicUrlCell": PublicUrlCell_b683313868dec7a246ac9ca278dea5c3,
   "@focus-reactive/payload-plugin-ab/admin/VariantsField#VariantsField": VariantsField_1e5bf2338fb8c7d4f6284f3e67c93951,
   "@focus-reactive/payload-plugin-translator/client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.server#default": default_5a9e6bfe3379b31c0258f532ec5399fb,
   "/components/admin/PreserveAutosaveEdits#PreserveAutosaveEdits": PreserveAutosaveEdits_39eb0920977e9164f764a165b8c797cc,
@@ -104,6 +107,7 @@ export const importMap = {
   "@focus-reactive/payload-plugin-visual-editing/admin#OpenFormAnnouncer": OpenFormAnnouncer_ec3bc0b0b5b9a6c0c60998da34f40f5d,
   "@focus-reactive/payload-plugin-visual-editing/admin#InstantPreviewBroadcaster": InstantPreviewBroadcaster_ec3bc0b0b5b9a6c0c60998da34f40f5d,
   "/components/admin/VisualPreviewButton#VisualPreviewButton": VisualPreviewButton_809e4dae2cde944461a83ddb2ad7664d,
+  "@payloadcms/next/client#SlugField": SlugField_2b8867833a34864a02ddf429b0728a40,
   "@payloadcms/richtext-lexical/client#BlocksFeatureClient": BlocksFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@/components/admin/RowLabel#RowLabelGroupName": RowLabelGroupName_7f4fa5fc68fb5a0a92393f6444a57fbd,
   "/components/admin/BlockNameCell#BlockNameCell": BlockNameCell_cc45cff47f16a104c7146a801d6e52ae,

@@ -8,6 +8,7 @@ import {
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
+import { PUBLIC_URL_FIELD_NAME, publicUrlField } from "@/lib/fields/publicUrlField";
 import { createSharedSlugField } from "@/lib/fields/slugField";
 import type { Page as PageType } from "@/payload-types";
 
@@ -30,7 +31,7 @@ export const Page: CollectionConfig<"page"> = {
     components: {
       edit: createLivePreviewEditComponents(),
     },
-    defaultColumns: ["title", "slug", "updatedAt"],
+    defaultColumns: ["title", PUBLIC_URL_FIELD_NAME, "updatedAt"],
     group: "Content",
     livePreview: {
       url: ({ data, locale }) =>
@@ -78,6 +79,7 @@ export const Page: CollectionConfig<"page"> = {
     },
     ...createBasePageFields({ withBlocksDefaultValue: true }),
     createSharedSlugField("page"),
+    publicUrlField(),
     createParentField("page", {
       admin: {
         position: "sidebar",
