@@ -176,9 +176,6 @@ export function VariantsField({
         <div className="ab-test__skeleton" aria-label="Loading variants" />
       ) : running ? (
         <>
-          <p className="field-description ab-test__description">
-            Visitors are split at random and keep their version on return visits.
-          </p>
           <SplitBar
             segments={[
               { id: "original", label: "Original", value: originalPercentage },
