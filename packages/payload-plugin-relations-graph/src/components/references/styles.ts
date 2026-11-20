@@ -1,34 +1,24 @@
-/** Scoped under `.rg-refs`; colours come from Payload's theme variables so light and dark both work. */
+/**
+ * Layout only — buttons, pills, banners, shimmer and the document table are Payload's own
+ * components and classes. Payload theme tokens only, so light and dark both follow the admin.
+ */
 export const REFERENCES_CSS = `
-.rg-refs__trigger { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 1px solid var(--theme-elevation-150); border-radius: 14px; background: var(--theme-elevation-50); color: var(--theme-elevation-800); font: inherit; font-size: 12px; line-height: 1; white-space: nowrap; cursor: pointer; }
-.rg-refs__trigger:hover { background: var(--theme-elevation-100); border-color: var(--theme-elevation-250); }
-.rg-refs__trigger:focus-visible { outline: 2px solid var(--theme-elevation-800); outline-offset: 2px; }
-.rg-refs__trigger--used { border-color: var(--theme-elevation-300); color: var(--theme-text); }
-.rg-refs__count { font-weight: 600; font-variant-numeric: tabular-nums; }
-.rg-refs__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--theme-elevation-300); }
-.rg-refs__trigger--used .rg-refs__dot { background: var(--theme-success-500, #16a34a); }
-.rg-refs__trigger--error .rg-refs__dot { background: var(--theme-error-500, #dc2626); }
-.rg-refs { display: flex; flex-direction: column; gap: 20px; padding-bottom: 32px; font-size: 14px; }
-.rg-refs__toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-.rg-refs__summary { margin: 0; color: var(--theme-elevation-600); }
-.rg-refs__refresh { margin-left: auto; height: 28px; padding: 0 10px; border: 1px solid var(--theme-elevation-150); border-radius: 4px; background: var(--theme-elevation-50); color: var(--theme-text); font: inherit; font-size: 12px; cursor: pointer; }
-.rg-refs__refresh:hover { background: var(--theme-elevation-100); }
-.rg-refs__refresh:disabled { opacity: 0.6; cursor: default; }
-.rg-refs__source { border: 1px solid var(--theme-elevation-150); border-radius: 6px; background: var(--theme-elevation-0); overflow: hidden; }
-.rg-refs__source-head { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 14px; border-bottom: 1px solid var(--theme-elevation-100); background: var(--theme-elevation-50); font-size: 15px; font-weight: 600; }
-.rg-refs__field { padding: 10px 14px; }
-.rg-refs__field + .rg-refs__field { border-top: 1px solid var(--theme-elevation-100); }
-.rg-refs__field-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 6px; }
-.rg-refs__path { font-family: var(--font-mono, monospace); font-size: 12px; color: var(--theme-elevation-800); overflow-wrap: anywhere; }
-.rg-refs__badge { padding: 1px 6px; border-radius: 3px; background: var(--theme-elevation-100); color: var(--theme-elevation-700); font-size: 11px; }
-.rg-refs__badge--draft { background: var(--theme-warning-100, #fef3c7); color: var(--theme-warning-800, #92400e); }
-.rg-refs__field-count { margin-left: auto; color: var(--theme-elevation-500); font-size: 12px; font-variant-numeric: tabular-nums; }
-.rg-refs__docs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-.rg-refs__doc { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.rg-refs__doc a { color: var(--theme-text); text-decoration: underline; text-decoration-color: var(--theme-elevation-300); text-underline-offset: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rg-refs__doc a:hover { text-decoration-color: currentColor; }
-.rg-refs__more, .rg-refs__note { margin: 6px 0 0; color: var(--theme-elevation-500); font-size: 12px; }
-.rg-refs__error { margin: 0; color: var(--theme-error-500, #dc2626); font-size: 13px; }
-.rg-refs__empty { margin: 0; padding: 24px; border: 1px dashed var(--theme-elevation-200); border-radius: 6px; color: var(--theme-elevation-600); text-align: center; }
+.rg-refs__trigger.btn { margin: 0; }
+.rg-refs__trigger .rg-refs__count { font-variant-numeric: tabular-nums; }
+.rg-refs { display: flex; flex-direction: column; gap: calc(var(--base) * 1.2); padding-bottom: calc(var(--base) * 2); }
+.rg-refs__toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: calc(var(--base) * 0.6); }
+.rg-refs__summary { margin: 0; color: var(--theme-elevation-500); }
+.rg-refs__toolbar .btn { margin: 0 0 0 auto; }
+.rg-refs__loading { display: flex; flex-direction: column; gap: calc(var(--base) * 0.4); }
+.rg-refs__source { display: flex; flex-direction: column; gap: calc(var(--base) * 0.5); }
+.rg-refs__source-head { display: flex; align-items: center; gap: calc(var(--base) * 0.4); margin: 0; font-size: var(--base-body-size, 13px); font-weight: 600; }
+.rg-refs__source .table { margin-bottom: 0; }
+.rg-refs__source .table th, .rg-refs__source .table td { min-width: 0; }
+.rg-refs__col-doc { width: 50%; }
+.rg-refs__doc { display: inline-flex; flex-wrap: wrap; align-items: center; gap: calc(var(--base) * 0.4); }
+.rg-refs__doc a { color: var(--theme-text); }
+.rg-refs__path { font-family: var(--font-mono); font-size: 12px; color: var(--theme-elevation-650); overflow-wrap: anywhere; }
+.rg-refs__more { color: var(--theme-elevation-500); }
+.rg-refs__source .banner { margin: 0; }
 .rg-refs__footnote { margin: 0; color: var(--theme-elevation-500); font-size: 12px; }
 `;
