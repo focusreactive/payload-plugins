@@ -10,6 +10,7 @@ export const DocumentEmbeddings: CollectionConfig = {
     update: superAdmin,
   },
   admin: {
+    defaultColumns: ["documentId", "collection", "locale", "updatedAt"],
     group: "System",
   },
   fields: [

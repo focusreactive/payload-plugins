@@ -35,7 +35,7 @@ export const Media: CollectionConfig<"media"> = {
     update: or(superAdmin, user, author),
   },
   admin: {
-    defaultColumns: ["filename", "alt"],
+    defaultColumns: ["filename", "alt", "mimeType", "filesize", "updatedAt"],
     group: "Content",
     pagination: {
       limits: [20, 50, 100],

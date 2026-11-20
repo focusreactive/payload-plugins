@@ -227,6 +227,7 @@ export const mcpPluginConfig = mcpPlugin({
   // collection fields, so a leading UI field lands directly under it.
   overrideApiKeyCollection: (collection) => ({
     ...collection,
+    admin: { ...collection.admin, defaultColumns: ["label", "user", "updatedAt"] },
     fields: [
       {
         name: "claudeCodeCommand",
