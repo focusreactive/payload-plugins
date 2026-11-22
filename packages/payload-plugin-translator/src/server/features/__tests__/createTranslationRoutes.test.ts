@@ -14,7 +14,7 @@ const OPEN_ON_PURPOSE = new AnyAccessGuard();
 const deps = (basePath?: string): TranslationRoutesDeps => ({
   taskRunnerFactory: { create: vi.fn(), capabilities: { stop: true, run: true } },
   runRecordStoreFactory: () => storeDouble(),
-  collectionConfig: { availableCollections: new Set(), keepsDrafts: new Set() },
+  collectionConfig: { availableCollections: new Set() },
   schemaMap: new Map(),
   state: { fingerprintOf: () => null },
   translatablePaths: () => [],

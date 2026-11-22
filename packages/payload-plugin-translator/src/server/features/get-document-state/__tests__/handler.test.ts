@@ -43,6 +43,7 @@ type World = {
 const requestFor = (world: World): PayloadRequest => {
   const document = world.document === undefined ? DOCUMENT : world.document;
   const payload = {
+    collections: {},
     config: {
       localization:
         world.localization === undefined

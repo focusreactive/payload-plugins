@@ -8,7 +8,8 @@ import type { TranslateDocumentInput } from "./translateDocument.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 import { openTargetDocument } from "./targetDocument.js";
 import type { TargetDocument } from "./targetDocument.js";
-import { resolveTargetLayer } from "./targetLayer.js";
+import { worldOfRegistered } from "../../shared/payload/worldOfCollection.js";
+import { layerOf } from "./targetLayer.js";
 import type { TargetLayer } from "./targetLayer.js";
 
 export type Run = {
@@ -36,8 +37,7 @@ export async function openRun(args: {
     throw new TranslatorConfigError(`Collection "${taskInput.collection}" not found in schemaMap`);
   }
 
-  const versions = payload.collections[taskInput.collection].config.versions;
-  const layer = resolveTargetLayer({ versions, targetLng: taskInput.targetLng });
+  const layer = layerOf(worldOfRegistered(payload, taskInput.collection), taskInput.targetLng);
   const target = {
     collection: taskInput.collection,
     documentId: taskInput.collectionId,

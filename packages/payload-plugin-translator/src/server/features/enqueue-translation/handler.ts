@@ -13,6 +13,7 @@ import type { AuthorisedWork } from "../../shared/access/authorised.js";
 import { Locales } from "../../../core/domain/locales/index.js";
 import type { TranslationFilter } from "../../../core/domain/selection/index.js";
 import { localesHoldingContent } from "../../shared/payload/localesHoldingContent.js";
+import { worldOfRegistered } from "../../shared/payload/worldOfCollection.js";
 
 import { EnqueueInputSchema, toAssignmentOutputs, wholeDocumentOnly } from "./model.js";
 import type { EnqueueConfig } from "./model.js";
@@ -53,18 +54,22 @@ export class EnqueueTranslationHandler {
   }): Promise<string[]> {
     const { req, collectionSlug, ids, targets, asked } = asking;
     const namesAddresses = asked.some((filter) => filter.kind === "leaves");
-    if (!namesAddresses || this.config.keepsDrafts.has(collectionSlug)) return [];
+    if (!namesAddresses) return [];
 
-    // Nowhere for text to sit is not the same as nowhere holding text: such a run writes nothing.
+    const world = worldOfRegistered(req.payload, collectionSlug);
+    const writeLandsInAnUnvalidatedDraft = world.kind === "layered";
+    if (writeLandsInAnUnvalidatedDraft) return [];
+
     const paths = this.config.translatablePaths(collectionSlug);
     if (paths.length === 0) return [];
 
     const holding = await localesHoldingContent({
       payload: req.payload,
       collection: collectionSlug,
-      ids,
+      grantedIds: ids,
       locales: targets,
       paths,
+      read: world.read.latest,
     });
     return targets.filter((locale) => ids.some((id) => holding.get(locale)?.has(id) !== true));
   }

@@ -27,7 +27,6 @@ const unreachable = (): never => {
 };
 
 const availableCollections = new Set<CollectionSlug>();
-const keepsDrafts = new Set<CollectionSlug>();
 const taskRunnerFactory: TaskRunnerFactory = {
   create: unreachable,
   capabilities: { stop: true, run: true },
@@ -53,7 +52,7 @@ const routeForEveryAction: Record<TranslatorAction, RouteUnderTest | null> = {
       createEnqueueRoute(
         taskRunnerFactory,
         runRecordStoreFactory,
-        { availableCollections, keepsDrafts, translatablePaths: () => [] },
+        { availableCollections, translatablePaths: () => [] },
         access
       ),
   },

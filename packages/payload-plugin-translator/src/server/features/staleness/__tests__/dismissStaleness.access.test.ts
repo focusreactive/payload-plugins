@@ -54,6 +54,7 @@ describe("POST /stale/dismiss — it asks before it re-bases", () => {
       rebaseSourceFingerprint,
     } as unknown as ProvenanceStore;
     payload = {
+      collections: {},
       findByID: vi.fn().mockResolvedValue({ id: "1", title: "Saved" }),
       logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
     } as unknown as Payload;

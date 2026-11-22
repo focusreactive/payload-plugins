@@ -13,7 +13,8 @@ import { ServerResponse } from "../../shared/index.js";
 import { NOT_MANAGED, NO_LOCALIZATION } from "../../shared/http/readRefusals.js";
 import { visibleIds } from "../../shared/payload/collections.js";
 import { localesHoldingContent } from "../../shared/payload/localesHoldingContent.js";
-import type { ContentByLocale } from "../../shared/payload/localesHoldingContent.js";
+import type { DocumentsHoldingContent } from "../../shared/payload/localesHoldingContent.js";
+import { latestOf } from "../../shared/payload/worldOfCollection.js";
 import { isCollectionAvailable, readLocales } from "../_lib/index.js";
 import type { ReadLocales } from "../_lib/index.js";
 
@@ -23,7 +24,7 @@ import type { GetListStateConfig } from "./model.js";
 function contentOf(cell: {
   id: DocumentId;
   locale: string;
-  holding: ContentByLocale;
+  holding: DocumentsHoldingContent;
   receipts: ReceiptsByDocument;
 }): ListDocumentState["locales"][number]["content"] {
   if (cell.holding.get(cell.locale)?.has(cell.id) !== true) return { kind: "empty" };
@@ -106,9 +107,10 @@ export class GetListStateHandler {
       localesHoldingContent({
         payload: req.payload,
         collection,
-        ids,
+        grantedIds: ids,
         locales: locales.targets,
         paths: this.config.translatablePaths(collection),
+        read: latestOf(req.payload, collection),
       }),
       this.receiptsOf(req, collection, ids),
       this.runsOf(req, collection, ids),

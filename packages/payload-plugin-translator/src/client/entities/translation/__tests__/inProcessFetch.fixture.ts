@@ -65,6 +65,7 @@ export function inProcessFetch({ documents, locales, access }: InProcessServer):
   const held = new Set(documents.map(keyOf));
   const routes = stubRoutes([...new Set(documents.map(({ collection }) => collection))], access);
   const payload = {
+    collections: {},
     config: {
       localization: {
         defaultLocale: locales.source,

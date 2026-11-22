@@ -46,6 +46,7 @@ describe("POST /field — it asks before it spends", () => {
       user: ANNA,
       payload: {
         findByID,
+        collections: {},
         config: { localization: { defaultLocale: "en", locales: ["en", "de"] } },
       },
     }) as unknown as PayloadRequest;

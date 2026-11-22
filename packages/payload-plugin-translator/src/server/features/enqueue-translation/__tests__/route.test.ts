@@ -10,13 +10,8 @@ import { AnyAccessGuard } from "../../../shared/access/AnyAccessGuard.js";
 import { storeDouble } from "../../../modules/runs/__tests__/fixtures/runRecordStore.js";
 
 const OPEN_ON_PURPOSE = new AnyAccessGuard();
-// Route-contract tests: pin path + method + access-guard wiring so the Phase 1
-// relocation of route registration stays behaviour-preserving. The handler
-// logic and the shared wrappers (withAccessCheck / withErrorHandler) are
-// covered by their own unit tests; here we only assert the route is wired.
 const config: EnqueueConfig = {
   availableCollections: new Set(),
-  keepsDrafts: new Set(),
   translatablePaths: () => ["title"],
 };
 const denyAccess: AccessGuard = { check: vi.fn().mockReturnValue(false) };

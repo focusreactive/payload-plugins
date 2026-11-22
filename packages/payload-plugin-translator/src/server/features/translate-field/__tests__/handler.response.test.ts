@@ -21,6 +21,7 @@ const reqWith = (body: Record<string, unknown>, doc: unknown): PayloadRequest =>
     json: () => Promise.resolve(body),
     payload: {
       findByID: vi.fn().mockResolvedValue(doc),
+      collections: {},
       config: { localization: LOCALIZATION },
     },
   }) as unknown as PayloadRequest;

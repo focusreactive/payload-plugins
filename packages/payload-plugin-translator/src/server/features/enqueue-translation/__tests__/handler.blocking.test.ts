@@ -59,7 +59,6 @@ describe("one run per document, decided before the runner is asked", () => {
     runs = storeDouble();
     config = {
       availableCollections: new Set(["posts"] as CollectionSlug[]),
-      keepsDrafts: new Set(["posts"] as CollectionSlug[]),
       translatablePaths: () => ["title"],
     };
     handler = new EnqueueTranslationHandler(

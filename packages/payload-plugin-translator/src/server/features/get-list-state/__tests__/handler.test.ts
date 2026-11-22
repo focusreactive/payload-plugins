@@ -31,6 +31,7 @@ type World = {
 const requestFor = (world: World): PayloadRequest => {
   const visible = world.visible ?? ["doc-1", "doc-2"];
   const payload = {
+    collections: {},
     config: {
       localization:
         world.localization === undefined

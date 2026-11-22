@@ -38,7 +38,6 @@ export const EnqueueInputSchema = z.object({
 
 export type EnqueueConfig = {
   availableCollections: Set<CollectionSlug>;
-  keepsDrafts: ReadonlySet<CollectionSlug>;
   translatablePaths: TranslatablePaths;
 };
 

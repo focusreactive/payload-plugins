@@ -24,19 +24,19 @@ describe("EnqueueTranslationHandler", () => {
   let config: EnqueueConfig;
   const warn = vi.fn();
 
-  // Bare request: no localization configured. Used for the validation, collection-availability, and
-  // localization-guard paths — all of which reject before any locale resolution.
-  const createMockRequest = (body: unknown): PayloadRequest =>
+  const requestWithoutLocalization = (body: unknown): PayloadRequest =>
     ({
-      payload: {} as Payload,
+      payload: { collections: {} } as unknown as Payload,
       json: vi.fn().mockResolvedValue(body),
     }) as unknown as PayloadRequest;
 
-  // Request whose payload carries a configured locale set + logger. Translation is meaningless without
-  // localization, so every success-path test runs against this.
   const createLocalizedRequest = (body: unknown): PayloadRequest =>
     ({
       payload: {
+        collections: {
+          posts: { config: { versions: { drafts: true } } },
+          pages: { config: { versions: { drafts: true } } },
+        },
         config: { localization: { locales: ["en", "de", "fr", "es"] } },
         logger: { warn },
       },
@@ -62,7 +62,6 @@ describe("EnqueueTranslationHandler", () => {
 
     config = {
       availableCollections: new Set(["posts", "pages"] as CollectionSlug[]),
-      keepsDrafts: new Set(["posts", "pages"] as CollectionSlug[]),
       translatablePaths: () => ["title"],
     };
 
@@ -90,7 +89,7 @@ describe("EnqueueTranslationHandler", () => {
 
   describe("validation", () => {
     it("returns validation error for missing required fields", async () => {
-      const req = createMockRequest({});
+      const req = requestWithoutLocalization({});
 
       const response = await handler.handle(req);
 
@@ -98,7 +97,7 @@ describe("EnqueueTranslationHandler", () => {
     });
 
     it("returns validation error for missing source_lng", async () => {
-      const req = createMockRequest({
+      const req = requestWithoutLocalization({
         target_lng: "de",
         collection_slug: "posts",
         collection_id: ["doc-1"],
@@ -112,7 +111,7 @@ describe("EnqueueTranslationHandler", () => {
 
   describe("collection availability", () => {
     it("returns bad request for unavailable collection", async () => {
-      const req = createMockRequest({
+      const req = requestWithoutLocalization({
         source_lng: "en",
         target_lng: "de",
         collection_slug: "users",
@@ -131,7 +130,7 @@ describe("EnqueueTranslationHandler", () => {
     // Without localization there is no valid target locale: a phantom locale would either orphan rows
     // or, with no localization at all, overwrite the single unlocalized field — wiping the source.
     it("returns 400 and enqueues nothing when localization is not enabled", async () => {
-      const req = createMockRequest({
+      const req = requestWithoutLocalization({
         source_lng: "en",
         target_lng: "de",
         collection_slug: "posts",
@@ -366,9 +365,14 @@ describe("EnqueueTranslationHandler", () => {
   });
 
   describe("asking for named fields where the write is live", () => {
-    const requestHolding = (holding: readonly string[], body: Record<string, unknown>) =>
+    const requestHolding = (
+      holding: readonly string[],
+      body: Record<string, unknown>,
+      collections: Record<string, unknown> = {}
+    ) =>
       ({
         payload: {
+          collections,
           config: { localization: { locales: ["en", "de", "fr", "es"] } },
           logger: { warn },
           find: vi.fn(async ({ locale }: { locale: string }) => ({
@@ -387,17 +391,16 @@ describe("EnqueueTranslationHandler", () => {
     const asked = (
       holding: readonly string[],
       body: Record<string, unknown>,
-      keepsDrafts: string[] = []
+      collections?: Record<string, unknown>
     ) =>
       new EnqueueTranslationHandler(
         {
           availableCollections: config.availableCollections,
-          keepsDrafts: new Set(keepsDrafts as CollectionSlug[]),
           translatablePaths: () => ["title"],
         },
         mockTaskRunnerFactory,
         () => storeDouble()
-      ).handle(requestHolding(holding, body));
+      ).handle(requestHolding(holding, body, collections));
 
     it("refuses a locale holding nothing, which the write would leave with empty required fields", async () => {
       const response = await asked([], { filters: leaves("title") });
@@ -425,7 +428,6 @@ describe("EnqueueTranslationHandler", () => {
       const response = await new EnqueueTranslationHandler(
         {
           availableCollections: config.availableCollections,
-          keepsDrafts: new Set<CollectionSlug>(),
           translatablePaths: () => [],
         },
         mockTaskRunnerFactory,
@@ -436,7 +438,13 @@ describe("EnqueueTranslationHandler", () => {
     });
 
     it("takes an empty locale where the collection keeps drafts, since a draft is not validated", async () => {
-      const response = await asked([], { filters: leaves("title") }, ["posts"]);
+      const response = await asked(
+        [],
+        { filters: leaves("title") },
+        {
+          posts: { config: { versions: { drafts: true } } },
+        }
+      );
 
       expect(response.status).toBe(200);
     });

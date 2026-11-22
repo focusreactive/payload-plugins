@@ -8,6 +8,7 @@ import type { ReportedRun, RunRecordStoreFactory } from "../../modules/runs/inde
 import { ServerResponse } from "../../shared/index.js";
 import { NOT_MANAGED, NO_LOCALIZATION } from "../../shared/http/readRefusals.js";
 import { localesHoldingContent } from "../../shared/payload/localesHoldingContent.js";
+import { latestOf } from "../../shared/payload/worldOfCollection.js";
 import { isCollectionAvailable, readLocales, requireReadableDocument } from "../_lib/index.js";
 import type { ReadLocales } from "../_lib/index.js";
 
@@ -95,9 +96,10 @@ export class GetDocumentStateHandler {
       localesHoldingContent({
         payload: req.payload,
         collection,
-        ids: [id],
+        grantedIds: [id],
         locales: locales.targets,
         paths: this.config.translatablePaths(collection),
+        read: latestOf(req.payload, collection),
       }),
       this.receiptsOf(req, collection, id),
       this.runsOf(req, collection, id),

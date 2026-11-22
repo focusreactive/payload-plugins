@@ -1,9 +1,9 @@
 import type { CollectionAfterChangeHook, CollectionSlug } from "payload";
-import { hasDraftsEnabled } from "payload/shared";
 
 import { authCollectionsOf, identityOf, scopeOf } from "../../shared/payload/identityOf.js";
 import { authorisedByTheSave } from "../../shared/access/authorised.js";
 import { swallowOrThrow } from "../../shared/payload/swallowOrThrow.js";
+import { worldOfCollection } from "../../shared/payload/worldOfCollection.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 
 import { hasSourceContentChanged } from "../../../core/domain/auto-translate/index.js";
@@ -67,8 +67,8 @@ export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAf
 
         if (req.locale !== sourceLocale) return;
 
-        const hasDrafts = hasDraftsEnabled(collection);
-        if (!passesPublishGate(doc, hasDrafts)) return;
+        const world = worldOfCollection(collection);
+        if (!passesPublishGate(doc, world)) return;
 
         if (!hasSourceContentChanged(previousDoc, doc, collection.slug, fingerprintOf)) return;
 
@@ -78,7 +78,7 @@ export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAf
           documentId: String(doc.id),
           sourceLocale,
           doc,
-          hasDrafts,
+          world,
           now: Date.now(),
         });
         if (tasks.length === 0) return;

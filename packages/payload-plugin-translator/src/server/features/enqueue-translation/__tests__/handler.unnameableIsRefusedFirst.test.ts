@@ -54,7 +54,6 @@ describe("POST /enqueue refuses an unnameable actor before asking about anything
     handler = new EnqueueTranslationHandler(
       {
         availableCollections: new Set(["posts"] as CollectionSlug[]),
-        keepsDrafts: new Set(["posts"] as CollectionSlug[]),
         translatablePaths: () => ["title"],
       },
       {

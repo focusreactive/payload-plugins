@@ -46,6 +46,7 @@ const request = ({ params = {}, body, search = "", findByID = vi.fn() }: Ask): P
     headers: new Headers(),
     user: { id: 1 },
     payload: {
+      collections: {},
       config: { localization: { defaultLocale: "en", locales: ["en", "de", "fr"] } },
       findByID,
     },

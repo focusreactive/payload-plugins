@@ -1,9 +1,5 @@
-import type { CollectionConfig } from "payload";
-import { hasAutosaveEnabled, hasDraftsEnabled } from "payload/shared";
+import type { World } from "../../../core/domain/world/index.js";
 
-export type VersionsSlice = CollectionConfig["versions"];
-
-/** The arguments that publish one locale, once a collection is known to have a draft layer. */
 export type PublishScope = {
   publishSpecificLocale: string;
   /**
@@ -35,18 +31,12 @@ export type TargetLayer =
 
 export type WriteLayer = TargetLayer["write"];
 
-export function resolveTargetLayer(args: {
-  versions: VersionsSlice;
-  targetLng: string;
-}): TargetLayer {
-  const { versions, targetLng } = args;
-  const config = { versions };
-
-  if (!hasDraftsEnabled(config)) return { kind: "no-drafts", write: { autosave: false } };
+export function layerOf(world: World<unknown>, targetLng: string): TargetLayer {
+  if (world.kind === "single-layer") return { kind: "no-drafts", write: { autosave: false } };
 
   return {
     kind: "drafts",
-    write: { draft: true, autosave: hasAutosaveEnabled(config) },
+    write: { draft: true, autosave: world.autosave },
     publish: { publishSpecificLocale: targetLng, status: "published" },
   };
 }

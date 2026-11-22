@@ -43,6 +43,7 @@ let logger: { error: ReturnType<typeof vi.fn> };
 beforeEach(() => {
   logger = { error: vi.fn() };
   payload = {
+    collections: {},
     findByID: vi.fn().mockResolvedValue(sourceDoc),
     logger,
   } as unknown as Payload;

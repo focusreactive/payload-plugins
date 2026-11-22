@@ -34,6 +34,7 @@ describe("enqueue asks about every document it was named", () => {
   const request = (body: unknown): PayloadRequest =>
     ({
       payload: {
+        collections: {},
         config: { localization: { locales: ["en", "de", "fr"] } },
         logger: { warn: vi.fn() },
       } as unknown as Payload,
@@ -67,7 +68,6 @@ describe("enqueue asks about every document it was named", () => {
     handler = new EnqueueTranslationHandler(
       {
         availableCollections: new Set(["posts"] as CollectionSlug[]),
-        keepsDrafts: new Set(["posts"] as CollectionSlug[]),
         translatablePaths: () => ["title"],
       },
       factory,
@@ -140,6 +140,7 @@ describe("a document the caller may not read, where the write is live", () => {
   const requestHolding = (holding: readonly string[], body: unknown): PayloadRequest =>
     ({
       payload: {
+        collections: {},
         config: { localization: { locales: ["en", "de", "fr"] } },
         logger: { warn: vi.fn() },
         find: vi.fn(async ({ locale }: { locale: string }) => ({
@@ -160,7 +161,6 @@ describe("a document the caller may not read, where the write is live", () => {
     const handler = new EnqueueTranslationHandler(
       {
         availableCollections: new Set(["posts"] as CollectionSlug[]),
-        keepsDrafts: new Set<CollectionSlug>(),
         translatablePaths: () => ["title"],
       },
       {

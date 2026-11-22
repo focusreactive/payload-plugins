@@ -21,7 +21,6 @@ export type TranslationRoutesDeps = Pick<
   translatablePaths: TranslatablePaths;
   collectionConfig: {
     availableCollections: Set<CollectionSlug>;
-    keepsDrafts: ReadonlySet<CollectionSlug>;
   };
 };
 

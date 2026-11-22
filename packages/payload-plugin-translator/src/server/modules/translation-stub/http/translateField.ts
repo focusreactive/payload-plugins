@@ -1,6 +1,7 @@
 import { ServerResponse, getByPath } from "../../../shared/index.js";
 import type { RouteHandler } from "../../../shared/http/withErrorHandler.js";
-import { fetchSourceDocument } from "../../../shared/payload/sourceDocument.js";
+import { fetchDocumentLocale } from "../../../shared/payload/documentLocale.js";
+import { latestOf } from "../../../shared/payload/worldOfCollection.js";
 import { FieldTranslationInputSchema } from "../../../features/translate-field/model.js";
 import type { FieldTranslationResult } from "../../../../types/wire/field-translation.js";
 
@@ -16,11 +17,12 @@ export function translateField({ managed }: Pick<StubDeps, "managed">): RouteHan
     const { collection_slug, field_path, target_lng, source_lng, doc_id } = parsed.data;
     if (!managed.has(collection_slug)) return ServerResponse.badRequest(NOT_MANAGED);
 
-    const source = await fetchSourceDocument({
+    const source = await fetchDocumentLocale({
       payload: req.payload,
       collection: collection_slug,
       id: doc_id,
       locale: source_lng,
+      read: latestOf(req.payload, collection_slug),
       user: req.user,
     });
     if (!source) return ServerResponse.notFound();

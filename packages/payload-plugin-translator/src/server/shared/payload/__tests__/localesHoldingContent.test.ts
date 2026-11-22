@@ -2,6 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import type { Payload } from "payload";
 
 import { localesHoldingContent } from "../localesHoldingContent.js";
+import { worldOfCollection } from "../worldOfCollection.js";
+
+const LATEST_OF_A_DRAFTED_COLLECTION = worldOfCollection({ versions: { drafts: true } }).read
+  .latest;
 
 const payloadHolding = (held: Record<string, string[]>) => {
   const find = vi.fn(async ({ locale }: { locale: string }) => ({
@@ -15,9 +19,10 @@ const ask = async (held: Record<string, string[]>, over: Record<string, unknown>
   const holding = await localesHoldingContent({
     payload,
     collection: "posts",
-    ids: ["doc-1", "doc-2"],
+    grantedIds: ["doc-1", "doc-2"],
     locales: ["en", "de", "fr"],
     paths: ["title", "sections.heading"],
+    read: LATEST_OF_A_DRAFTED_COLLECTION,
     ...over,
   });
   return { holding, find };
@@ -52,7 +57,7 @@ describe("which locales hold anything translatable", () => {
 
   it("asks nothing where the collection has nothing translatable, or nobody asked about a document", async () => {
     const nothingTranslatable = await ask({ en: ["doc-1"] }, { paths: [] });
-    const noDocuments = await ask({ en: ["doc-1"] }, { ids: [] });
+    const noDocuments = await ask({ en: ["doc-1"] }, { grantedIds: [] });
 
     expect(nothingTranslatable.find).not.toHaveBeenCalled();
     expect(noDocuments.find).not.toHaveBeenCalled();
