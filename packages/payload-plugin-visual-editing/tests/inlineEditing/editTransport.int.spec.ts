@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { AdminEditChannel } from "../../src/client/inlineEditing/adminEditChannel";
 import type { EditRoutes } from "../../src/client/inlineEditing/editRoutes";
 import type {
   EditTransport,
@@ -8,13 +9,16 @@ import type {
 } from "../../src/client/inlineEditing/editTransport";
 import type { VeEditedField, VeEditorState } from "../../src/shared/protocol";
 
+import {
+  createAdminEditChannel,
+  MEDIA_PICK_TIME_LIMIT_MS,
+} from "../../src/client/inlineEditing/adminEditChannel";
 import { createEditRoutes } from "../../src/client/inlineEditing/editRoutes";
 import {
   createEditTransport,
   EDIT_SAVE_PAUSE_MS,
   EDIT_SEND_PAUSE_MS,
   KEEPALIVE_BODY_LIMIT,
-  MEDIA_PICK_TIME_LIMIT_MS,
 } from "../../src/client/inlineEditing/editTransport";
 import {
   VE_DOCUMENT_SAVED_TYPE,
@@ -88,6 +92,7 @@ const pageImage = (shownMediaId: string | null = null): PageImage => {
 describe("the transport of an edit", () => {
   let transport: EditTransport;
   let routes: EditRoutes;
+  let channel: AdminEditChannel;
   let holdsAnyForm: boolean;
   let statuses: string[];
   let refusals: (string | undefined)[];
@@ -95,6 +100,7 @@ describe("the transport of an edit", () => {
 
   const start = () => {
     routes = createEditRoutes({ holdsAnyForm: () => holdsAnyForm, win: window });
+    channel = createAdminEditChannel(window, () => ctx.adminOrigin);
     transport = createEditTransport(
       () => ctx,
       (status, refusal) => {
@@ -102,7 +108,8 @@ describe("the transport of an edit", () => {
         refusals.push(refusal);
       },
       window,
-      routes
+      routes,
+      channel
     );
   };
 
@@ -144,6 +151,7 @@ describe("the transport of an edit", () => {
 
   afterEach(() => {
     transport.dispose();
+    channel.dispose();
     restorePreviewWindow();
     vi.unstubAllGlobals();
     vi.useRealTimers();
@@ -387,7 +395,7 @@ describe("the transport of an edit", () => {
 
         postFromAdmin({ ...IMAGE, type: VE_MEDIA_PICKED_TYPE, url: LIGHTHOUSE.url, width: 640 });
 
-        expect(image.show).toHaveBeenCalledWith({ ...IMAGE, url: LIGHTHOUSE.url, width: 640 });
+        expect(image.show).toHaveBeenCalledWith({ url: LIGHTHOUSE.url, width: 640 });
         expect(statuses).toEqual(["unsaved"]);
 
         savedInTheAdmin(TITLE);

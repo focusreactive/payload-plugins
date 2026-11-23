@@ -1,43 +1,30 @@
 import type {
-  VeDocument,
   VeEditedField,
   VeEditorState,
   VeRichTextStateRequestMessage,
 } from "../../shared/protocol.js";
 import type { VeRichTextFormats } from "../../shared/richText/formats.js";
-import type { PlainObject } from "../../shared/plainObject.js";
 import type { FieldTracker } from "../overlay/fieldTracker.js";
+import type { AdminEditChannel, DocumentNews } from "./adminEditChannel.js";
 import type { Point, TextPosition } from "./caret.js";
 import type { FieldEdit } from "./editTransport.js";
 import type { PageFields } from "./pageFields.js";
 import type { EditSession, RichTextEditor, RichTextEditorLoader } from "./richTextEditor.js";
 
-import { readEditedField, readRichTextEdit } from "../../shared/fieldEdit.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import {
   DATA_VE_LIVE_RICH_TEXT_ATTR,
   DATA_VE_PATH_ATTR,
-  VE_DOCUMENT_SAVED_TYPE,
-  VE_FIELD_PATCH_TYPE,
-  VE_FIELD_SNAPSHOT_TYPE,
-  VE_RICH_TEXT_STATE_REFUSED_TYPE,
   VE_RICH_TEXT_STATE_REQUEST_TYPE,
-  VE_RICH_TEXT_STATE_TYPE,
-  VE_RICH_TEXT_STRUCTURE_TYPE,
   VE_RICH_TEXT_VALUE_PATH,
 } from "../../shared/protocol.js";
 import { fixedNodesOf } from "../../shared/richText/editableNodes.js";
 import { readFormats } from "../../shared/richText/formats.js";
 import { isRichTextNodeKey } from "../../shared/richText/nodeKey.js";
 import { readPostedEditorState } from "../../shared/richText/postedEditorState.js";
-import {
-  documentAddressOf,
-  isVeDocument,
-  editedFieldAddressOf,
-  veDocumentOf,
-} from "../../shared/veDocument.js";
-import { adminOriginOf, hearTheAdmin } from "../adminWindow.js";
+import { documentAddressOf, editedFieldAddressOf } from "../../shared/veDocument.js";
 import { readMarkerFromAttrs } from "../overlay/markerExtractor.js";
+import { RICH_TEXT_STATE_TIME_LIMIT_MS } from "./adminEditChannel.js";
 import { textPositionAtPoint } from "./caret.js";
 import { endpointAnswerOf } from "./endpointAnswer.js";
 import { isPageField } from "./pageFields.js";
@@ -52,7 +39,6 @@ import {
 } from "./richTextTwin.js";
 
 export type RichTextEditingCtx = {
-  adminOrigin: string;
   payloadApi: string;
   locale?: string;
   inlineEditing: boolean;
@@ -63,6 +49,7 @@ export type RichTextEditingDeps = {
   tracker: FieldTracker;
   getCtx: () => RichTextEditingCtx;
   pageFields: PageFields;
+  channel: AdminEditChannel;
   beginEdit(field: VeEditedField, startedFrom: VeEditorState): FieldEdit<VeEditorState>;
   currentAdmin(): Window | null;
   endOtherEdits(): void;
@@ -76,8 +63,6 @@ export interface RichTextEditing {
   endIfRemoved(): void;
   dispose(): void;
 }
-
-export const RICH_TEXT_STATE_TIME_LIMIT_MS = 4000;
 
 export const RICH_TEXT_CHECK_PAUSE_MS = 200;
 
@@ -119,12 +104,6 @@ type WaitingClick = {
 const WRAPPER = `[${DATA_VE_PATH_ATTR}]`;
 const POINTER_EVENTS = ["pointerover", "pointermove"] as const;
 const WRAPPER_CONTENT = { characterData: true, childList: true, subtree: true };
-const NEWS_OF_A_DOCUMENT: ReadonlySet<unknown> = new Set([
-  VE_RICH_TEXT_STRUCTURE_TYPE,
-  VE_FIELD_PATCH_TYPE,
-  VE_FIELD_SNAPSHOT_TYPE,
-  VE_DOCUMENT_SAVED_TYPE,
-]);
 
 const isPlainPrimaryClick = (event: MouseEvent): boolean =>
   event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
@@ -152,6 +131,7 @@ const clickWrapperInstead = (wrapper: HTMLElement, event: MouseEvent) => {
 
 export function createRichTextEditing({
   beginEdit,
+  channel,
   currentAdmin,
   endOtherEdits,
   getCtx,
@@ -161,7 +141,7 @@ export function createRichTextEditing({
   const richTextLeaves = new Set<Text>();
   const held = new Map<string, Held>();
   const heldAt = new Map<string, number>();
-  const askedAt = new Map<string, number>();
+  const askedOfEndpointAt = new Map<string, number>();
   const checkedAt = new WeakMap<HTMLElement, number>();
   const readOnlyTwins = new Map<HTMLElement, ReadOnlyTwin>();
   let editor: RichTextEditor | null = null;
@@ -198,9 +178,11 @@ export function createRichTextEditing({
     return isInsideRichText(wrapper) ? null : answer.field;
   };
 
-  const isBeingAsked = (address: string): boolean => {
-    const asked = askedAt.get(address);
-    return asked !== undefined && Date.now() - asked < RICH_TEXT_STATE_TIME_LIMIT_MS;
+  const isBeingAsked = (field: VeEditedField): boolean => {
+    const asked = askedOfEndpointAt.get(editedFieldAddressOf(field));
+    const isAskedOfEndpoint =
+      asked !== undefined && Date.now() - asked < RICH_TEXT_STATE_TIME_LIMIT_MS;
+    return isAskedOfEndpoint || channel.richTextStates.isAsked(field);
   };
 
   const stopWaiting = (): WaitingClick | null => {
@@ -215,10 +197,12 @@ export function createRichTextEditing({
     stopWaiting()?.openField();
   };
 
-  const forget = (address: string) => {
+  const forget = (field: VeEditedField) => {
+    const address = editedFieldAddressOf(field);
     held.delete(address);
     heldAt.delete(address);
-    askedAt.delete(address);
+    askedOfEndpointAt.delete(address);
+    channel.richTextStates.forget(field);
   };
 
   const freshlyHeld = (address: string): Held | null => {
@@ -228,9 +212,9 @@ export function createRichTextEditing({
     return isFresh ? (held.get(address) ?? null) : null;
   };
 
-  const refuse = (address: string) => {
-    forget(address);
-    if (waitingClick?.address === address) openFieldInstead();
+  const refuse = (field: VeEditedField) => {
+    forget(field);
+    if (waitingClick?.address === editedFieldAddressOf(field)) openFieldInstead();
   };
 
   const dropReadOnlyTwin = (wrapper: HTMLElement) => {
@@ -270,7 +254,7 @@ export function createRichTextEditing({
     const ended = editing;
     if (!ended) return;
     editing = null;
-    forget(editedFieldAddressOf(ended.held.field));
+    forget(ended.held.field);
     const isOnThePage = ended.twin.isConnected && ended.wrapper.isConnected;
     ended.stopWatchingWrapper();
     const keepsTwin =
@@ -337,7 +321,7 @@ export function createRichTextEditing({
     if (!marker) return false;
     endOtherEdits();
     commit();
-    forget(editedFieldAddressOf(ready.field));
+    forget(ready.field);
 
     const shown = previous?.twin ?? wrapper;
     const { content, root: twin } = twinOf(wrapper, ready.state);
@@ -401,24 +385,28 @@ export function createRichTextEditing({
     if (!editor && !editorLoad && richTextEditor) editorLoad = takeLoadedEditor(richTextEditor);
   };
 
-  const hold = (address: string, answer: Held | null) => {
+  const hold = (field: VeEditedField, answer: Held | null) => {
     if (isDisposed) return;
     if (!answer) {
-      refuse(address);
+      refuse(field);
       return;
     }
-    askedAt.delete(address);
+    const address = editedFieldAddressOf(field);
+    askedOfEndpointAt.delete(address);
     held.set(address, answer);
     heldAt.set(address, Date.now());
     beginWaitingEdit();
   };
 
   const askAdmin = (adminWindow: Window, field: VeEditedField) => {
-    const message: VeRichTextStateRequestMessage = {
+    const request: VeRichTextStateRequestMessage = {
       ...field,
       type: VE_RICH_TEXT_STATE_REQUEST_TYPE,
     };
-    adminWindow.postMessage(message, adminOriginOf(getCtx().adminOrigin));
+    channel.richTextStates.ask(adminWindow, request, {
+      answered: (answer) => hold(field, { ...answer, field }),
+      refused: () => hold(field, null),
+    });
   };
 
   const askEndpoint = async (field: VeEditedField) => {
@@ -430,28 +418,30 @@ export function createRichTextEditing({
         method: "POST",
       });
       const { answer, refusal } = await endpointAnswerOf(response);
-      hold(editedFieldAddressOf(field), refusal === null ? heldOf(field, answer) : null);
+      hold(field, refusal === null ? heldOf(field, answer) : null);
     } catch {
-      hold(editedFieldAddressOf(field), null);
+      hold(field, null);
     }
   };
 
   const ask = (field: VeEditedField) => {
-    askedAt.set(editedFieldAddressOf(field), Date.now());
     loadEditor();
     const adminWindow = currentAdmin();
-    if (adminWindow) askAdmin(adminWindow, field);
-    else void askEndpoint(field);
+    if (adminWindow) {
+      askAdmin(adminWindow, field);
+      return;
+    }
+    askedOfEndpointAt.set(editedFieldAddressOf(field), Date.now());
+    void askEndpoint(field);
   };
 
   const askUnlessHeld = (field: VeEditedField) => {
-    const address = editedFieldAddressOf(field);
-    if (!held.has(address) && !isBeingAsked(address)) ask(field);
+    if (!held.has(editedFieldAddressOf(field)) && !isBeingAsked(field)) ask(field);
   };
 
-  const forgetDocument = (document: VeDocument | null) => {
-    for (const [address, { field }] of held) {
-      if (!document || documentAddressOf(field) === documentAddressOf(document)) forget(address);
+  const forgetDocument = ({ document }: DocumentNews) => {
+    for (const { field } of held.values()) {
+      if (!document || documentAddressOf(field) === documentAddressOf(document)) forget(field);
     }
     if (waitingClick) askUnlessHeld(waitingClick.field);
   };
@@ -475,17 +465,6 @@ export function createRichTextEditing({
       checkedAt.set(wrapper, Date.now());
       const field = fieldOf(wrapper);
       if (field && !isEdited(field)) askUnlessHeld(field);
-    }
-  };
-
-  const hearAdmin = (data: PlainObject) => {
-    const field = readEditedField(data);
-    if (data.type === VE_RICH_TEXT_STATE_TYPE && field) {
-      hold(editedFieldAddressOf(field), readRichTextEdit(data) && heldOf(field, data));
-    } else if (data.type === VE_RICH_TEXT_STATE_REFUSED_TYPE && field) {
-      refuse(editedFieldAddressOf(field));
-    } else if (NEWS_OF_A_DOCUMENT.has(data.type)) {
-      forgetDocument(isVeDocument(data) ? veDocumentOf(data) : null);
     }
   };
 
@@ -546,7 +525,7 @@ export function createRichTextEditing({
 
   for (const name of POINTER_EVENTS) document.addEventListener(name, askForRichTextUnderThePointer);
   document.addEventListener("click", editClickedTwinAgain);
-  const stopHearing = hearTheAdmin(window, () => getCtx().adminOrigin, hearAdmin);
+  const stopHearingNews = channel.onDocumentNews(forgetDocument);
 
   return {
     commit,
@@ -562,7 +541,7 @@ export function createRichTextEditing({
         document.removeEventListener(name, askForRichTextUnderThePointer);
       }
       document.removeEventListener("click", editClickedTwinAgain);
-      stopHearing();
+      stopHearingNews();
       stopTracking();
     },
     editInPlace(target, event, openField) {
@@ -574,7 +553,7 @@ export function createRichTextEditing({
       if (waitingClick) return true;
       const ready = freshlyHeld(editedFieldAddressOf(field));
       if (ready && editor) return begin(target, ready, caretAt(target, pointOf(event)), null);
-      if (!ready) forget(editedFieldAddressOf(field));
+      if (!ready) forget(field);
       waitForState(target, field, event, openField);
       return true;
     },

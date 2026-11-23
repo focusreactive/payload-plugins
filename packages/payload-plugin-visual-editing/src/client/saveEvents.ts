@@ -7,7 +7,7 @@ import { hearTheAdmin } from "./adminWindow.js";
 
 export type SavedDocument = VeLiveDocument | null;
 
-const savedDocumentOf = (message: PlainObject): SavedDocument => {
+export const savedDocumentOf = (message: PlainObject): SavedDocument => {
   if (!isVeDocument(message)) return null;
   const { locale } = message;
   return { ...veDocumentOf(message), ...(typeof locale === "string" && { locale }) };

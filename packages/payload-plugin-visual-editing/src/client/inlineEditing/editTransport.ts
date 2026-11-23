@@ -11,23 +11,14 @@ import type {
   VeRichTextEditMessage,
   VeShownMedia,
 } from "../../shared/protocol.js";
+import type { AdminEditChannel, DocumentNews } from "./adminEditChannel.js";
 import type { EditRoutes } from "./editRoutes.js";
 
-import {
-  CHANGED_ELSEWHERE,
-  isRichTextEdit,
-  readEditedField,
-  readSaveRefusal,
-  SAVE_FAILED,
-} from "../../shared/fieldEdit.js";
-import { readPickedMedia } from "../../shared/mediaOption.js";
+import { CHANGED_ELSEWHERE, isRichTextEdit, SAVE_FAILED } from "../../shared/fieldEdit.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import {
   VE_FIELD_EDIT_PATH,
-  VE_FIELD_EDIT_REFUSED_TYPE,
   VE_FIELD_EDIT_TYPE,
-  VE_MEDIA_PICK_CANCELLED_TYPE,
-  VE_MEDIA_PICKED_TYPE,
   VE_PICK_MEDIA_TYPE,
   VE_RICH_TEXT_EDIT_ENDED_TYPE,
   VE_RICH_TEXT_EDIT_TYPE,
@@ -36,13 +27,11 @@ import { readPostedEditorState } from "../../shared/richText/postedEditorState.j
 import { isSameValue } from "../../shared/sameValue.js";
 import { documentAddressOf, editedFieldAddressOf } from "../../shared/veDocument.js";
 
-import { adminOriginOf, hearTheAdmin } from "../adminWindow.js";
-import { listenToSaves } from "../saveEvents.js";
 import { endpointAnswerOf } from "./endpointAnswer.js";
 
 export type EditStatus = "failed" | "saved" | "saving" | "unsaved";
 
-export type EditTransportCtx = { adminOrigin: string; payloadApi: string; onEdited?: () => void };
+export type EditTransportCtx = { payloadApi: string; onEdited?: () => void };
 
 export type OnStatus = (status: EditStatus, refusal?: SaveRefusal) => void;
 
@@ -81,8 +70,6 @@ export const EDIT_SEND_PAUSE_MS = 400;
 
 export const EDIT_SAVE_PAUSE_MS = 2000;
 
-export const MEDIA_PICK_TIME_LIMIT_MS = 60_000;
-
 type OnSaveEnded = (isSaved: boolean) => void;
 
 type WaitingEdit = {
@@ -101,15 +88,9 @@ type PostedAnswer = { refusal: SaveRefusal | null; isLatest: boolean };
 
 type PageLeave = { left: Promise<void>; leave: () => void };
 
-type AskedOfAdmin = {
-  field: VeEditedField;
-  image: ShownImage;
-  adminWindow: Window;
-  askedAt: number;
-  chosen?: VeMediaOption;
-};
-
 type OpenEdit = { address: string };
+
+type ChosenOnThePage = { media: VeMediaOption; useAgain(): void };
 
 const nextPageLeave = (): PageLeave => {
   let leave: PageLeave["leave"] | undefined;
@@ -187,14 +168,14 @@ export function createEditTransport(
   getCtx: () => EditTransportCtx,
   onStatus: OnStatus,
   win: Window,
-  routes: EditRoutes
+  routes: EditRoutes,
+  channel: AdminEditChannel
 ): EditTransport {
   const { adminOf } = routes;
   const waiting = new Map<string, WaitingEdit>();
   const failed = new Map<string, FailedEdit>();
   const postedToAdmin = new Map<string, VeEdit>();
   const unsavedInForm = new Map<string, VeEditedField>();
-  const askedOfAdmin = new Map<string, AskedOfAdmin>();
   const watchedSaves = new Map<string, OnSaveEnded>();
   const savesOnTheWay = new Map<string, number>();
   const savedEdits = new Map<string, SavedEdit>();
@@ -212,20 +193,11 @@ export function createEditTransport(
   const isUnsaved = (address: string): boolean =>
     waiting.has(address) || savesOnTheWay.has(address) || failed.has(address);
 
-  const isStillAsked = (asked: AskedOfAdmin | undefined, adminWindow: Window): boolean =>
-    asked !== undefined &&
-    asked.adminWindow === adminWindow &&
-    !adminWindow.closed &&
-    Date.now() - asked.askedAt < MEDIA_PICK_TIME_LIMIT_MS;
-
-  const isAskedOfAdmin = (address: string): boolean => {
-    const asked = askedOfAdmin.get(address);
-    return asked !== undefined && isStillAsked(asked, asked.adminWindow);
-  };
-
   const isFinished = (field: VeEditedField): boolean => {
     const address = editedFieldAddressOf(field);
-    return address !== openEdit?.address && !isUnsaved(address) && !isAskedOfAdmin(address);
+    return (
+      address !== openEdit?.address && !isUnsaved(address) && !channel.mediaPicks.isAsked(field)
+    );
   };
 
   const releaseFinishedRoutes = () => routes.releaseFinished(isFinished);
@@ -337,7 +309,7 @@ export function createEditTransport(
     failed.delete(editedFieldAddressOf(edit));
     postedToAdmin.set(editedFieldAddressOf(edit), edit);
     unsavedInForm.set(editedFieldAddressOf(edit), edit);
-    adminWindow.postMessage(messageOf(edit), adminOriginOf(getCtx().adminOrigin));
+    channel.tell(adminWindow, messageOf(edit));
   };
 
   const stopWaiting = (address: string): WaitingEdit | null => {
@@ -421,8 +393,8 @@ export function createEditTransport(
     report("failed");
   };
 
-  const settle = (saved: VeLiveDocument | null) => {
-    if (unsavedInForm.size === 0) return;
+  const settle = ({ document: saved, isSave }: DocumentNews) => {
+    if (!isSave || unsavedInForm.size === 0) return;
     for (const [address, field] of unsavedInForm) {
       if (saved && !isSavedWith(field, saved)) continue;
       unsavedInForm.delete(address);
@@ -445,31 +417,33 @@ export function createEditTransport(
   };
 
   const tellTheAdminTheEditEnded = (field: VeEditedField) => {
+    const adminWindow = adminOf(field);
     const message: VeRichTextEditEndedMessage = { ...field, type: VE_RICH_TEXT_EDIT_ENDED_TYPE };
-    adminOf(field)?.postMessage(message, adminOriginOf(getCtx().adminOrigin));
+    if (adminWindow) channel.tell(adminWindow, message);
   };
 
   const askAdmin = (
     adminWindow: Window,
     field: VeEditedField,
     image: ShownImage,
-    chosen?: VeMediaOption
+    chosen?: ChosenOnThePage
   ) => {
-    const address = editedFieldAddressOf(field);
-    if (isStillAsked(askedOfAdmin.get(address), adminWindow)) return;
-    const message: VePickMediaMessage = {
+    if (channel.mediaPicks.isAsked(field, adminWindow)) return;
+    const request: VePickMediaMessage = {
       ...field,
-      ...(chosen && { mediaId: chosen.id }),
+      ...(chosen && { mediaId: chosen.media.id }),
       type: VE_PICK_MEDIA_TYPE,
     };
-    askedOfAdmin.set(address, {
-      adminWindow,
-      askedAt: Date.now(),
-      field,
-      image,
-      ...(chosen && { chosen }),
+    channel.mediaPicks.ask(adminWindow, request, {
+      answered(picked) {
+        image.show(picked);
+        holdInForm(field);
+      },
+      refused(refusal) {
+        if (chosen) refuseAsked(field, refusal, chosen.useAgain);
+        image.openField();
+      },
     });
-    adminWindow.postMessage(message, adminOriginOf(getCtx().adminOrigin));
     if (chosen) holdInForm(field);
   };
 
@@ -489,52 +463,13 @@ export function createEditTransport(
 
   const useMedia = (field: VeEditedField, image: ShownImage, media: VeMediaOption) => {
     const adminWindow = adminOf(field);
-    if (adminWindow) askAdmin(adminWindow, field, image, media);
+    const useAgain = () => useMedia(field, image, media);
+    if (adminWindow) askAdmin(adminWindow, field, image, { media, useAgain });
     else saveMediaThroughEndpoint(field, image, media);
   };
 
-  const takeAsked = (field: VeEditedField | null): AskedOfAdmin | null => {
-    const asked = field && askedOfAdmin.get(editedFieldAddressOf(field));
-    if (!field || !asked) return null;
-    askedOfAdmin.delete(editedFieldAddressOf(field));
-    return asked;
-  };
-
-  const showPickedMedia = (data: unknown) => {
-    const picked = readPickedMedia(data);
-    const asked = takeAsked(picked);
-    if (!picked || !asked) return;
-    asked.image.show(picked);
-    holdInForm(asked.field);
-  };
-
-  const refusePick = (data: unknown) => {
-    const asked = takeAsked(readEditedField(data));
-    if (!asked) return;
-    const { chosen, field, image } = asked;
-    if (chosen) refuseAsked(field, readSaveRefusal(data), () => useMedia(field, image, chosen));
-    image.openField();
-  };
-
-  const refuseFormEdit = (data: unknown) => {
-    const refused = readEditedField(data);
-    if (refused) refuse(refused, readSaveRefusal(data));
-  };
-
-  const stopHearing = hearTheAdmin(
-    win,
-    () => getCtx().adminOrigin,
-    (data) => {
-      if (data.type === VE_MEDIA_PICKED_TYPE) showPickedMedia(data);
-      if (data.type === VE_FIELD_EDIT_REFUSED_TYPE) {
-        refusePick(data);
-        refuseFormEdit(data);
-      }
-      if (data.type === VE_MEDIA_PICK_CANCELLED_TYPE) takeAsked(readEditedField(data));
-    }
-  );
-
-  const stopListeningToSaves = listenToSaves(() => getCtx().adminOrigin, settle, win);
+  const stopHearingRefusals = channel.onRefusedEdit(refuse);
+  const stopHearingNews = channel.onDocumentNews(settle);
 
   return {
     beginEdit(field: VeEditedField, startedFrom: EditValue): FieldEdit<EditValue> {
@@ -602,8 +537,8 @@ export function createEditTransport(
     dispose() {
       flush();
       isDisposed = true;
-      stopHearing();
-      stopListeningToSaves();
+      stopHearingRefusals();
+      stopHearingNews();
     },
     leavePage() {
       flush();

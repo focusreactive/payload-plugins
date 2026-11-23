@@ -9,6 +9,7 @@ import type { RichTextEditorLoader } from "./richTextEditor.js";
 import type { SaveStatus } from "./saveStatus.js";
 
 import { CLICK_LEFT_TO_THE_PAGE } from "../overlay/editTargets.js";
+import { createAdminEditChannel } from "./adminEditChannel.js";
 import { createEditRoutes } from "./editRoutes.js";
 import { createEditTransport } from "./editTransport.js";
 import { createImageReplacement } from "./imageReplacement.js";
@@ -63,7 +64,9 @@ export function createInlineEditing(
     win: window,
   });
 
-  const transport = createEditTransport(getCtx, showStatus, window, routes);
+  const channel = createAdminEditChannel(window, () => getCtx().adminOrigin);
+
+  const transport = createEditTransport(getCtx, showStatus, window, routes, channel);
 
   const pageFields = createPageFields({
     getLocale: () => getCtx().locale,
@@ -83,6 +86,7 @@ export function createInlineEditing(
 
   const richTextEditing = createRichTextEditing({
     beginEdit: transport.beginEdit,
+    channel,
     currentAdmin: routes.currentAdmin,
     endOtherEdits: () => textEditing.commit(),
     getCtx,
@@ -158,6 +162,7 @@ export function createInlineEditing(
       richTextEditing.dispose();
       textEditing.dispose();
       transport.dispose();
+      channel.dispose();
       window.removeEventListener(PAGE_LEFT_EVENT, saveBeforeThePageIsLeft);
       document.removeEventListener(VISIBILITY_EVENT, saveBeforeThePageIsHidden);
       stopTracking();

@@ -9,6 +9,7 @@ import type {
   FieldEdit,
 } from "../../src/client/inlineEditing/editTransport";
 
+import { createAdminEditChannel } from "../../src/client/inlineEditing/adminEditChannel";
 import { createEditRoutes } from "../../src/client/inlineEditing/editRoutes";
 import {
   createEditTransport,
@@ -83,10 +84,11 @@ describe("the versions edits on a page of its own add", () => {
     vi.useFakeTimers({ toFake: [...TIMERS_OF_THE_PAUSE] });
     statuses = [];
     transport = createEditTransport(
-      () => ({ adminOrigin: "", payloadApi: "" }),
+      () => ({ payloadApi: "" }),
       (status) => statuses.push(status),
       pageWindow,
-      createEditRoutes({ holdsAnyForm: () => false, win: pageWindow })
+      createEditRoutes({ holdsAnyForm: () => false, win: pageWindow }),
+      createAdminEditChannel(pageWindow, () => "")
     );
   });
 

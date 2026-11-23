@@ -22,10 +22,10 @@ import {
 } from "../../src/client/inlineEditing/editTransport";
 import { DATA_VE_OPAQUE_ATTR } from "../../src/client/inlineEditing/richText/opaqueNode";
 import { DATA_VE_RICH_TEXT_TOOLBAR_ATTR } from "../../src/client/inlineEditing/richText/toolbar";
+import { RICH_TEXT_STATE_TIME_LIMIT_MS } from "../../src/client/inlineEditing/adminEditChannel";
 import {
   RICH_TEXT_CHECK_PAUSE_MS,
   RICH_TEXT_STATE_FRESH_MS,
-  RICH_TEXT_STATE_TIME_LIMIT_MS,
 } from "../../src/client/inlineEditing/richTextEditing";
 import {
   DATA_VE_EDIT_STARTING_ATTR,
