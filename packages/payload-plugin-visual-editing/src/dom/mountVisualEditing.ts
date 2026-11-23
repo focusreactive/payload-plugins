@@ -77,12 +77,7 @@ export function mountVisualEditing({
     session,
     () => pageEditing
   );
-  const toggle = showsToggle
-    ? startSessionToggle(document, session, {
-        setEditsInPlace: pageStore.setEditsInPlace,
-        setMode: pageStore.setMode,
-      })
-    : null;
+  const toggle = showsToggle ? startSessionToggle(document, session, pageStore.setMode) : null;
   const followSession = () => {
     overlay.sync();
     toggle?.sync();

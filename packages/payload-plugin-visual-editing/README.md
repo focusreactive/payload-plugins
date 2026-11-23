@@ -582,7 +582,7 @@ mountVisualEditing({
 
 Without `richTextEditor` a click on rich text opens the field in the admin, and the page loads nothing of Lexical.
 
-The toggle then shows an **Edit on page** switch next to its modes, with a dot in the accent colour while it is on; in a window too narrow for one row the switch moves to a second row. It starts off, so a click still opens the field in the admin. The choice is kept in `localStorage` under `visual-editing-inline`, per origin. Turning it on while the outlines are **Off** sets them to **Hover**.
+Editing on the page then runs whenever the toggle is on **Hover** or **Always**; there is nothing more to turn on. On **Off** the page shows no frames and edits nothing, as without visual editing.
 
 ### Using it
 
@@ -637,7 +637,7 @@ Neither path trusts what the page sends back; the endpoint and the form apply th
 
 The admin writes the state into the form as its value and its initial value, so Payload's editor shows it; the endpoint writes it only into a field the plugin lists as rich text, and tells a save Payload dropped from one that landed by comparing what the field stores, whatever order the database keeps its keys in.
 
-After an edit in a tab of its own nothing renders the page again by itself. The page keeps what the editor typed on screen, as a read-only copy in place of the rich text the site rendered, until the site renders that rich text again. A click on that copy edits it again, or, with **Edit on page** off, does what a click on the rich text does. Pass `onEdited` to render it: it is called after every save of an edit made on the page in a tab of its own, of text, rich text or an image.
+After an edit in a tab of its own nothing renders the page again by itself. The page keeps what the editor typed on screen, as a read-only copy in place of the rich text the site rendered, until the site renders that rich text again. A click on that copy edits it again, or, on **Off**, does what a click on the rich text does. Pass `onEdited` to render it: it is called after every save of an edit made on the page in a tab of its own, of text, rich text or an image.
 
 ```tsx
 'use client'
@@ -776,7 +776,7 @@ mountVisualEditing({
 | `framedOnly` | `false` | Only run inside the Live Preview: its iframe or the window it opens. Elsewhere it only removes the markers from `root` and `<head>`. |
 | `instantPreview` | `true` | Text typed in the admin appears on the page, once the plugin option is on. `false` keeps the page from listening. |
 | `locale` | none | Locale of the page, see [Requirements](#requirements). |
-| `inlineEditing` | `false` | Offers the **Edit on page** switch, see [Editing on the page](#editing-on-the-page). |
+| `inlineEditing` | `false` | Turns on editing on the page in the **Hover** and **Always** modes, see [Editing on the page](#editing-on-the-page). |
 | `toggle` | `true` | Shows the Off / Hover / Always toggle. |
 | `accentColor`, `accentTextColor` | violet, white | Colour of the frames, the **Edit** badge and the toggle's "on" dot, and of the badge text. Same as on `VisualEditing.Provider`. |
 | `onSave` | none | Called after the admin saves the document, autosave included. |
@@ -927,7 +927,7 @@ A `beforeChange` hook removes intact markers from every write. It cannot recogni
 | `adminBasePath` | `/admin` | Must match the plugin option. |
 | `adminOrigin` | the page's origin | Origin of the admin window, with its scheme: `https://cms.example.com`. A value that is no `http` or `https` URL is ignored: the page then talks to its own origin and asks no `payloadApi`. |
 | `instantPreview` | `true` | See [Instant preview](#instant-preview). `false` keeps the page from listening to the admin. |
-| `inlineEditing` | `false` | Offers the **Edit on page** switch, see [Editing on the page](#editing-on-the-page). |
+| `inlineEditing` | `false` | Turns on editing on the page in the **Hover** and **Always** modes, see [Editing on the page](#editing-on-the-page). |
 | `onEdited` | none | Called after an edit made on the page in a tab of its own was saved, see [Where an edit is saved](#where-an-edit-is-saved). The latest function passed is the one called. |
 | `richTextEditor` | none | `() => import('@focus-reactive/payload-plugin-visual-editing/rich-text')`. With it and `inlineEditing`, rich text is edited on the page. The latest function passed is the one called. |
 | `buildAdminEditUrl` | built in | Builds the link used when the page was not opened from the admin. A link without an origin opens on `adminOrigin`. |

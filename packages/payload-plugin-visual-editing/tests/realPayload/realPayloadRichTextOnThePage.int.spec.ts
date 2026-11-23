@@ -19,7 +19,7 @@ import { EDIT_SAVE_PAUSE_MS } from "../../src/client/inlineEditing/editTransport
 import { DATA_VE_OPAQUE_ATTR } from "../../src/client/inlineEditing/richText/opaqueNode";
 import { DATA_VE_EDITED_ATTR } from "../../src/client/inlineEditing/richTextTwin";
 import { DATA_VE_EDITING_ATTR } from "../../src/client/inlineEditing/textEditing";
-import { EDITS_IN_PLACE_STORAGE_KEY, STORAGE_KEY } from "../../src/client/visualEditingMode";
+import { STORAGE_KEY } from "../../src/client/visualEditingMode";
 import { mountVisualEditing, richTextAttributes } from "../../src/dom";
 import { VE_FIELD_EDIT_PATH, VE_READ_HEADER } from "../../src/shared/protocol";
 import { childrenOf, rootOf } from "../../src/shared/richText/editorNodes";
@@ -236,7 +236,6 @@ describe("rich text edited on a page that saves through Payload", () => {
     saves = 0;
     fieldEdits = 0;
     window.localStorage.setItem(STORAGE_KEY, "hover");
-    window.localStorage.setItem(EDITS_IN_PLACE_STORAGE_KEY, "true");
     vi.spyOn(window, "open").mockImplementation(() => null);
     vi.stubGlobal("fetch", (url: string, init: RequestInit) =>
       askEndpoint(url.slice(PAYLOAD_API.length), init)

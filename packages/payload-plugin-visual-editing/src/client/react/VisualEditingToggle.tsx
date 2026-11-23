@@ -10,7 +10,7 @@ import { useVisualEditing } from "./VisualEditingProvider.js";
 
 export function VisualEditingToggle(): null {
   const session = useVisualEditing();
-  const { setEditsInPlace, setMode } = session;
+  const { setMode } = session;
   const latest = useRef(session);
   const toggle = useRef<FollowingSession | null>(null);
 
@@ -19,16 +19,13 @@ export function VisualEditingToggle(): null {
   });
 
   useEffect(() => {
-    const started = startSessionToggle(document, () => latest.current, {
-      setEditsInPlace,
-      setMode,
-    });
+    const started = startSessionToggle(document, () => latest.current, setMode);
     toggle.current = started;
     return () => {
       toggle.current = null;
       started.dispose();
     };
-  }, [setEditsInPlace, setMode]);
+  }, [setMode]);
 
   useEffect(() => {
     toggle.current?.sync();

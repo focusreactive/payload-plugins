@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EDIT_SAVE_PAUSE_MS } from "../../src/client/inlineEditing/editTransport";
 import { VisualEditingOverlay } from "../../src/client/react/VisualEditingOverlay";
 import { VisualEditingProvider } from "../../src/client/react/VisualEditingProvider";
-import { EDITS_IN_PLACE_STORAGE_KEY, STORAGE_KEY } from "../../src/client/visualEditingMode";
+import { STORAGE_KEY } from "../../src/client/visualEditingMode";
 import { mountVisualEditing } from "../../src/dom";
 
 import { markedText } from "../support/markedData";
@@ -45,7 +45,6 @@ describe("onEdited", () => {
     vi.useFakeTimers();
     isSaved = true;
     localStorage.setItem(STORAGE_KEY, "hover");
-    localStorage.setItem(EDITS_IN_PLACE_STORAGE_KEY, "true");
     vi.stubGlobal(
       "fetch",
       vi.fn(() =>

@@ -85,15 +85,10 @@ export function startSessionOverlay(
   };
 }
 
-export type ToggleActions = {
-  setMode: (mode: VisualEditingMode) => void;
-  setEditsInPlace: (editsInPlace: boolean) => void;
-};
-
 export function startSessionToggle(
   doc: Document,
   session: () => Session,
-  { setEditsInPlace, setMode }: ToggleActions
+  setMode: (mode: VisualEditingMode) => void
 ): FollowingSession {
   let toggle: Toggle | null = null;
 
@@ -103,13 +98,13 @@ export function startSessionToggle(
   };
 
   const sync = () => {
-    const { available, editsInPlace, inlineEditing, mode } = session();
+    const { available, mode } = session();
     if (!available) {
       remove();
       return;
     }
-    toggle ??= createToggle(doc, setMode, setEditsInPlace);
-    toggle.show(mode, inlineEditing ? editsInPlace : undefined);
+    toggle ??= createToggle(doc, setMode);
+    toggle.show(mode);
   };
   sync();
 

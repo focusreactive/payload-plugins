@@ -33,7 +33,6 @@ import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect.js";
 
 type VisualEditingContextType = Session & {
   setMode: (mode: VisualEditingMode) => void;
-  setEditsInPlace: (editsInPlace: boolean) => void;
   toggleEnabled: () => void;
   onEdited?: () => void;
   richTextEditor?: RichTextEditorLoader;
@@ -45,7 +44,6 @@ const NO_EDITOR = "The rich text editor of the page was taken away";
 
 const VisualEditingContext = createContext<VisualEditingContextType>({
   ...sessionOf({}, DETACHED_PAGE),
-  setEditsInPlace: noop,
   setMode: noop,
   toggleEnabled: noop,
 });
@@ -122,7 +120,6 @@ export function VisualEditingProvider({
       richTextEditor: hasRichTextEditor
         ? () => latestRichTextEditor.current?.() ?? Promise.reject(new Error(NO_EDITOR))
         : undefined,
-      setEditsInPlace: pageStore.setEditsInPlace,
       setMode: pageStore.setMode,
       toggleEnabled: () => pageStore.setMode(toggledMode(session.mode)),
     };

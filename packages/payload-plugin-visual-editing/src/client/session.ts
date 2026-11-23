@@ -3,7 +3,7 @@ import type { VisualEditingMode } from "./visualEditingMode.js";
 
 import { defaultBuildAdminEditUrl } from "../shared/buildAdminEditUrl.js";
 import { findAdminWindow } from "./adminWindow.js";
-import { EDITS_IN_PLACE_STORAGE_KEY, STORAGE_KEY } from "./visualEditingMode.js";
+import { STORAGE_KEY } from "./visualEditingMode.js";
 
 export type SessionOptions = {
   available?: boolean;
@@ -23,7 +23,6 @@ export type Session = {
   instantPreview: boolean;
   isInstantPreviewOn: boolean;
   inlineEditing: boolean;
-  editsInPlace: boolean;
   isInlineEditingOn: boolean;
   mode: VisualEditingMode;
   buildAdminEditUrl: BuildAdminEditUrl;
@@ -34,7 +33,6 @@ export type Session = {
 
 export type PageState = {
   mode: VisualEditingMode;
-  editsInPlace: boolean;
   isFramed: boolean;
   pageOrigin: string;
 };
@@ -44,18 +42,13 @@ export interface PageStore {
   subscribe(listener: () => void): () => void;
   attach(win: Window): void;
   setMode(mode: VisualEditingMode): void;
-  setEditsInPlace(editsInPlace: boolean): void;
 }
 
 export const DETACHED_PAGE: PageState = {
-  editsInPlace: false,
   isFramed: false,
   mode: "off",
   pageOrigin: "",
 };
-
-const STORED_ON = "true";
-const STORED_OFF = "false";
 
 const DEFAULT_ADMIN_BASE_PATH = "/admin";
 
@@ -108,8 +101,6 @@ const readStoredMode = (win: Window): VisualEditingMode => {
   return "off";
 };
 
-const MODE_THAT_SHOWS_WHAT_IS_EDITED: VisualEditingMode = "hover";
-
 export const toggledMode = (mode: VisualEditingMode): VisualEditingMode =>
   mode === "off" ? "always" : "off";
 
@@ -134,7 +125,6 @@ export function createPageStore(): PageStore {
     attach(win) {
       attachedWindow = win;
       change({
-        editsInPlace: storedUnder(win, EDITS_IN_PLACE_STORAGE_KEY) === STORED_ON,
         isFramed: win.self !== win.top || findAdminWindow(win) !== null,
         mode: readStoredMode(win),
         pageOrigin: win.location.origin,
@@ -143,14 +133,6 @@ export function createPageStore(): PageStore {
     setMode(mode) {
       change({ ...state, mode });
       if (attachedWindow) store(attachedWindow, STORAGE_KEY, mode);
-    },
-    setEditsInPlace(editsInPlace) {
-      const mode =
-        editsInPlace && state.mode === "off" ? MODE_THAT_SHOWS_WHAT_IS_EDITED : state.mode;
-      change({ ...state, editsInPlace, mode });
-      if (!attachedWindow) return;
-      store(attachedWindow, EDITS_IN_PLACE_STORAGE_KEY, editsInPlace ? STORED_ON : STORED_OFF);
-      store(attachedWindow, STORAGE_KEY, mode);
     },
   };
 }
@@ -167,12 +149,11 @@ export const sessionOf = (options: SessionOptions, page: PageState): Session => 
     adminOrigin,
     available,
     buildAdminEditUrl: options.buildAdminEditUrl ?? defaultBuildAdminEditUrl,
-    editsInPlace: page.editsInPlace,
     enabled,
     inlineEditing,
     instantPreview,
     isDraft,
-    isInlineEditingOn: enabled && inlineEditing && page.editsInPlace,
+    isInlineEditingOn: enabled && inlineEditing,
     isInstantPreviewOn: available && instantPreview,
     mode: page.mode,
     payloadApi: options.payloadApi ?? `${adminOrigin}${DEFAULT_API_PATH}`,

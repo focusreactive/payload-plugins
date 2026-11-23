@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { VisualEditingOverlay } from "../../src/client/react/VisualEditingOverlay";
 import { VisualEditingProvider } from "../../src/client/react/VisualEditingProvider";
-import { EDITS_IN_PLACE_STORAGE_KEY, STORAGE_KEY } from "../../src/client/visualEditingMode";
+import { STORAGE_KEY } from "../../src/client/visualEditingMode";
 import { identityAttrsOf } from "../../src/client/withVisualEditingPath";
 import { mountVisualEditing } from "../../src/dom";
 
@@ -41,7 +41,6 @@ describe("the rich text editor a site hands the page", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     localStorage.setItem(STORAGE_KEY, "hover");
-    localStorage.setItem(EDITS_IN_PLACE_STORAGE_KEY, "true");
     startEditSession = vi.fn(() => ({ end: () => undefined }));
     richTextEditor = vi.fn(() => Promise.resolve({ richTextEditor: { startEditSession } }));
     vi.stubGlobal(
@@ -105,6 +104,17 @@ describe("the rich text editor a site hands the page", () => {
       expect(startEditSession).toHaveBeenCalledWith(
         expect.objectContaining({ formats: FORMATS, state: STATE })
       );
+      expect(window.open).not.toHaveBeenCalled();
+    });
+
+    it("is not asked for in Off mode, where a click does what it does on the site", async () => {
+      localStorage.setItem(STORAGE_KEY, "off");
+      render(richTextEditor);
+
+      await clickRichText();
+
+      expect(richTextEditor).not.toHaveBeenCalled();
+      expect(fetch).not.toHaveBeenCalled();
       expect(window.open).not.toHaveBeenCalled();
     });
 

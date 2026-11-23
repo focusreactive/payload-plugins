@@ -45,7 +45,6 @@ describe("page store", () => {
     store.attach(window);
 
     expect(store.read()).toEqual({
-      editsInPlace: false,
       isFramed: true,
       mode: "hover",
       pageOrigin: window.location.origin,
@@ -134,7 +133,6 @@ const NO_ORIGINS = ["cms.example.com", "localhost:3000", "//cms.example.com", "f
 
 describe("session", () => {
   const framedPage = {
-    editsInPlace: false,
     isFramed: true,
     mode: "always" as const,
     pageOrigin: "https://site.example",
@@ -225,74 +223,32 @@ describe("session", () => {
 });
 
 describe("editing on the page", () => {
-  const EDITS_IN_PLACE_KEY = "visual-editing-inline";
-
   const page = {
-    editsInPlace: true,
     isFramed: false,
     mode: "hover" as const,
     pageOrigin: "https://site.example",
   };
 
-  it("is off until the editor turns it on", () => {
-    const store = createPageStore();
-
-    store.attach(window);
-
-    expect(store.read().editsInPlace).toBe(false);
-  });
-
-  it("keeps the choice of the editor between page loads", () => {
-    const store = createPageStore();
-    store.attach(window);
-
-    store.setEditsInPlace(true);
-
-    expect(localStorage.getItem(EDITS_IN_PLACE_KEY)).toBe("true");
-    const reloaded = createPageStore();
-    reloaded.attach(window);
-    expect(reloaded.read().editsInPlace).toBe(true);
-  });
-
-  it("shows outlines on hover when it is turned on while they are off", () => {
-    const store = createPageStore();
-    store.attach(window);
-
-    store.setEditsInPlace(true);
-
-    expect(store.read().mode).toBe("hover");
-    expect(localStorage.getItem(STORAGE_KEY)).toBe("hover");
-  });
-
-  it("keeps the mode the editor picked when it is turned on or off", () => {
-    const store = createPageStore();
-    store.attach(window);
-    store.setMode("always");
-
-    store.setEditsInPlace(true);
-    store.setEditsInPlace(false);
-
-    expect(store.read()).toMatchObject({ editsInPlace: false, mode: "always" });
-    expect(localStorage.getItem(EDITS_IN_PLACE_KEY)).toBe("false");
-  });
-
-  it("works on a page whose storage is blocked", () => {
-    const store = createPageStore();
-    store.attach(pageWithBlockedStorage());
-
-    store.setEditsInPlace(true);
-
-    expect(store.read().editsInPlace).toBe(true);
-  });
-
-  it("runs where the site offers it, the editor turned it on and outlines show", () => {
+  it("runs in every mode but Off where the site offers it", () => {
     const options = { available: true, inlineEditing: true };
 
     expect(sessionOf(options, page).isInlineEditingOn).toBe(true);
-    expect(sessionOf(options, { ...page, editsInPlace: false }).isInlineEditingOn).toBe(false);
+    expect(sessionOf(options, { ...page, mode: "always" }).isInlineEditingOn).toBe(true);
     expect(sessionOf(options, { ...page, mode: "off" }).isInlineEditingOn).toBe(false);
     expect(sessionOf({ available: true }, page).isInlineEditingOn).toBe(false);
     expect(sessionOf({ ...options, available: false }, page).isInlineEditingOn).toBe(false);
+  });
+
+  it("runs as soon as the page is attached in a mode but Off, whatever an older page stored for it", () => {
+    localStorage.setItem(STORAGE_KEY, "hover");
+    localStorage.setItem("visual-editing-inline", "false");
+    const store = createPageStore();
+
+    store.attach(window);
+
+    expect(
+      sessionOf({ available: true, inlineEditing: true }, store.read()).isInlineEditingOn
+    ).toBe(true);
   });
 
   it("is offered only where visual editing is available", () => {
