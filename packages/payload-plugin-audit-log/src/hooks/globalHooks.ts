@@ -1,27 +1,20 @@
-import type { Block, GlobalAfterChangeHook, GlobalConfig, PayloadRequest } from "payload";
+import type { Block, GlobalAfterChangeHook, GlobalConfig } from "payload";
 import { auditTarget, inLocale } from "../core/auditTarget";
-import {
-  configuredLocalesOf,
-  createChangeDiff,
-  withStoredValuesOfFieldsMissingFrom,
-} from "../core/changeDiff";
-import type { ChangeDiff } from "../core/changeDiff";
+import { createChangeDiff, withStoredValuesOfFieldsMissingFrom } from "../core/changeDiff";
 import { classifyGlobalChange } from "../core/classify";
 import { withStoredLocalizedValues } from "../core/storedLocalizedValues";
 import { recordAuditEvent } from "../core/writeEvent";
 import type { CapturedMainGlobal } from "../db/mainGlobalCapture";
 import type { ResolvedOptions } from "../options";
 import { failOpen } from "../utils/failOpen";
-import { readsWithFallbackLocale } from "../utils/fallbackLocale";
-import type { LocaleOfRequest } from "../utils/fallbackLocale";
 import { localizedFieldPaths, readRestrictedFieldPaths, storedValuesOf } from "../utils/fields";
 import type { SanitizedFieldsShape } from "../utils/fields";
+import { configuredLocalesOf, localeOfSave, readsWithFallbackLocale } from "../utils/locales";
+import type { LocaleOfRequest } from "../utils/locales";
 import { hasAutosave, hasDrafts } from "../utils/versions";
 import { trackGlobalOperations } from "./globalOperationTracking";
 
 type Doc = Record<string, unknown>;
-
-const ALL_LOCALES = "all";
 
 export function withGlobalAudit(
   global: GlobalConfig,
@@ -42,29 +35,8 @@ export function withGlobalAudit(
     maxChangedPaths: opts.maxChangedPaths,
   });
 
-  const localesOf = (req: PayloadRequest): readonly string[] =>
-    localized ? configuredLocalesOf(req) : [];
-
-  const changesSinceMainGlobal = (
-    diff: ChangeDiff,
-    mainGlobal: CapturedMainGlobal,
-    req: PayloadRequest,
-    doc: Doc
-  ): string[] => {
-    if (!mainGlobal.written) return diff.changedFields(mainGlobal.doc ?? undefined, doc);
-    return diff.changedStoredFields(
-      mainGlobal.doc ?? undefined,
-      mainGlobal.written,
-      doc,
-      localesOf(req)
-    );
-  };
-
   const storedBeforeSave = (mainGlobal: CapturedMainGlobal | undefined): Doc | null | undefined =>
     drafts ? (mainGlobal?.latestVersion ?? mainGlobal?.doc) : mainGlobal?.doc;
-
-  const localeOfSave = ({ locale }: LocaleOfRequest): string | undefined =>
-    localized && typeof locale === "string" && locale !== ALL_LOCALES ? locale : undefined;
 
   const previousDocAsStored = (
     savedIn: LocaleOfRequest,
@@ -73,7 +45,7 @@ export function withGlobalAudit(
   ): Doc => {
     const stored = storedBeforeSave(mainGlobal);
     if (!stored) return previousDoc;
-    const locale = localeOfSave(savedIn);
+    const locale = localeOfSave(savedIn, localized);
     if (locale === undefined) {
       return withStoredValuesOfFieldsMissingFrom(previousDoc, stored, readRestrictedFields);
     }
@@ -104,7 +76,8 @@ export function withGlobalAudit(
       storedValuesOf: storedValuesOfConfig(sanitizedGlobal as SanitizedFieldsShape),
       selected: flags.selected,
       submittedData: data,
-      saveLocale: localeOfSave(savedIn),
+      savedIn,
+      configuredLocales: configuredLocalesOf(req),
     });
     const wasPublished = drafts && mainGlobal?.doc?._status === "published";
     const action = classifyGlobalChange(previousDoc, diff.savedDoc(doc), {
@@ -115,7 +88,7 @@ export function withGlobalAudit(
       action === "global.unpublish" || (autosave && action === "global.publish" && !flags.restore);
     const changes =
       comparesWithMainGlobal && mainGlobal
-        ? changesSinceMainGlobal(diff, mainGlobal, req, doc)
+        ? diff.changedFields(mainGlobal.doc ?? undefined, doc, mainGlobal.written ?? undefined)
         : diff.changedFields(previousDoc, doc);
     if (action === "global.update" && changes.length === 0) return;
     const target = auditTarget("global", slug);

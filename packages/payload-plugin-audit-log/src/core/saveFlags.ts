@@ -1,4 +1,4 @@
-import type { LocaleOfRequest } from "../utils/fallbackLocale";
+import type { LocaleOfRequest } from "../utils/locales";
 import { isAutosaveDraftTick } from "../utils/versions";
 import { stampOperationStart } from "./operationClock";
 

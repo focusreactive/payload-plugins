@@ -1,5 +1,4 @@
 import type { CollectionConfig } from "payload";
-import { TRUNCATED_MARKER } from "../constants";
 
 type AuthConfig = CollectionConfig["auth"];
 
@@ -27,20 +26,4 @@ export function submittedSecretFields(
   const apiKeySubmitted = data.apiKey !== undefined;
   if (usesApiKeys(auth) && apiKeySubmitted) secretFields.push("apiKey");
   return secretFields;
-}
-
-export function withSecretFieldsFirst(
-  secretFields: readonly string[],
-  changes: string[],
-  maxChangedPaths: number
-): string[] {
-  if (secretFields.length === 0) return changes;
-  const wasTruncated = changes.at(-1) === TRUNCATED_MARKER;
-  const merged = [
-    ...secretFields,
-    ...changes.filter((path) => path !== TRUNCATED_MARKER && !secretFields.includes(path)),
-  ];
-  if (merged.length > maxChangedPaths)
-    return [...merged.slice(0, maxChangedPaths), TRUNCATED_MARKER];
-  return wasTruncated ? [...merged, TRUNCATED_MARKER] : merged;
 }

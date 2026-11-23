@@ -1,6 +1,7 @@
-import type { PayloadRequest } from "payload";
 import { TRUNCATED_MARKER } from "../constants";
 import type { FieldPathPattern, StoredValuesOf } from "../utils/fields";
+import { localeOfSave } from "../utils/locales";
+import type { LocaleOfRequest } from "../utils/locales";
 import { createdPaths, diffPaths, isLexicalRichText } from "./diffPaths";
 import { isRowOf, matchingRowOf } from "./rows";
 import { withStoredLocalizedValues } from "./storedLocalizedValues";
@@ -10,20 +11,16 @@ type Doc = Record<string, unknown>;
 export type ChangeDiff = {
   savedDoc: (doc: Doc) => Doc;
   createdFields: (doc: Doc) => string[];
-  changedFields: (before: Doc | undefined, after: Doc) => string[];
-  changedStoredFields: (
-    storedBefore: Doc | undefined,
-    storedAfter: Doc,
-    doc: Doc,
-    locales: readonly string[]
-  ) => string[];
+  changedFields: (before: Doc | undefined, doc: Doc, written?: Doc) => string[];
 };
 
 export type SavedDocScope = {
   storedValuesOf?: StoredValuesOf;
   selected?: boolean;
   submittedData?: Doc;
-  saveLocale?: string;
+  savedIn?: LocaleOfRequest;
+  configuredLocales?: readonly string[];
+  secretFields?: readonly string[];
 };
 
 const withinLimit = (paths: readonly string[], maxChangedPaths: number): string[] => {
@@ -185,7 +182,17 @@ export function createChangeDiff({
   localizedFields?: readonly FieldPathPattern[];
   maxChangedPaths: number;
 }): (scope?: SavedDocScope) => ChangeDiff {
-  return ({ storedValuesOf, selected = false, submittedData = {}, saveLocale } = {}) => {
+  const localized = localizedFields.length > 0;
+  return ({
+    storedValuesOf,
+    selected = false,
+    submittedData = {},
+    savedIn = {},
+    configuredLocales = [],
+    secretFields = [],
+  } = {}) => {
+    const saveLocale = localeOfSave(savedIn, localized);
+    const locales = localized ? configuredLocales : [];
     const stored = (doc: Doc): Doc => (storedValuesOf ? storedValuesOf(doc) : doc);
 
     const readableSubmittedData = (doc: Doc) =>
@@ -240,18 +247,22 @@ export function createChangeDiff({
       };
     };
 
+    const changedShownFields = (before: Doc | undefined, doc: Doc): string[] => {
+      const pair = comparable(before, doc);
+      return diffPaths(pair.before, pair.after, { max: maxChangedPaths });
+    };
+
     const changedStoredFields = (
       storedBefore: Doc | undefined,
       storedAfterSave: Doc,
-      doc: Doc,
-      locales: readonly string[]
+      doc: Doc
     ): string[] => {
       const inLocale = (value: Doc | undefined, locale: string | undefined) =>
         value && locale !== undefined
           ? withStoredLocalizedValues(value, value, localizedFields, locale)
           : value;
       const comparedLocales = locales.length > 0 ? locales : [undefined];
-      const paths = comparedLocales.flatMap((locale) => {
+      return comparedLocales.flatMap((locale) => {
         const pair = comparableStored(
           inLocale(storedBefore, locale),
           inLocale(storedAfterSave, locale) ?? {},
@@ -260,24 +271,21 @@ export function createChangeDiff({
         );
         return diffPaths(pair.before, pair.after, { max: maxChangedPaths });
       });
-      return withinLimit(paths, maxChangedPaths);
     };
 
     return {
       savedDoc,
-      changedStoredFields,
       createdFields: (doc) => createdPaths(writtenByCreate(doc)),
-      changedFields: (before, doc) => {
-        const pair = comparable(before, doc);
-        return diffPaths(pair.before, pair.after, { max: maxChangedPaths });
-      },
+      changedFields: (before, doc, written) =>
+        withinLimit(
+          [
+            ...secretFields,
+            ...(written
+              ? changedStoredFields(before, written, doc)
+              : changedShownFields(before, doc)),
+          ],
+          maxChangedPaths
+        ),
     };
   };
 }
-
-type LocalizationShape = { localization?: false | { localeCodes?: readonly string[] } };
-
-export const configuredLocalesOf = (req: PayloadRequest): readonly string[] => {
-  const localization = (req.payload.config as LocalizationShape | undefined)?.localization;
-  return localization ? (localization.localeCodes ?? []) : [];
-};

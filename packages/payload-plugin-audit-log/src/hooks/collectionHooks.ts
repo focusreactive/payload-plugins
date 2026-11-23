@@ -7,19 +7,19 @@ import type {
 } from "payload";
 import { API_KEY_HIDDEN_FIELDS, AUTH_HIDDEN_FIELDS } from "../constants";
 import { auditTarget, inLocale } from "../core/auditTarget";
-import { configuredLocalesOf, createChangeDiff } from "../core/changeDiff";
+import { createChangeDiff } from "../core/changeDiff";
 import type { ChangeDiff } from "../core/changeDiff";
 import { classifyCollectionChange } from "../core/classify";
-import { usesApiKeys, withSecretFieldsFirst } from "../core/secretFields";
+import { usesApiKeys } from "../core/secretFields";
 import { withStoredLocalizedValues } from "../core/storedLocalizedValues";
 import type { OperationEventArgs } from "../core/writeEvent";
 import { recordAuditEvent } from "../core/writeEvent";
 import type { ResolvedOptions } from "../options";
 import { failOpen } from "../utils/failOpen";
-import { readsWithFallbackLocale } from "../utils/fallbackLocale";
-import type { LocaleOfRequest } from "../utils/fallbackLocale";
 import { localizedFieldPaths, readRestrictedFieldPaths, storedValuesOf } from "../utils/fields";
 import type { SanitizedFieldsShape } from "../utils/fields";
+import { configuredLocalesOf, localeOfSave, readsWithFallbackLocale } from "../utils/locales";
+import type { LocaleOfRequest } from "../utils/locales";
 import { hasAutosave } from "../utils/versions";
 import { buildCollectionAuthHooks } from "./collectionAuthHooks";
 import { trackCollectionOperations } from "./collectionOperationTracking";
@@ -30,8 +30,6 @@ const fieldsHiddenByPayload = (auth: CollectionConfig["auth"]): string[] => {
   if (!auth) return [];
   return [...AUTH_HIDDEN_FIELDS, ...(usesApiKeys(auth) ? API_KEY_HIDDEN_FIELDS : [])];
 };
-
-const ALL_LOCALES = "all";
 
 const publishedOnly = (doc: Doc): Doc | undefined =>
   doc._status === "published" ? doc : undefined;
@@ -74,14 +72,8 @@ export function withCollectionAudit(
       localized,
     });
 
-  const localesOf = (req: PayloadRequest): readonly string[] =>
-    localized ? configuredLocalesOf(req) : [];
-
-  const localeOfSave = ({ locale }: LocaleOfRequest): string | undefined =>
-    localized && typeof locale === "string" && locale !== ALL_LOCALES ? locale : undefined;
-
   const inLocaleOfSave = (savedIn: LocaleOfRequest, stored: Doc): Doc => {
-    const locale = localeOfSave(savedIn);
+    const locale = localeOfSave(savedIn, localized);
     return locale === undefined
       ? stored
       : withStoredLocalizedValues(stored, stored, localizedFields, locale);
@@ -92,14 +84,13 @@ export function withCollectionAudit(
     doc: Doc,
     written: Doc | undefined
   ): Doc => {
-    const locale = localeOfSave(savedIn);
+    const locale = localeOfSave(savedIn, localized);
     return written && locale !== undefined && readsWithFallbackLocale(savedIn)
       ? withStoredLocalizedValues(doc, written, localizedFields, locale)
       : doc;
   };
 
   const changesOfUpdate = (
-    req: PayloadRequest,
     savedIn: LocaleOfRequest,
     diff: ChangeDiff,
     {
@@ -111,10 +102,8 @@ export function withCollectionAudit(
   ): string[] => {
     if (!liveDocBeforeSave) return diff.changedFields(previousDoc, doc);
     const lastPublish = publishedOnly(liveDocBeforeSave);
-    if (!written) {
-      return diff.changedFields(lastPublish && inLocaleOfSave(savedIn, lastPublish), doc);
-    }
-    return diff.changedStoredFields(lastPublish, written, doc, localesOf(req));
+    if (written) return diff.changedFields(lastPublish, doc, written);
+    return diff.changedFields(lastPublish && inLocaleOfSave(savedIn, lastPublish), doc);
   };
 
   const recordChange = async ({
@@ -138,7 +127,9 @@ export function withCollectionAudit(
       storedValuesOf: storedValuesOfConfig(sanitizedCollection as SanitizedFieldsShape),
       selected: flags.selected,
       submittedData: data,
-      saveLocale: localeOfSave(savedIn),
+      savedIn,
+      configuredLocales: configuredLocalesOf(req),
+      secretFields: flags.secretFields,
     });
     const savedDoc = diff.savedDoc(doc);
     const docAsStored = withoutFallbackValues(savedIn, doc, written);
@@ -154,19 +145,15 @@ export function withCollectionAudit(
       flags: { ...flags, wasPublished },
     });
     const comparesWithLiveDoc = action === "doc.unpublish" || (autosave && publishes);
-    const secretFields = operation === "update" ? (flags.secretFields ?? []) : [];
-    const changes = withSecretFieldsFirst(
-      secretFields,
+    const changes =
       operation === "create"
         ? diff.createdFields(doc)
-        : changesOfUpdate(req, savedIn, diff, {
+        : changesOfUpdate(savedIn, diff, {
             previousDoc,
             liveDocBeforeSave: comparesWithLiveDoc ? liveDoc : undefined,
             written,
             doc: docAsStored,
-          }),
-      opts.maxChangedPaths
-    );
+          });
     if (action === "doc.update" && changes.length === 0) return;
 
     await record(

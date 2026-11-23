@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readsWithFallbackLocale } from "../../src/utils/fallbackLocale";
+import { readsWithFallbackLocale } from "../../src/utils/locales";
 
 describe("reads with a fallback locale", () => {
   it("is true only when another locale fills missing values", () => {

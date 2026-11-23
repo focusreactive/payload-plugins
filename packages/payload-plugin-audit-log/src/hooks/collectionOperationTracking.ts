@@ -18,8 +18,8 @@ import type { OpFlags, SaveArgs } from "../core/saveFlags";
 import { submittedSecretFields } from "../core/secretFields";
 import { openWrittenDocCapture, takeWrittenDoc } from "../db/writtenDocCapture";
 import { failOpen } from "../utils/failOpen";
-import { readsWithFallbackLocale } from "../utils/fallbackLocale";
-import type { LocaleOfRequest } from "../utils/fallbackLocale";
+import { readsWithFallbackLocale } from "../utils/locales";
+import type { LocaleOfRequest } from "../utils/locales";
 import { hasAutosave, hasDrafts } from "../utils/versions";
 
 type Doc = Record<string, unknown>;

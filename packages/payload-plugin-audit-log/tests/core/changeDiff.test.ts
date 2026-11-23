@@ -7,13 +7,22 @@ const LOCALES = ["en", "de"] as const;
 const ROWS = { rows: true } as const;
 
 const diffOf = (
-  options: { maxChangedPaths?: number; submittedData?: Record<string, unknown> } = {}
+  options: {
+    maxChangedPaths?: number;
+    submittedData?: Record<string, unknown>;
+    configuredLocales?: readonly string[];
+    secretFields?: readonly string[];
+  } = {}
 ) =>
   createChangeDiff({
     readRestrictedFields: [["token"]],
     localizedFields: [["title"], ["items", ROWS, "label"]],
     maxChangedPaths: options.maxChangedPaths ?? 200,
-  })({ submittedData: options.submittedData ?? {} });
+  })({
+    submittedData: options.submittedData ?? {},
+    configuredLocales: options.configuredLocales ?? LOCALES,
+    secretFields: options.secretFields,
+  });
 
 const publishedBefore = {
   title: { en: "Title", de: "Titel" },
@@ -23,7 +32,7 @@ const publishedBefore = {
   _status: "published",
 };
 
-describe("changedStoredFields", () => {
+describe("changedFields of a save whose written document was kept", () => {
   it("lists only the field that changed when both sides are stored in every locale", () => {
     const after = { ...publishedBefore, note: "Changed" };
     const shownInEnglish = {
@@ -31,9 +40,7 @@ describe("changedStoredFields", () => {
       note: "Changed",
       items: [{ id: "r", label: "Label" }],
     };
-    expect(diffOf().changedStoredFields(publishedBefore, after, shownInEnglish, LOCALES)).toEqual([
-      "note",
-    ]);
+    expect(diffOf().changedFields(publishedBefore, shownInEnglish, after)).toEqual(["note"]);
   });
 
   it("lists a localized field changed in a locale other than the one shown", () => {
@@ -43,7 +50,7 @@ describe("changedStoredFields", () => {
       items: [{ id: "r", label: { en: "Label", de: "Neu" } }],
     };
     const shownInEnglish = { title: "Title", note: "Note", items: [{ id: "r", label: "Label" }] };
-    expect(diffOf().changedStoredFields(publishedBefore, after, shownInEnglish, LOCALES)).toEqual([
+    expect(diffOf().changedFields(publishedBefore, shownInEnglish, after)).toEqual([
       "title",
       "items.0.label",
     ]);
@@ -51,33 +58,30 @@ describe("changedStoredFields", () => {
 
   it("lists nothing when nothing changed in any locale", () => {
     const shownInGerman = { title: "Titel", note: "Note", items: [{ id: "r", label: "Etikett" }] };
-    expect(
-      diffOf().changedStoredFields(publishedBefore, { ...publishedBefore }, shownInGerman, LOCALES)
-    ).toEqual([]);
+    expect(diffOf().changedFields(publishedBefore, shownInGerman, { ...publishedBefore })).toEqual(
+      []
+    );
   });
 
   it("leaves out a read-restricted field the saved document does not show, unless it was submitted", () => {
     const after = { ...publishedBefore, token: "t2" };
     const shown = { title: "Title", note: "Note", items: [{ id: "r", label: "Label" }] };
-    expect(diffOf().changedStoredFields(publishedBefore, after, shown, LOCALES)).toEqual([]);
+    expect(diffOf().changedFields(publishedBefore, shown, after)).toEqual([]);
     expect(
-      diffOf({ submittedData: { token: "t2" } }).changedStoredFields(
-        publishedBefore,
-        after,
-        shown,
-        LOCALES
-      )
+      diffOf({ submittedData: { token: "t2" } }).changedFields(publishedBefore, shown, after)
     ).toEqual(["token"]);
   });
 
   it("compares the whole stored documents when there are no locales", () => {
     const after = { ...publishedBefore, note: "Changed" };
-    expect(diffOf().changedStoredFields(publishedBefore, after, after, [])).toEqual(["note"]);
+    expect(diffOf({ configuredLocales: [] }).changedFields(publishedBefore, after, after)).toEqual([
+      "note",
+    ]);
   });
 
   it("lists every field set when there is nothing before", () => {
     const shown = { title: "Title", note: "Note", items: [{ id: "r", label: "Label" }] };
-    expect(diffOf().changedStoredFields(undefined, publishedBefore, shown, LOCALES)).toEqual([
+    expect(diffOf().changedFields(undefined, shown, publishedBefore)).toEqual([
       "title",
       "note",
       "items",
@@ -93,19 +97,21 @@ describe("changedStoredFields", () => {
       items: [{ id: "r", label: { en: "Label", de: "Neu" } }],
     };
     const shown = { title: "New", note: "Changed", items: [{ id: "r", label: "Label" }] };
-    expect(
-      diffOf({ maxChangedPaths: 2 }).changedStoredFields(publishedBefore, after, shown, LOCALES)
-    ).toEqual(["title", "note", TRUNCATED_MARKER]);
+    expect(diffOf({ maxChangedPaths: 2 }).changedFields(publishedBefore, shown, after)).toEqual([
+      "title",
+      "note",
+      TRUNCATED_MARKER,
+    ]);
   });
 });
 
-describe("changedStoredFields of a save in one locale", () => {
+describe("changedFields of a save in one locale whose written document was kept", () => {
   const diffOfEnglishSave = (submittedData: Record<string, unknown>) =>
     createChangeDiff({
       readRestrictedFields: [["secret"]],
       localizedFields: [["title"], ["secret"]],
       maxChangedPaths: 200,
-    })({ submittedData, saveLocale: "en" });
+    })({ submittedData, savedIn: { locale: "en" }, configuredLocales: LOCALES });
 
   const before = { title: { en: "T", de: "T-de" }, secret: { en: "s-en", de: "s-de" } };
   const shownInEnglish = { title: "T3" };
@@ -113,11 +119,10 @@ describe("changedStoredFields of a save in one locale", () => {
   it("compares a submitted read-restricted value only in the locale of the save", () => {
     const after = { ...before, title: { en: "T3", de: "T-de" } };
     expect(
-      diffOfEnglishSave({ title: "T3", secret: "s-en" }).changedStoredFields(
+      diffOfEnglishSave({ title: "T3", secret: "s-en" }).changedFields(
         before,
-        after,
         shownInEnglish,
-        LOCALES
+        after
       )
     ).toEqual(["title"]);
   });
@@ -125,13 +130,29 @@ describe("changedStoredFields of a save in one locale", () => {
   it("still lists a read-restricted value the save changed in its locale", () => {
     const after = { title: { en: "T3", de: "T-de" }, secret: { en: "s-new", de: "s-de" } };
     expect(
-      diffOfEnglishSave({ title: "T3", secret: "s-new" }).changedStoredFields(
+      diffOfEnglishSave({ title: "T3", secret: "s-new" }).changedFields(
         before,
-        after,
         shownInEnglish,
-        LOCALES
+        after
       )
     ).toEqual(["title", "secret"]);
+  });
+});
+
+describe("changedFields with secret fields", () => {
+  it("lists the secret fields first and keeps them within the limit", () => {
+    const after = { ...publishedBefore, note: "Changed", _status: "draft" };
+    expect(diffOf({ secretFields: ["password"] }).changedFields(publishedBefore, after)).toEqual([
+      "password",
+      "note",
+      "_status",
+    ]);
+    expect(
+      diffOf({ maxChangedPaths: 2, secretFields: ["password", "apiKey"] }).changedFields(
+        publishedBefore,
+        after
+      )
+    ).toEqual(["password", "apiKey", TRUNCATED_MARKER]);
   });
 });
 
