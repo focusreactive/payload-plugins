@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react";
 const SPECS_THAT_RUN_PAYLOAD = ["tests/realPayload/**/*.int.spec.ts"];
 
 const SPECS_OF_SERVER_CODE = [
+  "tests/server/draftField.int.spec.ts",
   "tests/server/latestReads.int.spec.ts",
   "tests/server/unsavedRichTextWithoutSchemaCache.int.spec.ts",
 ];

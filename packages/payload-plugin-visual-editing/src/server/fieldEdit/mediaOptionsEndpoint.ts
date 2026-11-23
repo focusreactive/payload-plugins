@@ -1,29 +1,16 @@
 import type { Endpoint, Payload, PayloadRequest, Where } from "payload";
 
-import { docAccessOperation, docAccessOperationGlobal, headersWithCors } from "payload";
+import { docAccessOperation, docAccessOperationGlobal } from "payload";
 
-import type { SaveRefusal } from "../../shared/fieldEdit.js";
 import type { VeMediaOptions, VeMediaOptionsRequest } from "../../shared/protocol.js";
 import type { DocumentToRead } from "../unsavedRichText/postedRequest.js";
-import type { User } from "./draftField.js";
+import type { SignedInRequest } from "./draftField.js";
 
-import { readEditedField, REQUEST_UNREADABLE } from "../../shared/fieldEdit.js";
+import { readEditedField } from "../../shared/fieldEdit.js";
 import { mediaOptionOf } from "../../shared/mediaOption.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import { VE_MEDIA_OPTIONS_PATH } from "../../shared/protocol.js";
-import { jsonBodyOf } from "../endpointJson.js";
-import {
-  ANSWERED,
-  draftFieldOf,
-  inLocaleOfProject,
-  FIELD_NOT_EDITABLE,
-  FORBIDDEN,
-  isRefusal,
-  refusalOfStatus,
-  SIGNED_OUT,
-  statusOfFailure,
-  UNREADABLE_REQUEST,
-} from "./draftField.js";
+import { DOCUMENT_NOT_UPDATABLE, draftFieldEndpoint, FIELD_NOT_EDITABLE } from "./draftField.js";
 import { shownUploadCollectionOf } from "./editedField.js";
 
 export const MEDIA_PAGE_SIZE = 24;
@@ -36,18 +23,6 @@ const DESCRIPTION_FIELD = "alt";
 const DESCRIPTION_FIELD_TYPE = "text";
 
 const NOTHING_LISTED: VeMediaOptions = { collection: null, documents: [], hasNextPage: false };
-
-const answer = (options: object, status: number, req: PayloadRequest): Response =>
-  Response.json(options, {
-    headers: headersWithCors({ headers: new Headers({ "Cache-Control": "no-store" }), req }),
-    status,
-  });
-
-const refuse = (
-  status: number,
-  req: PayloadRequest,
-  reason: SaveRefusal = refusalOfStatus(status)
-): Response => answer({ ...NOTHING_LISTED, reason }, status, req);
 
 const isPageNumber = (page: unknown): page is number =>
   typeof page === "number" && Number.isSafeInteger(page) && page >= FIRST_PAGE;
@@ -87,8 +62,7 @@ const mayUpdate = async (req: PayloadRequest, document: DocumentToRead): Promise
 };
 
 const listMedia = async (
-  payload: Payload,
-  user: User,
+  { payload, user }: SignedInRequest,
   collection: string,
   { locale, page, search }: VeMediaOptionsRequest
 ): Promise<VeMediaOptions> => {
@@ -112,28 +86,14 @@ const listMedia = async (
   };
 };
 
-export const mediaOptionsEndpoint: Endpoint = {
-  handler: async (req) => {
-    const { payload, user } = req;
-    if (!user) return refuse(SIGNED_OUT, req);
-
-    const posted = readRequest(await jsonBodyOf(req));
-    if (!posted) return refuse(UNREADABLE_REQUEST, req, REQUEST_UNREADABLE);
-    const request = inLocaleOfProject(payload, posted);
-
-    try {
-      const field = await draftFieldOf(payload, user, request);
-      if (isRefusal(field)) return refuse(field.status, req);
-
-      const collection = shownUploadCollectionOf(field.shown, field.schema, request.key);
-      if (collection === null) return refuse(FIELD_NOT_EDITABLE, req);
-      if (!(await mayUpdate(req, field.document))) return refuse(FORBIDDEN, req);
-
-      return answer(await listMedia(payload, user, collection, request), ANSWERED, req);
-    } catch (error) {
-      return refuse(statusOfFailure(error), req);
-    }
+export const mediaOptionsEndpoint: Endpoint = draftFieldEndpoint({
+  answer: async ({ document, schema, shown }, request, req) => {
+    const collection = shownUploadCollectionOf(shown, schema, request.key);
+    if (collection === null) return FIELD_NOT_EDITABLE;
+    if (!(await mayUpdate(req, document))) return DOCUMENT_NOT_UPDATABLE;
+    return listMedia(req, collection, request);
   },
-  method: "post",
   path: VE_MEDIA_OPTIONS_PATH,
-};
+  readAsked: readRequest,
+  refusedAnswer: NOTHING_LISTED,
+});

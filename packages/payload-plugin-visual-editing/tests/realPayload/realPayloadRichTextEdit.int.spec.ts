@@ -12,7 +12,7 @@ import { EDITOR, OUTSIDER, WRITER, signIn } from "../support/unsavedRichTextRequ
 
 type Saved = { status: number; saved: unknown };
 
-type Valued = { status: number; value: unknown; formats?: unknown };
+type Valued = { status: number; value: unknown; formats?: unknown; reason?: unknown };
 
 type Node = Record<string, unknown> & { children?: Node[] };
 
@@ -111,9 +111,9 @@ describe("editing rich text through the endpoints", () => {
 
   const valueOf = async (body: unknown, headers = editor): Promise<Valued> => {
     const response = await post(VE_RICH_TEXT_VALUE_PATH, body, headers);
-    const { formats, value } = (await response.json()) as { formats: unknown; value: unknown };
+    const { formats, reason, value } = (await response.json()) as Valued;
     return formats === null
-      ? { status: response.status, value }
+      ? { reason, status: response.status, value }
       : { formats, status: response.status, value };
   };
 
@@ -251,19 +251,19 @@ describe("editing rich text through the endpoints", () => {
       it("for a request without a user", async () => {
         const answer = await valueOf({ ...page(docId), key: "body" }, new Headers());
 
-        expect(answer).toEqual({ status: 401, value: null });
+        expect(answer).toEqual({ reason: "signed-out", status: 401, value: null });
       });
 
       it("for a user who cannot read the document", async () => {
         const answer = await valueOf({ ...page(docId), key: "body" }, outsider);
 
-        expect(answer).toEqual({ status: 422, value: null });
+        expect(answer).toEqual({ reason: "not-editable", status: 422, value: null });
       });
 
       it("for a request that names no locale, in a project with locales", async () => {
         const answer = await valueOf({ ...page(docId), key: "body", locale: undefined });
 
-        expect(answer).toEqual({ status: 400, value: null });
+        expect(answer).toEqual({ reason: "failed", status: 400, value: null });
       });
 
       it("for a global without drafts", async () => {
@@ -273,13 +273,13 @@ describe("editing rich text through the endpoints", () => {
           kind: "global",
         });
 
-        expect(answer).toEqual({ status: 409, value: null });
+        expect(answer).toEqual({ reason: "no-drafts", status: 409, value: null });
       });
 
       it("for a field the user may not read", async () => {
         const answer = await valueOf({ ...page(docId), key: "guardedBody" }, writer);
 
-        expect(answer).toEqual({ status: 422, value: null });
+        expect(answer).toEqual({ reason: "not-editable", status: 422, value: null });
       });
 
       it.each([
@@ -289,7 +289,11 @@ describe("editing rich text through the endpoints", () => {
         ["a field the schema does not have", "missing"],
         ["a rich text that holds nothing yet", "localizedBody"],
       ])("for %s", async (_name, key) => {
-        expect(await valueOf({ ...page(docId), key })).toEqual({ status: 422, value: null });
+        expect(await valueOf({ ...page(docId), key })).toEqual({
+          reason: "not-editable",
+          status: 422,
+          value: null,
+        });
       });
     });
   });
