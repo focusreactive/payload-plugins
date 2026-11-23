@@ -6,7 +6,6 @@ import type { PreviewSession } from "./previewSession.js";
 import type { PreviewWindow } from "./usePreviewWindow.js";
 
 import { VE_ANNOUNCE_REQUEST_TYPE, VE_PREVIEW_GRANT_REQUEST_TYPE } from "../../shared/protocol.js";
-import { isMessageFrom } from "../../shared/messageSource.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 
 const BLANK_PAGE_URL = "about:blank";
@@ -27,7 +26,7 @@ const grantedPageOf = (message: unknown): GrantedPage | null =>
     : null;
 
 export function usePreviewPage(
-  { getFrame, getWindow, origin, post }: PreviewWindow,
+  { getFrame, getWindow, hear, origin, post }: PreviewWindow,
   session: PreviewSession,
   onPageAnnounced: (page: GrantedPage) => void
 ): void {
@@ -45,21 +44,20 @@ export function usePreviewPage(
       askPageToAnnounceItself();
     };
 
-    const answerAnnouncement = (event: MessageEvent) => {
-      if (!isMessageFrom(event, origin, getWindow())) return;
-      post(session.pageAnnounced(event.data));
-      const page = grantedPageOf(event.data);
+    const answerAnnouncement = (data: unknown) => {
+      post(session.pageAnnounced(data));
+      const page = grantedPageOf(data);
       if (page) onPageAnnounced(page);
     };
 
     const frame = getFrame();
-    window.addEventListener("message", answerAnnouncement);
+    const stopHearing = hear(answerAnnouncement);
     frame?.addEventListener(FRAME_LOAD_EVENT, startOverWithLoadedPage);
     askPageToAnnounceItself();
 
     return () => {
-      window.removeEventListener("message", answerAnnouncement);
+      stopHearing();
       frame?.removeEventListener(FRAME_LOAD_EVENT, startOverWithLoadedPage);
     };
-  }, [getFrame, getWindow, onPageAnnounced, origin, post, session]);
+  }, [getFrame, getWindow, hear, onPageAnnounced, origin, post, session]);
 }

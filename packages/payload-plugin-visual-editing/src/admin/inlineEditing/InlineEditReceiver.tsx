@@ -1,72 +1,21 @@
 "use client";
 
-import { useDocumentInfo, useForm, useLocale } from "@payloadcms/ui";
-import { useEffect } from "react";
-
-import type { VeFieldEditRefusedMessage } from "../../shared/protocol.js";
-
 import { NOT_EDITABLE } from "../../shared/fieldEdit.js";
-import { isMessageFrom } from "../../shared/messageSource.js";
-import { VE_FIELD_EDIT_REFUSED_TYPE } from "../../shared/protocol.js";
-import { useEditableSchema } from "../instantPreview/useEditableSchema.js";
-import { usePreviewWindow } from "../instantPreview/usePreviewWindow.js";
-import { openDocumentOf } from "../openField/openDocument.js";
 import { editOfDocument, formEditOf } from "./formEdit.js";
+import { useOpenDocumentForm } from "./useOpenDocumentForm.js";
 
 export function InlineEditReceiver({ excludeFieldNames }: { excludeFieldNames?: string[] }) {
-  const { disabled: isFormDisabled, dispatchFields, getFields, setModified } = useForm();
-  const { id, collectionSlug, docPermissions, globalSlug } = useDocumentInfo();
-  const editableSchema = useEditableSchema({ collectionSlug, globalSlug }, excludeFieldNames);
-  const { code: locale } = useLocale();
-  const { getWindow, origin } = usePreviewWindow();
-
-  useEffect(() => {
-    const document = openDocumentOf({ collectionSlug, globalSlug, id });
-    if (!document || !origin) return;
-
-    const writeEditIntoForm = (event: MessageEvent) => {
-      if (!isMessageFrom(event, origin, getWindow())) return;
-      const openDocument = { ...document, locale };
-      const edit = editOfDocument(event.data, openDocument);
-      if (!edit) return;
-      const formEdit = isFormDisabled
-        ? null
-        : formEditOf(edit, {
-            document: openDocument,
-            editableSchema,
-            formState: getFields(),
-            permissions: docPermissions,
-          });
-      if (!formEdit) {
-        const { value: _value, ...refused } = edit;
-        const message: VeFieldEditRefusedMessage = {
-          ...refused,
-          reason: NOT_EDITABLE,
-          type: VE_FIELD_EDIT_REFUSED_TYPE,
-        };
-        getWindow()?.postMessage(message, origin);
-        return;
-      }
-      dispatchFields({ path: formEdit.path, type: "UPDATE", value: formEdit.value });
-      setModified(true);
-    };
-
-    window.addEventListener("message", writeEditIntoForm);
-    return () => window.removeEventListener("message", writeEditIntoForm);
-  }, [
-    collectionSlug,
-    dispatchFields,
-    docPermissions,
-    editableSchema,
-    getFields,
-    getWindow,
-    globalSlug,
-    id,
-    isFormDisabled,
-    locale,
-    origin,
-    setModified,
-  ]);
+  useOpenDocumentForm(excludeFieldNames, (message, document, form) => {
+    const edit = editOfDocument(message, document);
+    if (!edit) return;
+    const formEdit = form.held((open) => formEditOf(edit, open));
+    if (!formEdit) {
+      const { value: _value, ...refused } = edit;
+      form.refuse(refused, NOT_EDITABLE);
+      return;
+    }
+    form.write(formEdit);
+  });
 
   return null;
 }

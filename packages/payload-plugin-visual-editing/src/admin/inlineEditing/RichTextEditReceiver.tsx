@@ -1,29 +1,15 @@
 "use client";
 
-import { useConfig, useDocumentInfo, useForm, useLocale } from "@payloadcms/ui";
+import { useConfig } from "@payloadcms/ui";
 import { useEffect, useRef } from "react";
 
-import type { VeRichTextFormats } from "../../shared/richText/formats.js";
-
-import type {
-  VeEditedField,
-  VeFieldEditRefusedMessage,
-  VeRichTextStateMessage,
-  VeRichTextStateRefusedMessage,
-} from "../../shared/protocol.js";
-import type { OpenForm } from "./formEdit.js";
+import type { VeEditedField } from "../../shared/protocol.js";
+import type { PostedRichTextEdit } from "./richTextFormEdit.js";
+import type { OpenDocumentForm } from "./useOpenDocumentForm.js";
 
 import { NOT_EDITABLE } from "../../shared/fieldEdit.js";
-import { isMessageFrom } from "../../shared/messageSource.js";
-import {
-  VE_FIELD_EDIT_REFUSED_TYPE,
-  VE_RICH_TEXT_STATE_REFUSED_TYPE,
-  VE_RICH_TEXT_STATE_REQUEST_TYPE,
-  VE_RICH_TEXT_STATE_TYPE,
-} from "../../shared/protocol.js";
-import { useEditableSchema } from "../instantPreview/useEditableSchema.js";
-import { usePreviewWindow } from "../instantPreview/usePreviewWindow.js";
-import { openDocumentOf } from "../openField/openDocument.js";
+import { VE_RICH_TEXT_STATE_REFUSED_TYPE, VE_RICH_TEXT_STATE_TYPE } from "../../shared/protocol.js";
+import { documentAddressOf } from "../../shared/veDocument.js";
 import {
   allowedFormatsOf,
   createRunningEdits,
@@ -35,135 +21,54 @@ import {
   stateForThePage,
   stateRequestOfDocument,
 } from "./richTextFormEdit.js";
-
-type AnswerWithFormats = (field: VeEditedField, ofEditor: VeRichTextFormats | null) => void;
+import { useOpenDocumentForm } from "./useOpenDocumentForm.js";
 
 export function RichTextEditReceiver({ excludeFieldNames }: { excludeFieldNames?: string[] }) {
-  const { disabled: isFormDisabled, dispatchFields, getFields, setModified } = useForm();
-  const { id, collectionSlug, docPermissions, globalSlug } = useDocumentInfo();
-  const editableSchema = useEditableSchema({ collectionSlug, globalSlug }, excludeFieldNames);
-  const { code: locale } = useLocale();
-  const { getWindow, origin } = usePreviewWindow();
   const runningEdits = useRef(createRunningEdits()).current;
-  const answerWithFormats = useRef<AnswerWithFormats | null>(null);
   const { config } = useConfig();
-  const apiUrl = `${config.serverURL}${config.routes.api}`;
+  const editorFormatsOf = fetchEditorFormatsFrom(`${config.serverURL}${config.routes.api}`);
 
-  useEffect(
-    () => () => runningEdits.forget(),
-    [collectionSlug, globalSlug, id, locale, runningEdits]
-  );
+  const heldInForm = (form: OpenDocumentForm, field: VeEditedField) =>
+    form.held((open) => richTextOfForm(field, open));
 
-  useEffect(() => {
-    const document = openDocumentOf({ collectionSlug, globalSlug, id });
-    if (!document || !origin) return;
-    const openDocument = { ...document, locale };
-    const editorFormatsOf = fetchEditorFormatsFrom(apiUrl);
+  const answer = async (form: OpenDocumentForm, field: VeEditedField) => {
+    const ofEditor = heldInForm(form, field) ? await editorFormatsOf(field) : null;
+    const document = form.document();
+    const isStillOpen = document && documentAddressOf(document) === documentAddressOf(field);
+    if (!form.isOpen() || !isStillOpen) return;
+    const held = heldInForm(form, field);
+    if (!held) {
+      form.tell({ ...field, reason: NOT_EDITABLE, type: VE_RICH_TEXT_STATE_REFUSED_TYPE });
+      return;
+    }
+    const formats = allowedFormatsOf(held, ofEditor);
+    runningEdits.answered(field, { formats, state: held.value });
+    form.tell({ ...field, formats, state: stateForThePage(held), type: VE_RICH_TEXT_STATE_TYPE });
+  };
 
-    const openForm = (): OpenForm | null =>
-      isFormDisabled
-        ? null
-        : {
-            document: openDocument,
-            editableSchema,
-            formState: getFields(),
-            permissions: docPermissions,
-          };
+  const writeEditIntoForm = (form: OpenDocumentForm, edit: PostedRichTextEdit) => {
+    const formEdit = form.held((open) =>
+      richTextFormEditOf(edit, open, runningEdits.beginningOf(edit.field))
+    );
+    if (!formEdit) {
+      form.refuse(edit.field, NOT_EDITABLE);
+      return;
+    }
+    form.write({ initialValue: formEdit.value, ...formEdit });
+  };
 
-    const refuseEdit = (field: VeEditedField) => {
-      const message: VeFieldEditRefusedMessage = {
-        ...field,
-        reason: NOT_EDITABLE,
-        type: VE_FIELD_EDIT_REFUSED_TYPE,
-      };
-      getWindow()?.postMessage(message, origin);
-    };
+  const { document } = useOpenDocumentForm(excludeFieldNames, (message, open, form) => {
+    const asked = stateRequestOfDocument(message, open);
+    if (asked) void answer(form, asked);
+    const edit = richTextEditOfDocument(message, open);
+    if (edit) writeEditIntoForm(form, edit);
+    const ended = endedEditOfDocument(message, open);
+    if (ended) runningEdits.ended(ended);
+  });
 
-    const refuseStateRequest = (field: VeEditedField) => {
-      const message: VeRichTextStateRefusedMessage = {
-        ...field,
-        reason: NOT_EDITABLE,
-        type: VE_RICH_TEXT_STATE_REFUSED_TYPE,
-      };
-      getWindow()?.postMessage(message, origin);
-    };
+  const { collectionSlug, docId, kind, locale } = document ?? {};
 
-    const heldInForm = (field: VeEditedField) => {
-      const form = openForm();
-      return form && richTextOfForm(field, form);
-    };
-
-    const answer: AnswerWithFormats = (field, ofEditor) => {
-      if (
-        !stateRequestOfDocument({ ...field, type: VE_RICH_TEXT_STATE_REQUEST_TYPE }, openDocument)
-      ) {
-        return;
-      }
-      const held = heldInForm(field);
-      if (!held) {
-        refuseStateRequest(field);
-        return;
-      }
-      const formats = allowedFormatsOf(held, ofEditor);
-      runningEdits.answered(field, { formats, state: held.value });
-      const message: VeRichTextStateMessage = {
-        ...field,
-        formats,
-        state: stateForThePage(held),
-        type: VE_RICH_TEXT_STATE_TYPE,
-      };
-      getWindow()?.postMessage(message, origin);
-    };
-    answerWithFormats.current = answer;
-
-    const answerStateRequest = async (field: VeEditedField) => {
-      const ofEditor = heldInForm(field) ? await editorFormatsOf(field) : null;
-      answerWithFormats.current?.(field, ofEditor);
-    };
-
-    const writeEditIntoForm = (edit: NonNullable<ReturnType<typeof richTextEditOfDocument>>) => {
-      const form = openForm();
-      const formEdit = form && richTextFormEditOf(edit, form, runningEdits.beginningOf(edit.field));
-      if (!formEdit) {
-        refuseEdit(edit.field);
-        return;
-      }
-      const { path, value } = formEdit;
-      dispatchFields({ initialValue: value, path, type: "UPDATE", value });
-      setModified(true);
-    };
-
-    const hearPreviewPage = (event: MessageEvent) => {
-      if (!isMessageFrom(event, origin, getWindow())) return;
-      const asked = stateRequestOfDocument(event.data, openDocument);
-      if (asked) void answerStateRequest(asked);
-      const edit = richTextEditOfDocument(event.data, openDocument);
-      if (edit) writeEditIntoForm(edit);
-      const ended = endedEditOfDocument(event.data, openDocument);
-      if (ended) runningEdits.ended(ended);
-    };
-
-    window.addEventListener("message", hearPreviewPage);
-    return () => {
-      if (answerWithFormats.current === answer) answerWithFormats.current = null;
-      window.removeEventListener("message", hearPreviewPage);
-    };
-  }, [
-    apiUrl,
-    collectionSlug,
-    dispatchFields,
-    docPermissions,
-    editableSchema,
-    getFields,
-    getWindow,
-    globalSlug,
-    id,
-    isFormDisabled,
-    locale,
-    origin,
-    runningEdits,
-    setModified,
-  ]);
+  useEffect(() => () => runningEdits.forget(), [collectionSlug, docId, kind, locale, runningEdits]);
 
   return null;
 }
