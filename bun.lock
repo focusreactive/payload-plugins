@@ -32,6 +32,7 @@
         "@focus-reactive/payload-plugin-presets": "workspace:*",
         "@focus-reactive/payload-plugin-scheduling": "workspace:*",
         "@focus-reactive/payload-plugin-seo": "workspace:*",
+        "@focus-reactive/payload-plugin-stacked-editing": "workspace:*",
         "@focus-reactive/payload-plugin-translator": "workspace:*",
         "@focus-reactive/payload-plugin-visual-editing": "workspace:*",
         "@payloadcms/db-postgres": "3.90.1",
@@ -59,6 +60,7 @@
         "class-variance-authority": "0.7.1",
         "clsx": "2.1.1",
         "cross-env": "7.0.3",
+        "dequal": "2.0.3",
         "dotenv": "16.4.7",
         "graphql": "16.8.1",
         "jose": "6.0.11",
@@ -88,6 +90,7 @@
         "@types/pg": "8.20.0",
         "@types/react": "19.2.9",
         "@types/react-dom": "19.2.3",
+        "@vercel/stega": "1.1.0",
         "@vitejs/plugin-react": "4.5.2",
         "jsdom": "26.1.0",
         "playwright": "1.56.1",
@@ -213,7 +216,7 @@
     },
     "packages/payload-plugin-ab": {
       "name": "@focus-reactive/payload-plugin-ab",
-      "version": "2.10.1",
+      "version": "2.11.0",
       "devDependencies": {
         "@payloadcms/ui": "3.90.1",
         "@types/node": "22.19.9",
@@ -291,7 +294,7 @@
     },
     "packages/payload-plugin-audit-log": {
       "name": "@focus-reactive/payload-plugin-audit-log",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "devDependencies": {
         "@payloadcms/ui": "3.90.1",
         "@types/node": "22.19.9",
@@ -312,7 +315,7 @@
     },
     "packages/payload-plugin-comments": {
       "name": "@focus-reactive/payload-plugin-comments",
-      "version": "1.11.3",
+      "version": "1.12.0",
       "dependencies": {
         "@radix-ui/react-dropdown-menu": "^2.1.16",
         "@tanstack/react-query": "5.0.0",
@@ -419,7 +422,7 @@
     },
     "packages/payload-plugin-presets": {
       "name": "@focus-reactive/payload-plugin-presets",
-      "version": "0.12.1",
+      "version": "0.13.0",
       "dependencies": {
         "@radix-ui/react-popover": "1.1.15",
       },
@@ -459,7 +462,7 @@
     },
     "packages/payload-plugin-seo": {
       "name": "@focus-reactive/payload-plugin-seo",
-      "version": "1.10.2",
+      "version": "3.0.0",
       "dependencies": {
         "@yoast/search-metadata-previews": "^3.0.0",
         "class-variance-authority": "0.7.1",
@@ -503,9 +506,29 @@
         "react-dom",
       ],
     },
+    "packages/payload-plugin-stacked-editing": {
+      "name": "@focus-reactive/payload-plugin-stacked-editing",
+      "version": "1.0.1",
+      "devDependencies": {
+        "@payloadcms/ui": "3.90.1",
+        "@swc/cli": "0.4.0",
+        "@swc/core": "1.7.0",
+        "@types/react": "19.2.9",
+        "jsdom": "^25.0.0",
+        "payload": "3.90.1",
+        "react": "19.2.1",
+        "typescript": "5.9.2",
+        "vitest": "^2.1.0",
+      },
+      "peerDependencies": {
+        "@payloadcms/ui": "^3.84.0",
+        "payload": "^3.84.0",
+        "react": "^19.0.0",
+      },
+    },
     "packages/payload-plugin-translator": {
       "name": "@focus-reactive/payload-plugin-translator",
-      "version": "0.18.1",
+      "version": "0.19.0",
       "dependencies": {
         "@hookform/resolvers": "^3.9.0",
         "@radix-ui/react-popover": "^1.1.0",
@@ -544,11 +567,15 @@
     },
     "packages/payload-plugin-visual-editing": {
       "name": "@focus-reactive/payload-plugin-visual-editing",
-      "version": "1.1.0",
+      "version": "1.6.0",
       "dependencies": {
         "@vercel/stega": "^1.1.0",
       },
       "devDependencies": {
+        "@payloadcms/db-sqlite": "3.90.1",
+        "@payloadcms/graphql": "3.90.1",
+        "@payloadcms/richtext-lexical": "3.90.1",
+        "@payloadcms/translations": "3.90.1",
         "@payloadcms/ui": "3.90.1",
         "@swc/cli": "0.4.0",
         "@swc/core": "1.7.0",
@@ -567,12 +594,15 @@
       },
       "peerDependencies": {
         "@payloadcms/ui": "^3.79.0",
-        "next": "^14.0.0 || ^15.0.0 || ^16.0.0",
         "payload": "^3.79.0",
-        "react": "^18.0.0 || ^19.0.0",
+        "react": "^18.2.0 || ^19.0.0",
+        "react-dom": "^18.2.0 || ^19.0.0",
       },
       "optionalPeers": [
-        "next",
+        "@payloadcms/ui",
+        "payload",
+        "react",
+        "react-dom",
       ],
     },
     "packages/tailwind-config": {
@@ -881,6 +911,8 @@
     "@focus-reactive/payload-plugin-scheduling": ["@focus-reactive/payload-plugin-scheduling@workspace:packages/payload-plugin-scheduling"],
 
     "@focus-reactive/payload-plugin-seo": ["@focus-reactive/payload-plugin-seo@workspace:packages/payload-plugin-seo"],
+
+    "@focus-reactive/payload-plugin-stacked-editing": ["@focus-reactive/payload-plugin-stacked-editing@workspace:packages/payload-plugin-stacked-editing"],
 
     "@focus-reactive/payload-plugin-translator": ["@focus-reactive/payload-plugin-translator@workspace:packages/payload-plugin-translator"],
 

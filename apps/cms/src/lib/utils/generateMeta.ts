@@ -1,3 +1,4 @@
+import { stripMarkers } from "@focus-reactive/payload-plugin-visual-editing";
 import type { Metadata } from "next";
 
 import { I18N_CONFIG } from "@/lib/config/i18n";
@@ -7,7 +8,7 @@ import type { Media, Page, Post } from "@/payload-types";
 
 import type { Locale } from "../types";
 import { buildUrl } from "../utils/path/buildUrl";
-import { buildPageTitle } from "./buildPageTitle";
+import { buildPageTitle, titlePartsOf } from "./buildPageTitle";
 import { getAbsoluteMediaUrl } from "./getMediaUrl";
 import { mergeOpenGraph } from "./mergeOpenGraph";
 
@@ -25,6 +26,11 @@ const getImageURL = (image: Media | null | undefined) => {
 
   const ogUrl = image.sizes?.og?.url ?? image.url;
   return getAbsoluteMediaUrl(ogUrl, image.filesize) || null;
+};
+
+const pathBreadcrumbsOf = (breadcrumbs: Page["breadcrumbs"]): Page["breadcrumbs"] => {
+  const last = breadcrumbs?.at(-1);
+  return last ? [{ url: stripMarkers(last.url) }] : breadcrumbs;
 };
 
 export const generateMeta = async (args: {
@@ -45,52 +51,49 @@ export const generateMeta = async (args: {
 
   const settings = await getSiteSettings({ locale });
 
-  const siteName = settings?.general?.siteName || "Site";
-  const separator = settings?.seo?.titleSeparator || "|";
-  const suffix = settings?.seo?.titleSuffix || siteName;
-  const ogSiteName = settings?.seo?.og?.siteName || siteName;
+  const titleParts = titlePartsOf(settings);
+  const { siteName } = titleParts;
+  const ogSiteName = stripMarkers(settings?.seo?.og?.siteName) || siteName;
+  const defaultDescription = stripMarkers(settings?.seo?.defaultDescription);
+  const settingsOgDescription = stripMarkers(settings?.seo?.og?.description);
+  const metaDescription = stripMarkers(doc?.meta?.description);
+  const slug = doc?.slug;
+  const breadcrumbs = pathBreadcrumbsOf((doc as Page)?.breadcrumbs);
 
-  const baseTitle = doc?.meta?.title || doc?.title || settings?.seo?.og?.title || siteName;
+  const baseTitle =
+    stripMarkers(doc?.meta?.title || doc?.title || settings?.seo?.og?.title) || siteName;
 
-  const title = buildPageTitle(baseTitle, separator, suffix, siteName);
+  const title = buildPageTitle(baseTitle, titleParts);
 
-  const description =
-    doc?.meta?.description ||
-    settings?.seo?.defaultDescription ||
-    settings?.seo?.og?.description ||
-    "";
+  const description = metaDescription || defaultDescription || settingsOgDescription || "";
 
-  const ogDescription =
-    doc?.meta?.description ||
-    settings?.seo?.og?.description ||
-    settings?.seo?.defaultDescription ||
-    "";
+  const ogDescription = metaDescription || settingsOgDescription || defaultDescription || "";
 
   const ogImage = getImageURL(
     (doc?.meta?.image || settings?.seo?.og?.image) as Parameters<typeof getImageURL>[0]
   );
 
-  const ogTitle = doc?.meta?.title || doc?.title || settings?.seo?.og?.title || siteName;
+  const ogTitle = baseTitle;
 
   let canonical: string;
   if (collection === "posts") {
     canonical = buildUrl({
       collection: "posts",
       locale,
-      slug: doc?.slug || null,
+      slug: slug || null,
     });
   } else {
     canonical = buildUrl({
-      breadcrumbs: (doc as Page)?.breadcrumbs,
+      breadcrumbs,
       collection: "page",
       locale,
-      slug: doc?.slug || null,
+      slug: slug || null,
     });
   }
 
   const twitterCard = settings?.seo?.x?.card || "summary_large_image";
-  const twitterSite = settings?.seo?.x?.site;
-  const twitterCreator = settings?.seo?.x?.creator;
+  const twitterSite = stripMarkers(settings?.seo?.x?.site);
+  const twitterCreator = stripMarkers(settings?.seo?.x?.creator);
 
   const shouldIndex = doc?.meta?.robots === "index";
 
@@ -103,19 +106,19 @@ export const generateMeta = async (args: {
         currentLocale: locale,
         page,
       });
-    } else if (doc?.slug) {
+    } else if (slug) {
       languages = await getAlternateLocales({
         collection: "posts",
         currentLocale: locale,
-        slug: doc.slug,
+        slug,
       });
     }
   } else if (collection === "page") {
     languages = await getAlternateLocales({
-      breadcrumbs: (doc as Page)?.breadcrumbs,
+      breadcrumbs,
       collection: "page",
       currentLocale: locale,
-      slug: doc?.slug || undefined,
+      slug: slug || undefined,
     });
   }
 

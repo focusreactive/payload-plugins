@@ -4,8 +4,10 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 import { cn } from "../../../../utils/style";
 import type { DrilldownModel } from "../../../../engine/types/visualization";
+import { useSeoTranslation } from "../../../../translations/useSeoTranslation";
 
-export function DrillDown({ items, label }: DrilldownModel) {
+export function DrillDown({ items, noun }: DrilldownModel) {
+  const { t } = useSeoTranslation();
   const [open, setOpen] = useState(false);
 
   if (!items.length) return null;
@@ -19,11 +21,11 @@ export function DrillDown({ items, label }: DrilldownModel) {
       >
         {open ? (
           <>
-            Hide <ChevronUp size={14} />
+            {t("viz.hide")} <ChevronUp size={14} />
           </>
         ) : (
           <>
-            {label} <ChevronDown size={14} />
+            {t(`viz.show.${noun}`, { count: items.length })} <ChevronDown size={14} />
           </>
         )}
       </button>

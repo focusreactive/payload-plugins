@@ -1,4 +1,5 @@
 import type { CheckId } from "../../../constants/checkIds";
+import type { ResolvedSeoThresholds } from "../../../types/config";
 import type { CheckResult } from "../../types/analysis";
 import type { Visualization } from "../../types/visualization";
 import { gaugeKeyByCheck, PRESENCE_CHECKS } from "./constants";
@@ -11,12 +12,13 @@ import { readPositions } from "./utils/readPositions";
 
 export function resolveVisualization(
   check: CheckResult,
-  data: Record<string, unknown> | undefined
+  data: Record<string, unknown> | undefined,
+  thresholds: ResolvedSeoThresholds
 ): Visualization {
   const id = check.id as CheckId;
 
   if (PRESENCE_CHECKS.has(id)) return resolvePresence();
-  if (gaugeKeyByCheck[id]) return resolveValueRange(check, data);
+  if (gaugeKeyByCheck[id]) return resolveValueRange(check, data, thresholds);
 
   switch (id) {
     case "subheadingsKeyword":
@@ -27,13 +29,13 @@ export function resolveVisualization(
     case "internalLinks":
       return resolveLinks(check, data);
     case "textCompetingLinks":
-      return resolveDrilldown(data, "items", "link", "links");
+      return resolveDrilldown(data, "items", "link");
     case "subheadingsTooLong":
-      return resolveDrilldown(data, "items", "section", "sections");
+      return resolveDrilldown(data, "items", "section");
     case "textParagraphTooLong":
-      return resolveDrilldown(data, "paragraphs", "paragraph", "paragraphs");
+      return resolveDrilldown(data, "paragraphs", "paragraph");
     case "sentenceBeginnings":
-      return resolveDrilldown(data, "items", "group", "groups");
+      return resolveDrilldown(data, "items", "group");
     case "keyphraseDistribution": {
       const positions = readPositions(data);
       if (!positions?.length) return resolvePresence();

@@ -2,10 +2,10 @@ import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
 import React from "react";
 
-import { BLOG_CONFIG } from "@/lib/config/blog";
 import { cn } from "@/components/utils";
 import { Button, ButtonVariant } from "@/components/button";
 import { Link } from "@/components/shared";
+import { getDocumentPath } from "@/lib/utils/path/getDocumentPath";
 import type { LinkAppearances } from "@/lib/fields/link";
 import type { Page, Post } from "@/payload-types";
 
@@ -21,11 +21,6 @@ const linkVariants = cva("transition-all", {
     },
   },
 });
-
-const collectionPaths: Record<string, string> = {
-  page: "",
-  posts: BLOG_CONFIG.basePath,
-};
 
 interface Props {
   appearance?:
@@ -76,10 +71,7 @@ export const CMSLink: React.FC<Props> = (props) => {
     url,
   } = props;
 
-  const href =
-    type === "reference" && typeof reference?.value === "object" && reference.value.slug
-      ? `${collectionPaths[reference.relationTo]}/${reference.value.slug}`
-      : url;
+  const href = type === "reference" && reference ? getDocumentPath(reference) : url;
 
   if (!href) {
     return null;

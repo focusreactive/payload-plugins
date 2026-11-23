@@ -1,13 +1,27 @@
 import { PLUGIN_NAME } from "./constants";
-import type { SeoPluginConfig } from "./types/config";
+import type { ResolvedSeoThresholds, SeoPluginConfig } from "./types/config";
 
-let pluginConfig: SeoPluginConfig | null = null;
-
-export function setPluginConfig(config: SeoPluginConfig): void {
-  pluginConfig = config;
+interface PluginState {
+  config: SeoPluginConfig;
+  thresholds: ResolvedSeoThresholds;
 }
-export function getPluginConfig(): SeoPluginConfig {
-  if (!pluginConfig) throw new Error(`[${PLUGIN_NAME}] config accessed before initialization`);
 
-  return pluginConfig;
+let pluginState: PluginState | null = null;
+
+function getPluginState(): PluginState {
+  if (!pluginState) throw new Error(`[${PLUGIN_NAME}] config accessed before initialization`);
+
+  return pluginState;
+}
+
+export function setPluginConfig(config: SeoPluginConfig, thresholds: ResolvedSeoThresholds): void {
+  pluginState = { config, thresholds };
+}
+
+export function getPluginConfig(): SeoPluginConfig {
+  return getPluginState().config;
+}
+
+export function getResolvedThresholds(): ResolvedSeoThresholds {
+  return getPluginState().thresholds;
 }

@@ -5,6 +5,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { KeyphraseTab } from "../../src/components/SeoDrawer/tabs/KeyphraseTab";
 import type { AnalysisResult } from "../../src/engine/types/analysis";
 
+vi.mock("../../src/components/SeoDrawer/tabs/keyphrase/KeyphraseUsageNotice", () => ({
+  KeyphraseUsage: ({ phrase }: { phrase: string }) => <div data-testid="usage">{phrase}</div>,
+}));
+
 afterEach(() => {
   cleanup();
 });
@@ -204,5 +208,76 @@ describe("KeyphraseTab", () => {
     );
     const railCard = screen.getByRole("button", { name: /headless cms/i });
     expect(railCard).not.toHaveTextContent("58");
+  });
+
+  it("renders the usage notice for the selected keyphrase", () => {
+    render(
+      <KeyphraseTab
+        keyphrases={entries}
+        selectedId="b"
+        result={result}
+        analyzing={false}
+        {...handlers}
+        showUsage
+      />
+    );
+    expect(screen.getByTestId("usage")).toHaveTextContent("headless cms");
+  });
+
+  it("renders no usage notice unless asked to", () => {
+    render(
+      <KeyphraseTab
+        keyphrases={entries}
+        selectedId="b"
+        result={result}
+        analyzing={false}
+        {...handlers}
+      />
+    );
+    expect(screen.queryByTestId("usage")).toBeNull();
+  });
+
+  it("tells the user when keyphrases could not be saved", () => {
+    const { rerender } = render(
+      <KeyphraseTab
+        keyphrases={entries}
+        selectedId={null}
+        result={result}
+        analyzing={false}
+        {...handlers}
+      />
+    );
+    expect(screen.queryByRole("alert")).toBeNull();
+
+    rerender(
+      <KeyphraseTab
+        keyphrases={entries}
+        selectedId={null}
+        result={result}
+        analyzing={false}
+        saveFailed
+        {...handlers}
+      />
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(/couldn.t save keyphrases/iu);
+  });
+
+  it("shows keyphrases read-only with a hint when they cannot be edited", () => {
+    render(
+      <KeyphraseTab
+        keyphrases={[{ ...entries[0] }, { ...entries[1], synonyms: ["cms"] }]}
+        selectedId="b"
+        result={result}
+        analyzing={false}
+        readOnly
+        {...handlers}
+      />
+    );
+    expect(screen.getByRole("textbox", { name: /^related keyphrase$/iu })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /add related keyphrase/iu })).toBeDisabled();
+    expect(screen.getByRole("textbox", { name: /add a synonym/iu })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /set as focus/iu })).toBeNull();
+    expect(screen.queryByRole("button", { name: /remove/iu })).toBeNull();
+    expect(screen.getByText(/can.t edit this document/iu)).toBeInTheDocument();
   });
 });

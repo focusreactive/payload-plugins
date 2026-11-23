@@ -1,3 +1,4 @@
+import type { Message } from "../../translations/types";
 import type { Status } from "./analysis";
 
 export interface GaugeBand {
@@ -22,22 +23,22 @@ export interface GaugeModel {
 
 export type GaugeUnit = "words" | "chars" | "px" | "percent" | "score";
 
-interface YoastScoredSpec {
-  statusSource: "yoast";
+interface GaugeSpecBase {
   axisMin: number;
   axisMax: number;
   thresholds: number[];
-  scores: number[];
   unit: GaugeUnit;
+  openEnded?: boolean;
 }
 
-interface DirectStatusSpec {
+interface YoastScoredSpec extends GaugeSpecBase {
+  statusSource: "yoast";
+  scores: number[];
+}
+
+interface DirectStatusSpec extends GaugeSpecBase {
   statusSource: "direct";
-  axisMin: number;
-  axisMax: number;
-  thresholds: number[];
   statuses: Status[];
-  unit: GaugeUnit;
 }
 
 export type GaugeSpec = YoastScoredSpec | DirectStatusSpec;
@@ -48,12 +49,14 @@ export interface SegmentModel {
   countLabel?: string;
   filledPct: number;
   filledStatus: Status;
-  legend?: { tone: SwatchTone; label: string }[];
+  legend?: { tone: SwatchTone; label: Message }[];
 }
+
+export type DrilldownNoun = "link" | "section" | "paragraph" | "group";
 
 export interface DrilldownModel {
   items: { left: string; right: string }[];
-  label: string;
+  noun: DrilldownNoun;
 }
 
 export interface DistributionModel {

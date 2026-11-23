@@ -1,7 +1,8 @@
 import type { Status } from "../engine/types/analysis";
+import type { TranslationKey } from "../translations/types";
 
-export const STATUS_PILL_LABEL: Record<Status, string> = {
-  good: "Good",
-  warn: "Needs work",
-  bad: "Problem",
+export const STATUS_LABEL_KEY: Record<Status, TranslationKey> = {
+  good: "status.good",
+  warn: "status.warn",
+  bad: "status.bad",
 };

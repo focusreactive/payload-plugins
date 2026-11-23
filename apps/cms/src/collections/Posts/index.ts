@@ -6,6 +6,10 @@ import { CtaBannerInlineBlock } from "@/blocks/CtaBanner/inlineConfig";
 import { LogosInlineBlock } from "@/blocks/Logos/inlineConfig";
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
+import {
+  createLivePreviewEditComponents,
+  createLivePreviewVersions,
+} from "@/lib/config/livePreview";
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import { anyone, author, or, user, superAdmin } from "@/lib/access";
 import {
@@ -34,9 +38,7 @@ export const Posts: CollectionConfig<"posts"> = {
   },
   admin: {
     components: {
-      edit: {
-        PreviewButton: "/components/admin/VisualPreviewButton#VisualPreviewButton",
-      },
+      edit: createLivePreviewEditComponents(),
     },
     defaultColumns: ["title", "slug", "heroImage", "updatedAt"],
     group: "Blog",
@@ -88,7 +90,6 @@ export const Posts: CollectionConfig<"posts"> = {
         {
           fields: [
             {
-              defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.posts.title),
               label: {
                 en: "Title",
                 es: "Título",
@@ -330,8 +331,5 @@ export const Posts: CollectionConfig<"posts"> = {
     },
   },
   slug: BLOG_CONFIG.collection,
-  versions: {
-    drafts: true,
-    maxPerDoc: 50,
-  },
+  versions: createLivePreviewVersions(),
 };

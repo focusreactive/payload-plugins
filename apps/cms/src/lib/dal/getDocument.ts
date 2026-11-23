@@ -1,3 +1,4 @@
+import { cacheTag } from "@/lib/utils/cacheTags";
 import { scopedCache } from "@/lib/utils/scopedCache";
 import { getPayloadClient } from "@/dal/payload-client";
 import type { Config } from "@/payload-types";
@@ -46,5 +47,5 @@ export const getCachedDocument = (collection: Collection, slug: string) =>
 
 export const getCachedDocumentByID = (collection: Collection, id: number) =>
   scopedCache(async () => getDocumentByID(collection, id), [collection, id.toString()], {
-    tags: [`${collection}_id_${id}`],
+    tags: [`${collection}_id_${id}`, cacheTag({ type: "pagePaths" })],
   });

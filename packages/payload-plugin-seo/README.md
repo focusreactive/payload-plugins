@@ -1,8 +1,8 @@
 # @focus-reactive/payload-plugin-seo
 
-Live SEO analysis for [Payload CMS](https://payloadcms.com/) v3 + Next.js, powered by [Yoast](https://github.com/Yoast/wordpress-seo). Adds a real-time SEO drawer to the document editor — keyphrase optimization, on-page checks, readability, inclusive language, content vitals, and a Google SERP preview — without adding a single field to your database.
+Live SEO analysis for [Payload CMS](https://payloadcms.com/) v3 + Next.js, powered by [Yoast](https://github.com/Yoast/wordpress-seo). Adds a real-time SEO drawer to the document editor — keyphrase optimization, on-page checks, readability, inclusive language, content vitals, and a Google SERP preview — without adding a single field to your documents.
 
-The plugin injects a button into the editor toolbar of each configured collection. Clicking it opens a drawer that reads the current (unsaved) form values, derives the title, meta description, and slug from dot-path config, runs **your** registered content extractor to build the body content, and runs the Yoast analysis engine **entirely in the browser**. Nothing is persisted — there are zero new collections, globals, or fields.
+The plugin injects a button into the editor toolbar of each configured collection. Clicking it opens a drawer that reads the current (unsaved) form values, derives the title, meta description, and slug from dot-path config, runs **your** registered content extractor to build the body content, and runs the Yoast analysis engine **entirely in the browser**. Your documents get no new fields. Keyphrases are stored in one hidden collection by the [keyphrase index](#keyphrase-index), which is on by default; set `keyphraseIndex: false` to keep them in the browser instead.
 
 ---
 
@@ -15,7 +15,7 @@ I want to add live SEO analysis to my Payload CMS v3 + Next.js project using @fo
 
 ## How it works
 
-The plugin adds NO database fields, collections, or globals. It injects a button into the
+By default the plugin adds NO database fields, collections, or globals. It injects a button into the
 document editor toolbar (admin.components.edit.beforeDocumentControls) of each configured
 collection. The button opens a drawer that:
 - Reads the live (unsaved) form values for the document
@@ -101,7 +101,14 @@ registerContentExtractors({ '@/seo/extractPageContent#default': extractPageConte
   docs/fields you need (one parallel request per collection), then read them with store.get().
 - Non-English analysis requires the locale code in `supportedLocales`; the matching Yoast
   language pack is dynamically imported on demand.
-- No GA4, no API keys, no server calls except the resolveDocs reads against your own Payload API.
+- No GA4, no API keys. By default the drawer loads and saves keyphrases through the plugin's
+  endpoints on your Payload server. With keyphraseIndex: false the only server calls are the
+  resolveDocs reads against your own Payload API.
+- The keyphrase index (on by default) stores keyphrases in a hidden `seo-keyphrases` collection,
+  warns when a keyphrase is already used elsewhere, and adds an Internal links tab. It adds a
+  collection, so SQL adapters need a migration (payload migrate:create); set
+  `keyphraseIndex: false` to keep keyphrases in the browser instead. Add a per-collection
+  `resolveUrl: ({ doc, locale, req }) => string | null` to show public URLs in link suggestions.
 ```
 
 ---
@@ -128,7 +135,7 @@ Document editor (configured collection)
    Tabs: Keyphrase · On-page SEO · Readability · Inclusive · Content vitals · SERP preview
 ```
 
-The analysis runs on a ~1 second debounce as form values change. **No data is written** — the drawer is a pure read-only overlay on top of the editor's current state.
+The analysis runs on a ~1 second debounce as form values change. **No document data is written** — the drawer is a read-only overlay on top of the editor's current state. Keyphrases are stored on the server by the [keyphrase index](#keyphrase-index), or kept in the browser with `keyphraseIndex: false`.
 
 ---
 
@@ -223,8 +230,14 @@ interface SeoPluginConfig {
   site?: SeoSiteConfig;
   /** Locale codes whose Yoast language packs may be loaded. Default: ['en'] */
   supportedLocales?: string[];
-  /** Override the English UI strings (merged with defaults). */
+  /** Override or add UI strings per admin language (see "Admin language"). */
   translations?: Translations;
+  /** Store keyphrases on the server and enable the "already used on" notice and the
+   *  Internal links tab. Adds the `seo-keyphrases` collection. Set to false to keep
+   *  keyphrases in the browser (localStorage) only. Default: true */
+  keyphraseIndex?: boolean;
+  /** Bands of the checks that show a gauge (see "Thresholds"). Default: the Yoast values. */
+  thresholds?: SeoThresholds;
 }
 ```
 
@@ -249,6 +262,12 @@ interface SeoCollectionConfig {
    * is empty (a one-time console error is logged) — there is no built-in fallback.
    */
   extractContentPath: string;
+  /**
+   * Server-only. Public URL of a document, used by link suggestions when
+   * `keyphraseIndex` is on. Return null when the document has no public URL.
+   */
+  resolveUrl?: (args: { doc: Record<string, unknown>; locale: string; req: PayloadRequest }) =>
+    string | null | Promise<string | null>;
 }
 ```
 
@@ -547,8 +566,8 @@ interface SeoTextFieldOptions {
    */
   generateOnPublish?: boolean;
   /**
-   * Override the target length window.
-   * Defaults: title → 400–600 px; description → 120–156 chars.
+   * Override the target length window. Missing numbers follow the plugin `thresholds`:
+   * title → 400 px to `titleWidth.max` (600); description → `metaDescriptionLength` (120–156 chars).
    */
   range?: { min?: number; max?: number };
 }
@@ -556,7 +575,12 @@ interface SeoTextFieldOptions {
 
 The field renders identically to a native Payload text field, with two additions below
 the input: a length meter (pixels for title, characters for description) and a status
-pill showing **Too short**, **Good**, or **Too long** against the configured range.
+pill showing **Too short**, **Good**, or **Too long** the way the drawer scores it. A description
+of `min` characters or fewer is too short and one over `max` is too long. A title is too long over
+`max` and too short only below a `min` the field sets in its own `range`; otherwise the title
+`min` is just the lower end of the generation target, because Yoast scores narrower titles as good.
+The plugin throws when Payload starts if a field's `range`, filled in from `thresholds`, ends up
+with `min` not below `max`.
 
 ### Generation endpoint and OpenAI config
 
@@ -665,6 +689,7 @@ The drawer presents six tabs, all derived from a single in-browser Yoast analysi
 | **Inclusive**             | Flags potentially exclusionary or non-inclusive language.                                                                                          |
 | **Content vitals**        | Word count, sentence/paragraph counts, image & video counts, reading time, prominent words.                                                        |
 | **Search result preview** | Live Google SERP preview (desktop + mobile) with keyphrase highlighting, built on `@yoast/search-metadata-previews`.                               |
+| **Internal links**        | Other documents whose keyphrases appear in this text but are not linked yet. Only with [`keyphraseIndex`](#keyphrase-index).                       |
 
 **Without a keyphrase:** the drawer still runs and the On-page, Readability, Inclusive, Content vitals, and SERP tabs all populate. Only the keyphrase-specific assessments wait until you type a focus keyphrase and analysis runs.
 
@@ -677,7 +702,127 @@ The **Keyphrase** tab is a master–detail workspace: a rail lists all configure
 - **Synonyms** — each keyphrase (focus or related) can have its own synonym list; synonyms are folded into that keyphrase's own analysis pass, the same way they would be for a single Yoast focus keyphrase.
 - **SERP highlighting** — the search-result preview bolds only the focus keyphrase and its synonyms; related keyphrases are not highlighted there.
 
-**Persistence:** keyphrases are **not stored in the database** — there are no new fields, collections, or globals. The full list (text + synonyms per entry) is kept in the browser's `localStorage`, keyed per collection + document + locale, and is pruned of empty entries on save. Switching documents or locales loads (or starts) a separate list; clearing browser storage resets it.
+**Persistence:** keyphrases are never written to your documents — there are no new fields. By default the [keyphrase index](#keyphrase-index) stores the full list (text + synonyms per entry) on the server, per collection + document + locale. With `keyphraseIndex: false` the list is kept in the browser's `localStorage` under the same key instead and is pruned of empty entries on save. Switching documents or locales loads (or starts) a separate list; clearing browser storage resets a browser-only list.
+
+---
+
+## Keyphrase index
+
+The keyphrase index is on by default. It stores keyphrases on the server, so every editor sees the same set. Set `keyphraseIndex: false` to keep them in the browser only:
+
+```ts
+seoPlugin({
+  collections: [/* … */],
+  keyphraseIndex: false,
+});
+```
+
+- Keyphrases and synonyms are saved per document and locale in a hidden `seo-keyphrases` collection (`docCollection`, `docId`, `locale`, `keyphrases`, `intents`, unique on `docCollection` + `docId` + `locale`). Up to 5 keyphrases per document, 10 synonyms each, 100 characters per entry. Longer input is cut to these limits when it is saved.
+- With the index on, the browser keeps no copy of the list. Browser storage holds only an edit the server has not accepted yet and a list saved in the browser while the index was off. If the server has never stored keyphrases for a document and locale, that list is uploaded the first time the drawer is opened. The upload never overwrites a row another tab or editor created in the meantime. The browser copy is removed once the server accepted a list for the document or already has one; in that case the drawer switches to the server list.
+- An edit the server did not accept is kept in the browser and sent again with the next save, when the browser comes back online, or when the drawer is next opened after a reload. The Keyphrase tab shows a notice until a save succeeds. Saves for one document are sent one at a time.
+- Editors who can read a document but not update it see its keyphrases read-only.
+- If loading the keyphrases from the server fails, the drawer falls back to browser storage for that document, without the "already used on" notice and the Internal links tab.
+- Removing every keyphrase keeps an empty row, so an old browser copy is never uploaded over it.
+- A pending edit is sent when the page is hidden or closed, so navigating away does not lose it.
+- Rows are deleted when their document is deleted.
+- The index adds a collection. On SQL adapters (Postgres, SQLite) run `payload migrate:create` and apply the migration, or set `keyphraseIndex: false`.
+- Turning the option off again does not delete the stored rows. The drawer goes back to browser storage, which starts empty for documents whose keyphrases were moved to the server.
+
+### Endpoints and access
+
+The plugin registers four endpoints under your API route. `locale` is required when localization is enabled and ignored otherwise.
+
+- `GET /seo/keyphrases?collection=&docId=&locale=` returns `{ keyphrases, indexed, canUpdate }`, where `indexed` says whether the server has a row for the document and locale and `canUpdate` whether the user may change it.
+- `PUT /seo/keyphrases` with body `{ collection, docId, locale, keyphrases: [{ text, synonyms }], ifAbsent?: boolean }` replaces the keyphrases and returns `{ keyphrases }`. With `ifAbsent: true` it only creates a missing row and answers `409` with the stored keyphrases when one exists.
+- `GET /seo/keyphrase-usage?collection=&docId=&locale=&phrase=` returns `{ docs: [{ collection, id, title }] }`, the other documents that use the same keyphrase.
+- `POST /seo/link-suggestions` with body `{ collection, docId, locale, text, linkedHrefs?: string[], linkedDocs?: [{ collection, docId }] }` returns `{ suggestions, linked }`. `linked` lists the `linkedDocs` the user can read as `[{ collection, id, title }]`, in the order they were sent.
+
+The `seo-keyphrases` collection itself is closed: every operation is denied in its access control, it is hidden from the admin and not exposed over GraphQL. Only these endpoints read or write it.
+
+- Every request needs a logged-in user (otherwise `401`) from the admin user collection `admin.user` (otherwise `403`).
+- The user must be able to read the document the request is about, otherwise `404`.
+- `PUT /seo/keyphrases` also needs update access to that document, otherwise `403`. It is evaluated the way Payload's `GET /api/<collection>/access/<id>` endpoint does it, so the collection's `access.update` gets the document `id` and query constraints are matched against the document. An error thrown while checking counts as no access.
+- Every document returned is loaded with the user's read access, so editors never see titles or URLs they could not open themselves.
+
+### "Already used on" notice
+
+The Keyphrase tab shows **"This keyphrase is already used on:"** with links to the edit view of other documents that have the same keyphrase in the same locale. Word order, case and accents on Latin letters are ignored (`CMS Payload` = `payload cms`, `café` = `cafe`). Synonyms are not compared.
+
+### Internal links tab
+
+The drawer gets an **Internal links** tab. **Find opportunities** lists up to 10 other documents whose keyphrases or synonyms appear in this document's text and are not linked from it yet, with the matched phrase, the number of matches, a snippet with the matched text highlighted and the target link to copy. Below it, **Already linked** lists the documents this text already links to with rich text internal links, each linking to its edit view. When every match is already linked, the tab says so instead of reporting that nothing was found.
+
+Give each collection a `resolveUrl` so suggestions show public URLs and targets already linked by URL are skipped. Without it, suggestions only link to the admin edit view.
+
+```ts
+import type { ResolveUrl } from "@focus-reactive/payload-plugin-seo";
+
+const resolvePostUrl: ResolveUrl = ({ doc, locale }) =>
+  typeof doc.slug === "string" ? `/${locale}/blog/${doc.slug}` : null;
+
+seoPlugin({
+  collections: [
+    {
+      slug: "posts",
+      extractContentPath: "@/collections/Posts/extractPostContent#default",
+      resolveUrl: resolvePostUrl,
+    },
+  ],
+});
+```
+
+`resolveUrl` runs on the server with the target document (depth 0) in the requested locale. Relative and absolute URLs both work. A thrown error is logged and treated as `null`.
+
+Matching rules:
+
+- Whole words only: `web` does not match `websites`.
+- Case and accents on Latin letters are ignored: `café` matches `cafe`. `ñ`, Cyrillic `й` and Japanese voiced kana such as `が` stay distinct letters.
+- A hyphen counts as a space: `e-commerce` matches `e commerce`.
+- Text in scripts written without spaces between words (Chinese, Japanese, Thai) is split into words with `Intl.Segmenter` where the runtime provides it.
+- Only documents that have keyphrases in the same locale can be suggested. In collections with drafts enabled only published documents are suggested.
+- A target is skipped when the text already links to it, either as a rich text internal link or by an `href` whose path equals its `resolveUrl` result.
+- Rich text internal links are read from the Lexical `LinkFeature` shape (`linkType: "internal"`, `doc: { relationTo, value }`) anywhere in the form data. Other link fields, such as custom link groups or relationship fields, are only detected through the `href` they render into the content.
+- An `href` counts only when it is relative, or when its host equals the host of `serverURL`, of the plugin's `site.baseUrl`, of the request or of an absolute `resolveUrl` result. `http` and `https` and a leading `www.` are treated as the same site. Links to other sites are ignored, even when their path matches.
+- Paths are compared literally: `/en/alpha` and `/alpha` are different. If your site serves the default locale both with and without a prefix, return from `resolveUrl` the form your content links use.
+- Each request reads the index rows of the locale 500 at a time (`docCollection`, `docId`, `keyphrases` only) and matches them in memory. Matching targets are then loaded in growing batches until 10 suggestions are found, at most 300 targets per request.
+- Limits: the text sent for matching is capped at 100,000 characters, at most 500 `href`s of up to 2,048 characters each and at most 500 rich text internal links are compared.
+
+### Upgrading from 1.x
+
+`keyphraseIndex` now defaults to `true`. If you never set it, the plugin now adds the hidden `seo-keyphrases` collection, its endpoints and the Internal links tab. On SQL adapters (Postgres, SQLite) run `payload migrate:create` and then `payload migrate`, or set `keyphraseIndex: false` to keep the browser-only behavior. Keyphrases saved in the browser are uploaded the first time the drawer is opened for each document and locale.
+
+---
+
+## Thresholds
+
+`thresholds` sets the bands of the checks that show a gauge, in the units the drawer shows. Every number is optional and defaults to the Yoast value, so leaving the option out changes nothing.
+
+```ts
+seoPlugin({
+  collections: [/* … */],
+  thresholds: {
+    keyphraseDensity: { min: 0.5, max: 2.5 },
+    textLength: { min: 600, acceptableMin: 450 },
+  },
+});
+```
+
+| Check                   | Numbers (default)                                                 | Unit                                     |
+| ----------------------- | ----------------------------------------------------------------- | ---------------------------------------- |
+| `keyphraseLength`       | `max` good up to (4), `acceptableMax` okay up to (8)              | words                                    |
+| `keyphraseDensity`      | `min` (0.5) to `max` (3) is good                                  | % of the text weighted by keyphrase length, texts of 100+ words |
+| `metaDescriptionLength` | `min` too short up to (120), `max` too long over (156)            | characters                               |
+| `titleWidth`            | `max` too wide over (600); narrower titles are good, `max` must be over 400 | pixels                                   |
+| `textLength`            | `min` good from (300), `acceptableMin` okay from (250)            | words                                    |
+| `textSentenceLength`    | `maxSentenceWords` (20), `max` good up to (25), `acceptableMax` okay up to (30) | words; % of sentences longer than `maxSentenceWords` |
+| `fleschReadingEase`     | `min` good from (60), `acceptableMin` okay from (50)              | score 0–100                              |
+
+- The same numbers drive the Yoast check, the gauge bands and the numbers in the check tips and recommendations.
+- The plugin validates the option when Payload starts and throws on an unknown check or number, a negative or non-numeric value, 0 for `keyphraseLength.max`, `textLength.acceptableMin` or `textSentenceLength.maxSentenceWords`, a percentage or score over 100, a `titleWidth.max` of 400 or less, or bands in the wrong order (for example `min` not below `max`).
+- Transition words and passive voice keep the Yoast bands: Yoast hardcodes them instead of reading them from its assessment config.
+- A number you set wins over Yoast's language-specific settings too. Numbers you leave out keep the analysis language's Yoast settings, for example 25-word sentences in Spanish, a 60–80 character meta description and character-based text length in Japanese, or 6/9-word keyphrases in languages without function words. Gauges, tips and recommendations show the numbers that were actually used. The length meters of generated SEO fields use the configured or default numbers.
+- Keyphrase density is the value Yoast scores: the share of words, weighted by the keyphrase length (`0.7 + words / 3`). The gauge shows the same value.
+- [Generated SEO fields](#generated-seo-fields) use `titleWidth.max` and `metaDescriptionLength` for their length meters and generation targets, unless the field sets its own `range`.
 
 ---
 
@@ -700,13 +845,47 @@ seoPlugin({
 
 The active locale is taken from the admin and normalized to Yoast's `xx_XX` form (e.g. `en` → `en_EN`). The locale is passed to your extractor as `ctx.locale` and to `resolveDocs` (so projected fetches are locale-correct). A locale not listed in `supportedLocales` falls back to English processing.
 
+### Admin language
+
+The drawer and the generated fields speak the admin's language (Payload's `i18n`, the user's language switch), independently of the content locale above. English and Czech ship with the plugin; any other admin language falls back to English string by string.
+
+Payload only offers the admin languages your config enables, so add Czech to `i18n.supportedLanguages` to get the Czech UI:
+
+```ts
+import { cs } from "@payloadcms/translations/languages/cs";
+import { en } from "@payloadcms/translations/languages/en";
+
+export default buildConfig({
+  i18n: { supportedLanguages: { en, cs } },
+  // ...
+});
+```
+
+The strings are registered as Payload custom translations under the `seo` namespace, so they can be overridden — or a whole language added — with `translations`. Keys are the ones in [`src/translations/messages/en.ts`](./src/translations/messages/en.ts):
+
+```ts
+seoPlugin({
+  // ...
+  translations: {
+    de: {
+      title: "SEO-Analyse",
+      "tab.keyphrase": "Fokus-Keyphrase",
+      "viz.show.link_one": "{{count}} Link anzeigen",
+      "viz.show.link_other": "{{count}} Links anzeigen",
+    },
+  },
+});
+```
+
+`{{name}}` placeholders are interpolated. Plurals are separate keys suffixed `_zero`, `_one`, `_two`, `_few`, `_many` or `_other`, chosen with `Intl.PluralRules` for the admin language; `_other` is required, the rest only where the language has that form (Czech uses `_one`, `_few` and `_other`). Keys are type-checked against the English set (the `Translations` type is exported). The `seo:` prefix and the colon-separated tab keys of earlier versions (`"seo:tab:keyphrase"`) are still accepted. Strings from this option take precedence over `i18n.translations.<language>.seo` in your Payload config.
+
 ---
 
 ## Exports Reference
 
 | Import path                                                          | Exports                                                                                                                                                                                                                                              |
 | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@focus-reactive/payload-plugin-seo`                                 | `seoPlugin`, `seoTextField`; types `SeoPluginConfig`, `SeoCollectionConfig`, `SeoFieldPaths`, `SeoSiteConfig`, `ContentExtractor`, `SeoGenerationConfig`                                                                                             |
+| `@focus-reactive/payload-plugin-seo`                                 | `seoPlugin`, `seoTextField`; types `SeoPluginConfig`, `SeoCollectionConfig`, `SeoFieldPaths`, `SeoSiteConfig`, `ContentExtractor`, `SeoGenerationConfig`, `SeoThresholds`, `ResolveUrl`, `ResolveUrlArgs`, `Translations`, `MessageKey` |
 | `@focus-reactive/payload-plugin-seo/content`                         | Builder helpers `heading`, `paragraph`, `link`, `image`, `video`, `richText`, `html`, `compact`; `registerContentExtractors`, `resolveContentExtractor`; types `ContentNode`, `HeadingLevel`, `ContentExtractor`, `ExtractContext`, `ExtractToolkit`, `DocQuery`, `DocStore`, `ContentHelpers` |
 | `@focus-reactive/payload-plugin-seo/fields`                          | `seoTextField`; type `SeoTextFieldOptions`                                                                                                                                                                                                           |
 | `@focus-reactive/payload-plugin-seo/admin.css`                       | Compiled admin styles for the drawer & button                                                                                                                                                                                                       |

@@ -1,3 +1,4 @@
+import { stripMarkers } from "@focus-reactive/payload-plugin-visual-editing";
 import type { LexicalNode, SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
 import { convertLexicalToPlaintext } from "@payloadcms/richtext-lexical/plaintext";
 
@@ -11,7 +12,7 @@ export function extractLexicalText(value: unknown): string {
     return "";
   }
 
-  return convertLexicalToPlaintext({ data: value as SerializedEditorState });
+  return stripMarkers(convertLexicalToPlaintext({ data: value as SerializedEditorState }));
 }
 
 export function joinText(parts: (string | null | undefined)[]): string {

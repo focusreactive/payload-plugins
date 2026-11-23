@@ -1,0 +1,3 @@
+export const LIVE_PREVIEW_AUTOSAVE_INTERVAL_MS = 300;
+
+export const PRESERVE_AUTOSAVE_EDITS = true;

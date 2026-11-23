@@ -7,17 +7,19 @@ import { HeadingIssuePills } from "./HeadingIssuePills";
 import { HeadingLevelTiles } from "./HeadingLevelTiles";
 import { HeadingTree } from "./HeadingTree";
 import { countHeadingWarnings } from "./HeadingTree/headingTreeView";
+import { useSeoTranslation } from "../../../../translations/useSeoTranslation";
 
 interface HeadingsSectionProps {
   data: HeadingStructure;
 }
 
 export function HeadingsSection({ data }: HeadingsSectionProps) {
+  const { t } = useSeoTranslation();
   const warnings = countHeadingWarnings(data.tree);
 
   return (
     <SectionCard
-      title="Headings"
+      title={t("headings.title")}
       widget={
         <HeadingIssuePills errors={data.issues.length} warnings={warnings} total={data.total} />
       }
@@ -26,8 +28,8 @@ export function HeadingsSection({ data }: HeadingsSectionProps) {
         <HeadingIssueBanner key={issue.type} issue={issue} />
       ))}
 
-      <div className="text-[9.5px] font-semibold uppercase tracking-[0.05em] text-neutral-500 px-[15px] pt-[11px]">
-        Levels
+      <div className="text-[12px] font-medium text-neutral-600 px-[15px] pt-[11px]">
+        {t("headings.levels")}
       </div>
       <HeadingLevelTiles levels={data.levels} />
       <HeadingTree tree={data.tree} />

@@ -1,10 +1,20 @@
-import type { Translations } from "../../translations/types";
+import { isRecord } from "../isRecord";
 
-export function mergeTranslations(base: Translations, extra: Translations): Translations {
-  const out: Translations = { ...base };
+type NamespacedTranslations = Record<string, Record<string, unknown>>;
 
-  for (const [locale, strings] of Object.entries(extra)) {
-    out[locale] = { ...(out[locale] ?? {}), ...strings };
+export function mergeTranslations(
+  base: NamespacedTranslations,
+  extra: NamespacedTranslations
+): NamespacedTranslations {
+  const out: NamespacedTranslations = { ...base };
+
+  for (const [language, namespaces] of Object.entries(extra)) {
+    const merged: Record<string, unknown> = { ...out[language] };
+    for (const [namespace, value] of Object.entries(namespaces)) {
+      const existing = merged[namespace];
+      merged[namespace] = isRecord(existing) && isRecord(value) ? { ...existing, ...value } : value;
+    }
+    out[language] = merged;
   }
 
   return out;

@@ -19,5 +19,5 @@ export async function getRedirects(locale: Locale) {
 
 export const getCachedRedirects = ({ locale }: { locale: Locale }) =>
   scopedCache(async () => getRedirects(locale), ["redirects", locale], {
-    tags: ["redirects", cacheTag({ locale, type: "redirect" })],
+    tags: ["redirects", cacheTag({ locale, type: "redirect" }), cacheTag({ type: "pagePaths" })],
   });

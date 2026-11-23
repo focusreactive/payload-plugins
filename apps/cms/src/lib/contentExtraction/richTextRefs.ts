@@ -6,7 +6,7 @@ function isId(v: unknown): v is Id {
   return typeof v === "number" || typeof v === "string";
 }
 
-function isRecord(v: unknown): v is Record<string, unknown> {
+export function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 

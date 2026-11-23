@@ -1,16 +1,9 @@
-// Public surface of the Domain Access Layer.
-//
-// Application code should import from `@/dal` (not from individual files
-// inside this directory). Hooks, validate, and access functions live inside
-// Payload's request lifecycle — they use `req.payload` directly, not the DAL.
-// See ./README.md for the full pattern.
-
 export { getPayloadClient } from "./payload-client";
 
-// Pages
 export { getPageBySlug, PAGE_RENDER_DEPTH } from "./getPageBySlug";
 
-// Posts
+export { getUnsavedRichText } from "./getUnsavedRichText";
+
 export { getPostBySlug } from "./getPostBySlug";
 export { getPosts } from "./getPosts";
 export type { GetPostsOptions } from "./getPosts";
@@ -18,11 +11,10 @@ export { getRelatedPosts } from "./getRelatedPosts";
 export { searchPosts } from "./searchPosts";
 export type { SearchPostsOptions } from "./searchPosts";
 
-// Documents (generic)
 export { getCachedDocument, getCachedDocumentByID } from "./getDocument";
 export { getAllDocuments } from "./getAllDocuments";
+export { getPreviewDocument } from "./getPreviewDocument";
 
-// Globals
 export { getCachedGlobal, formatGlobalCacheTag, revalidateGlobalTags } from "./getGlobals";
 export { getSiteSettings } from "./getSiteSettings";
 export { getBlogPageSettings } from "./getBlogPageSettings";
@@ -30,15 +22,8 @@ export type { BlogPageSettingsData } from "./getBlogPageSettings";
 export { getAdminSettings } from "./getAdminSettings";
 export { getNotFoundSettings } from "./getNotFoundSettings";
 
-// Media
 export { getDefaultMediaId, DEFAULT_MEDIA_CACHE_TAG } from "./getDefaultMediaId";
 
-// Redirects
 export { getRedirects, getCachedRedirects } from "./getRedirects";
 
-// Localization
 export { getAlternateLocales } from "./getAlternateLocales";
-
-// Static params (route generation)
-export { getMainSitePageStaticParams } from "./staticParams/pages";
-export { getBlogPostStaticParams } from "./staticParams/posts";

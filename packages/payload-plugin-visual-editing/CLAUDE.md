@@ -1,58 +1,85 @@
 # @focus-reactive/payload-plugin-visual-editing — Agent Guide
 
-Payload v3 plugin that adds click-to-edit overlays to server-rendered content via Vercel stega + a postMessage bridge back to the admin.
+Payload v3 plugin: click-to-edit overlays on server-rendered draft content through Vercel stega markers and a `postMessage` bridge to the admin, plus an optional instant preview of text edits.
 
-## Pipeline at a glance
+[`README.md`](./README.md) is the user document: when behaviour changes for a project that uses the plugin, update it, including "Upgrading". Read the rules below before changing anything.
 
-Three layers. Each runs in a different context.
+## Where things are
 
-| Layer | Entrypoint | Runs in | Job |
-|---|---|---|---|
-| Server | `src/internal/{beforeOperationHook, afterReadHook, afterOperationHook}.ts` | Payload hooks (Local API draft reads only) | Stamp `_meta` on holders in `afterRead`, then in `afterOperation` weave `@vercel/stega` zero-width chars into text fields so the path survives SSR. |
-| Client overlay | `src/client/VisualEditingOverlay.tsx` → `src/client/overlay/*` | User's frontend page, wrapped by `<VisualEditing.Overlay>` | `MutationObserver` scans for stega in text nodes, groups by `(collectionSlug, docId, path, anchor)`, picks a target element, writes `data-ve-target`, draws Edit badges. |
-| Admin bridge | `src/admin/VisualEditingBridgeProvider.tsx` | Payload admin shell (injected via `admin.components.providers`) | Receives `postMessage` from the overlay, navigates to the correct doc if needed, resolves the path to a tab/collapsible/row chain, scrolls, focuses, sweeps. |
+| Part | Code |
+|---|---|
+| Public entries | `src/index.ts` (plugin, `readUnsavedRichText`, `stripMarkers`, `excludeValues`), `src/client/index.ts` (React, re-exports `src/client/react/*`), `src/dom/index.ts` (no React), `src/admin/index.ts` |
+| Endpoints and preview grants | `src/server/endpoints.ts` (`preview-grant`, `unsaved-rich-text`, added with `instantPreview`), `src/server/previewGrant.ts` (signs and checks a grant), `src/admin/instantPreview/previewGrants.ts` (asks for one and keeps it fresh) |
+| Server hooks and marking | `src/server/markRead.ts` (marks a read), `src/server/markedReads.ts` (decides whether a read is marked), `src/server/hooks/*` (Payload adapters); the rich text markers are `src/shared/richText/markTextLeaves.ts`, shared with the page |
+| Unsaved rich text on the server | `src/readUnsavedRichText.ts`, `src/server/unsavedRichText/*` |
+| Shared by server, admin and page | `src/shared/*`: `protocol.ts` (messages, `data-ve-*` attributes), `shared.ts`, `veDocument.ts`, `fieldKey.ts`, `editableSchema/*`, `richText/*` |
+| Admin bridge (click-to-edit) | `src/admin/VisualEditingBridgeProvider.tsx`, `src/admin/previewPages.ts` (which windows it accepts clicks from), `src/admin/PreviewPageBridge.tsx` (announces the Live Preview window, posts `ve:document-saved`), `src/admin/openField/*`, `resolveContainerChain.ts`, `expandAndFocus.ts` |
+| Instant preview in the admin | `src/admin/instantPreview/previewSession.ts` (decides what the preview page is sent), `src/admin/InstantPreviewBroadcaster.tsx`, `src/admin/instantPreview/usePreviewPage.ts`, `src/admin/instantPreview/usePreviewWindow.ts` (React adapters) |
+| Page session and adapters | `src/client/session.ts` (mode, storage, frame, admin origin), `src/client/overlayScope.ts` (locale and saved shapes of one overlay), `src/client/sessionOverlay.ts` (what runs on a root for a session: the overlay, the marker cleaner or nothing, and the toggle; both adapters only call its `sync`), `src/client/toggle.ts`, `src/client/saveEvents.ts`, `src/client/previewGrant.ts`; React adapter `src/client/react/*`, DOM adapter `src/dom/*` |
+| Overlay on the page | `src/client/overlay/fieldTracker.ts` (one record per marked text node: markers stripped and restored, own writes counted, fields and rich text nodes reported and released, an attribute the page renders again cleaned again, an element whose whole text is one field stamped with its `data-ve-*` attributes so a split of its text keeps the target and the instant text, written into in place of its text-bearing children only, so an icon stays), `src/client/overlay/editTargets.ts`, `src/client/overlay/markerCleaner.ts` (markers of `<head>` while the overlay runs, and of the whole page of a draft without an overlay), `src/client/createOverlay.ts`, `src/client/*` |
+| Instant preview on the page | `src/client/instantPreview/liveFields.ts` (what each live field shows and announces), `src/client/instantPreview/instantPreview.ts` (routes tracker and admin events to it), `src/client/instantPreview/unsavedRender/liveRichText.ts` (one live rich text: admin channel, announce, saved shape, held saved render), `unsavedRender.ts` behind it (what it shows on the page and which render call it starts), `optimisticValue.ts` (the value the page builds from a posted state and a base), `src/client/react/LiveRichText.tsx` and `src/client/react/useUnsavedRender.ts` (React adapter), `src/dom/liveRichTextElements.ts` (DOM adapter); `unsavedRender/valueSource.ts` (asks the `unsaved-rich-text` endpoint with the grant), `unsavedRender/baseValues.ts` (the saved value and the answers each field renders on the page with), all behind `unsavedRender/renderSources.ts` (the grants, source and bases of one page, and the one rule of where a structure is rendered: on the page, through Payload or by the call of the site), which both adapters ask |
 
-`src/internal/shared.ts` is the single source of truth for the transport shape (`VeIdentity = {collectionSlug, docId, path, kind}`).
+`admin` and `client` never import `server`; `shared` imports none of them; `client/overlay` never imports `client/instantPreview`. Check with `bunx madge --circular --extensions ts,tsx src`. Everything of the page that imports React lives in `src/client/react/`. The rest of `client`, `shared`, `dom` and `stripMarkers.ts` never import `react`, `react-dom`, `next` or `@payloadcms/*`, and `server` never imports React or `@payloadcms/ui`; the rule in the root `oxlint.config.ts` checks both by folder on commit, so a new module is covered by where it is put. `tests/dom/domEntryImports.int.spec.ts` checks the import graph of `./dom`.
 
-## Non-obvious invariants
+## Things that are easy to break
 
-- **Group key must include collection + docId + path + anchor.** See `src/client/overlay/markerExtractor.ts`. Keying by `path` alone conflates sibling-rendered docs (three FeatureSet cards with `path="title"` collapse to one LCA-wide target). Anchor alone does not differentiate either — plain text nodes have `anchor=null`.
-- **Scan skips `<script>`, `<style>`, `<noscript>`, `<template>`.** See `src/client/overlay/stegaScanner.ts`. JSON-LD emitted via `JSON.stringify` preserves stega zero-width chars; decoding those drags real targets up to the LCA of the script and the rendered element.
-- **Payload virtualizes field groups below the fold** via `<RenderIfInViewport>` (IntersectionObserver with `rootMargin: 1000px`). Before polling for a row/collapsible/input id, scroll the deepest-mounted `field-<ancestor>` into view — see `scrollNearestAncestorIntoView` in `src/admin/expandAndFocus.ts`.
-- **Stega is only embedded on `draft + Local API` reads.** See `src/internal/gate.ts`. REST reads (including those the admin panel makes) skip enrichment so stega doesn't leak into form inputs. `context.visualEditing` (boolean) overrides the gate; with `enrichment: 'explicit'` it is the only way in — no guessing, so server-side draft reads (plugins, jobs) stay clean.
-- **`beforeOperationHook` filters on `operation === 'read'`** — that's Payload's v3 coarse-grained operation label for `find`/`findByID`/`findVersions`/etc. Don't "fix" it to `'find'`.
-- **Stega zero-width chars get stripped from the live DOM** by `stegaBookkeeper` after scanning (to avoid layout surprises). Originals are restored on teardown. If you need the raw pre-scan HTML, fetch it server-side.
-- **Field exclusion is per consumer config.** Multi-tenant consumers typically pass `excludeFieldNames: ['tenant']`; the schema cache respects this.
+- **Group edit targets by document, path, locale and anchor.** Three cards that each render `title` must not become one target around all three.
+- **A `_meta` is a field reference.** `markRead` writes it on rich text, relationship and upload values and on populated documents, and an outer read leaves a value that has one as it is. Holders never leave `markRead`.
+- **A holder path never crosses a relationship.** Do not look up the related collection's schema from the outer document.
+- **The editable schema can refer to itself.** A referenced block nested in itself gives a cyclic schema. Walk it along a path or along data; never recurse over it and never serialise it. Only `src/shared/editableSchema/` builds and walks it; callers use `editableSchema.ts` (`isMarkable`, `holderFieldAt`, `richTextValueAt`, `schemaPathOfRichText`) and never read the object.
+- **Add a field type to `editableSchema.ts` only together with its marker on the server.** The admin sends what that rule allows.
+- **Server and admin must agree on leaves and shape.** Both import `isTextLeaf` and `shapeOf`. A change to either changes every node key.
+- **The editor state leaves the admin only in `src/admin/instantPreview/unsavedStructures.ts`**, for a field the page announced with `ve:rich-text-rendered`, when the shape changes. Never per keystroke, never in a snapshot or a patch.
+- **`readUnsavedRichText` trusts nothing in the request.** The document is read with the user's access, the state is validated and placed only into a field the editable schema lists as `richText`, block fields come from the saved document, and the `_meta` of the result comes from the read. The server never renders a posted state that did not go through it. The page may render in the browser the state the admin posted to it, with data the server already gave this page, and nothing else. A request without a state reads the saved value of the field under the same checks and a read key of that field alone, so no newer state and no read of another row of the same list replaces it; the page asks for the bases of several rows at once. Both read only the top-level field that holds the rich text unless `readWholeDocument` is set.
+- **The field tracker releases a node before it reports it again.** `liveFields` keeps no node map: it releases a node by the address of the match it was given. A node reported with a new field before its old match was released would be patched as both fields.
+- **A value is marked only when `hasMarker` says so, and the overlay never writes a value that stays the same.** `hasMarker` (`src/shared/stegaText.ts`) is the pattern of `@vercel/stega`. A range of zero-width code points also matches an em dash, curly quotes, an ellipsis and a narrow no-break space: the tracker wrote such an `aria-label` back unchanged, the observer reported the write and the page froze in that loop. The mutation pipeline skips an attribute record whose value equals its old value, so a write that changes nothing is never reported.
+- **An adapter of a live rich text shows what `shownFor` returns and calls its `commit` once that is on screen, after every render.** The module waits for that commit before it starts the next render call; nothing else of its timing belongs in an adapter. The React adapter sets a render on the page with a plain `setState` and an answer of a call in `startTransition`, so the render on the page is never held behind a pending transition.
+- **Where a structure is rendered is decided in `renderSources.ts` alone, the same for both adapters.** With a renderer of the value (`renderValue`, `renderRichTextValue`) and a grant from `payloadApi`, the check goes through the endpoint, not the call of the site (the action, `renderRichText`). The answer goes through the same renderer, so React updates the elements in place; without a grant the call of the site is made. A field without references renders on the page with a renderer of the value alone. Without `payloadApi` there is no base: a field with references waits for the call of the site. Without a renderer of the value nothing renders on the page. An adapter passes its renderers and never reads the grant, the source or the bases.
+- **A grant is the only way a request without a session reads unsaved rich text.** `unsaved-rich-text` checks its signature and expiry, loads the user it names and reads only the document it names, with that user's access. It populates a relationship, upload or link node only when the saved value of the same field refers to the same document, and never a document of an auth or `payload-*` collection: `savedReferences.ts` holds every other id back in the `beforeRead` hook and `readAsUser` puts it back after the read, and a read that asked for the rule and did not get it answers nothing. `readUnsavedRichText` itself, which the site's own server code calls, populates what the posted state names. The admin posts a grant only to the origin of the Live Preview URL, once per page load and grant (`previewGrants.ts` remembers what it sent); a page that starts to listen asks for it with `ve:preview-grant-request`, because its announcements do not say whether it holds one.
+- **The admin accepts a click from another origin only from the Live Preview window, on the origin of its URL** (`previewPages.ts`). The page never posts to `"*"`.
+- **Never two render calls out.** A Server Action occupies the router's queue until it returns; `unsavedRender.ts` starts the next call only when the previous one has settled, whatever the component shows meanwhile. A render on the page is not a call.
+- **A structure is shown by the render on the page first, and the server is called once per pause.** `unsavedRender.ts` calls `optimistic` synchronously in `tell` and shows what it returns before any call; the call waits `SERVER_CHECK_PAUSE_MS` after the last structure and replaces the render on the page only with an answer for the structure the editor holds. An answer of nothing keeps the render on the page. A field the page cannot render (no renderer, no base, a renderer that throws) keeps the `STRUCTURE_SETTLE_MS` path, so it gets no slower.
+- **Only a structure with references needs a base.** `baseValues.ts` asks for the saved value of one field: when the editor types in a field that had references when the page loaded, or when a structure with references of such a field, or of any field after a save, needs it. A structure without references renders with no base, before and after a save, and asks nothing until the pause. Never ask for every field of the page at once. A base that did not arrive is asked for again; when one arrives, its watchers render the structure the editor holds on the page again.
+- **A save makes the structure the editor holds the saved one, until the page renders again.** `ve:document-saved` names the document Payload reported as saved and the locale of the admin (`PreviewPageBridge.tsx`); a save of another document, such as one in a drawer, or in another locale changes nothing for the field, and a message without a document (an admin of 1.2.0) counts as a save of the field. On a save of its document, `liveRichText.ts` takes the render it showed for that structure (or the first one that arrives for it) as the saved render, so `shownFor`, the saved shape `unsavedRender.ts` and the overlay scope are told and the saved shapes the overlay keeps follow it. A saved render the adapter passes that differs from the one it passed before replaces it. Adapters keep passing the render the page loaded with; they never track saves themselves.
+- **A base is forgotten on every save.** `baseValues.ts` drops the saved value and the answers of every field on `ve:document-saved` and ignores what arrives for a call that started before it. A stale base shows the old fields of a block until the server answers.
+- **`liveRichTextOf` and `richTextAttributes` carry `hasReferences` and `meta`** for the render on the page; an identity without them (markup of an older version) keeps the server path.
+- **The value built on the page equals the answer of `readUnsavedRichText`, markers, `_meta` and populated documents included.** `optimisticValue.ts` places, populates and marks the state with the functions the server uses from `src/shared/richText/`; change them on one side only and the node keys drift. `tests/realPayload/realPayloadOptimisticParity.int.spec.ts` judges it on a real Payload.
+- **The fields of a block never leave the admin.** `unsavedStructures.ts` posts `withoutBlockFields(state)`.
+- **`LiveRichText` never gets the value.** Its props are the field identity and a shape. Passing the value would serialise it into every draft page.
+- **Every character of a marker's payload costs twelve bytes in the page.** `toStegaPayload` (`src/shared/shared.ts`) writes a field as a list without property names and the row ids of its key once, `toRichTextNodeMarker` writes a text node as `shape#address`. Only `fromStegaPayload` and `fromRichTextNodeMarker` read a payload; both still read the objects 1.2.0 wrote.
+- **`#` separates the parts of a node key.** A rich text field whose key contains it is not marked and not answered.
+- **`sessionOverlay.ts` starts an overlay again only when it has to**: when the session turns it on, or turns instant preview on or off. A change of mode, admin origin or locale reaches the running overlay through `sync` and its getters. Creating the overlay again on every render would drop the MutationObserver and the values the live fields hold; the React adapter starts it in an effect without dependencies and calls `sync` when the session changes.
+- **Never decide whether a read is marked from state another read can touch.** A collection decides from the `args` its `afterOperation` receives. A global counts open reads per `req` object and marks only while no other read of it is open; it fails closed. A flag in `req.context` is shared with nested reads, with failed reads that never clear it, with concurrent reads and, through Payload's `createLocalReq`, with the `context` object of the caller, and each of these marked a published read. The rule lives in `markedReads.ts`; the hooks only report operations to it. It counts `operation === 'read'`, Payload's name for `findGlobal`, as a draft read, not a typo for `find`.
+
+## Commands
+
+```bash
+bunx vitest run            # all tests
+bun run check-types        # tsgo
+bunx ultracite fix <file>  # format and lint one file
+bun run build              # swc + declarations into dist/
+```
+
+## Testing
+
+- Specs mirror the source tree: `tests/server`, `tests/overlay`, `tests/admin`, `tests/instantPreview`, `tests/realPayload`, helpers in `tests/support`.
+- Server behaviour is judged by the specs in `tests/realPayload/`, which read through a real Payload on in-memory sqlite and run in `node`, like `tests/server/latestReads.int.spec.ts` and `tests/server/unsavedRichTextWithoutSchemaCache.int.spec.ts`. `tests/realPayload/realPayloadRichTextLive.int.spec.ts` runs a real Payload under jsdom. A unit test that feeds `markRead` a hand-written document must use the shape those reads produce.
+- Overlay tests post `MessageEvent`s on `window` and stub `window.parent` to stand in for the admin. Model both list shapes: the same Text node rendered again with another path (list keyed by row id) and with another key (list keyed by index).
+- Add a failing test that reproduces the observed DOM or data before touching the overlay or the encoder.
 
 ## Dev loop against an external consumer
 
-If a consumer project pins this package as a `file:` dep, note that it which copies `dist/` at install time and does NOT auto-refresh on source change. After editing plugin source:
+A consumer that pins this package as a `file:` dependency copies `dist/` at install time. After a change:
 
 ```bash
-# in this package
 bun run build
-# then sync dist into the consumer
 rsync -a --delete \
   packages/payload-plugin-visual-editing/dist/ \
   ../../<consumer>/node_modules/@focus-reactive/payload-plugin-visual-editing/dist/
 ```
 
-Next.js may have cached the old chunk — hard-refresh the preview tab (Ctrl/Cmd+Shift+R) or restart `next dev` if client-bundle changes don't land.
-
-To see what the overlay did: open the admin iframe, `document.querySelectorAll('[data-ve-target]')` shows every registered target; `data-ve-target` holds the stega path. Absent collection/docId attrs on those elements are expected — those live in the closure-held click handler, not the DOM.
-
-## Testing
-
-`bunx vitest run` inside this package. jsdom-backed tests live in `tests/*.int.spec.ts[x]`. jsdom lacks `scrollIntoView` and `window.scrollBy` — guard calls with `typeof el.scrollIntoView === 'function'` or surface errors as controlled warnings.
-
-Prefer adding a failing test that reproduces a real observed DOM shape before touching the overlay modules — the grouping/target-selection rules have surprising interactions and regress silently.
+Hard-refresh the preview tab or restart `next dev` if the client bundle does not change. In the preview, `document.querySelectorAll('[data-ve-target]')` lists every edit target; the attribute holds the marker path.
 
 ## Publishing
 
-Published to npm as a **public** package: `private: false` + `publishConfig.access: "public"`, released by semantic-release via the monorepo release flow (with provenance). Peer deps are pinned to a real supported band (`@payloadcms/ui`/`payload` `^3.79.0`), not a blanket `^3.0.0`, because the admin bridge depends on `useConfig().getEntityConfig` whose shape is not stable across all 3.x minors — widen the floor only after testing against the lower bound. First publish (manual `npm publish` + `gh release create` tag) follows the [`payload-plugins-add-package`](../../.claude/skills/payload-plugins-add-package/SKILL.md) flow.
-
-## Gotchas to re-read before debugging
-
-- `src/internal/encodeStega.ts` — terminal marker promotion for richText is the trickiest server-side bit.
-- `src/client/overlay/targetSelector.ts` — `pickTargetForGroup` prefers `<a>`/`<button>` over LCA, and has a label→form-field expansion for floating-label inputs.
-- `src/admin/resolveContainerChain.ts` — path → DOM instruction translation, including `_index-<n>` handling for unnamed ancestors.
+Public package, released by semantic-release through the monorepo flow. The peer range for `payload` and `@payloadcms/ui` is `^3.79.0`, because the bridge depends on `useConfig().getEntityConfig`; widen it only after testing against the lower bound. All peers are optional, because a site that uses only `./dom` needs none of them. `react` and `react-dom` are `^18.2.0 || ^19.0.0`: the page adapters use nothing newer than `useSyncExternalStore`, and the admin gets React 19 from Payload. `next` is not a peer because nothing imports it. Do not bump `version` by hand.

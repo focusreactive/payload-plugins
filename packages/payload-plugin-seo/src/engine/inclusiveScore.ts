@@ -1,7 +1,7 @@
-import type { InclusiveCategory, Status } from "./types/analysis";
+import type { InclusiveCategory, InclusiveCategoryId, Status } from "./types/analysis";
 
 export interface RawInclusiveFlag {
-  category: string;
+  category: InclusiveCategoryId;
   term: string;
   suggestion: string;
   location: string;
@@ -11,7 +11,7 @@ export interface InclusiveResult {
   ringScore: number;
   status: Status;
   categories: InclusiveCategory[];
-  cleanCategories: string[];
+  cleanCategories: InclusiveCategoryId[];
 }
 
 function flagsToRing(count: number): number {
@@ -20,12 +20,12 @@ function flagsToRing(count: number): number {
 
 export function scoreInclusive(
   flags: RawInclusiveFlag[],
-  allCategories: string[]
+  allCategories: InclusiveCategoryId[]
 ): InclusiveResult {
-  const byCategory = new Map<string, InclusiveCategory>();
+  const byCategory = new Map<InclusiveCategoryId, InclusiveCategory>();
 
   for (const f of flags) {
-    const cat = byCategory.get(f.category) ?? { name: f.category, flags: [] };
+    const cat = byCategory.get(f.category) ?? { id: f.category, flags: [] };
     cat.flags.push({
       term: f.term,
       suggestion: f.suggestion,
@@ -35,8 +35,8 @@ export function scoreInclusive(
   }
 
   const categories = [...byCategory.values()];
-  const flaggedNames = new Set(categories.map((c) => c.name));
-  const cleanCategories = allCategories.filter((name) => !flaggedNames.has(name));
+  const flaggedIds = new Set(categories.map((c) => c.id));
+  const cleanCategories = allCategories.filter((id) => !flaggedIds.has(id));
   const ringScore = flagsToRing(flags.length);
   const status: Status = ringScore >= 80 ? "good" : ringScore >= 50 ? "warn" : "bad";
 

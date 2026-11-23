@@ -151,7 +151,7 @@ When Payload MCP tools (`getPageContent`, `getPostsContent`, etc.) return conten
 
 ## Tests
 
-- Integration: `tests/int/**/*.int.spec.ts` (Vitest, jsdom)
+- Integration: `tests/int/**/*.int.spec.{ts,tsx}` (Vitest, jsdom)
 - E2E: `tests/e2e/` (Playwright, Chromium only)
 
 ## See Also

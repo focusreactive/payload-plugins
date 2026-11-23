@@ -1,8 +1,10 @@
 "use client";
 
 import type { DistributionModel } from "../../../../engine/types/visualization";
+import { useSeoTranslation } from "../../../../translations/useSeoTranslation";
 
 export function DistributionBar({ positions }: DistributionModel) {
+  const { t } = useSeoTranslation();
   return (
     <>
       <div className="frseo-docbar relative h-[24px] rounded-rs border border-neutral-200">
@@ -16,9 +18,9 @@ export function DistributionBar({ positions }: DistributionModel) {
       </div>
 
       <div className="flex justify-between text-[10px] text-neutral-500 mt-[5px]">
-        <span>start</span>
-        <span>middle</span>
-        <span>end</span>
+        <span>{t("viz.start")}</span>
+        <span>{t("viz.middle")}</span>
+        <span>{t("viz.end")}</span>
       </div>
     </>
   );

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+  clearKeyphrases,
   loadKeyphrases,
   saveKeyphrases,
   storageKey,
@@ -25,6 +26,13 @@ describe("keyphraseStorage", () => {
     expect(loaded.map((k) => k.text)).toEqual(["payload cms", "headless cms"]);
     expect(loaded[0].synonyms).toEqual(["payloadcms"]);
     expect(loaded[0].id).toBeTruthy();
+  });
+
+  it("clears a stored list", () => {
+    const key = storageKey("pages", "1", "en");
+    saveKeyphrases(key, [createEntry("payload cms")]);
+    clearKeyphrases(key);
+    expect(localStorage.getItem(key)).toBeNull();
   });
 
   it("removes the key when nothing persistable remains", () => {

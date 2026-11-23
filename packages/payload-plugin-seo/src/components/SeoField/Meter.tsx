@@ -2,18 +2,21 @@
 
 import { cva } from "class-variance-authority";
 import type { Measurement } from "../../measure/measure";
+import type { SeoFieldKind } from "../../server/generate/prompts";
+import type { TranslationKey } from "../../translations/types";
 import { Pill } from "../../ui/Pill";
+import { useSeoTranslation } from "../../translations/useSeoTranslation";
 
 const STATUS_TO_VARIANT = {
   good: "good",
   short: "warn",
   long: "bad",
 } as const;
-const STATUS_LABEL = {
-  good: "Good",
-  short: "Too short",
-  long: "Too long",
-} as const;
+const STATUS_LABEL_KEY = {
+  good: "meter.good",
+  short: "meter.short",
+  long: "meter.long",
+} as const satisfies Record<Measurement["status"], TranslationKey>;
 const fillVariants = cva("absolute inset-y-0 left-0 rounded-full", {
   variants: {
     status: {
@@ -28,10 +31,11 @@ interface MeterProps {
   measurement: Measurement;
   hasText: boolean;
   loading: boolean;
-  kindLabel: string;
+  kind: SeoFieldKind;
 }
 
-export function Meter({ measurement, hasText, loading, kindLabel }: MeterProps) {
+export function Meter({ measurement, hasText, loading, kind }: MeterProps) {
+  const { t } = useSeoTranslation();
   const { value, min, max, status, unit } = measurement;
 
   const readout = unit === "px" ? `${value} / ${max} px` : `${value} / ${max}`;
@@ -64,9 +68,9 @@ export function Meter({ measurement, hasText, loading, kindLabel }: MeterProps) 
       </span>
 
       {hasText && !loading ? (
-        <Pill variant={STATUS_TO_VARIANT[status]}>{STATUS_LABEL[status]}</Pill>
+        <Pill variant={STATUS_TO_VARIANT[status]}>{t(STATUS_LABEL_KEY[status])}</Pill>
       ) : (
-        <Pill variant="neutral">{loading ? "Working…" : `No ${kindLabel}`}</Pill>
+        <Pill variant="neutral">{t(loading ? "meter.working" : `meter.empty.${kind}`)}</Pill>
       )}
     </div>
   );

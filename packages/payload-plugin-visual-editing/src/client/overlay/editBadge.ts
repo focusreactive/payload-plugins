@@ -2,40 +2,27 @@ import {
   DATA_VE_FOR_ATTR,
   DATA_VE_TARGET_ATTR,
   LABEL_CLASS,
+  LABEL_ICON_SVG,
   LABEL_STYLES,
-  OUTLINE_STYLE,
+  FRAME_ACTIVE_BORDER,
+  FRAME_ACTIVE_WIDTH,
+  FRAME_RADIUS,
 } from "./constants.js";
+import { placeFrame } from "./frameLayer.js";
 
-export type EditBadgeConfig = {
+type EditBadgeConfig = {
   href: string;
   clickHandler: (event: MouseEvent) => void;
-  originalOutline: string;
-  /** Whether the badge should paint/restore the outline. False when the registry already painted
-   *  a persistent outline ('always' mode) — the badge only manages the Edit link then. */
-  paintOutline: boolean;
 };
 
 export interface EditBadge {
-  /** The <a> label element — HoverController references it for the `relatedTarget === label` transition. */
   readonly labelElement: HTMLAnchorElement;
-  /** Show the badge anchored to `target`, set its href and click listener, paint the outline. */
   show(target: HTMLElement, config: EditBadgeConfig): void;
-  /** Hide the badge and restore the outline that was on the currently-shown target. */
   hide(): void;
-  /** Re-position the anchor to the given target's current bounding rect. */
   reposition(target: HTMLElement): void;
-  /** Remove the badge DOM and all internally-attached listeners. */
   dispose(): void;
 }
 
-// Portal-rendered Edit badge. We deliberately DO NOT append the badge into
-// the target's subtree: doing so changes the target's child count and can
-// trigger sibling-selector recalculation (Tailwind `space-y-*` / `:last-child`
-// margin resets / `* + *` spacing), causing visible layout jumps on hover.
-// The layer lives on <body>, uses `position: fixed` with `pointer-events: none`
-// (so it never blocks pointer events against real content), and an inner
-// `anchor` element is sized/translated to match the active target's
-// `getBoundingClientRect()` each time the active target changes.
 export function createEditBadge(): EditBadge {
   const layer = document.createElement("div");
   layer.dataset.veLayer = "true";
@@ -50,6 +37,7 @@ export function createEditBadge(): EditBadge {
     visibility: "hidden",
   } as Partial<CSSStyleDeclaration>);
 
+  // The anchor is the active frame; the badge sits on its top right corner like a tab.
   const anchor = document.createElement("div");
   Object.assign(anchor.style, {
     position: "absolute",
@@ -57,31 +45,29 @@ export function createEditBadge(): EditBadge {
     left: "0",
     width: "0",
     height: "0",
+    boxSizing: "border-box",
+    border: FRAME_ACTIVE_BORDER,
+    borderRadius: FRAME_RADIUS,
+    borderTopRightRadius: "0",
     pointerEvents: "none",
     transform: "translate(0, 0)",
   } as Partial<CSSStyleDeclaration>);
 
   const label = document.createElement("a");
-  label.textContent = "Edit";
+  label.innerHTML = `${LABEL_ICON_SVG}<span>Edit</span>`;
   label.className = LABEL_CLASS;
   label.target = "_blank";
   label.rel = "noopener noreferrer";
-  Object.assign(label.style, LABEL_STYLES);
+  Object.assign(label.style, LABEL_STYLES, { right: `-${FRAME_ACTIVE_WIDTH}px` });
 
   anchor.append(label);
   layer.append(anchor);
   document.body.append(layer);
 
   let currentClickHandler: ((event: MouseEvent) => void) | null = null;
-  let currentTarget: HTMLElement | null = null;
-  let currentOriginalOutline = "";
-  let currentPaintedOutline = false;
 
   const reposition = (target: HTMLElement) => {
-    const rect = target.getBoundingClientRect();
-    anchor.style.transform = `translate(${rect.left}px, ${rect.top}px)`;
-    anchor.style.width = `${rect.width}px`;
-    anchor.style.height = `${rect.height}px`;
+    placeFrame(anchor, target, FRAME_ACTIVE_WIDTH);
   };
 
   return {
@@ -89,31 +75,15 @@ export function createEditBadge(): EditBadge {
       return label;
     },
     show(target, config) {
-      if (config.paintOutline) {
-        target.style.outline = OUTLINE_STYLE;
-        currentPaintedOutline = true;
-      } else {
-        currentPaintedOutline = false;
-      }
       reposition(target);
       label.href = config.href;
       label.setAttribute(DATA_VE_FOR_ATTR, target.getAttribute(DATA_VE_TARGET_ATTR) ?? "");
       if (currentClickHandler) label.removeEventListener("click", currentClickHandler);
       label.addEventListener("click", config.clickHandler);
       currentClickHandler = config.clickHandler;
-      currentTarget = target;
-      currentOriginalOutline = config.originalOutline;
       layer.style.visibility = "visible";
     },
     hide() {
-      if (currentTarget) {
-        if (currentPaintedOutline) {
-          currentTarget.style.outline = currentOriginalOutline;
-        }
-        currentTarget = null;
-        currentOriginalOutline = "";
-        currentPaintedOutline = false;
-      }
       layer.style.visibility = "hidden";
       if (currentClickHandler) {
         label.removeEventListener("click", currentClickHandler);

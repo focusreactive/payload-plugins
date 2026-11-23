@@ -1,3 +1,4 @@
+import { stripMarkers } from "@focus-reactive/payload-plugin-visual-editing";
 import React from "react";
 
 interface JsonLdProps {
@@ -13,7 +14,11 @@ export function JsonLd({ data }: JsonLdProps) {
     <script
       type="application/ld+json"
       dangerouslySetInnerHTML={{
-        __html: JSON.stringify(data, null, process.env.NODE_ENV === "development" ? 2 : 0),
+        __html: JSON.stringify(
+          stripMarkers(data),
+          null,
+          process.env.NODE_ENV === "development" ? 2 : 0
+        ),
       }}
     />
   );

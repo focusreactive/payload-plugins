@@ -3,6 +3,7 @@ import type { HeadingNode } from "../../../../../engine/types/analysis";
 import { cn } from "../../../../../utils/style";
 import { formatSkippedLevels } from "../headingIssueCopy";
 import { Chevron } from "./Chevron";
+import { useSeoTranslation } from "../../../../../translations/useSeoTranslation";
 
 interface HeadingTreeRowProps {
   node: HeadingNode;
@@ -25,6 +26,8 @@ export function HeadingTreeRow({
   rowRef,
   badgeRef,
 }: HeadingTreeRowProps) {
+  const { t } = useSeoTranslation();
+
   return (
     <div
       ref={rowRef}
@@ -48,7 +51,7 @@ export function HeadingTreeRow({
             }
           : undefined
       }
-      title={hasKids ? (isOpen ? "Collapse" : "Expand") : undefined}
+      title={hasKids ? t(isOpen ? "headings.collapse" : "headings.expand") : undefined}
     >
       <span
         ref={badgeRef}
@@ -72,13 +75,13 @@ export function HeadingTreeRow({
           </span>
         ) : (
           <span className="flex-1 min-w-0 truncate text-[12px] font-medium italic text-neutral-400">
-            (empty heading)
+            {t("headings.emptyHeading")}
           </span>
         )}
 
         {node.issue ? (
           <span className="flex-none inline-flex items-center rounded-[20px] bg-seo-warn-100 px-[8px] py-[2px] text-[9.5px] font-bold tracking-[0.02em] text-seo-warn">
-            {formatSkippedLevels(node.issue.skipped)}
+            {t("headings.skipped", { levels: formatSkippedLevels(node.issue.skipped) })}
           </span>
         ) : null}
 

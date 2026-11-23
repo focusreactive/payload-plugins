@@ -3,8 +3,10 @@ import { setPluginConfig } from "./config";
 import { PLUGIN_NAME } from "./constants";
 import type { SeoPluginConfig } from "./types/config";
 import { overrideAdmin } from "./utils/config/overrideAdmin";
+import { resolveThresholds } from "./utils/config/resolveThresholds";
 import { mergeTranslations } from "./utils/config/mergeTranslations";
-import { en } from "./translations/en";
+import { buildTranslations } from "./translations";
+import { withKeyphraseIndex } from "./server/keyphrases/withKeyphraseIndex";
 
 const PREFIX = `[${PLUGIN_NAME}]`;
 
@@ -38,11 +40,12 @@ export const seoPlugin =
     }
 
     const effectiveConfig: SeoPluginConfig = { ...config, collections };
-    setPluginConfig(effectiveConfig);
+    const thresholds = resolveThresholds(effectiveConfig.thresholds);
+    setPluginConfig(effectiveConfig, thresholds);
 
     const merged = mergeTranslations(
       (incomingConfig.i18n?.translations as never) ?? {},
-      mergeTranslations(en, effectiveConfig.translations ?? {})
+      buildTranslations(effectiveConfig.translations)
     );
 
     const withTranslations: Config = {
@@ -50,5 +53,8 @@ export const seoPlugin =
       i18n: { ...incomingConfig.i18n, translations: merged as never },
     };
 
-    return overrideAdmin(withTranslations, effectiveConfig);
+    return withKeyphraseIndex(
+      overrideAdmin(withTranslations, effectiveConfig, thresholds),
+      effectiveConfig
+    );
   };

@@ -37,7 +37,10 @@ import * as migration_20261001_143037_add_media_storage_prefix from './20261001_
 import * as migration_20261012_110154_remove_author_required_flag_for_comment from './20261012_110154_remove_author_required_flag_for_comment';
 import * as migration_20261028_134213_section_heading_group from './20261028_134213_section_heading_group';
 import * as migration_20261028_134825_dedicated_page_hero from './20261028_134825_dedicated_page_hero';
-import * as migration_20261109_085936_add_audit_log from './20261109_085936_add_audit_log';
+import * as migration_20261106_113418_add_seo_keyphrases from './20261106_113418_add_seo_keyphrases';
+import * as migration_20261112_171504_add_autosave_to_live_preview_collections from './20261112_171504_add_autosave_to_live_preview_collections';
+import * as migration_20261117_123529_add_autosave_to_header_footer from './20261117_123529_add_autosave_to_header_footer';
+import * as migration_20261123_105827_add_audit_log from './20261123_105827_add_audit_log';
 
 export const migrations = [
   {
@@ -236,8 +239,23 @@ export const migrations = [
     name: '20261028_134825_dedicated_page_hero',
   },
   {
-    up: migration_20261109_085936_add_audit_log.up,
-    down: migration_20261109_085936_add_audit_log.down,
-    name: '20261109_085936_add_audit_log'
+    up: migration_20261106_113418_add_seo_keyphrases.up,
+    down: migration_20261106_113418_add_seo_keyphrases.down,
+    name: '20261106_113418_add_seo_keyphrases',
+  },
+  {
+    up: migration_20261112_171504_add_autosave_to_live_preview_collections.up,
+    down: migration_20261112_171504_add_autosave_to_live_preview_collections.down,
+    name: '20261112_171504_add_autosave_to_live_preview_collections',
+  },
+  {
+    up: migration_20261117_123529_add_autosave_to_header_footer.up,
+    down: migration_20261117_123529_add_autosave_to_header_footer.down,
+    name: '20261117_123529_add_autosave_to_header_footer',
+  },
+  {
+    up: migration_20261123_105827_add_audit_log.up,
+    down: migration_20261123_105827_add_audit_log.down,
+    name: '20261123_105827_add_audit_log'
   },
 ];

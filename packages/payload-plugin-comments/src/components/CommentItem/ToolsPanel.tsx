@@ -21,7 +21,7 @@ export function ToolsPanel({ commentId, isResolved, canDelete, onDelete, onResol
 
   return (
     <>
-      <div className="absolute top-3 right-3 flex bg-(--theme-elevation-0) p-1 border rounded-md border-(--theme-elevation-100) opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto">
+      <div className="absolute top-3 right-3 flex bg-(--theme-elevation-0) p-1 border rounded-md border-(--theme-elevation-100) opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
         <IconButton
           onClick={() => {
             onResolve();

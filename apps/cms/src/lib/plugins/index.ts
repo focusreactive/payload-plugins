@@ -5,6 +5,7 @@ import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
 import { seoPlugin as seoAnalysisPlugin } from "@focus-reactive/payload-plugin-seo";
+import { stackedEditing } from "@focus-reactive/payload-plugin-stacked-editing";
 import {
   translatorPlugin,
   createOpenAIProvider,
@@ -27,6 +28,7 @@ import { Posts } from "@/collections/Posts";
 import serverExtractPostContent from "@/collections/Posts/serverExtractPostContent";
 import { Testimonials } from "@/collections/Testimonials";
 import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
+import { resolveDocUrl } from "@/lib/contentExtraction/links";
 import { getMediaStoragePrefix } from "@/lib/storage/mediaStoragePrefix";
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import { abAdapter } from "@/lib/plugins/ab/abAdapter";
@@ -249,6 +251,7 @@ export const plugins: Plugin[] = [
         },
         extractContentPath: "@/collections/Page/extractPageContent#default",
         serverExtractContent: serverExtractPageContent,
+        resolveUrl: resolveDocUrl("page"),
       },
       {
         slug: "posts",
@@ -259,6 +262,7 @@ export const plugins: Plugin[] = [
         },
         extractContentPath: "@/collections/Posts/extractPostContent#default",
         serverExtractContent: serverExtractPostContent,
+        resolveUrl: resolveDocUrl("posts"),
       },
     ],
     site: {
@@ -273,6 +277,9 @@ export const plugins: Plugin[] = [
     generateLabel: (_, doc: unknown) => (doc as Page).title,
     generateURL: (docs) => docs.reduce((url, doc) => `${url}/${doc.slug}`, ""),
   }),
+
+  // Before presetsPlugin, which wraps existing row labels.
+  stackedEditing({ collections: ["page", "posts"], globals: [] }),
 
   presetsPlugin({
     labels: {
@@ -419,14 +426,13 @@ export const plugins: Plugin[] = [
   visualEditingPlugin({
     adminBasePath: "/admin",
     enrichment: "explicit",
+    instantPreview: true,
     skipCollections: [
       "users",
       "media",
       "categories",
       "authors",
       "testimonials",
-      "header",
-      "footer",
       "document-embeddings",
       "redirects",
       "presets",
@@ -434,6 +440,7 @@ export const plugins: Plugin[] = [
       "comment-reads",
       "ab-experiments",
       "payload-mcp-api-keys",
+      "seo-keyphrases",
     ],
     skipGlobals: ["site-settings"],
   }),
