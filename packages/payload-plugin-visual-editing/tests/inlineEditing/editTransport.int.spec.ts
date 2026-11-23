@@ -452,6 +452,19 @@ describe("the transport of an edit", () => {
         expect(picks()).toHaveLength(2);
       });
 
+      it.each([
+        ["was cancelled", () => postFromAdmin({ ...IMAGE, type: VE_MEDIA_PICK_CANCELLED_TYPE })],
+        ["took too long", () => vi.advanceTimersByTime(MEDIA_PICK_TIME_LIMIT_MS)],
+      ])("releases the route of an image once its pick in the drawer %s", (_name, endThePick) => {
+        const replacement = { postMessage: vi.fn() };
+        transport.beginImageEdit(IMAGE, pageImage()).pickInTheDrawer();
+
+        endThePick();
+        stubAdminWindow(replacement);
+
+        expect(routes.adminOf(IMAGE)).toBe(replacement);
+      });
+
       it("picked on the page is written by the admin and counted unsaved until the admin saved its document", () => {
         transport.beginImageEdit(IMAGE, pageImage("3")).use(LIGHTHOUSE);
         expect(statuses).toEqual(["unsaved"]);

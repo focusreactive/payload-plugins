@@ -27,6 +27,7 @@ import { readPostedEditorState } from "../../shared/richText/postedEditorState.j
 import { isSameValue } from "../../shared/sameValue.js";
 import { documentAddressOf, editedFieldAddressOf } from "../../shared/veDocument.js";
 
+import { MEDIA_PICK_TIME_LIMIT_MS } from "./adminEditChannel.js";
 import { endpointAnswerOf } from "./endpointAnswer.js";
 
 export type EditStatus = "failed" | "saved" | "saving" | "unsaved";
@@ -442,11 +443,13 @@ export function createEditTransport(
         image.show(picked);
         holdInForm(field);
       },
+      cancelled: releaseFinishedRoutes,
       refused(refusal) {
         if (chosen) refuseAsked(field, refusal, chosen.useAgain);
         image.openField();
       },
     });
+    setTimeout(releaseFinishedRoutes, MEDIA_PICK_TIME_LIMIT_MS);
     if (chosen) holdInForm(field);
   };
 
