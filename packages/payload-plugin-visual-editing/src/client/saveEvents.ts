@@ -16,14 +16,15 @@ const savedDocumentOf = (message: Record<string, unknown>): SavedDocument => {
 
 export function listenToSaves(
   adminOrigin: () => string,
-  onSaved: (saved: SavedDocument) => void
+  onSaved: (saved: SavedDocument) => void,
+  win: Window = window
 ): () => void {
   const handleAdminMessage = (event: MessageEvent) => {
-    if (!isMessageFrom(event, adminOrigin(), findAdminWindow(window))) return;
+    if (!isMessageFrom(event, adminOrigin(), findAdminWindow(win))) return;
     if (isPlainObject(event.data) && event.data.type === VE_DOCUMENT_SAVED_TYPE) {
       onSaved(savedDocumentOf(event.data));
     }
   };
-  window.addEventListener("message", handleAdminMessage);
-  return () => window.removeEventListener("message", handleAdminMessage);
+  win.addEventListener("message", handleAdminMessage);
+  return () => win.removeEventListener("message", handleAdminMessage);
 }

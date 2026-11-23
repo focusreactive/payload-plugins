@@ -3,8 +3,13 @@ import type { Payload, PayloadRequest } from "payload";
 import { createLocalReq } from "payload";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { EditStatus, EditTransport } from "../../src/client/inlineEditing/editTransport";
+import type {
+  EditStatus,
+  EditTransport,
+  FieldEdit,
+} from "../../src/client/inlineEditing/editTransport";
 
+import { createEditRoutes } from "../../src/client/inlineEditing/editRoutes";
 import {
   createEditTransport,
   EDIT_SAVE_PAUSE_MS,
@@ -38,7 +43,11 @@ describe("the versions edits on a page of its own add", () => {
     return (await endpoint!.handler(req)) as Response;
   };
 
-  const pageWindow = { fetch: postToEndpoint } as unknown as Window;
+  const pageWindow = {
+    addEventListener: () => undefined,
+    fetch: postToEndpoint,
+    removeEventListener: () => undefined,
+  } as unknown as Window;
 
   const versionsOf = async (docId: string) =>
     (await payload.countVersions({ collection: "pages", where: { parent: { equals: docId } } }))
@@ -47,8 +56,11 @@ describe("the versions edits on a page of its own add", () => {
   const untilSaved = () =>
     vi.waitFor(() => expect(statuses.at(-1)).toBe("saved"), { timeout: SAVE_TIME_LIMIT_MS });
 
-  const typeAndPause = async (docId: string, value: string) => {
-    transport.send({ ...page(docId), base: "Shown", key: "label", locale: "en", value });
+  const beginEdit = (docId: string) =>
+    transport.beginEdit({ ...page(docId), key: "label", locale: "en" }, "Shown");
+
+  const typeAndPause = async (edit: FieldEdit<string>, value: string) => {
+    edit.change(value);
     vi.advanceTimersByTime(EDIT_SAVE_PAUSE_MS);
     await vi.waitFor(() => expect(statuses.at(-1)).not.toBe("saving"), {
       timeout: SAVE_TIME_LIMIT_MS,
@@ -74,7 +86,7 @@ describe("the versions edits on a page of its own add", () => {
       () => ({ adminOrigin: "", payloadApi: "" }),
       (status) => statuses.push(status),
       pageWindow,
-      () => null
+      createEditRoutes({ holdsAnyForm: () => false, win: pageWindow })
     );
   });
 
@@ -92,13 +104,15 @@ describe("the versions edits on a page of its own add", () => {
     const docId = String(created.id);
     const before = await versionsOf(docId);
 
-    for (const value of ["S", "Sh", "Sho"]) await typeAndPause(docId, value);
-    transport.flush();
+    const first = beginEdit(docId);
+    for (const value of ["S", "Sh", "Sho"]) await typeAndPause(first, value);
+    first.end();
     await untilSaved();
     const afterTheFirstEdit = await versionsOf(docId);
 
-    for (const value of ["Show", "Shown", "Shown!"]) await typeAndPause(docId, value);
-    transport.flush();
+    const second = beginEdit(docId);
+    for (const value of ["Show", "Shown", "Shown!"]) await typeAndPause(second, value);
+    second.end();
     await untilSaved();
 
     expect(afterTheFirstEdit - before).toBeLessThanOrEqual(2);

@@ -9,11 +9,12 @@ export type EditRoutesDeps = {
   holdsAnyForm(): boolean;
 };
 
-export type IsUnsaved = (field: VeEditedField) => boolean;
+export type IsFinished = (field: VeEditedField) => boolean;
 
 export interface EditRoutes {
   currentAdmin(): Window | null;
-  beginEdit(field: VeEditedField, isUnsaved: IsUnsaved): void;
+  pin(field: VeEditedField): void;
+  releaseFinished(isFinished: IsFinished): void;
   adminOf(field: VeEditedField): Window | null;
   drawerOf(field: VeEditedField): Window | null;
 }
@@ -37,15 +38,17 @@ export function createEditRoutes({ holdsAnyForm, win }: EditRoutesDeps): EditRou
 
   return {
     adminOf,
-    beginEdit(field, isUnsaved) {
-      for (const [address, pinned] of pinnedRoutes) {
-        if (!isUnsaved(pinned.field)) pinnedRoutes.delete(address);
-      }
-      pinnedRoutes.set(editedFieldAddressOf(field), { admin: currentAdmin(), field });
-    },
     currentAdmin,
     drawerOf(field) {
       return isFramedByAdmin(win) ? adminOf(field) : null;
+    },
+    pin(field) {
+      pinnedRoutes.set(editedFieldAddressOf(field), { admin: currentAdmin(), field });
+    },
+    releaseFinished(isFinished) {
+      for (const [address, pinned] of pinnedRoutes) {
+        if (isFinished(pinned.field)) pinnedRoutes.delete(address);
+      }
     },
   };
 }

@@ -5,52 +5,76 @@ import type {
   VeEditorState,
   VeFieldEditMessage,
   VeLiveDocument,
+  VeMediaOption,
+  VePickMediaMessage,
+  VeRichTextEditEndedMessage,
   VeRichTextEditMessage,
+  VeShownMedia,
 } from "../../shared/protocol.js";
+import type { EditRoutes } from "./editRoutes.js";
 
-import { CHANGED_ELSEWHERE, isRichTextEdit, SAVE_FAILED } from "../../shared/fieldEdit.js";
+import {
+  CHANGED_ELSEWHERE,
+  isRichTextEdit,
+  readEditedField,
+  readSaveRefusal,
+  SAVE_FAILED,
+} from "../../shared/fieldEdit.js";
+import { readPickedMedia } from "../../shared/mediaOption.js";
+import { isMessageFrom } from "../../shared/messageSource.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import {
   VE_FIELD_EDIT_PATH,
+  VE_FIELD_EDIT_REFUSED_TYPE,
   VE_FIELD_EDIT_TYPE,
+  VE_MEDIA_PICK_CANCELLED_TYPE,
+  VE_MEDIA_PICKED_TYPE,
+  VE_PICK_MEDIA_TYPE,
+  VE_RICH_TEXT_EDIT_ENDED_TYPE,
   VE_RICH_TEXT_EDIT_TYPE,
 } from "../../shared/protocol.js";
 import { readPostedEditorState } from "../../shared/richText/postedEditorState.js";
 import { isSameValue } from "../../shared/sameValue.js";
 import { documentAddressOf, editedFieldAddressOf } from "../../shared/veDocument.js";
 
-import { adminOriginOf } from "../adminWindow.js";
+import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
+import { listenToSaves } from "../saveEvents.js";
 import { endpointAnswerOf } from "./endpointAnswer.js";
 
 export type EditStatus = "failed" | "saved" | "saving" | "unsaved";
 
 export type EditTransportCtx = { adminOrigin: string; payloadApi: string; onEdited?: () => void };
 
-export type EditedField = VeEditedField;
-
-export type OnSaveEnded = (isSaved: boolean) => void;
-
 export type OnStatus = (status: EditStatus, refusal?: SaveRefusal) => void;
 
-export type OnDelivered = () => void;
+export type EditValue = string | VeEditorState;
 
-export type RetryRefused = () => void;
+export interface FieldEdit<Value extends EditValue> {
+  change(value: Value): void;
+  hold(value: Value): void;
+  goesToTheAdmin(): boolean;
+  isUnsaved(): boolean;
+  cancel(): void;
+  end(): void;
+}
 
-export type AdminOf = (field: EditedField) => Window | null;
+export type ShownImage = {
+  shownMediaId: string | null;
+  show(media: VeShownMedia): (() => void) | null;
+  openField(): void;
+};
+
+export interface ImageEdit {
+  pickInTheDrawer(): boolean;
+  use(media: VeMediaOption): void;
+}
 
 export interface EditTransport {
-  send(edit: VeEdit, onDelivered?: OnDelivered): void;
-  hold(edit: VeEdit): void;
-  drop(field: EditedField): void;
-  sendNow(edit: VeEdit, onSaveEnded?: OnSaveEnded): void;
-  holdInForm(field: EditedField): void;
-  isUnsaved(field: EditedField): boolean;
-  flush(): void;
-  flushBeforeLeaving(): void;
-  refuse(field: EditedField, refusal?: SaveRefusal): void;
-  refuseAsked(field: EditedField, refusal: SaveRefusal, askAgain: RetryRefused): void;
-  settle(saved: VeLiveDocument | null): void;
+  beginEdit(field: VeEditedField, startedFrom: string): FieldEdit<string>;
+  beginEdit(field: VeEditedField, startedFrom: VeEditorState): FieldEdit<VeEditorState>;
+  beginImageEdit(field: VeEditedField, image: ShownImage): ImageEdit;
   retry(): void;
+  leavePage(): void;
   dispose(): void;
 }
 
@@ -58,15 +82,17 @@ export const EDIT_SEND_PAUSE_MS = 400;
 
 export const EDIT_SAVE_PAUSE_MS = 2000;
 
+export const MEDIA_PICK_TIME_LIMIT_MS = 60_000;
+
+type OnSaveEnded = (isSaved: boolean) => void;
+
 type WaitingEdit = {
   edit: VeEdit;
   timer: ReturnType<typeof setTimeout> | null;
-  onDelivered?: OnDelivered;
+  onDelivered?: () => void;
 };
 
-type FailedEdit = { refusal: SaveRefusal } & ({ edit: VeEdit } | { askAgain: RetryRefused });
-
-type EditValue = string | VeEditorState;
+type FailedEdit = { refusal: SaveRefusal } & ({ edit: VeEdit } | { askAgain: () => void });
 
 type SavedEdit = { startedFrom: EditValue; sent: EditValue; stored: EditValue };
 
@@ -76,6 +102,16 @@ type PostedAnswer = { refusal: SaveRefusal | null; isLatest: boolean };
 
 type PageLeave = { left: Promise<void>; leave: () => void };
 
+type AskedOfAdmin = {
+  field: VeEditedField;
+  image: ShownImage;
+  adminWindow: Window;
+  askedAt: number;
+  chosen?: VeMediaOption;
+};
+
+type OpenEdit = { address: string };
+
 const nextPageLeave = (): PageLeave => {
   let leave: PageLeave["leave"] | undefined;
   const left = new Promise<void>((resolve) => {
@@ -84,7 +120,7 @@ const nextPageLeave = (): PageLeave => {
   return { leave: () => leave?.(), left };
 };
 
-const isSavedWith = (edit: EditedField, saved: VeLiveDocument): boolean =>
+const isSavedWith = (edit: VeEditedField, saved: VeLiveDocument): boolean =>
   documentAddressOf(edit) === documentAddressOf(saved) &&
   (!edit.locale || !saved.locale || edit.locale === saved.locale);
 
@@ -106,6 +142,14 @@ const valueOf = (edit: VeEdit): EditValue => (isRichTextEdit(edit) ? edit.state 
 const storedValueOf = (edit: VeEdit, stored: unknown): EditValue => {
   if (isRichTextEdit(edit)) return readPostedEditorState(stored) ?? edit.state;
   return typeof stored === "string" ? stored : edit.value;
+};
+
+const editOf = (field: VeEditedField, startedFrom: EditValue | null, value: EditValue): VeEdit => {
+  if (typeof value === "string") {
+    return { ...field, ...(typeof startedFrom === "string" && { base: startedFrom }), value };
+  }
+  const base = startedFrom === null || typeof startedFrom === "string" ? {} : { base: startedFrom };
+  return { ...field, ...base, state: value };
 };
 
 type StartingValue = "base" | "sentBefore";
@@ -144,12 +188,14 @@ export function createEditTransport(
   getCtx: () => EditTransportCtx,
   onStatus: OnStatus,
   win: Window,
-  adminOf: AdminOf
+  routes: EditRoutes
 ): EditTransport {
+  const { adminOf } = routes;
   const waiting = new Map<string, WaitingEdit>();
   const failed = new Map<string, FailedEdit>();
   const postedToAdmin = new Map<string, VeEdit>();
-  const unsavedInForm = new Map<string, EditedField>();
+  const unsavedInForm = new Map<string, VeEditedField>();
+  const askedOfAdmin = new Map<string, AskedOfAdmin>();
   const watchedSaves = new Map<string, OnSaveEnded>();
   const savesOnTheWay = new Map<string, number>();
   const savedEdits = new Map<string, SavedEdit>();
@@ -159,18 +205,39 @@ export function createEditTransport(
   const savedWhenEditsEnd = new Set<string>();
   let saves: Promise<void> = Promise.resolve();
   let pageLeave = nextPageLeave();
+  let openEdit: OpenEdit | null = null;
   let isDisposed = false;
 
   const latestRefusal = (): SaveRefusal | undefined => [...failed.values()].at(-1)?.refusal;
+
+  const isUnsaved = (address: string): boolean =>
+    waiting.has(address) || savesOnTheWay.has(address) || failed.has(address);
+
+  const isStillAsked = (asked: AskedOfAdmin | undefined, adminWindow: Window): boolean =>
+    asked !== undefined &&
+    asked.adminWindow === adminWindow &&
+    !adminWindow.closed &&
+    Date.now() - asked.askedAt < MEDIA_PICK_TIME_LIMIT_MS;
+
+  const isAskedOfAdmin = (address: string): boolean => {
+    const asked = askedOfAdmin.get(address);
+    return asked !== undefined && isStillAsked(asked, asked.adminWindow);
+  };
+
+  const isFinished = (field: VeEditedField): boolean => {
+    const address = editedFieldAddressOf(field);
+    return address !== openEdit?.address && !isUnsaved(address) && !isAskedOfAdmin(address);
+  };
+
+  const releaseFinishedRoutes = () => routes.releaseFinished(isFinished);
 
   const report = (status: EditStatus) => {
     if (isDisposed) return;
     const refusal = latestRefusal();
     if (refusal === undefined) onStatus(status);
     else onStatus("failed", refusal);
+    releaseFinishedRoutes();
   };
-
-  const settle = () => report("saved");
 
   const statusAfterASave = (): EditStatus => {
     if (waiting.size > 0 || unsavedInForm.size > 0) return "unsaved";
@@ -178,7 +245,7 @@ export function createEditTransport(
     return "saved";
   };
 
-  const fail = (field: EditedField, failure: FailedEdit) => {
+  const fail = (field: VeEditedField, failure: FailedEdit) => {
     failed.delete(editedFieldAddressOf(field));
     failed.set(editedFieldAddressOf(field), failure);
   };
@@ -236,8 +303,8 @@ export function createEditTransport(
   };
 
   const saveThroughEndpoint = async (edit: VeEdit) => {
-    report("saving");
     countSaveOnTheWay(editedFieldAddressOf(edit), 1);
+    report("saving");
     const { isLatest, refusal } = await post(edit);
     const isSaved = refusal === null;
     countSaveOnTheWay(editedFieldAddressOf(edit), -1);
@@ -306,36 +373,244 @@ export function createEditTransport(
     for (const address of [...waiting.keys()]) deliverWaiting(address);
   };
 
+  const drop = (address: string) => {
+    if (stopWaiting(address) && isIdle()) report("saved");
+  };
+
+  const send = (edit: VeEdit, onDelivered?: () => void) => {
+    const address = editedFieldAddressOf(edit);
+    supersede(address);
+    watchedSaves.delete(address);
+    const timer = isSavedWhenTheEditEnds(edit)
+      ? null
+      : setTimeout(deliverWaiting, pauseBeforeSending(edit), address);
+    waiting.set(address, { edit, onDelivered, timer });
+    report("unsaved");
+  };
+
+  const hold = (edit: VeEdit) => {
+    const address = editedFieldAddressOf(edit);
+    supersede(address);
+    watchedSaves.delete(address);
+    waiting.set(address, { edit, timer: null });
+    report("unsaved");
+  };
+
+  const saveAtOnce = (edit: VeEdit, onSaveEnded: OnSaveEnded) => {
+    const address = editedFieldAddressOf(edit);
+    supersede(address);
+    watchedSaves.set(address, onSaveEnded);
+    report("unsaved");
+    deliver(edit);
+  };
+
+  const holdInForm = (field: VeEditedField) => {
+    failed.delete(editedFieldAddressOf(field));
+    unsavedInForm.set(editedFieldAddressOf(field), field);
+    report("unsaved");
+  };
+
+  const refuse = (field: VeEditedField, refusal: SaveRefusal) => {
+    const edit = postedToAdmin.get(editedFieldAddressOf(field));
+    if (!edit) return;
+    fail(edit, { edit, refusal });
+    report("failed");
+  };
+
+  const refuseAsked = (field: VeEditedField, refusal: SaveRefusal, askAgain: () => void) => {
+    fail(field, { askAgain, refusal });
+    report("failed");
+  };
+
+  const settle = (saved: VeLiveDocument | null) => {
+    if (unsavedInForm.size === 0) return;
+    for (const [address, field] of unsavedInForm) {
+      if (saved && !isSavedWith(field, saved)) continue;
+      unsavedInForm.delete(address);
+      postedToAdmin.delete(address);
+    }
+    if (unsavedInForm.size === 0) report(statusAfterASave());
+  };
+
+  const open = (field: VeEditedField): OpenEdit => {
+    const opened = { address: editedFieldAddressOf(field) };
+    openEdit = opened;
+    releaseFinishedRoutes();
+    routes.pin(field);
+    return opened;
+  };
+
+  const close = (opened: OpenEdit) => {
+    if (openEdit === opened) openEdit = null;
+    releaseFinishedRoutes();
+  };
+
+  const tellTheAdminTheEditEnded = (field: VeEditedField) => {
+    const message: VeRichTextEditEndedMessage = { ...field, type: VE_RICH_TEXT_EDIT_ENDED_TYPE };
+    adminOf(field)?.postMessage(message, adminOriginOf(getCtx().adminOrigin));
+  };
+
+  const askAdmin = (
+    adminWindow: Window,
+    field: VeEditedField,
+    image: ShownImage,
+    chosen?: VeMediaOption
+  ) => {
+    const address = editedFieldAddressOf(field);
+    if (isStillAsked(askedOfAdmin.get(address), adminWindow)) return;
+    const message: VePickMediaMessage = {
+      ...field,
+      ...(chosen && { mediaId: chosen.id }),
+      type: VE_PICK_MEDIA_TYPE,
+    };
+    askedOfAdmin.set(address, {
+      adminWindow,
+      askedAt: Date.now(),
+      field,
+      image,
+      ...(chosen && { chosen }),
+    });
+    adminWindow.postMessage(message, adminOriginOf(getCtx().adminOrigin));
+    if (chosen) holdInForm(field);
+  };
+
+  const saveMediaThroughEndpoint = (
+    field: VeEditedField,
+    image: ShownImage,
+    media: VeMediaOption
+  ) => {
+    let putBack = image.show(media);
+    const followTheSave = (isSaved: boolean) => {
+      if (isSaved) putBack ??= image.show(media);
+      else putBack?.();
+      if (!isSaved) putBack = null;
+    };
+    saveAtOnce(editOf(field, image.shownMediaId, String(media.id)), followTheSave);
+  };
+
+  const useMedia = (field: VeEditedField, image: ShownImage, media: VeMediaOption) => {
+    const adminWindow = adminOf(field);
+    if (adminWindow) askAdmin(adminWindow, field, image, media);
+    else saveMediaThroughEndpoint(field, image, media);
+  };
+
+  const takeAsked = (field: VeEditedField | null): AskedOfAdmin | null => {
+    const asked = field && askedOfAdmin.get(editedFieldAddressOf(field));
+    if (!field || !asked) return null;
+    askedOfAdmin.delete(editedFieldAddressOf(field));
+    return asked;
+  };
+
+  const showPickedMedia = (data: unknown) => {
+    const picked = readPickedMedia(data);
+    const asked = takeAsked(picked);
+    if (!picked || !asked) return;
+    asked.image.show(picked);
+    holdInForm(asked.field);
+  };
+
+  const refusePick = (data: unknown) => {
+    const asked = takeAsked(readEditedField(data));
+    if (!asked) return;
+    const { chosen, field, image } = asked;
+    if (chosen) refuseAsked(field, readSaveRefusal(data), () => useMedia(field, image, chosen));
+    image.openField();
+  };
+
+  const refuseFormEdit = (data: unknown) => {
+    const refused = readEditedField(data);
+    if (refused) refuse(refused, readSaveRefusal(data));
+  };
+
+  const hearAdmin = (event: MessageEvent) => {
+    const { adminOrigin } = getCtx();
+    if (!isMessageFrom(event, adminOriginOf(adminOrigin), findAdminWindow(win))) return;
+    const { data } = event;
+    if (!isPlainObject(data)) return;
+    if (data.type === VE_MEDIA_PICKED_TYPE) showPickedMedia(data);
+    if (data.type === VE_FIELD_EDIT_REFUSED_TYPE) {
+      refusePick(data);
+      refuseFormEdit(data);
+    }
+    if (data.type === VE_MEDIA_PICK_CANCELLED_TYPE) takeAsked(readEditedField(data));
+  };
+  win.addEventListener("message", hearAdmin);
+
+  const stopListeningToSaves = listenToSaves(() => getCtx().adminOrigin, settle, win);
+
   return {
+    beginEdit(field: VeEditedField, startedFrom: EditValue): FieldEdit<EditValue> {
+      const opened = open(field);
+      const address = editedFieldAddressOf(field);
+      const isRichText = typeof startedFrom !== "string";
+      let wasChanged = false;
+      let wasDelivered = false;
+
+      const goesToTheAdmin = () => adminOf(field) !== null;
+
+      const change = (value: EditValue) => {
+        wasChanged = true;
+        send(editOf(field, startedFrom, value), () => {
+          wasDelivered = true;
+        });
+      };
+
+      const end = () => {
+        deliverWaiting(address);
+        if (isRichText) tellTheAdminTheEditEnded(field);
+        close(opened);
+      };
+
+      return {
+        cancel() {
+          if (wasChanged) {
+            drop(address);
+            if (wasDelivered || (isRichText && goesToTheAdmin())) {
+              send(editOf(field, startedFrom, startedFrom));
+            }
+          }
+          end();
+        },
+        change,
+        end,
+        goesToTheAdmin,
+        hold(value) {
+          if (goesToTheAdmin()) {
+            change(value);
+            return;
+          }
+          wasChanged = true;
+          hold(editOf(field, startedFrom, value));
+        },
+        isUnsaved: () => isUnsaved(address),
+      };
+    },
+    beginImageEdit(field, image) {
+      const opened = open(field);
+      return {
+        pickInTheDrawer() {
+          const drawerWindow = routes.drawerOf(field);
+          if (!drawerWindow) return false;
+          askAdmin(drawerWindow, field, image);
+          close(opened);
+          return true;
+        },
+        use(media) {
+          useMedia(field, image, media);
+          close(opened);
+        },
+      };
+    },
     dispose() {
       flush();
       isDisposed = true;
+      win.removeEventListener("message", hearAdmin);
+      stopListeningToSaves();
     },
-    drop(field) {
-      if (stopWaiting(editedFieldAddressOf(field)) && isIdle()) settle();
-    },
-    hold(edit) {
-      const address = editedFieldAddressOf(edit);
-      supersede(address);
-      watchedSaves.delete(address);
-      waiting.set(address, { edit, timer: null });
-      report("unsaved");
-    },
-    flush,
-    flushBeforeLeaving() {
+    leavePage() {
       flush();
       pageLeave.leave();
       pageLeave = nextPageLeave();
-    },
-    refuse(field, refusal = SAVE_FAILED) {
-      const edit = postedToAdmin.get(editedFieldAddressOf(field));
-      if (!edit) return;
-      fail(edit, { edit, refusal });
-      report("failed");
-    },
-    refuseAsked(field, refusal, askAgain) {
-      fail(field, { askAgain, refusal });
-      report("failed");
     },
     retry() {
       const refused = [...failed.values()];
@@ -345,42 +620,6 @@ export function createEditTransport(
         else failure.askAgain();
       }
       if (unsavedInForm.size > 0) report("unsaved");
-    },
-    send(edit, onDelivered) {
-      const address = editedFieldAddressOf(edit);
-      supersede(address);
-      watchedSaves.delete(address);
-      const timer = isSavedWhenTheEditEnds(edit)
-        ? null
-        : setTimeout(deliverWaiting, pauseBeforeSending(edit), address);
-      waiting.set(address, { edit, onDelivered, timer });
-      report("unsaved");
-    },
-    sendNow(edit, onSaveEnded) {
-      const address = editedFieldAddressOf(edit);
-      supersede(address);
-      if (onSaveEnded) watchedSaves.set(address, onSaveEnded);
-      else watchedSaves.delete(address);
-      report("unsaved");
-      deliver(edit);
-    },
-    isUnsaved(field) {
-      const address = editedFieldAddressOf(field);
-      return waiting.has(address) || savesOnTheWay.has(address) || failed.has(address);
-    },
-    holdInForm(field) {
-      failed.delete(editedFieldAddressOf(field));
-      unsavedInForm.set(editedFieldAddressOf(field), field);
-      report("unsaved");
-    },
-    settle(saved) {
-      if (unsavedInForm.size === 0) return;
-      for (const [address, field] of unsavedInForm) {
-        if (saved && !isSavedWith(field, saved)) continue;
-        unsavedInForm.delete(address);
-        postedToAdmin.delete(address);
-      }
-      if (unsavedInForm.size === 0) report(statusAfterASave());
     },
   };
 }

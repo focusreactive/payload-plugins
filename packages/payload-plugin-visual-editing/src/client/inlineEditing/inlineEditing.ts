@@ -3,17 +3,11 @@ import type { BadgeAction } from "../overlay/editBadge.js";
 import type { VeEditedField } from "../../shared/protocol.js";
 import type { FieldMatch, FieldTracker } from "../overlay/fieldTracker.js";
 import type { ClickTaken } from "../overlay/editTargets.js";
-import type { EditStatus, OnDelivered } from "./editTransport.js";
+import type { EditStatus } from "./editTransport.js";
 import type { OpenForms } from "./pageFields.js";
 import type { RichTextEditorLoader } from "./richTextEditor.js";
 import type { SaveStatus } from "./saveStatus.js";
 
-import { readEditedField, readSaveRefusal } from "../../shared/fieldEdit.js";
-import { isMessageFrom } from "../../shared/messageSource.js";
-import { isPlainObject } from "../../shared/plainObject.js";
-import { VE_FIELD_EDIT_REFUSED_TYPE } from "../../shared/protocol.js";
-import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
-import { listenToSaves } from "../saveEvents.js";
 import { CLICK_LEFT_TO_THE_PAGE } from "../overlay/editTargets.js";
 import { createEditRoutes } from "./editRoutes.js";
 import { createEditTransport } from "./editTransport.js";
@@ -69,7 +63,7 @@ export function createInlineEditing(
     win: window,
   });
 
-  const transport = createEditTransport(getCtx, showStatus, window, routes.adminOf);
+  const transport = createEditTransport(getCtx, showStatus, window, routes);
 
   const pageFields = createPageFields({
     getLocale: () => getCtx().locale,
@@ -85,44 +79,21 @@ export function createInlineEditing(
   const isPlainTextOfThePage = (match: FieldMatch): boolean =>
     match.richText === undefined && editedFieldOf(match) !== null;
 
-  const send = (
-    match: FieldMatch,
-    value: string,
-    startedFrom: string,
-    onDelivered?: OnDelivered
-  ) => {
-    const field = editedFieldOf(match);
-    if (field) transport.send({ ...field, base: startedFrom, value }, onDelivered);
-  };
-
-  const dropWaiting = (match: FieldMatch) => {
-    const field = editedFieldOf(match);
-    if (field) transport.drop(field);
-  };
-
-  const textEditing = createTextEditing({ dropWaiting, flush: transport.flush, send, tracker });
+  const textEditing = createTextEditing({ beginEdit: transport.beginEdit, tracker });
 
   const richTextEditing = createRichTextEditing({
-    dropUnsaved: transport.drop,
+    beginEdit: transport.beginEdit,
+    currentAdmin: routes.currentAdmin,
     endOtherEdits: () => textEditing.commit(),
-    flush: transport.flush,
     getCtx,
-    holdUnsaved: transport.hold,
-    isUnsaved: transport.isUnsaved,
     pageFields,
-    routes,
-    send: transport.send,
     tracker,
   });
   const imageReplacement = createImageReplacement({
+    beginImageEdit: transport.beginImageEdit,
     getCtx,
     isInsideRichText: richTextEditing.isInsideRichText,
-    holdInForm: transport.holdInForm,
-    isUnsaved: transport.isUnsaved,
     pageFields,
-    refuseAsked: transport.refuseAsked,
-    routes,
-    save: transport.sendNow,
     tracker,
   });
   saveStatus = createSaveStatus(document, transport.retry);
@@ -149,30 +120,15 @@ export function createInlineEditing(
     },
   });
 
-  const refuseEditTheFormDidNotTake = (event: MessageEvent) => {
-    const { adminOrigin } = getCtx();
-    if (!isMessageFrom(event, adminOriginOf(adminOrigin), findAdminWindow(window))) return;
-    const { data } = event;
-    if (!isPlainObject(data) || data.type !== VE_FIELD_EDIT_REFUSED_TYPE) return;
-    const refused = readEditedField(data);
-    if (refused) transport.refuse(refused, readSaveRefusal(data));
-  };
-  window.addEventListener("message", refuseEditTheFormDidNotTake);
-
   const saveBeforeThePageIsLeft = () => {
     richTextEditing.commitBeforeThePageIsHidden();
-    transport.flushBeforeLeaving();
+    transport.leavePage();
   };
   const saveBeforeThePageIsHidden = () => {
     if (document.visibilityState === HIDDEN) saveBeforeThePageIsLeft();
   };
   window.addEventListener(PAGE_LEFT_EVENT, saveBeforeThePageIsLeft);
   document.addEventListener(VISIBILITY_EVENT, saveBeforeThePageIsHidden);
-
-  const stopListeningToSaves = listenToSaves(
-    () => getCtx().adminOrigin,
-    (saved) => transport.settle(saved)
-  );
 
   const endEdits = () => {
     textEditing.commit();
@@ -181,8 +137,7 @@ export function createInlineEditing(
 
   const editTextInPlace = (match: FieldMatch, field: VeEditedField, event: MouseEvent): boolean => {
     richTextEditing.commit();
-    routes.beginEdit(field, transport.isUnsaved);
-    return textEditing.begin(match, { x: event.clientX, y: event.clientY });
+    return textEditing.begin(match, field, { x: event.clientX, y: event.clientY });
   };
 
   return {
@@ -203,8 +158,6 @@ export function createInlineEditing(
       richTextEditing.dispose();
       textEditing.dispose();
       transport.dispose();
-      stopListeningToSaves();
-      window.removeEventListener("message", refuseEditTheFormDidNotTake);
       window.removeEventListener(PAGE_LEFT_EVENT, saveBeforeThePageIsLeft);
       document.removeEventListener(VISIBILITY_EVENT, saveBeforeThePageIsHidden);
       stopTracking();

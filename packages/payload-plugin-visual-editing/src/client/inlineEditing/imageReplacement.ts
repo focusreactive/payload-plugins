@@ -1,32 +1,11 @@
-import type {
-  VeEditedField,
-  VeFieldEdit,
-  VeMediaOption,
-  VePickMediaMessage,
-  VeShownMedia,
-} from "../../shared/protocol.js";
+import type { VeEditedField } from "../../shared/protocol.js";
 import type { BadgeAction } from "../overlay/editBadge.js";
 import type { FieldTracker } from "../overlay/fieldTracker.js";
-import type { SaveRefusal } from "../../shared/fieldEdit.js";
-import type { EditRoutes, IsUnsaved } from "./editRoutes.js";
-import type { OnSaveEnded, RetryRefused } from "./editTransport.js";
+import type { ImageEdit, ShownImage } from "./editTransport.js";
 import type { PageFields } from "./pageFields.js";
 
-import { readEditedField, readSaveRefusal } from "../../shared/fieldEdit.js";
-import { readPickedMedia } from "../../shared/mediaOption.js";
-import { isMessageFrom } from "../../shared/messageSource.js";
-import { isPlainObject } from "../../shared/plainObject.js";
-import {
-  DATA_VE_LIVE_RICH_TEXT_ATTR,
-  DATA_VE_VALUE_ID_ATTR,
-  VE_FIELD_EDIT_REFUSED_TYPE,
-  VE_MEDIA_PICK_CANCELLED_TYPE,
-  VE_MEDIA_PICKED_TYPE,
-  VE_PICK_MEDIA_TYPE,
-} from "../../shared/protocol.js";
-import { editedFieldAddressOf } from "../../shared/veDocument.js";
+import { DATA_VE_LIVE_RICH_TEXT_ATTR, DATA_VE_VALUE_ID_ATTR } from "../../shared/protocol.js";
 
-import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
 import { readMarkerFromAttrs } from "../overlay/markerExtractor.js";
 import { createMediaLibrary } from "./mediaLibrary.js";
 import { createMediaPicker } from "./mediaPicker.js";
@@ -34,9 +13,7 @@ import { isPageField } from "./pageFields.js";
 import { absoluteUrlOf, showMedia } from "./shownImage.js";
 
 export type ImageReplacementCtx = {
-  adminOrigin: string;
   payloadApi: string;
-  locale?: string;
   inlineEditing: boolean;
 };
 
@@ -45,11 +22,7 @@ export type ImageReplacementOptions = {
   getCtx: () => ImageReplacementCtx;
   pageFields: PageFields;
   isInsideRichText: (target: Element) => boolean;
-  save: (edit: VeFieldEdit, onSaveEnded: OnSaveEnded) => void;
-  holdInForm: (field: VeEditedField) => void;
-  isUnsaved: IsUnsaved;
-  refuseAsked: (field: VeEditedField, refusal: SaveRefusal, askAgain: RetryRefused) => void;
-  routes: EditRoutes;
+  beginImageEdit(field: VeEditedField, image: ShownImage): ImageEdit;
 };
 
 export interface ImageReplacement {
@@ -65,15 +38,6 @@ type ReplaceableImage = {
   shownMediaId: string | null;
 };
 
-type AskedOfAdmin = ReplaceableImage & {
-  openField: () => void;
-  adminWindow: Window;
-  askedAt: number;
-  chosen?: VeMediaOption;
-};
-
-export const MEDIA_PICK_TIME_LIMIT_MS = 60_000;
-
 const IMAGES = "img";
 
 const onlyImageOf = (target: HTMLElement): HTMLImageElement | null => {
@@ -83,18 +47,13 @@ const onlyImageOf = (target: HTMLElement): HTMLImageElement | null => {
 };
 
 export function createImageReplacement({
+  beginImageEdit,
   getCtx,
-  holdInForm,
   isInsideRichText,
-  isUnsaved,
   pageFields,
-  refuseAsked,
-  routes,
-  save,
   tracker,
 }: ImageReplacementOptions): ImageReplacement {
   const trackedTexts = new Set<Text>();
-  const askedOfAdmin = new Map<string, AskedOfAdmin>();
   const urlOf = (url: string) => absoluteUrlOf(url, getCtx().payloadApi);
   const picker = createMediaPicker(
     document,
@@ -129,109 +88,14 @@ export function createImageReplacement({
     };
   };
 
-  const show = ({ image }: ReplaceableImage, media: VeShownMedia): (() => void) | null =>
-    image.isConnected ? showMedia(image, media, urlOf(media.url)) : null;
-
-  const isStillOpen = (asked: AskedOfAdmin | undefined, adminWindow: Window): boolean =>
-    asked !== undefined &&
-    asked.adminWindow === adminWindow &&
-    !adminWindow.closed &&
-    Date.now() - asked.askedAt < MEDIA_PICK_TIME_LIMIT_MS;
-
-  const askAdmin = (
-    adminWindow: Window,
-    replaceable: ReplaceableImage,
-    openField: () => void,
-    chosen?: VeMediaOption
-  ) => {
-    const address = editedFieldAddressOf(replaceable.field);
-    if (isStillOpen(askedOfAdmin.get(address), adminWindow)) return;
-    const message: VePickMediaMessage = {
-      ...replaceable.field,
-      ...(chosen && { mediaId: chosen.id }),
-      type: VE_PICK_MEDIA_TYPE,
-    };
-    askedOfAdmin.set(address, {
-      ...replaceable,
-      adminWindow,
-      askedAt: Date.now(),
+  const replace = ({ field, image, shownMediaId }: ReplaceableImage, openField: () => void) => {
+    const edit = beginImageEdit(field, {
       openField,
-      ...(chosen && { chosen }),
+      show: (media) => (image.isConnected ? showMedia(image, media, urlOf(media.url)) : null),
+      shownMediaId,
     });
-    adminWindow.postMessage(message, adminOriginOf(getCtx().adminOrigin));
-    if (chosen) holdInForm(replaceable.field);
+    if (!edit.pickInTheDrawer()) picker.open(field, edit.use, openField);
   };
-
-  const saveThroughEndpoint = (replaceable: ReplaceableImage, media: VeMediaOption) => {
-    let putBack = show(replaceable, media);
-    const followTheSave = (isSaved: boolean) => {
-      if (isSaved) putBack ??= show(replaceable, media);
-      else putBack?.();
-      if (!isSaved) putBack = null;
-    };
-    const { field, shownMediaId } = replaceable;
-    const base = shownMediaId === null ? {} : { base: shownMediaId };
-    save({ ...field, ...base, value: String(media.id) }, followTheSave);
-  };
-
-  const takeChosen = (
-    replaceable: ReplaceableImage,
-    openField: () => void,
-    media: VeMediaOption
-  ) => {
-    const adminWindow = routes.adminOf(replaceable.field);
-    if (adminWindow) askAdmin(adminWindow, replaceable, openField, media);
-    else saveThroughEndpoint(replaceable, media);
-  };
-
-  const replace = (replaceable: ReplaceableImage, openField: () => void) => {
-    routes.beginEdit(replaceable.field, isUnsaved);
-    const drawerWindow = routes.drawerOf(replaceable.field);
-    if (drawerWindow) {
-      askAdmin(drawerWindow, replaceable, openField);
-      return;
-    }
-    picker.open(replaceable.field, (media) => takeChosen(replaceable, openField, media), openField);
-  };
-
-  const takeAsked = (field: VeEditedField | null): AskedOfAdmin | null => {
-    const asked = field && askedOfAdmin.get(editedFieldAddressOf(field));
-    if (!field || !asked) return null;
-    askedOfAdmin.delete(editedFieldAddressOf(field));
-    return asked;
-  };
-
-  const showPickedMedia = (data: unknown) => {
-    const picked = readPickedMedia(data);
-    const asked = takeAsked(picked);
-    if (!picked || !asked) return;
-    show(asked, picked);
-    holdInForm(asked.field);
-  };
-
-  const showRefusalAndOpenField = (data: unknown) => {
-    const asked = takeAsked(readEditedField(data));
-    if (!asked) return;
-    const { chosen, openField } = asked;
-    const refusal = readSaveRefusal(data);
-    if (chosen) refuseAsked(asked.field, refusal, () => takeChosen(asked, openField, chosen));
-    openField();
-  };
-
-  const forgetCancelledPick = (data: unknown) => {
-    takeAsked(readEditedField(data));
-  };
-
-  const hearAdmin = (event: MessageEvent) => {
-    const { adminOrigin } = getCtx();
-    if (!isMessageFrom(event, adminOriginOf(adminOrigin), findAdminWindow(window))) return;
-    const { data } = event;
-    if (!isPlainObject(data)) return;
-    if (data.type === VE_MEDIA_PICKED_TYPE) showPickedMedia(data);
-    if (data.type === VE_FIELD_EDIT_REFUSED_TYPE) showRefusalAndOpenField(data);
-    if (data.type === VE_MEDIA_PICK_CANCELLED_TYPE) forgetCancelledPick(data);
-  };
-  window.addEventListener("message", hearAdmin);
 
   return {
     actionOf(target) {
@@ -243,7 +107,6 @@ export function createImageReplacement({
       };
     },
     dispose() {
-      window.removeEventListener("message", hearAdmin);
       stopTracking();
       picker.remove();
     },

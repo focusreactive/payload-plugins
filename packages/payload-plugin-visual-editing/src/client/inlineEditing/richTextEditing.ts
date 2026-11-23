@@ -2,14 +2,12 @@ import type {
   VeDocument,
   VeEditedField,
   VeEditorState,
-  VeRichTextEdit,
-  VeRichTextEditEndedMessage,
   VeRichTextStateRequestMessage,
 } from "../../shared/protocol.js";
 import type { VeRichTextFormats } from "../../shared/richText/formats.js";
 import type { FieldTracker } from "../overlay/fieldTracker.js";
 import type { Point, TextPosition } from "./caret.js";
-import type { EditRoutes } from "./editRoutes.js";
+import type { FieldEdit } from "./editTransport.js";
 import type { PageFields } from "./pageFields.js";
 import type { EditSession, RichTextEditor, RichTextEditorLoader } from "./richTextEditor.js";
 
@@ -22,7 +20,6 @@ import {
   VE_DOCUMENT_SAVED_TYPE,
   VE_FIELD_PATCH_TYPE,
   VE_FIELD_SNAPSHOT_TYPE,
-  VE_RICH_TEXT_EDIT_ENDED_TYPE,
   VE_RICH_TEXT_STATE_REFUSED_TYPE,
   VE_RICH_TEXT_STATE_REQUEST_TYPE,
   VE_RICH_TEXT_STATE_TYPE,
@@ -66,13 +63,9 @@ export type RichTextEditingDeps = {
   tracker: FieldTracker;
   getCtx: () => RichTextEditingCtx;
   pageFields: PageFields;
-  send(edit: VeRichTextEdit, onDelivered?: () => void): void;
-  holdUnsaved(edit: VeRichTextEdit): void;
-  dropUnsaved(field: VeEditedField): void;
-  isUnsaved(field: VeEditedField): boolean;
-  flush(): void;
+  beginEdit(field: VeEditedField, startedFrom: VeEditorState): FieldEdit<VeEditorState>;
+  currentAdmin(): Window | null;
   endOtherEdits(): void;
-  routes: EditRoutes;
 };
 
 export interface RichTextEditing {
@@ -105,8 +98,8 @@ type Edit = {
   held: Held;
   latest: VeEditorState;
   wasChanged: boolean;
-  wasDelivered: boolean;
   showsWhatWasSaved: boolean;
+  saving: FieldEdit<VeEditorState>;
   stopWatchingWrapper(): void;
   previous: ReadOnlyTwin | null;
   session: EditSession;
@@ -158,18 +151,13 @@ const clickWrapperInstead = (wrapper: HTMLElement, event: MouseEvent) => {
 };
 
 export function createRichTextEditing({
-  dropUnsaved,
+  beginEdit,
+  currentAdmin,
   endOtherEdits,
-  flush,
   getCtx,
-  holdUnsaved,
-  isUnsaved,
   pageFields,
-  routes,
-  send,
   tracker,
 }: RichTextEditingDeps): RichTextEditing {
-  const { adminOf } = routes;
   const richTextLeaves = new Set<Text>();
   const held = new Map<string, Held>();
   const heldAt = new Map<string, number>();
@@ -236,8 +224,7 @@ export function createRichTextEditing({
   const freshlyHeld = (address: string): Held | null => {
     const at = heldAt.get(address);
     const isFresh =
-      routes.currentAdmin() !== null ||
-      (at !== undefined && Date.now() - at < RICH_TEXT_STATE_FRESH_MS);
+      currentAdmin() !== null || (at !== undefined && Date.now() - at < RICH_TEXT_STATE_FRESH_MS);
     return isFresh ? (held.get(address) ?? null) : null;
   };
 
@@ -260,7 +247,7 @@ export function createRichTextEditing({
     previous?.stopWatching();
     previous?.twin.remove();
     const shownAgain = new MutationObserver(() => {
-      if (editing?.wrapper !== wrapper && !isUnsaved(ended.held.field)) dropReadOnlyTwin(wrapper);
+      if (editing?.wrapper !== wrapper && !ended.saving.isUnsaved()) dropReadOnlyTwin(wrapper);
     });
     shownAgain.observe(wrapper, WRAPPER_CONTENT);
     readOnlyTwins.set(wrapper, {
@@ -275,19 +262,8 @@ export function createRichTextEditing({
     edit.latest = state;
     edit.wasChanged = true;
     edit.showsWhatWasSaved = false;
-    const change = { ...edit.held.field, base: edit.held.state, state };
-    if (adminOf(edit.held.field) || holdsEveryFixedNode(edit, state)) {
-      send(change, () => {
-        edit.wasDelivered = true;
-      });
-    } else {
-      holdUnsaved(change);
-    }
-  };
-
-  const tellAdminTheEditEnded = (field: VeEditedField) => {
-    const message: VeRichTextEditEndedMessage = { ...field, type: VE_RICH_TEXT_EDIT_ENDED_TYPE };
-    adminOf(field)?.postMessage(message, adminOriginOf(getCtx().adminOrigin));
+    if (holdsEveryFixedNode(edit, state)) edit.saving.change(state);
+    else edit.saving.hold(state);
   };
 
   const end = (keepsWhatWasTyped: boolean) => {
@@ -302,7 +278,7 @@ export function createRichTextEditing({
       isOnThePage &&
       ended.wasChanged &&
       !ended.showsWhatWasSaved &&
-      !adminOf(ended.held.field);
+      !ended.saving.goesToTheAdmin();
     const copy = keepsTwin ? readOnlyCopyOf(ended.twin) : null;
     ended.session.end();
     if (copy) {
@@ -313,21 +289,13 @@ export function createRichTextEditing({
       ended.showAgain();
       if (ended.showsWhatWasSaved) dropReadOnlyTwin(ended.wrapper);
     }
-    flush();
-    tellAdminTheEditEnded(ended.held.field);
+    if (keepsWhatWasTyped) ended.saving.end();
+    else ended.saving.cancel();
   };
 
   const commit = () => end(true);
 
-  const takeBack = ({ held: { field, state }, wasDelivered }: Edit) => {
-    dropUnsaved(field);
-    if (adminOf(field) || wasDelivered) send({ ...field, base: state, state });
-  };
-
-  const cancel = () => {
-    if (editing?.wasChanged) takeBack(editing);
-    end(false);
-  };
+  const cancel = () => end(false);
 
   const caretAt = (shown: HTMLElement, point: Point): TextPosition | null =>
     textPositionAtPoint(shown.ownerDocument, editableTextsIn(shown, richTextLeaves), point);
@@ -370,7 +338,6 @@ export function createRichTextEditing({
     endOtherEdits();
     commit();
     forget(editedFieldAddressOf(ready.field));
-    routes.beginEdit(ready.field, isUnsaved);
 
     const shown = previous?.twin ?? wrapper;
     const { content, root: twin } = twinOf(wrapper, ready.state);
@@ -382,21 +349,22 @@ export function createRichTextEditing({
       showAgain();
       return false;
     }
+    const saving = beginEdit(ready.field, ready.state);
     const rendersOfTheSite = new MutationObserver(() => {
-      if (editing?.wrapper === wrapper) editing.showsWhatWasSaved = !isUnsaved(ready.field);
+      if (editing?.wrapper === wrapper) editing.showsWhatWasSaved = !saving.isUnsaved();
     });
     rendersOfTheSite.observe(wrapper, WRAPPER_CONTENT);
     editing = {
       held: ready,
       latest: ready.state,
       previous,
+      saving,
       session,
       showAgain,
       showsWhatWasSaved: false,
       stopWatchingWrapper: () => rendersOfTheSite.disconnect(),
       twin,
       wasChanged: false,
-      wasDelivered: false,
       wrapper,
     };
     return true;
@@ -471,7 +439,7 @@ export function createRichTextEditing({
   const ask = (field: VeEditedField) => {
     askedAt.set(editedFieldAddressOf(field), Date.now());
     loadEditor();
-    const adminWindow = routes.currentAdmin();
+    const adminWindow = currentAdmin();
     if (adminWindow) askAdmin(adminWindow, field);
     else void askEndpoint(field);
   };
@@ -587,7 +555,7 @@ export function createRichTextEditing({
   return {
     commit,
     commitBeforeThePageIsHidden() {
-      if (editing && !adminOf(editing.held.field)) commit();
+      if (editing && !editing.saving.goesToTheAdmin()) commit();
     },
     dispose() {
       commit();

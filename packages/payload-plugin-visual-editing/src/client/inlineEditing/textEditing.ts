@@ -1,5 +1,7 @@
+import type { VeEditedField } from "../../shared/protocol.js";
 import type { FieldMatch, FieldTracker } from "../overlay/fieldTracker.js";
 import type { Point } from "./caret.js";
+import type { FieldEdit } from "./editTransport.js";
 
 import { holdsLineBreak, oneLineOf } from "../../shared/fieldEdit.js";
 import { caretOffsetIn, placeCaret, placeCaretAtPoint } from "./caret.js";
@@ -9,13 +11,11 @@ export const DATA_VE_EDITING_ATTR = "data-ve-editing";
 
 export type TextEditingDeps = {
   tracker: FieldTracker;
-  send(match: FieldMatch, text: string, startedFrom: string, onDelivered?: () => void): void;
-  dropWaiting(match: FieldMatch): void;
-  flush(): void;
+  beginEdit(field: VeEditedField, startedFrom: string): FieldEdit<string>;
 };
 
 export interface TextEditing {
-  begin(match: FieldMatch, point: Point): boolean;
+  begin(match: FieldMatch, field: VeEditedField, point: Point): boolean;
   isEditing(holder: Element): boolean;
   commit(): void;
   endIfRemoved(): void;
@@ -30,7 +30,7 @@ type Edit = {
   initialText: string;
   text: string;
   caret: number;
-  wasDelivered: boolean;
+  saving: FieldEdit<string>;
   restored: ReadonlyMap<string, string | null>;
   breakLinesAsThePageDid(): void;
   hideFrame(): void;
@@ -180,15 +180,10 @@ const setAttributes = (
   }
 };
 
-export function createTextEditing({
-  dropWaiting,
-  flush,
-  send,
-  tracker,
-}: TextEditingDeps): TextEditing {
+export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): TextEditing {
   let editing: Edit | null = null;
 
-  const end = (text: string) => {
+  const end = (text: string, isTakenBack: boolean) => {
     const ended = editing;
     if (!ended) return;
     editing = null;
@@ -198,28 +193,24 @@ export function createTextEditing({
     setAttributes(ended.editedElement, ended.restored);
     ended.breakLinesAsThePageDid();
     tracker.endEdit(ended.match, text);
-    flush();
+    if (isTakenBack) ended.saving.cancel();
+    else ended.saving.end();
     if (ended.editedElement.ownerDocument.activeElement === ended.editedElement)
       ended.editedElement.blur();
   };
 
   const commit = () => {
-    if (editing) end(editing.text);
+    if (editing) end(editing.text, false);
   };
 
   const cancel = () => {
-    if (!editing) return;
-    dropWaiting(editing.match);
-    if (editing.wasDelivered) send(editing.match, editing.initialText, editing.initialText);
-    end(editing.initialText);
+    if (editing) end(editing.initialText, true);
   };
 
   const followTyping = (edit: Edit) => {
     edit.text = textOf(edit.editedElement);
     edit.caret = caretOffsetIn(edit.editedElement) ?? edit.caret;
-    send(edit.match, edit.text, edit.initialText, () => {
-      edit.wasDelivered = true;
-    });
+    edit.saving.change(edit.text);
   };
 
   const followCaret = (edit: Edit) => {
@@ -275,7 +266,7 @@ export function createTextEditing({
   };
 
   return {
-    begin(match, point) {
+    begin(match, field, point) {
       if (editing?.match === match) return true;
       commit();
 
@@ -299,9 +290,9 @@ export function createTextEditing({
         initialText: text,
         match,
         restored: new Map(EDITING_ATTRS.map((name) => [name, editedElement.getAttribute(name)])),
+        saving: beginEdit(field, text),
         stopListening: () => undefined,
         text,
-        wasDelivered: false,
       };
       addEditingStyle(doc);
       editedElement.setAttribute(EDITABLE_ATTR, RICH_TEXT);
