@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  captureMainGlobals,
   closeMainGlobalCapture,
   openMainGlobalCapture,
   takeCapturedMainGlobal,
-} from "../../src/core/mainGlobalCapture";
-import { captureMainGlobalReads } from "../../src/db/captureMainGlobalReads";
+} from "../../src/db/mainGlobalCapture";
 
 const stored = { title: "Published", _status: "published" };
 const filtered = {};
@@ -13,7 +13,7 @@ const ACCESS_WHERE = { title: { equals: "visible" } };
 const adapterReturning = (resultOf: (args: any) => unknown = () => stored) => {
   const findGlobal = vi.fn(async (args: any) => resultOf(args));
   const db: Record<string, unknown> = { findGlobal };
-  captureMainGlobalReads(db);
+  captureMainGlobals(db);
   const read = (args: Record<string, unknown>) =>
     (db.findGlobal as (args: unknown) => Promise<unknown>)(args);
   return { db, findGlobal, read };
@@ -29,7 +29,7 @@ const adapterWithVersions = (versionsOf: (args: any) => unknown[] = () => [lates
     docs: versionsOf(args).map((version) => ({ version })),
   }));
   const db: Record<string, unknown> = { findGlobal: vi.fn(async () => stored), findGlobalVersions };
-  captureMainGlobalReads(db);
+  captureMainGlobals(db);
   const readVersions = (args: Record<string, unknown>) =>
     (db.findGlobalVersions as (args: unknown) => Promise<unknown>)(args);
   const read = (args: Record<string, unknown>) =>
@@ -37,7 +37,7 @@ const adapterWithVersions = (versionsOf: (args: any) => unknown[] = () => [lates
   return { findGlobalVersions, read, readVersions };
 };
 
-describe("captureMainGlobalReads", () => {
+describe("captureMainGlobals", () => {
   it("passes every read through and keeps nothing while no capture is open", async () => {
     const { findGlobal, read } = adapterReturning();
     const req = request();
@@ -111,11 +111,11 @@ describe("captureMainGlobalReads", () => {
 
   it("wraps an adapter once and leaves adapters without findGlobal alone", async () => {
     const { db, findGlobal, read } = adapterReturning();
-    captureMainGlobalReads(db);
+    captureMainGlobals(db);
     await read({ slug: "header" });
     expect(findGlobal).toHaveBeenCalledTimes(1);
-    expect(() => captureMainGlobalReads({})).not.toThrow();
-    expect(() => captureMainGlobalReads(undefined)).not.toThrow();
+    expect(() => captureMainGlobals({})).not.toThrow();
+    expect(() => captureMainGlobals(undefined)).not.toThrow();
   });
 
   it("keeps the first latest version Payload reads before the main global, next to it", async () => {
@@ -193,13 +193,13 @@ const adapterWithWrites = () => {
   const updateGlobal = vi.fn(async (_args: any): Promise<unknown> => writtenGlobal);
   const createGlobal = vi.fn(async (_args: any): Promise<unknown> => writtenGlobal);
   const db: Record<string, unknown> = { findGlobal, updateGlobal, createGlobal };
-  captureMainGlobalReads(db);
+  captureMainGlobals(db);
   const call = (method: string, args: Record<string, unknown>) =>
     (db[method] as (args: unknown) => Promise<unknown>)(args);
   return { updateGlobal, createGlobal, call };
 };
 
-describe("captureMainGlobalReads keeps the global the update writes", () => {
+describe("captureMainGlobals keeps the global the update writes", () => {
   it.each(["updateGlobal", "createGlobal"])(
     "keeps what %s stored once Payload has read the global and the hooks have run",
     async (method) => {

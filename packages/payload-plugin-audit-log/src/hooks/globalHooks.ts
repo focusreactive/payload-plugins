@@ -19,8 +19,8 @@ import {
   closeMainGlobalCapture,
   openMainGlobalCapture,
   takeCapturedMainGlobal,
-} from "../core/mainGlobalCapture";
-import type { CapturedMainGlobal } from "../core/mainGlobalCapture";
+} from "../db/mainGlobalCapture";
+import type { CapturedMainGlobal } from "../db/mainGlobalCapture";
 import { stampOperationStart } from "../core/operationClock";
 import { pushOpFlags, takeOpFlags } from "../core/requestState";
 import { withStoredLocalizedValues } from "../core/storedLocalizedValues";

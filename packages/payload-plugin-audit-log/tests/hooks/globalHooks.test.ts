@@ -1,7 +1,6 @@
 import type { GlobalConfig } from "payload";
 import { describe, expect, it, vi } from "vitest";
-import { CTX_MAIN_GLOBAL_READS } from "../../src/constants";
-import { captureMainGlobalReads } from "../../src/db/captureMainGlobalReads";
+import { captureMainGlobals, takeCapturedMainGlobal } from "../../src/db/mainGlobalCapture";
 import { withGlobalAudit } from "../../src/hooks/globalHooks";
 import { normalizeOptions } from "../../src/options";
 import { fakeRequest, recordedEvents, runHooks } from "../helpers/fakeRequest";
@@ -216,7 +215,7 @@ describe("global hooks", () => {
       const { req, db, create } = makeReq({ locale: "de", fallbackLocale });
       const findGlobal = vi.fn().mockResolvedValue(change.stored);
       db.findGlobal = findGlobal;
-      captureMainGlobalReads(db);
+      captureMainGlobals(db);
       await runHooks(localizedSettings.hooks?.beforeOperation, {
         operation: "update",
         args: {},
@@ -399,7 +398,7 @@ describe("globals with drafts reuse the main global Payload reads during the upd
     const { req, db } = request;
     const findGlobal = vi.fn().mockResolvedValue(s.mainGlobal);
     db.findGlobal = findGlobal;
-    captureMainGlobalReads(db);
+    captureMainGlobals(db);
     const read = db.findGlobal as (args: Doc) => Promise<unknown>;
     await runHooks(global.hooks?.beforeOperation, { operation: "update", args: s.args ?? {}, req });
     await read({ slug: global.slug, locale: "en", req, where: undefined });
@@ -538,7 +537,7 @@ describe("globals with drafts reuse the main global Payload reads during the upd
     const restore = makeReq();
     const findGlobal = vi.fn().mockResolvedValue({ title: "A", _status: "published" });
     restore.db.findGlobal = findGlobal;
-    captureMainGlobalReads(restore.db);
+    captureMainGlobals(restore.db);
     await runHooks(autosaveGlobal.hooks?.beforeOperation, {
       operation: "restoreVersion",
       args: { id: "v1" },
@@ -564,9 +563,7 @@ describe("globals with drafts reuse the main global Payload reads during the upd
       previousDoc: { title: "A", _status: "draft" },
       doc: { title: "B", _status: "draft" },
     });
-    expect((request.req.context[CTX_MAIN_GLOBAL_READS] as Map<string, unknown>).has("home")).toBe(
-      false
-    );
+    expect(takeCapturedMainGlobal(request.req, "home")).toBeUndefined();
     await save(autosaveGlobal, request, {
       mainGlobal: { title: "B", _status: "draft" },
       previousDoc: { title: "B", _status: "draft" },
@@ -797,7 +794,7 @@ describe("globals compared with the stored global Payload reads before the save"
     request.findGlobalVersions.mockResolvedValue({
       docs: s.latestVersion ? [{ version: s.latestVersion }] : [],
     });
-    captureMainGlobalReads(db);
+    captureMainGlobals(db);
     await runHooks(global.hooks?.beforeOperation, {
       operation: "update",
       args: { data: s.data, ...s.args },
@@ -993,7 +990,7 @@ describe("an autosave publish of a localized global compares what it writes in e
     db.create = request.create;
     db.findGlobal = vi.fn().mockResolvedValue(mainGlobal);
     db.updateGlobal = vi.fn().mockResolvedValue(written);
-    captureMainGlobalReads(db);
+    captureMainGlobals(db);
     await runHooks(localizedAutosave.hooks?.beforeOperation, {
       operation: "update",
       args: {},

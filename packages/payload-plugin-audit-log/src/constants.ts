@@ -76,5 +76,3 @@ export const API_KEY_HIDDEN_FIELDS = ["apiKey", "apiKeyIndex", "hasAPIKey"] as c
 export const CTX_ACTOR = "auditActor";
 export const CTX_OP = "__auditOp";
 export const CTX_REQUEST_ID = "__auditRequestId";
-export const CTX_MAIN_GLOBAL_READS = "__auditMainGlobalReads";
-export const CTX_WRITTEN_DOCS = "__auditWrittenDocs";

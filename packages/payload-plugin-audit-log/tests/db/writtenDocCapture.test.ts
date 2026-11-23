@@ -1,7 +1,10 @@
 import type { Payload } from "payload";
 import { describe, expect, it, vi } from "vitest";
-import { openWrittenDocCapture, takeWrittenDoc } from "../../src/core/writtenDocCapture";
-import { captureCollectionWrites } from "../../src/db/captureCollectionWrites";
+import {
+  captureWrittenDocs,
+  openWrittenDocCapture,
+  takeWrittenDoc,
+} from "../../src/db/writtenDocCapture";
 
 type Write = (args: Record<string, unknown>) => Promise<unknown>;
 
@@ -15,7 +18,7 @@ const adapter = (updated: unknown = stored) => {
   const updateOne = vi.fn(async () => updated);
   const createVersion = vi.fn(async () => ({ id: "v", parent: 7, version: storedVersion }));
   const db: Record<string, unknown> = { updateOne, createVersion };
-  captureCollectionWrites({ logger: { error } } as unknown as Payload, db);
+  captureWrittenDocs({ logger: { error } } as unknown as Payload, db);
   return {
     updateOne: (args: Record<string, unknown>) => (db.updateOne as Write)(args),
     createVersion: (args: Record<string, unknown>) => (db.createVersion as Write)(args),
@@ -23,7 +26,7 @@ const adapter = (updated: unknown = stored) => {
   };
 };
 
-describe("captureCollectionWrites", () => {
+describe("captureWrittenDocs", () => {
   it("passes every write through and keeps nothing while no capture is open", async () => {
     const { updateOne } = adapter();
     const req = request();
@@ -87,9 +90,9 @@ describe("captureCollectionWrites", () => {
     const write = vi.fn(async () => stored);
     const db: Record<string, unknown> = { updateOne: write };
     const payload = { logger: { error: vi.fn() } } as unknown as Payload;
-    captureCollectionWrites(payload, db);
+    captureWrittenDocs(payload, db);
     const wrapped = db.updateOne;
-    captureCollectionWrites(payload, db);
+    captureWrittenDocs(payload, db);
     expect(db.updateOne).toBe(wrapped);
   });
 });

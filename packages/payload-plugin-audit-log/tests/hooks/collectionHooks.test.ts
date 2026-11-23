@@ -1,6 +1,6 @@
-import type { CollectionConfig } from "payload";
+import type { CollectionConfig, Payload } from "payload";
 import { describe, expect, it, vi } from "vitest";
-import { captureWrittenDoc } from "../../src/core/writtenDocCapture";
+import { captureWrittenDocs } from "../../src/db/writtenDocCapture";
 import { withCollectionAudit } from "../../src/hooks/collectionHooks";
 import { normalizeOptions } from "../../src/options";
 import {
@@ -30,6 +30,17 @@ const postsCollection = { slug: "posts", admin: { useAsTitle: "title" } };
 const usersCollection = { slug: "users" };
 
 const firstEvent = (create: ReturnType<typeof fakeRequest>["create"]) => recordedEvents(create)[0];
+
+const writeThroughAdapter = async (
+  req: FakeRequest,
+  collection: string,
+  id: number,
+  written: Doc
+) => {
+  const db: Record<string, unknown> = { updateOne: async () => written };
+  captureWrittenDocs(req.payload as unknown as Payload, db);
+  await (db.updateOne as (args: unknown) => Promise<unknown>)({ collection, id, req });
+};
 
 const callHook = (hook: unknown, args: unknown) => (hook as (a: unknown) => unknown)(args);
 
@@ -991,7 +1002,7 @@ describe("collection hooks", () => {
         req: publishReq,
         collection: { slug: "pages" },
       });
-      if (written) captureWrittenDoc(publishReq, "pages", 1, written);
+      if (written) await writeThroughAdapter(publishReq, "pages", 1, written);
       await beforeAuditAfterChange?.(publishReq);
       await runUpdate(hooks, publishReq, publishOverAutosavedDraft);
     };
@@ -1684,7 +1695,7 @@ describe("collection hooks", () => {
         req,
         collection: postsCollection,
       });
-      captureWrittenDoc(req, "posts", 1, change.written);
+      await writeThroughAdapter(req, "posts", 1, change.written);
       await runUpdate(localizedPosts.hooks, req, change);
       return create;
     };
@@ -2362,7 +2373,12 @@ describe("collection hooks", () => {
         req,
         collection: postsCollection,
       });
-      captureWrittenDoc(req, "posts", 1, { id: 1, title: "u", body: "b", _status: "published" });
+      await writeThroughAdapter(req, "posts", 1, {
+        id: 1,
+        title: "u",
+        body: "b",
+        _status: "published",
+      });
       await runUpdate(autosavePosts.hooks, req, {
         previousDoc: latestDraft,
         doc: { id: 1, title: "u", _status: "published" },
@@ -2575,7 +2591,7 @@ describe.each([
       req,
       collection: postsCollection,
     });
-    captureWrittenDoc(req, "posts", 1, change.written);
+    await writeThroughAdapter(req, "posts", 1, change.written);
     await runUpdate(layoutPosts.hooks, req, change);
     return create;
   };

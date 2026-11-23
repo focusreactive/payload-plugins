@@ -16,7 +16,7 @@ import {
   withOperationFlags,
 } from "../core/requestState";
 import { submittedSecretFields } from "../core/secretFields";
-import { openWrittenDocCapture, takeWrittenDoc } from "../core/writtenDocCapture";
+import { openWrittenDocCapture, takeWrittenDoc } from "../db/writtenDocCapture";
 import { failOpen } from "../utils/failOpen";
 import { readsWithFallbackLocale } from "../utils/fallbackLocale";
 import { hasAutosave, hasDrafts, isAutosaveDraftTick } from "../utils/versions";

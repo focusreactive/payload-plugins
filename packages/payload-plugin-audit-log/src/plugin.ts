@@ -2,8 +2,8 @@ import type { BaseDatabaseAdapter, CollectionConfig, Config, Payload, Plugin } f
 import { buildAuditCollection } from "./collection/auditCollection";
 import { CUSTOM_CONFIG_KEY, DEFAULT_FOLDERS_SLUG } from "./constants";
 import { deferAuditWritesToCommit } from "./core/failOpenInsert";
-import { captureCollectionWrites } from "./db/captureCollectionWrites";
-import { captureMainGlobalReads } from "./db/captureMainGlobalReads";
+import { captureMainGlobals } from "./db/mainGlobalCapture";
+import { captureWrittenDocs } from "./db/writtenDocCapture";
 import { withCollectionAudit } from "./hooks/collectionHooks";
 import { buildFailedLoginHook } from "./hooks/failedLoginHook";
 import { withGlobalAudit } from "./hooks/globalHooks";
@@ -53,8 +53,8 @@ const auditedWhenCreated = (db: Config["db"], audit: AuditAdapter): Config["db"]
 
 const auditAdapter: AuditAdapter = (payload, adapter) => {
   deferAuditWritesToCommit(payload, adapter);
-  captureMainGlobalReads(adapter);
-  captureCollectionWrites(payload, adapter);
+  captureMainGlobals(adapter);
+  captureWrittenDocs(payload, adapter);
 };
 
 export function auditLogPlugin(options: AuditLogPluginOptions = {}): Plugin {
