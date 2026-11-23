@@ -8,12 +8,7 @@ import type {
   VeRichTextEditMessage,
 } from "../../shared/protocol.js";
 
-import {
-  CHANGED_ELSEWHERE,
-  isRichTextEdit,
-  readSaveRefusal,
-  SAVE_FAILED,
-} from "../../shared/fieldEdit.js";
+import { CHANGED_ELSEWHERE, isRichTextEdit, SAVE_FAILED } from "../../shared/fieldEdit.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import {
   VE_FIELD_EDIT_PATH,
@@ -25,6 +20,7 @@ import { isSameValue } from "../../shared/sameValue.js";
 import { documentAddressOf, editedFieldAddressOf } from "../../shared/veDocument.js";
 
 import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
+import { endpointAnswerOf } from "./endpointAnswer.js";
 
 export type EditStatus = "failed" | "saved" | "saving" | "unsaved";
 
@@ -124,9 +120,6 @@ const continuesSaved = (edit: VeEdit, saved: SavedEdit | undefined): saved is Sa
   edit.base !== undefined &&
   (isSameValue(edit.base, saved.startedFrom) || isSameValue(edit.base, saved.sent));
 
-const isSavedBy = (response: Response, answer: unknown): boolean =>
-  response.ok && isPlainObject(answer) && answer.saved === true;
-
 const postToEndpoint = async (win: Window, url: string, edit: VeEdit): Promise<EndpointAnswer> => {
   try {
     const body = JSON.stringify(edit);
@@ -137,9 +130,9 @@ const postToEndpoint = async (win: Window, url: string, edit: VeEdit): Promise<E
       keepalive: bytesOf(body) <= KEEPALIVE_BODY_LIMIT,
       method: "POST",
     });
-    const answer: unknown = await response.json();
-    if (!isSavedBy(response, answer) || !isPlainObject(answer)) {
-      return { autosaves: true, refusal: readSaveRefusal(answer), stored: undefined };
+    const { answer, refusal } = await endpointAnswerOf(response);
+    if (refusal || !isPlainObject(answer) || answer.saved !== true) {
+      return { autosaves: true, refusal: refusal ?? SAVE_FAILED, stored: undefined };
     }
     return { autosaves: answer.autosave !== false, refusal: null, stored: answer.value };
   } catch {

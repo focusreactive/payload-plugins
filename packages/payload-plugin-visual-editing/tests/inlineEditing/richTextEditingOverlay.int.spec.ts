@@ -1223,7 +1223,7 @@ describe("editing rich text on the page", () => {
       expect(event.defaultPrevented).toBe(true);
       expect(messagesOfType(postToAdmin, VE_MESSAGE_TYPE)).toEqual([]);
 
-      postFromAdmin({ ...BODY, type: VE_RICH_TEXT_STATE_REFUSED_TYPE });
+      postFromAdmin({ ...BODY, reason: "not-editable", type: VE_RICH_TEXT_STATE_REFUSED_TYPE });
 
       expect(twinOf(wrapper)?.hasAttribute(DATA_VE_EDITING_ATTR) ?? false).toBe(false);
       expect(messagesOfType(postToAdmin, VE_MESSAGE_TYPE)).toHaveLength(1);
@@ -1303,7 +1303,7 @@ describe("editing rich text on the page", () => {
       pressOutside();
       expect(statusLabel()).toBe("Unsaved changes");
 
-      postFromAdmin({ ...BODY, type: VE_RICH_TEXT_STATE_REFUSED_TYPE });
+      postFromAdmin({ ...BODY, reason: "not-editable", type: VE_RICH_TEXT_STATE_REFUSED_TYPE });
 
       expect(statusLabel()).toBe("Unsaved changes");
     });

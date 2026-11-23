@@ -82,6 +82,7 @@ export function RichTextEditReceiver({ excludeFieldNames }: { excludeFieldNames?
     const refuseStateRequest = (field: VeEditedField) => {
       const message: VeRichTextStateRefusedMessage = {
         ...field,
+        reason: NOT_EDITABLE,
         type: VE_RICH_TEXT_STATE_REFUSED_TYPE,
       };
       getWindow()?.postMessage(message, origin);

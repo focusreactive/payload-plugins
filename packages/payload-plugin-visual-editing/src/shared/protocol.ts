@@ -239,6 +239,7 @@ export const VE_RICH_TEXT_STATE_REFUSED_TYPE = "ve:rich-text-state-refused";
 
 export type VeRichTextStateRefusedMessage = VeEditedField & {
   type: typeof VE_RICH_TEXT_STATE_REFUSED_TYPE;
+  reason: SaveRefusal;
 };
 
 export const VE_RICH_TEXT_EDIT_TYPE = "ve:rich-text-edit";

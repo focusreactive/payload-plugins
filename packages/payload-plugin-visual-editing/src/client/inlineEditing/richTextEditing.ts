@@ -43,6 +43,7 @@ import type { FindAdminWindow } from "../adminWindow.js";
 import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
 import { readMarkerFromAttrs } from "../overlay/markerExtractor.js";
 import { textPositionAtPoint } from "./caret.js";
+import { endpointAnswerOf } from "./endpointAnswer.js";
 import { editorOf } from "./richTextEditor.js";
 import {
   contentOf,
@@ -468,8 +469,8 @@ export function createRichTextEditing({
         headers: { "Content-Type": "application/json" },
         method: "POST",
       });
-      const answer: unknown = response.ok ? await response.json() : null;
-      hold(editedFieldAddressOf(field), heldOf(field, answer));
+      const { answer, refusal } = await endpointAnswerOf(response);
+      hold(editedFieldAddressOf(field), refusal === null ? heldOf(field, answer) : null);
     } catch {
       hold(editedFieldAddressOf(field), null);
     }
