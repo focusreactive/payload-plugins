@@ -9,6 +9,7 @@ import type {
 import type { VeRichTextFormats } from "../../shared/richText/formats.js";
 import type { FieldTracker } from "../overlay/fieldTracker.js";
 import type { Point, TextPosition } from "./caret.js";
+import type { EditRoutes } from "./editRoutes.js";
 import type { PageFields } from "./pageFields.js";
 import type { EditSession, RichTextEditor, RichTextEditorLoader } from "./richTextEditor.js";
 
@@ -38,8 +39,6 @@ import {
   editedFieldAddressOf,
   veDocumentOf,
 } from "../../shared/veDocument.js";
-import type { FindAdminWindow } from "../adminWindow.js";
-
 import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
 import { readMarkerFromAttrs } from "../overlay/markerExtractor.js";
 import { textPositionAtPoint } from "./caret.js";
@@ -73,9 +72,7 @@ export type RichTextEditingDeps = {
   isUnsaved(field: VeEditedField): boolean;
   flush(): void;
   endOtherEdits(): void;
-  findAdmin?: FindAdminWindow;
-  adminOf(field: VeEditedField): Window | null;
-  pinAdmin(field: VeEditedField): void;
+  routes: EditRoutes;
 };
 
 export interface RichTextEditing {
@@ -161,19 +158,18 @@ const clickWrapperInstead = (wrapper: HTMLElement, event: MouseEvent) => {
 };
 
 export function createRichTextEditing({
-  adminOf,
   dropUnsaved,
   endOtherEdits,
-  findAdmin = () => findAdminWindow(window),
   flush,
   getCtx,
   holdUnsaved,
   isUnsaved,
   pageFields,
-  pinAdmin,
+  routes,
   send,
   tracker,
 }: RichTextEditingDeps): RichTextEditing {
+  const { adminOf } = routes;
   const richTextLeaves = new Set<Text>();
   const held = new Map<string, Held>();
   const heldAt = new Map<string, number>();
@@ -240,7 +236,8 @@ export function createRichTextEditing({
   const freshlyHeld = (address: string): Held | null => {
     const at = heldAt.get(address);
     const isFresh =
-      findAdmin() !== null || (at !== undefined && Date.now() - at < RICH_TEXT_STATE_FRESH_MS);
+      routes.currentAdmin() !== null ||
+      (at !== undefined && Date.now() - at < RICH_TEXT_STATE_FRESH_MS);
     return isFresh ? (held.get(address) ?? null) : null;
   };
 
@@ -373,7 +370,7 @@ export function createRichTextEditing({
     endOtherEdits();
     commit();
     forget(editedFieldAddressOf(ready.field));
-    pinAdmin(ready.field);
+    routes.beginEdit(ready.field, isUnsaved);
 
     const shown = previous?.twin ?? wrapper;
     const { content, root: twin } = twinOf(wrapper, ready.state);
@@ -474,7 +471,7 @@ export function createRichTextEditing({
   const ask = (field: VeEditedField) => {
     askedAt.set(editedFieldAddressOf(field), Date.now());
     loadEditor();
-    const adminWindow = findAdmin();
+    const adminWindow = routes.currentAdmin();
     if (adminWindow) askAdmin(adminWindow, field);
     else void askEndpoint(field);
   };

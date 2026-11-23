@@ -19,7 +19,7 @@ import { readPostedEditorState } from "../../shared/richText/postedEditorState.j
 import { isSameValue } from "../../shared/sameValue.js";
 import { documentAddressOf, editedFieldAddressOf } from "../../shared/veDocument.js";
 
-import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
+import { adminOriginOf } from "../adminWindow.js";
 import { endpointAnswerOf } from "./endpointAnswer.js";
 
 export type EditStatus = "failed" | "saved" | "saving" | "unsaved";
@@ -36,7 +36,7 @@ export type OnDelivered = () => void;
 
 export type RetryRefused = () => void;
 
-export type FindAdminOf = (field: EditedField) => Window | null;
+export type AdminOf = (field: EditedField) => Window | null;
 
 export interface EditTransport {
   send(edit: VeEdit, onDelivered?: OnDelivered): void;
@@ -143,8 +143,8 @@ const postToEndpoint = async (win: Window, url: string, edit: VeEdit): Promise<E
 export function createEditTransport(
   getCtx: () => EditTransportCtx,
   onStatus: OnStatus,
-  win: Window = window,
-  findAdmin: FindAdminOf = () => findAdminWindow(win)
+  win: Window,
+  adminOf: AdminOf
 ): EditTransport {
   const waiting = new Map<string, WaitingEdit>();
   const failed = new Map<string, FailedEdit>();
@@ -261,7 +261,7 @@ export function createEditTransport(
   };
 
   const deliver = (edit: VeEdit) => {
-    const adminWindow = findAdmin(edit);
+    const adminWindow = adminOf(edit);
     if (!adminWindow) {
       saves = saveAfter(saves, edit);
       return;
@@ -282,10 +282,10 @@ export function createEditTransport(
   };
 
   const pauseBeforeSending = (edit: VeEdit): number =>
-    findAdmin(edit) ? EDIT_SEND_PAUSE_MS : EDIT_SAVE_PAUSE_MS;
+    adminOf(edit) ? EDIT_SEND_PAUSE_MS : EDIT_SAVE_PAUSE_MS;
 
   const isSavedWhenTheEditEnds = (edit: VeEdit): boolean =>
-    !findAdmin(edit) && savedWhenEditsEnd.has(documentAddressOf(edit));
+    !adminOf(edit) && savedWhenEditsEnd.has(documentAddressOf(edit));
 
   const isIdle = (): boolean =>
     waiting.size === 0 && savesOnTheWay.size === 0 && unsavedInForm.size === 0;

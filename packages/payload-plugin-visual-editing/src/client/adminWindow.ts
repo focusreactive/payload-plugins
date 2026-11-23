@@ -6,6 +6,4 @@ export function findAdminWindow(win: Window): Window | null {
   return opener && !opener.closed ? opener : null;
 }
 
-export type FindAdminWindow = () => Window | null;
-
 export const isFramedByAdmin = (win: Window): boolean => win.parent !== win;

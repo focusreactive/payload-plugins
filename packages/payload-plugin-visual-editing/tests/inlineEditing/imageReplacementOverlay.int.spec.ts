@@ -20,6 +20,7 @@ import {
   DATA_VE_VALUE_ID_ATTR,
   VE_DOCUMENT_SAVED_TYPE,
   VE_FIELD_EDIT_REFUSED_TYPE,
+  VE_FIELD_EDIT_TYPE,
   VE_FIELD_SNAPSHOT_TYPE,
   VE_MEDIA_PICK_CANCELLED_TYPE,
   VE_MEDIA_PICKED_TYPE,
@@ -608,6 +609,39 @@ describe("replacing an image on the page", () => {
 
       expect(messagesOfType(postToAdmin, VE_PICK_MEDIA_TYPE)).toHaveLength(1);
       expect(messagesOfType(postToAdmin, VE_MESSAGE_TYPE)).toHaveLength(1);
+    });
+  });
+
+  describe("in a window the admin opened before it was told of a form", () => {
+    const postToOpener = vi.fn();
+
+    beforeEach(() => {
+      postToOpener.mockClear();
+      stubOpenerWindow({ closed: false, postMessage: postToOpener });
+      start();
+    });
+
+    it("saves the picked image again through the endpoint on Retry once the admin told of a form", async () => {
+      isSaved = false;
+      await useLighthouse();
+      expect(statusLabel()).toBe("Not saved");
+      isSaved = true;
+      postFromAdmin(
+        {
+          ...PAGE,
+          fields: [{ key: "title", saved: "Hello", value: "Hello" }],
+          locale: "en",
+          type: VE_FIELD_SNAPSHOT_TYPE,
+        },
+        { source: window.opener }
+      );
+
+      retry();
+      await flushMutations();
+
+      expect(messagesOfType(postToOpener, VE_FIELD_EDIT_TYPE)).toEqual([]);
+      expect(requestsTo("/visual-editing/field-edit")).toHaveLength(2);
+      expect(statusLabel()).toBe("Saved");
     });
   });
 

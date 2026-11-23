@@ -8,6 +8,7 @@ import type {
 import type { BadgeAction } from "../overlay/editBadge.js";
 import type { FieldTracker } from "../overlay/fieldTracker.js";
 import type { SaveRefusal } from "../../shared/fieldEdit.js";
+import type { EditRoutes, IsUnsaved } from "./editRoutes.js";
 import type { OnSaveEnded, RetryRefused } from "./editTransport.js";
 import type { PageFields } from "./pageFields.js";
 
@@ -24,9 +25,8 @@ import {
   VE_PICK_MEDIA_TYPE,
 } from "../../shared/protocol.js";
 import { editedFieldAddressOf } from "../../shared/veDocument.js";
-import type { FindAdminWindow } from "../adminWindow.js";
 
-import { adminOriginOf, findAdminWindow, isFramedByAdmin } from "../adminWindow.js";
+import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
 import { readMarkerFromAttrs } from "../overlay/markerExtractor.js";
 import { createMediaLibrary } from "./mediaLibrary.js";
 import { createMediaPicker } from "./mediaPicker.js";
@@ -47,8 +47,9 @@ export type ImageReplacementOptions = {
   isInsideRichText: (target: Element) => boolean;
   save: (edit: VeFieldEdit, onSaveEnded: OnSaveEnded) => void;
   holdInForm: (field: VeEditedField) => void;
+  isUnsaved: IsUnsaved;
   refuseAsked: (field: VeEditedField, refusal: SaveRefusal, askAgain: RetryRefused) => void;
-  findAdmin?: FindAdminWindow;
+  routes: EditRoutes;
 };
 
 export interface ImageReplacement {
@@ -82,12 +83,13 @@ const onlyImageOf = (target: HTMLElement): HTMLImageElement | null => {
 };
 
 export function createImageReplacement({
-  findAdmin = () => findAdminWindow(window),
   getCtx,
   holdInForm,
   isInsideRichText,
+  isUnsaved,
   pageFields,
   refuseAsked,
+  routes,
   save,
   tracker,
 }: ImageReplacementOptions): ImageReplacement {
@@ -177,15 +179,16 @@ export function createImageReplacement({
     openField: () => void,
     media: VeMediaOption
   ) => {
-    const adminWindow = findAdmin();
+    const adminWindow = routes.adminOf(replaceable.field);
     if (adminWindow) askAdmin(adminWindow, replaceable, openField, media);
     else saveThroughEndpoint(replaceable, media);
   };
 
   const replace = (replaceable: ReplaceableImage, openField: () => void) => {
-    const adminWindow = findAdmin();
-    if (adminWindow && isFramedByAdmin(window)) {
-      askAdmin(adminWindow, replaceable, openField);
+    routes.beginEdit(replaceable.field, isUnsaved);
+    const drawerWindow = routes.drawerOf(replaceable.field);
+    if (drawerWindow) {
+      askAdmin(drawerWindow, replaceable, openField);
       return;
     }
     picker.open(replaceable.field, (media) => takeChosen(replaceable, openField, media), openField);

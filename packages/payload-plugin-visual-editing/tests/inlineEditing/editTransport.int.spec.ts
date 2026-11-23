@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { EditTransport } from "../../src/client/inlineEditing/editTransport";
 
+import { createEditRoutes } from "../../src/client/inlineEditing/editRoutes";
 import {
   createEditTransport,
   EDIT_SAVE_PAUSE_MS,
@@ -25,6 +26,11 @@ const STATE = editorState(paragraph(textNode("Hello")));
 const CHANGED_STATE = editorState(paragraph(textNode("Hello world")));
 
 const onEdited = vi.fn();
+
+const routesOfThePage = createEditRoutes({
+  holdsAnyForm: () => false,
+  win: window,
+});
 
 const ctx = { adminOrigin: ADMIN_ORIGIN, onEdited, payloadApi: PAYLOAD_API };
 
@@ -52,7 +58,9 @@ describe("the transport of an edit", () => {
       (status, refusal) => {
         statuses.push(status);
         refusals.push(refusal);
-      }
+      },
+      window,
+      routesOfThePage.adminOf
     );
   };
 

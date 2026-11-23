@@ -12,10 +12,10 @@ import { readEditedField, readSaveRefusal } from "../../shared/fieldEdit.js";
 import { isMessageFrom } from "../../shared/messageSource.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import { VE_FIELD_EDIT_REFUSED_TYPE } from "../../shared/protocol.js";
-import { editedFieldAddressOf } from "../../shared/veDocument.js";
-import { adminOriginOf, findAdminWindow, isFramedByAdmin } from "../adminWindow.js";
+import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
 import { listenToSaves } from "../saveEvents.js";
 import { CLICK_LEFT_TO_THE_PAGE } from "../overlay/editTargets.js";
+import { createEditRoutes } from "./editRoutes.js";
 import { createEditTransport } from "./editTransport.js";
 import { createImageReplacement } from "./imageReplacement.js";
 import { createPageFields, isPageField } from "./pageFields.js";
@@ -64,32 +64,16 @@ export function createInlineEditing(
     saveStatus?.show(status, refusal);
   };
 
-  const findAdmin = (): Window | null => {
-    const adminWindow = findAdminWindow(window);
-    if (!adminWindow) return null;
-    const isTold = isFramedByAdmin(window) || (openForms?.holdsAnyForm() ?? false);
-    return isTold ? adminWindow : null;
-  };
+  const routes = createEditRoutes({
+    holdsAnyForm: () => openForms?.holdsAnyForm() ?? false,
+    win: window,
+  });
 
-  const pinnedAdmins = new Map<string, { field: VeEditedField; admin: Window | null }>();
+  const transport = createEditTransport(getCtx, showStatus, window, routes.adminOf);
 
-  const adminOf = (field: VeEditedField): Window | null => {
-    const pinned = pinnedAdmins.get(editedFieldAddressOf(field));
-    if (!pinned) return findAdmin();
-    return pinned.admin && pinned.admin === findAdmin() ? pinned.admin : null;
-  };
-
-  const transport = createEditTransport(getCtx, showStatus, window, adminOf);
-
-  const pinAdmin = (field: VeEditedField) => {
-    for (const [address, pinned] of pinnedAdmins) {
-      if (!transport.isUnsaved(pinned.field)) pinnedAdmins.delete(address);
-    }
-    pinnedAdmins.set(editedFieldAddressOf(field), { admin: findAdmin(), field });
-  };
   const pageFields = createPageFields({
     getLocale: () => getCtx().locale,
-    isNextToAdmin: () => findAdmin() !== null,
+    isNextToAdmin: () => routes.currentAdmin() !== null,
     openForms,
   });
 
@@ -119,26 +103,25 @@ export function createInlineEditing(
   const textEditing = createTextEditing({ dropWaiting, flush: transport.flush, send, tracker });
 
   const richTextEditing = createRichTextEditing({
-    adminOf,
     dropUnsaved: transport.drop,
     endOtherEdits: () => textEditing.commit(),
-    findAdmin,
     flush: transport.flush,
     getCtx,
     holdUnsaved: transport.hold,
     isUnsaved: transport.isUnsaved,
     pageFields,
-    pinAdmin,
+    routes,
     send: transport.send,
     tracker,
   });
   const imageReplacement = createImageReplacement({
-    findAdmin,
     getCtx,
     isInsideRichText: richTextEditing.isInsideRichText,
     holdInForm: transport.holdInForm,
+    isUnsaved: transport.isUnsaved,
     pageFields,
     refuseAsked: transport.refuseAsked,
+    routes,
     save: transport.sendNow,
     tracker,
   });
@@ -198,7 +181,7 @@ export function createInlineEditing(
 
   const editTextInPlace = (match: FieldMatch, field: VeEditedField, event: MouseEvent): boolean => {
     richTextEditing.commit();
-    pinAdmin(field);
+    routes.beginEdit(field, transport.isUnsaved);
     return textEditing.begin(match, { x: event.clientX, y: event.clientY });
   };
 
