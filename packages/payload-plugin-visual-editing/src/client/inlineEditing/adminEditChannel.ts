@@ -67,6 +67,7 @@ export interface AdminEditChannel {
 
 type Answering<Answer> = {
   timeLimitMs: number;
+  takesLateAnswers: boolean;
   answerType: string;
   refusalType: string;
   cancelType?: string;
@@ -91,6 +92,7 @@ const MEDIA_PICK: Answering<VeShownMedia> = {
   cancelType: VE_MEDIA_PICK_CANCELLED_TYPE,
   read: shownMediaOf,
   refusalType: VE_FIELD_EDIT_REFUSED_TYPE,
+  takesLateAnswers: true,
   timeLimitMs: MEDIA_PICK_TIME_LIMIT_MS,
 };
 
@@ -104,6 +106,7 @@ const RICH_TEXT_STATE: Answering<AnsweredRichText> = {
   answerType: VE_RICH_TEXT_STATE_TYPE,
   read: readAnsweredRichText,
   refusalType: VE_RICH_TEXT_STATE_REFUSED_TYPE,
+  takesLateAnswers: false,
   timeLimitMs: RICH_TEXT_STATE_TIME_LIMIT_MS,
 };
 
@@ -132,10 +135,12 @@ function createRequests<Request extends VeEditedField, Answer>(
 
   const take = (message: PlainObject): AdminAnswers<Answer> | null => {
     const field = readEditedField(message);
-    const open = field && asked.get(editedFieldAddressOf(field));
-    if (!field || !open) return null;
-    asked.delete(editedFieldAddressOf(field));
-    return open.answers;
+    const address = field && editedFieldAddressOf(field);
+    const open = address && asked.get(address);
+    if (!address || !open) return null;
+    const isInTime = answering.takesLateAnswers || isStillAsked(address);
+    asked.delete(address);
+    return isInTime ? open.answers : null;
   };
 
   return {

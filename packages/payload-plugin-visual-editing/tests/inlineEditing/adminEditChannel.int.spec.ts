@@ -198,6 +198,28 @@ describe("the channel of the page to the admin for edits", () => {
     expect(channel.richTextStates.isAsked(BODY)).toBe(false);
   });
 
+  it("takes no state that arrives after its time limit, as the page opened the field instead", () => {
+    const answers = answersOf();
+    channel.richTextStates.ask(adminWindow(), STATE_REQUEST, answers);
+    vi.advanceTimersByTime(RICH_TEXT_STATE_TIME_LIMIT_MS);
+
+    postFromAdmin({ ...BODY, formats: FORMATS, state: STATE, type: VE_RICH_TEXT_STATE_TYPE });
+    postFromAdmin({ ...BODY, type: VE_RICH_TEXT_STATE_REFUSED_TYPE });
+
+    expect(answers.answered).not.toHaveBeenCalled();
+    expect(answers.refused).not.toHaveBeenCalled();
+  });
+
+  it("takes a pick that arrives after its time limit, as the drawer of the admin stays open", () => {
+    const answers = answersOf();
+    channel.mediaPicks.ask(adminWindow(), PICK, answers);
+    vi.advanceTimersByTime(MEDIA_PICK_TIME_LIMIT_MS);
+
+    postFromAdmin({ ...IMAGE, type: VE_MEDIA_PICKED_TYPE, url: "/lighthouse.jpg" });
+
+    expect(answers.answered).toHaveBeenCalledWith({ url: "/lighthouse.jpg" });
+  });
+
   it("asks another admin window or one whose admin was closed again", () => {
     const other = { closed: false, postMessage: vi.fn() };
     channel.mediaPicks.ask(adminWindow(), PICK, answersOf());
