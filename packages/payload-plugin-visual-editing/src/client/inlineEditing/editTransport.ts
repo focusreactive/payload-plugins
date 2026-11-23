@@ -14,7 +14,6 @@ import {
   readSaveRefusal,
   SAVE_FAILED,
 } from "../../shared/fieldEdit.js";
-import { topLevelNameOf } from "../../shared/fieldKey.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import {
   VE_FIELD_EDIT_PATH,
@@ -23,11 +22,7 @@ import {
 } from "../../shared/protocol.js";
 import { readPostedEditorState } from "../../shared/richText/postedEditorState.js";
 import { isSameValue } from "../../shared/sameValue.js";
-import {
-  documentAddressOf,
-  editedFieldAddressOf,
-  fieldAddressOf,
-} from "../../shared/veDocument.js";
+import { documentAddressOf, editedFieldAddressOf } from "../../shared/veDocument.js";
 
 import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
 
@@ -91,14 +86,6 @@ const nextPageLeave = (): PageLeave => {
     leave = resolve;
   });
   return { leave: () => leave?.(), left };
-};
-
-const topLevelFieldAddressOf = (edit: VeEdit): string =>
-  fieldAddressOf(edit, topLevelNameOf(edit.key));
-
-const oneAfterTheOther = async (first: Promise<void>, second: Promise<void>) => {
-  await first;
-  await second;
 };
 
 const isSavedWith = (edit: EditedField, saved: VeLiveDocument): boolean =>
@@ -178,7 +165,6 @@ export function createEditTransport(
   const latestQueued = new Map<string, VeEdit>();
   const savedWhenEditsEnd = new Set<string>();
   let saves: Promise<void> = Promise.resolve();
-  const savesOfTopLevelFields = new Map<string, Promise<void>>();
   let pageLeave = nextPageLeave();
   let isDisposed = false;
 
@@ -270,40 +256,21 @@ export function createEditTransport(
     if (isSaved) getCtx().onEdited?.();
   };
 
-  const saveAfter = async (
-    earlierSaves: Promise<void>,
-    earlierSavesOfTheTopLevelField: Promise<void>,
-    edit: VeEdit
-  ) => {
+  const saveAfter = async (earlierSaves: Promise<void>, edit: VeEdit) => {
     const address = editedFieldAddressOf(edit);
     latestQueued.set(address, edit);
     countSaveOnTheWay(address, 1);
-    await Promise.race([
-      earlierSaves,
-      oneAfterTheOther(pageLeave.left, earlierSavesOfTheTopLevelField),
-    ]);
+    await Promise.race([earlierSaves, pageLeave.left]);
     countSaveOnTheWay(address, -1);
     if (latestQueued.get(address) !== edit) return;
     latestQueued.delete(address);
     await saveThroughEndpoint(edit);
   };
 
-  const saveInTurn = async (edit: VeEdit) => {
-    const topLevelField = topLevelFieldAddressOf(edit);
-    const earlierSavesOfTheTopLevelField = savesOfTopLevelFields.get(topLevelField);
-    const save = saveAfter(saves, earlierSavesOfTheTopLevelField ?? Promise.resolve(), edit);
-    saves = save;
-    savesOfTopLevelFields.set(topLevelField, save);
-    await save;
-    if (savesOfTopLevelFields.get(topLevelField) === save) {
-      savesOfTopLevelFields.delete(topLevelField);
-    }
-  };
-
   const deliver = (edit: VeEdit) => {
     const adminWindow = findAdmin(edit);
     if (!adminWindow) {
-      void saveInTurn(edit);
+      saves = saveAfter(saves, edit);
       return;
     }
     savedEdits.delete(editedFieldAddressOf(edit));
