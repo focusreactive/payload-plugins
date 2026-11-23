@@ -5,8 +5,6 @@ import type {
   PayloadRequest,
 } from "payload";
 import { readForAudit } from "../core/failOpenInsert";
-import { stampOperationStart } from "../core/operationClock";
-import type { OpFlags } from "../core/requestState";
 import {
   getOpFlags,
   operationFlagsOf,
@@ -15,21 +13,26 @@ import {
   takeOpFlags,
   withOperationFlags,
 } from "../core/requestState";
+import { flagsOfSave } from "../core/saveFlags";
+import type { OpFlags, SaveArgs } from "../core/saveFlags";
 import { submittedSecretFields } from "../core/secretFields";
 import { openWrittenDocCapture, takeWrittenDoc } from "../db/writtenDocCapture";
 import { failOpen } from "../utils/failOpen";
 import { readsWithFallbackLocale } from "../utils/fallbackLocale";
-import { hasAutosave, hasDrafts, isAutosaveDraftTick } from "../utils/versions";
+import type { LocaleOfRequest } from "../utils/fallbackLocale";
+import { hasAutosave, hasDrafts } from "../utils/versions";
 
 type Doc = Record<string, unknown>;
 
-type OperationArgs = {
-  id?: unknown;
-  data?: unknown;
-  draft?: boolean;
-  autosave?: boolean;
-  select?: unknown;
-  publishSpecificLocale?: unknown;
+type OperationArgs = SaveArgs & { id?: unknown; publishSpecificLocale?: unknown };
+
+type SaveObservations = { liveDoc?: Doc; wasPublished?: boolean; writtenDocIds: Set<string> };
+
+export type FinishedCollectionSave = {
+  flags: OpFlags;
+  liveDoc?: Doc;
+  wasPublished?: boolean;
+  written?: Doc;
 };
 
 const TRACKING_FAILURE = "could not track the document operation";
@@ -71,6 +74,13 @@ export function trackCollectionOperations(collection: CollectionConfig, localize
   const isAuth = Boolean(collection.auth);
   const drafts = hasDrafts(collection.versions);
   const autosaveEnabled = hasAutosave(collection.versions);
+  const observationsOfSaves = new WeakMap<OpFlags, SaveObservations>();
+
+  const observationsOf = (flags: OpFlags): SaveObservations => {
+    const observations = observationsOfSaves.get(flags) ?? { writtenDocIds: new Set<string>() };
+    observationsOfSaves.set(flags, observations);
+    return observations;
+  };
 
   const secretFieldsOf = (data: unknown, draft: unknown): string[] => {
     if (!isAuth || !isObject(data)) return [];
@@ -90,7 +100,8 @@ export function trackCollectionOperations(collection: CollectionConfig, localize
     req,
   }: Parameters<CollectionBeforeOperationHook>[0]) => {
     const runtimeOperation: string = operation;
-    const { id, data, draft, autosave, select, publishSpecificLocale } = args as OperationArgs;
+    const operationArgs = args as OperationArgs;
+    const { id, data, draft, publishSpecificLocale } = operationArgs;
     const operationReq: PayloadRequest = args.req ?? req;
     const savedIn = {
       locale:
@@ -104,17 +115,7 @@ export function trackCollectionOperations(collection: CollectionConfig, localize
     }
     if (!TRACKED_OPERATIONS.has(runtimeOperation)) return undefined;
 
-    const flags: OpFlags = {
-      source: "operation",
-      draft: Boolean(draft),
-      restore: runtimeOperation === "restoreVersion",
-      autosave:
-        runtimeOperation !== "create" &&
-        isAutosaveDraftTick(autosaveEnabled, { autosave, draft, data }),
-      ...(select === undefined ? {} : { selected: true }),
-      savedIn,
-      startedAt: stampOperationStart(),
-    };
+    const flags = flagsOfSave(runtimeOperation, operationArgs, autosaveEnabled, savedIn);
 
     if (runtimeOperation === "create") {
       tagCreate(data, flags);
@@ -154,8 +155,9 @@ export function trackCollectionOperations(collection: CollectionConfig, localize
     if (!isPlainSave) return;
     const mainDoc = await readMainDoc(req, docId, "reading the published document failed");
     if (!mainDoc) return;
-    flags.liveDoc = mainDoc;
-    if (mainDoc._status === "published") flags.wasPublished = true;
+    const observations = observationsOf(flags);
+    observations.liveDoc = mainDoc;
+    if (mainDoc._status === "published") observations.wasPublished = true;
   };
 
   const rememberLiveDocBeforePublish = async (
@@ -165,7 +167,7 @@ export function trackCollectionOperations(collection: CollectionConfig, localize
   ) => {
     if (!startedByOperation(flags) || flags.restore) return;
     const mainDoc = await readMainDoc(req, docId, "reading the live document failed");
-    if (mainDoc) flags.liveDoc = mainDoc;
+    if (mainDoc) observationsOf(flags).liveDoc = mainDoc;
   };
 
   const moveRestoreFlagsToDocument = (req: PayloadRequest, id: string) => {
@@ -178,8 +180,12 @@ export function trackCollectionOperations(collection: CollectionConfig, localize
   const savesRestore = (req: PayloadRequest, id: string): boolean =>
     startedAfter(getOpFlags(req, slug, id), operationFlagsOf(req, slug));
 
-  const flagsOfSave = (req: PayloadRequest, id: string): OpFlags =>
-    (savesRestore(req, id) ? getOpFlags(req, slug, id) : operationFlagsOf(req, slug)) ?? {};
+  const flagsOfDocumentSave = (
+    req: PayloadRequest,
+    id: string,
+    flagsOfRestore: typeof getOpFlags
+  ): OpFlags =>
+    (savesRestore(req, id) ? flagsOfRestore(req, slug, id) : operationFlagsOf(req, slug)) ?? {};
 
   const captureWrittenDocOfSave = (
     req: PayloadRequest,
@@ -188,7 +194,7 @@ export function trackCollectionOperations(collection: CollectionConfig, localize
     docId: unknown
   ) => {
     if (!isTracked(flags)) return;
-    flags.writtenDocCaptures = new Set([...(flags.writtenDocCaptures ?? []), id]);
+    observationsOf(flags).writtenDocIds.add(id);
     openWrittenDocCapture(req, slug, docId);
   };
 
@@ -203,7 +209,7 @@ export function trackCollectionOperations(collection: CollectionConfig, localize
     if (req.context[PAYLOAD_RESTORING_VERSION_CONTEXT_KEY] === true) {
       moveRestoreFlagsToDocument(req, id);
     }
-    const flags = flagsOfSave(req, id);
+    const flags = flagsOfDocumentSave(req, id, getOpFlags);
 
     const mayUnpublishBehindNewerDraft =
       drafts && data?._status === "draft" && originalDoc._status !== "published";
@@ -229,18 +235,27 @@ export function trackCollectionOperations(collection: CollectionConfig, localize
     return args.data;
   };
 
-  const takeFlags = (
+  const finishSave = (
     req: PayloadRequest,
-    operation: "create" | "update",
-    id: string,
-    data: unknown
-  ): OpFlags => {
-    if (operation === "create") return createFlagsOf(data) ?? {};
-    return savesRestore(req, id) ? takeOpFlags(req, slug, id) : (operationFlagsOf(req, slug) ?? {});
+    { operation, docId, data }: { operation: "create" | "update"; docId: unknown; data: unknown }
+  ): FinishedCollectionSave => {
+    if (operation === "create") return { flags: createFlagsOf(data) ?? {} };
+    const id = String(docId);
+    const flags = flagsOfDocumentSave(req, id, takeOpFlags);
+    const observations = observationsOfSaves.get(flags);
+    const written = observations?.writtenDocIds.delete(id)
+      ? takeWrittenDoc(req, slug, docId)
+      : undefined;
+    return {
+      flags,
+      liveDoc: observations?.liveDoc,
+      wasPublished: observations?.wasPublished,
+      written,
+    };
   };
 
-  const takeWrittenDocOfSave = (req: PayloadRequest, flags: OpFlags, docId: unknown) =>
-    flags.writtenDocCaptures?.delete(String(docId)) ? takeWrittenDoc(req, slug, docId) : undefined;
+  const savedInOf = (req: PayloadRequest): LocaleOfRequest =>
+    operationFlagsOf(req, slug)?.savedIn ?? req;
 
-  return { beforeOperation, beforeChange, takeFlags, takeWrittenDocOfSave };
+  return { beforeOperation, beforeChange, finishSave, savedInOf };
 }

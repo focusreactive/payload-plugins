@@ -10,7 +10,6 @@ import { auditTarget, inLocale } from "../core/auditTarget";
 import { configuredLocalesOf, createChangeDiff } from "../core/changeDiff";
 import type { ChangeDiff } from "../core/changeDiff";
 import { classifyCollectionChange } from "../core/classify";
-import { operationFlagsOf } from "../core/requestState";
 import { usesApiKeys, withSecretFieldsFirst } from "../core/secretFields";
 import { withStoredLocalizedValues } from "../core/storedLocalizedValues";
 import type { OperationEventArgs } from "../core/writeEvent";
@@ -64,13 +63,10 @@ export function withCollectionAudit(
     return typeof title === "string" ? title : undefined;
   };
 
-  const localeOfOperation = (req: PayloadRequest): LocaleOfRequest =>
-    operationFlagsOf(req, slug)?.savedIn ?? req;
-
   const record = (
     req: PayloadRequest,
     args: OperationEventArgs,
-    savedIn: LocaleOfRequest = localeOfOperation(req)
+    savedIn: LocaleOfRequest = tracking.savedInOf(req)
   ) =>
     recordAuditEvent(req, opts, {
       ...args,
@@ -131,9 +127,11 @@ export function withCollectionAudit(
     collection: sanitizedCollection,
   }: Parameters<CollectionAfterChangeHook>[0]) => {
     const accessWasOverridden = overrideAccess === true;
-    const flags = tracking.takeFlags(req, operation, String(doc.id), data);
-    const written =
-      operation === "update" ? tracking.takeWrittenDocOfSave(req, flags, doc.id) : undefined;
+    const { flags, liveDoc, wasPublished, written } = tracking.finishSave(req, {
+      operation,
+      docId: doc.id,
+      data,
+    });
     if (flags.autosave) return;
     const savedIn = flags.savedIn ?? req;
     const diff = diffForSave({
@@ -149,7 +147,12 @@ export function withCollectionAudit(
       !flags.restore &&
       savedDoc._status === "published" &&
       previousDoc?._status !== "published";
-    const action = classifyCollectionChange({ operation, previousDoc, doc: savedDoc, flags });
+    const action = classifyCollectionChange({
+      operation,
+      previousDoc,
+      doc: savedDoc,
+      flags: { ...flags, wasPublished },
+    });
     const comparesWithLiveDoc = action === "doc.unpublish" || (autosave && publishes);
     const secretFields = operation === "update" ? (flags.secretFields ?? []) : [];
     const changes = withSecretFieldsFirst(
@@ -158,7 +161,7 @@ export function withCollectionAudit(
         ? diff.createdFields(doc)
         : changesOfUpdate(req, savedIn, diff, {
             previousDoc,
-            liveDocBeforeSave: comparesWithLiveDoc ? flags.liveDoc : undefined,
+            liveDocBeforeSave: comparesWithLiveDoc ? liveDoc : undefined,
             written,
             doc: docAsStored,
           }),

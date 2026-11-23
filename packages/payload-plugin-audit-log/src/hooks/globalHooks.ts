@@ -1,12 +1,4 @@
-import type {
-  Block,
-  GlobalAfterChangeHook,
-  GlobalBeforeChangeHook,
-  GlobalBeforeOperationHook,
-  GlobalConfig,
-  PayloadRequest,
-} from "payload";
-import { GLOBALS_NAMESPACE } from "../constants";
+import type { Block, GlobalAfterChangeHook, GlobalConfig, PayloadRequest } from "payload";
 import { auditTarget, inLocale } from "../core/auditTarget";
 import {
   configuredLocalesOf,
@@ -15,23 +7,17 @@ import {
 } from "../core/changeDiff";
 import type { ChangeDiff } from "../core/changeDiff";
 import { classifyGlobalChange } from "../core/classify";
-import {
-  closeMainGlobalCapture,
-  openMainGlobalCapture,
-  takeCapturedMainGlobal,
-} from "../db/mainGlobalCapture";
-import type { CapturedMainGlobal } from "../db/mainGlobalCapture";
-import { stampOperationStart } from "../core/operationClock";
-import { pushOpFlags, takeOpFlags } from "../core/requestState";
 import { withStoredLocalizedValues } from "../core/storedLocalizedValues";
 import { recordAuditEvent } from "../core/writeEvent";
+import type { CapturedMainGlobal } from "../db/mainGlobalCapture";
 import type { ResolvedOptions } from "../options";
 import { failOpen } from "../utils/failOpen";
 import { readsWithFallbackLocale } from "../utils/fallbackLocale";
 import type { LocaleOfRequest } from "../utils/fallbackLocale";
 import { localizedFieldPaths, readRestrictedFieldPaths, storedValuesOf } from "../utils/fields";
 import type { SanitizedFieldsShape } from "../utils/fields";
-import { hasAutosave, hasDrafts, isAutosaveDraftTick } from "../utils/versions";
+import { hasAutosave, hasDrafts } from "../utils/versions";
+import { trackGlobalOperations } from "./globalOperationTracking";
 
 type Doc = Record<string, unknown>;
 
@@ -49,6 +35,7 @@ export function withGlobalAudit(
   const localizedFields = localizedFieldPaths(global.fields, sharedBlocks);
   const localized = localizedFields.length > 0;
   const readRestrictedFields = readRestrictedFieldPaths(global.fields, sharedBlocks);
+  const tracking = trackGlobalOperations(global);
   const diffForSave = createChangeDiff({
     readRestrictedFields,
     localizedFields,
@@ -71,28 +58,6 @@ export function withGlobalAudit(
       doc,
       localesOf(req)
     );
-  };
-
-  const trackOperation = ({ args, operation, req }: Parameters<GlobalBeforeOperationHook>[0]) => {
-    if (operation !== "update" && operation !== "restoreVersion") return;
-    const capturesMainGlobal = operation === "update";
-    if (capturesMainGlobal) openMainGlobalCapture(req, slug);
-    const {
-      draft,
-      autosave: autosaveRequested,
-      data,
-      select,
-    } = (args ?? {}) as { draft?: boolean; autosave?: boolean; data?: unknown; select?: unknown };
-    pushOpFlags(req, GLOBALS_NAMESPACE, slug, {
-      source: "operation",
-      draft: Boolean(draft),
-      restore: operation === "restoreVersion",
-      autosave: isAutosaveDraftTick(autosave, { autosave: autosaveRequested, draft, data }),
-      ...(select === undefined ? {} : { selected: true }),
-      ...(capturesMainGlobal ? { capturesMainGlobal } : {}),
-      savedIn: { locale: req.locale, fallbackLocale: req.fallbackLocale },
-      startedAt: stampOperationStart(),
-    });
   };
 
   const storedBeforeSave = (mainGlobal: CapturedMainGlobal | undefined): Doc | null | undefined =>
@@ -131,8 +96,7 @@ export function withGlobalAudit(
     overrideAccess,
     global: sanitizedGlobal,
   }: Parameters<GlobalAfterChangeHook>[0]) => {
-    const flags = takeOpFlags(req, GLOBALS_NAMESPACE, slug);
-    const mainGlobal = flags.capturesMainGlobal ? takeCapturedMainGlobal(req, slug) : undefined;
+    const { flags, mainGlobal } = tracking.finishSave(req);
     if (flags.autosave) return;
     const savedIn = flags.savedIn ?? req;
     const previousDoc = previousDocAsStored(savedIn, previousDocAsRead, mainGlobal);
@@ -165,19 +129,6 @@ export function withGlobalAudit(
     });
   };
 
-  const beforeOperation: GlobalBeforeOperationHook = async (args) => {
-    await failOpen(args.req.payload, "could not track the global operation", () =>
-      trackOperation(args)
-    );
-  };
-
-  const beforeChange: GlobalBeforeChangeHook = async ({ data, req }) => {
-    await failOpen(req.payload, "could not track the global change", () =>
-      closeMainGlobalCapture(req, slug)
-    );
-    return data;
-  };
-
   const afterChange: GlobalAfterChangeHook = async (args) => {
     await failOpen(args.req.payload, "could not record the global change", () =>
       recordChange(args)
@@ -190,8 +141,8 @@ export function withGlobalAudit(
     ...global,
     hooks: {
       ...hooks,
-      beforeOperation: [...(hooks.beforeOperation ?? []), beforeOperation],
-      beforeChange: [...(hooks.beforeChange ?? []), beforeChange],
+      beforeOperation: [...(hooks.beforeOperation ?? []), tracking.beforeOperation],
+      beforeChange: [...(hooks.beforeChange ?? []), tracking.beforeChange],
       afterChange: [...(hooks.afterChange ?? []), afterChange],
     },
   };

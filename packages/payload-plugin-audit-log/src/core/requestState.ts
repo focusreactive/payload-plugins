@@ -1,25 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { isolateObjectProperty } from "payload";
 import { CTX_OP, CTX_REQUEST_ID } from "../constants";
-import type { LocaleOfRequest } from "../utils/fallbackLocale";
+import type { OpFlags } from "./saveFlags";
 
 type Context = Record<string, unknown>;
 type ReqWithContext = { context?: Context } | undefined | null;
-
-export type OpFlags = {
-  source?: "operation" | "bulk";
-  draft?: boolean;
-  restore?: boolean;
-  autosave?: boolean;
-  wasPublished?: boolean;
-  liveDoc?: Record<string, unknown>;
-  secretFields?: string[];
-  selected?: boolean;
-  writtenDocCaptures?: Set<string>;
-  capturesMainGlobal?: boolean;
-  savedIn?: LocaleOfRequest;
-  startedAt?: string;
-};
 
 type OpFlagStacks = Map<string, OpFlags[]>;
 
