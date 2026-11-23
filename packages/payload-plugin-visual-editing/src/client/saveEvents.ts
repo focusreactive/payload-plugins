@@ -1,14 +1,13 @@
+import type { PlainObject } from "../shared/plainObject.js";
 import type { VeLiveDocument } from "../shared/protocol.js";
 
-import { isMessageFrom } from "../shared/messageSource.js";
-import { isPlainObject } from "../shared/plainObject.js";
 import { VE_DOCUMENT_SAVED_TYPE } from "../shared/protocol.js";
 import { isVeDocument, veDocumentOf } from "../shared/veDocument.js";
-import { findAdminWindow } from "./adminWindow.js";
+import { hearTheAdmin } from "./adminWindow.js";
 
 export type SavedDocument = VeLiveDocument | null;
 
-const savedDocumentOf = (message: Record<string, unknown>): SavedDocument => {
+const savedDocumentOf = (message: PlainObject): SavedDocument => {
   if (!isVeDocument(message)) return null;
   const { locale } = message;
   return { ...veDocumentOf(message), ...(typeof locale === "string" && { locale }) };
@@ -19,12 +18,7 @@ export function listenToSaves(
   onSaved: (saved: SavedDocument) => void,
   win: Window = window
 ): () => void {
-  const handleAdminMessage = (event: MessageEvent) => {
-    if (!isMessageFrom(event, adminOrigin(), findAdminWindow(win))) return;
-    if (isPlainObject(event.data) && event.data.type === VE_DOCUMENT_SAVED_TYPE) {
-      onSaved(savedDocumentOf(event.data));
-    }
-  };
-  win.addEventListener("message", handleAdminMessage);
-  return () => win.removeEventListener("message", handleAdminMessage);
+  return hearTheAdmin(win, adminOrigin, (message) => {
+    if (message.type === VE_DOCUMENT_SAVED_TYPE) onSaved(savedDocumentOf(message));
+  });
 }

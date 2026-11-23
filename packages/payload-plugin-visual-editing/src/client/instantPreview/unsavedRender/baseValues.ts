@@ -1,14 +1,13 @@
 import type { LiveRichTextField, VeFieldPatchMessage } from "../../../shared/protocol.js";
 import type { ValueSource } from "./valueSource.js";
 
-import { isMessageFrom } from "../../../shared/messageSource.js";
 import { isPlainObject } from "../../../shared/plainObject.js";
 import { VE_DOCUMENT_SAVED_TYPE, VE_FIELD_PATCH_TYPE } from "../../../shared/protocol.js";
 import { rootOf } from "../../../shared/richText/editorNodes.js";
 import { fieldKeyOfRichTextNode } from "../../../shared/richText/nodeKey.js";
 import { hasReferences } from "../../../shared/richText/references.js";
 import { fieldAddressOf, isVeDocument, keyedFieldAddressOf } from "../../../shared/veDocument.js";
-import { adminOriginOf, findAdminWindow } from "../../adminWindow.js";
+import { hearTheAdmin } from "../../adminWindow.js";
 
 export type Base = { base: unknown };
 
@@ -98,16 +97,14 @@ export function createBaseValues(adminOrigin: () => string, source: ValueSource)
     }
   };
 
-  const handleAdminMessage = (event: MessageEvent) => {
-    if (!isMessageFrom(event, adminOriginOf(adminOrigin()), findAdminWindow(window))) return;
-    if (isPlainObject(event.data) && event.data.type === VE_DOCUMENT_SAVED_TYPE) {
+  const stop = hearTheAdmin(window, adminOrigin, (message) => {
+    if (message.type === VE_DOCUMENT_SAVED_TYPE) {
       forgetBases();
       return;
     }
-    const typed = patchMessageOf(event.data);
+    const typed = patchMessageOf(message);
     if (typed) askForTyped(typed);
-  };
-  window.addEventListener("message", handleAdminMessage);
+  });
 
   return {
     answerFor(field, locale) {
@@ -126,7 +123,7 @@ export function createBaseValues(adminOrigin: () => string, source: ValueSource)
       void askForSaved(entry, locale);
       return null;
     },
-    stop: () => window.removeEventListener("message", handleAdminMessage),
+    stop,
     watch(field, fieldHasReferences, onBase) {
       const address = keyedFieldAddressOf(field);
       const entry = fields.get(address) ?? {

@@ -5,6 +5,7 @@ import type {
   VeRichTextStateRequestMessage,
 } from "../../shared/protocol.js";
 import type { VeRichTextFormats } from "../../shared/richText/formats.js";
+import type { PlainObject } from "../../shared/plainObject.js";
 import type { FieldTracker } from "../overlay/fieldTracker.js";
 import type { Point, TextPosition } from "./caret.js";
 import type { FieldEdit } from "./editTransport.js";
@@ -12,7 +13,6 @@ import type { PageFields } from "./pageFields.js";
 import type { EditSession, RichTextEditor, RichTextEditorLoader } from "./richTextEditor.js";
 
 import { readEditedField, readRichTextEdit } from "../../shared/fieldEdit.js";
-import { isMessageFrom } from "../../shared/messageSource.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import {
   DATA_VE_LIVE_RICH_TEXT_ATTR,
@@ -36,7 +36,7 @@ import {
   editedFieldAddressOf,
   veDocumentOf,
 } from "../../shared/veDocument.js";
-import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
+import { adminOriginOf, hearTheAdmin } from "../adminWindow.js";
 import { readMarkerFromAttrs } from "../overlay/markerExtractor.js";
 import { textPositionAtPoint } from "./caret.js";
 import { endpointAnswerOf } from "./endpointAnswer.js";
@@ -478,11 +478,7 @@ export function createRichTextEditing({
     }
   };
 
-  const hearAdmin = (event: MessageEvent) => {
-    const { adminOrigin } = getCtx();
-    if (!isMessageFrom(event, adminOriginOf(adminOrigin), findAdminWindow(window))) return;
-    const { data } = event;
-    if (!isPlainObject(data)) return;
+  const hearAdmin = (data: PlainObject) => {
     const field = readEditedField(data);
     if (data.type === VE_RICH_TEXT_STATE_TYPE && field) {
       hold(editedFieldAddressOf(field), readRichTextEdit(data) && heldOf(field, data));
@@ -550,7 +546,7 @@ export function createRichTextEditing({
 
   for (const name of POINTER_EVENTS) document.addEventListener(name, askForRichTextUnderThePointer);
   document.addEventListener("click", editClickedTwinAgain);
-  window.addEventListener("message", hearAdmin);
+  const stopHearing = hearTheAdmin(window, () => getCtx().adminOrigin, hearAdmin);
 
   return {
     commit,
@@ -566,7 +562,7 @@ export function createRichTextEditing({
         document.removeEventListener(name, askForRichTextUnderThePointer);
       }
       document.removeEventListener("click", editClickedTwinAgain);
-      window.removeEventListener("message", hearAdmin);
+      stopHearing();
       stopTracking();
     },
     editInPlace(target, event, openField) {

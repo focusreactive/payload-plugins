@@ -21,7 +21,6 @@ import {
   SAVE_FAILED,
 } from "../../shared/fieldEdit.js";
 import { readPickedMedia } from "../../shared/mediaOption.js";
-import { isMessageFrom } from "../../shared/messageSource.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import {
   VE_FIELD_EDIT_PATH,
@@ -37,7 +36,7 @@ import { readPostedEditorState } from "../../shared/richText/postedEditorState.j
 import { isSameValue } from "../../shared/sameValue.js";
 import { documentAddressOf, editedFieldAddressOf } from "../../shared/veDocument.js";
 
-import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
+import { adminOriginOf, hearTheAdmin } from "../adminWindow.js";
 import { listenToSaves } from "../saveEvents.js";
 import { endpointAnswerOf } from "./endpointAnswer.js";
 
@@ -522,19 +521,18 @@ export function createEditTransport(
     if (refused) refuse(refused, readSaveRefusal(data));
   };
 
-  const hearAdmin = (event: MessageEvent) => {
-    const { adminOrigin } = getCtx();
-    if (!isMessageFrom(event, adminOriginOf(adminOrigin), findAdminWindow(win))) return;
-    const { data } = event;
-    if (!isPlainObject(data)) return;
-    if (data.type === VE_MEDIA_PICKED_TYPE) showPickedMedia(data);
-    if (data.type === VE_FIELD_EDIT_REFUSED_TYPE) {
-      refusePick(data);
-      refuseFormEdit(data);
+  const stopHearing = hearTheAdmin(
+    win,
+    () => getCtx().adminOrigin,
+    (data) => {
+      if (data.type === VE_MEDIA_PICKED_TYPE) showPickedMedia(data);
+      if (data.type === VE_FIELD_EDIT_REFUSED_TYPE) {
+        refusePick(data);
+        refuseFormEdit(data);
+      }
+      if (data.type === VE_MEDIA_PICK_CANCELLED_TYPE) takeAsked(readEditedField(data));
     }
-    if (data.type === VE_MEDIA_PICK_CANCELLED_TYPE) takeAsked(readEditedField(data));
-  };
-  win.addEventListener("message", hearAdmin);
+  );
 
   const stopListeningToSaves = listenToSaves(() => getCtx().adminOrigin, settle, win);
 
@@ -604,7 +602,7 @@ export function createEditTransport(
     dispose() {
       flush();
       isDisposed = true;
-      win.removeEventListener("message", hearAdmin);
+      stopHearing();
       stopListeningToSaves();
     },
     leavePage() {
