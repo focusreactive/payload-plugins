@@ -1,9 +1,10 @@
 import { TRUNCATED_MARKER } from "../constants";
 import type { FieldPathPattern, StoredValuesOf } from "../utils/fields";
+import { isRecord } from "../utils/isRecord";
 import { localeOfSave } from "../utils/locales";
 import type { LocaleOfRequest } from "../utils/locales";
 import { createdPaths, diffPaths, isLexicalRichText } from "./diffPaths";
-import { isRowOf, matchingRowOf } from "./rows";
+import { mapAtPaths, matchingRowOf, valueAt } from "./fieldPaths";
 import { withStoredLocalizedValues } from "./storedLocalizedValues";
 
 type Doc = Record<string, unknown>;
@@ -29,94 +30,21 @@ const withinLimit = (paths: readonly string[], maxChangedPaths: number): string[
   return truncated ? [...unique.slice(0, maxChangedPaths), TRUNCATED_MARKER] : unique;
 };
 
-const isRecord = (value: unknown): value is Doc =>
-  typeof value === "object" && value !== null && !Array.isArray(value) && !(value instanceof Date);
-
-function withoutFieldMissingFromAfter(
-  before: unknown,
-  after: unknown,
-  pattern: FieldPathPattern
-): unknown {
-  const [segment, ...rest] = pattern;
-  if (segment === undefined) return before;
-  if (typeof segment !== "string") {
-    if (!Array.isArray(before)) return before;
-    const afterRows = Array.isArray(after) ? after : [];
-    const rows = before.map((row, index) =>
-      isRowOf(segment, row)
-        ? withoutFieldMissingFromAfter(row, matchingRowOf(row, index, afterRows), rest)
-        : row
-    );
-    return rows.every((row, index) => row === before[index]) ? before : rows;
-  }
-  if (!(isRecord(before) && segment in before)) return before;
-  const afterValue = isRecord(after) ? after[segment] : undefined;
-  if (rest.length === 0) {
-    if (afterValue !== undefined) return before;
-    return Object.fromEntries(Object.entries(before).filter(([key]) => key !== segment));
-  }
-  const stripped = withoutFieldMissingFromAfter(before[segment], afterValue, rest);
-  return stripped === before[segment] ? before : { ...before, [segment]: stripped };
-}
-
 const withoutFieldsMissingFromAfter = (
   before: Doc | undefined,
   after: Doc,
   patterns: readonly FieldPathPattern[]
 ): Doc | undefined =>
-  patterns.reduce<Doc | undefined>(
-    (readable, pattern) =>
-      withoutFieldMissingFromAfter(readable, after, pattern) as Doc | undefined,
-    before
+  mapAtPaths(before, [after], patterns, (parent, key, [afterParent]) =>
+    key in parent && valueAt(afterParent, key) === undefined
+      ? Object.fromEntries(Object.entries(parent).filter(([field]) => field !== key))
+      : parent
   );
 
 type ComparedValueOf = (before: Doc, after: Doc, saved: Doc, key: string) => unknown;
 
 const restrictedValueToCompare: ComparedValueOf = (before, after, saved, key) =>
   after[key] === undefined && key in before && saved[key] !== undefined ? saved[key] : after[key];
-
-function withSavedValueAt(
-  before: unknown,
-  after: unknown,
-  saved: unknown,
-  pattern: FieldPathPattern,
-  comparedValueOf: ComparedValueOf
-): unknown {
-  const [segment, ...rest] = pattern;
-  if (segment === undefined) return after;
-  if (typeof segment !== "string") {
-    if (!Array.isArray(after)) return after;
-    const beforeRows = Array.isArray(before) ? before : [];
-    const savedRows = Array.isArray(saved) ? saved : [];
-    const rows = after.map((row, index) =>
-      isRowOf(segment, row)
-        ? withSavedValueAt(
-            matchingRowOf(row, index, beforeRows),
-            row,
-            matchingRowOf(row, index, savedRows),
-            rest,
-            comparedValueOf
-          )
-        : row
-    );
-    return rows.every((row, index) => row === after[index]) ? after : rows;
-  }
-  if (!isRecord(after)) return after;
-  const comparedBefore = isRecord(before) ? before : {};
-  const comparedSaved = isRecord(saved) ? saved : {};
-  if (rest.length === 0) {
-    const compared = comparedValueOf(comparedBefore, after, comparedSaved, segment);
-    return Object.is(compared, after[segment]) ? after : { ...after, [segment]: compared };
-  }
-  const withSaved = withSavedValueAt(
-    comparedBefore[segment],
-    after[segment],
-    comparedSaved[segment],
-    rest,
-    comparedValueOf
-  );
-  return withSaved === after[segment] ? after : { ...after, [segment]: withSaved };
-}
 
 const storedValueMissingFromDoc: ComparedValueOf = (_before, doc, stored, key) =>
   doc[key] === undefined && stored[key] !== undefined ? stored[key] : doc[key];
@@ -128,11 +56,15 @@ const withSavedValuesAt = (
   patterns: readonly FieldPathPattern[],
   comparedValueOf: ComparedValueOf
 ): Doc =>
-  patterns.reduce<Doc>(
-    (comparable, pattern) =>
-      withSavedValueAt(before, comparable, saved, pattern, comparedValueOf) as Doc,
-    after
-  );
+  mapAtPaths(after, [before, saved], patterns, (parent, key, [beforeParent, savedParent]) => {
+    const compared = comparedValueOf(
+      isRecord(beforeParent) ? beforeParent : {},
+      parent,
+      isRecord(savedParent) ? savedParent : {},
+      key
+    );
+    return Object.is(compared, parent[key]) ? parent : { ...parent, [key]: compared };
+  });
 
 export const withStoredValuesOfFieldsMissingFrom = (
   doc: Doc,

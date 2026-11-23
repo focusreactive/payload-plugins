@@ -75,7 +75,7 @@ type Doc = Record<string, unknown>;
 
 export type StoredValuesOf = (doc: Doc) => Doc;
 
-const isRecord = (value: unknown): value is Doc =>
+const isNonArrayObject = (value: unknown): value is Doc =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 const hasNamedSubfields = (field: FlattenedFieldShape): boolean =>
@@ -95,7 +95,7 @@ function withStoredValues(
       .filter(([key]) => isStored(key))
       .map(([key, value]) => {
         const field = fieldsByName.get(key);
-        if (!(field?.flattenedFields && hasNamedSubfields(field) && isRecord(value))) {
+        if (!(field?.flattenedFields && hasNamedSubfields(field) && isNonArrayObject(value))) {
           return [key, value];
         }
         const subfields = fieldsByNameOf(field.flattenedFields);
