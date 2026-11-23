@@ -91,6 +91,34 @@ describe("the channel of the page to the admin for edits", () => {
     expect(admin.postMessage).toHaveBeenCalledWith(edit, ADMIN_ORIGIN);
   });
 
+  it("tells and hears the admin on the origin of the page it runs in when no admin origin is given", () => {
+    const pageOrigin = "https://site.example.com";
+    const pageEvents = new EventTarget();
+    const otherAdmin = { closed: false, postMessage: vi.fn() };
+    const page = {
+      addEventListener: pageEvents.addEventListener.bind(pageEvents),
+      location: { origin: pageOrigin },
+      parent: otherAdmin,
+      removeEventListener: pageEvents.removeEventListener.bind(pageEvents),
+    } as unknown as Window;
+    const edit: VeFieldEditMessage = { ...IMAGE, type: VE_FIELD_EDIT_TYPE, value: "Hello" };
+    const refused = vi.fn();
+    const pageChannel = createAdminEditChannel(page, () => "");
+    pageChannel.onRefusedEdit(refused);
+    const refusal = new MessageEvent("message", {
+      data: { ...IMAGE, type: VE_FIELD_EDIT_REFUSED_TYPE },
+      origin: pageOrigin,
+    });
+    Object.defineProperty(refusal, "source", { value: otherAdmin });
+
+    pageChannel.tell(otherAdmin as unknown as Window, edit);
+    pageEvents.dispatchEvent(refusal);
+    pageChannel.dispose();
+
+    expect(otherAdmin.postMessage).toHaveBeenCalledWith(edit, pageOrigin);
+    expect(refused).toHaveBeenCalledWith(IMAGE, "failed");
+  });
+
   it("answers a pick of the field it was asked for, once", () => {
     const answers = answersOf();
     channel.mediaPicks.ask(adminWindow(), PICK, answers);

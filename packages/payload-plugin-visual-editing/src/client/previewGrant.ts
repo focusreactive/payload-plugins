@@ -20,7 +20,7 @@ export function listenToPreviewGrants(
       pageId: pageLoadIdOf(window),
       type: VE_PREVIEW_GRANT_REQUEST_TYPE,
     };
-    findAdminWindow(window)?.postMessage(request, adminOriginOf(adminOrigin()));
+    findAdminWindow(window)?.postMessage(request, adminOriginOf(adminOrigin(), window));
   };
 
   const stop = hearTheAdmin(window, adminOrigin, (message) => {

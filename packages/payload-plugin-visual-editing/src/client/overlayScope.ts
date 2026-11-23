@@ -38,6 +38,6 @@ export const startLiveRichText = <Node>(
 ): LiveRichText<Node> =>
   createLiveRichText({
     ...options,
-    adminPage: () => ({ adminOrigin: adminOriginOf(adminOrigin()), locale: scope?.locale }),
+    adminPage: () => ({ adminOrigin: adminOriginOf(adminOrigin(), window), locale: scope?.locale }),
     savedShapes: scope?.savedShapes ?? null,
   });

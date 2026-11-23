@@ -169,7 +169,7 @@ export function createAdminEditChannel(win: Window, adminOrigin: () => string): 
   const newsListeners = new Set<(news: DocumentNews) => void>();
 
   const tell = (adminWindow: Window, message: unknown) => {
-    adminWindow.postMessage(message, adminOriginOf(adminOrigin()));
+    adminWindow.postMessage(message, adminOriginOf(adminOrigin(), win));
   };
 
   const mediaPicks = createRequests<VePickMediaMessage, VeShownMedia>(MEDIA_PICK, tell);

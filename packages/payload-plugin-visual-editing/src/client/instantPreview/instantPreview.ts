@@ -32,7 +32,7 @@ export function createInstantPreview(
   );
   const adminPage = () => {
     const { adminOrigin, locale } = getCtx();
-    return { adminOrigin: adminOriginOf(adminOrigin), locale };
+    return { adminOrigin: adminOriginOf(adminOrigin, window), locale };
   };
 
   let isAnnouncementQueued = false;

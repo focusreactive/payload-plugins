@@ -3,7 +3,8 @@ import type { PlainObject } from "../shared/plainObject.js";
 import { isMessageFrom } from "../shared/messageSource.js";
 import { isPlainObject } from "../shared/plainObject.js";
 
-export const adminOriginOf = (adminOrigin: string): string => adminOrigin || window.location.origin;
+export const adminOriginOf = (adminOrigin: string, win: Window): string =>
+  adminOrigin || win.location.origin;
 
 export function findAdminWindow(win: Window): Window | null {
   if (win.parent && win.parent !== win) return win.parent;
@@ -19,7 +20,7 @@ export function hearTheAdmin(
   onMessage: (message: PlainObject) => void
 ): () => void {
   const hear = (event: MessageEvent) => {
-    if (!isMessageFrom(event, adminOriginOf(adminOrigin()), findAdminWindow(win))) return;
+    if (!isMessageFrom(event, adminOriginOf(adminOrigin(), win), findAdminWindow(win))) return;
     if (isPlainObject(event.data)) onMessage(event.data);
   };
   win.addEventListener("message", hear);
