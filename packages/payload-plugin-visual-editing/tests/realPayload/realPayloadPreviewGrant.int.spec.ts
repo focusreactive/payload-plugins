@@ -40,6 +40,7 @@ describe("the unsaved rich text endpoint of a preview page on another origin", (
     const endpoint = payload.config.endpoints.find((candidate) => candidate.path === path);
     const requestHeaders = new Headers(headers);
     requestHeaders.set("Origin", SITE_ORIGIN);
+    requestHeaders.set("Content-Type", "application/json");
     const { user } = await payload.auth({ headers: requestHeaders });
     const req = await createLocalReq(
       { req: { headers: requestHeaders } as Partial<PayloadRequest>, user: user ?? undefined },

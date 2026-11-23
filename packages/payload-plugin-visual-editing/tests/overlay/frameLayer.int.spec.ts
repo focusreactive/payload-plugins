@@ -1,10 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createOverlay } from "../../src/client/createOverlay";
 import { DATA_VE_FRAME_ATTR } from "../../src/client/overlay/constants";
 
 import { markedText } from "../support/markedData";
 import { overlayCtx } from "../support/overlay";
+import { zoomEveryElement, zoomNoElement } from "../support/zoom";
+
+const PAGE_ZOOM = 1.25;
 
 const framesOnPage = () => document.querySelectorAll<HTMLElement>(`[${DATA_VE_FRAME_ATTR}]`);
 
@@ -41,6 +44,26 @@ describe("resting frames", () => {
 
     overlay.dispose();
     expect(framesOnPage()).toHaveLength(0);
+  });
+
+  it("draws a frame where its target is drawn on a page the site zoomed", () => {
+    zoomEveryElement(PAGE_ZOOM);
+    vi.spyOn(main.querySelector("h1") as HTMLElement, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(500, 250, 400, 200)
+    );
+
+    const overlay = createOverlay(main, () => overlayCtx({ mode: "always" }));
+
+    const frame = framesOnPage()[0] as HTMLElement;
+    expect([frame.style.transform, frame.style.width, frame.style.height]).toEqual([
+      "translate(398.5px, 198.5px)",
+      "323px",
+      "163px",
+    ]);
+
+    overlay.dispose();
+    zoomNoElement();
+    vi.restoreAllMocks();
   });
 
   it("draws no resting frames in hover mode", () => {

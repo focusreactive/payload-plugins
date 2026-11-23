@@ -36,7 +36,11 @@ export function VisualEditingOverlay({
     const started = startSessionOverlay(
       root,
       () => latest.current.scope,
-      () => latest.current.session
+      () => latest.current.session,
+      () => ({
+        onEdited: latest.current.session.onEdited,
+        richTextEditor: latest.current.session.richTextEditor,
+      })
     );
     overlay.current = started;
     return () => {

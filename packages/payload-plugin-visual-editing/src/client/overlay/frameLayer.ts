@@ -5,6 +5,8 @@ import {
   FRAME_RADIUS,
 } from "./constants.js";
 import { clipUnderCovers, measureCovers } from "./covers.js";
+import { areaOf, rectOf } from "./targetArea.js";
+import { rectInZoomOf } from "./zoom.js";
 
 export const placeFrame = (
   box: HTMLElement,
@@ -12,14 +14,15 @@ export const placeFrame = (
   borderWidth: number,
   covers: ReadonlyMap<Element, DOMRect> = measureCovers()
 ): void => {
-  const rect = target.getBoundingClientRect();
+  const rect = rectOf(target);
   const hidden = rect.width === 0 && rect.height === 0;
   box.style.display = hidden ? "none" : "block";
   if (hidden) return;
-  const origin = { x: rect.left - borderWidth, y: rect.top - borderWidth };
+  const { height, left, top, width } = rectInZoomOf(box, rect);
+  const origin = { x: left - borderWidth, y: top - borderWidth };
   box.style.transform = `translate(${origin.x}px, ${origin.y}px)`;
-  box.style.width = `${rect.width + borderWidth * 2}px`;
-  box.style.height = `${rect.height + borderWidth * 2}px`;
+  box.style.width = `${width + borderWidth * 2}px`;
+  box.style.height = `${height + borderWidth * 2}px`;
   clipUnderCovers(box, target, origin, covers);
 };
 
@@ -82,17 +85,17 @@ export function createFrameLayer(): FrameLayer {
         borderRadius: FRAME_RADIUS,
         pointerEvents: "none",
       } as Partial<CSSStyleDeclaration>);
-      placeFrame(frame, target, FRAME_IDLE_WIDTH);
       layer.append(frame);
+      placeFrame(frame, target, FRAME_IDLE_WIDTH);
       frames.set(target, frame);
-      resizes?.observe(target);
+      resizes?.observe(areaOf(target));
     },
     remove(target) {
       const frame = frames.get(target);
       if (!frame) return;
       frame.remove();
       frames.delete(target);
-      resizes?.unobserve(target);
+      resizes?.unobserve(areaOf(target));
     },
     dispose() {
       if (frameRequest !== 0) cancelAnimationFrame(frameRequest);

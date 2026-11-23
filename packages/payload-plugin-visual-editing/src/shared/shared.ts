@@ -13,6 +13,7 @@ export type VeIdentity = {
   docId?: string;
   key?: string;
   locale?: string;
+  multiline?: true;
 };
 
 export type MetaInfo = VeIdentity & { terminal?: true };
@@ -45,6 +46,8 @@ const DOC_KINDS: readonly DocKind[] = ["collection", "global"];
 
 const ABSENT = 0;
 
+const MULTILINE = 1;
+
 type Absent = typeof ABSENT;
 
 export type StegaPayload = [
@@ -53,7 +56,8 @@ export type StegaPayload = [
   docId: string | Absent,
   path: string,
   rowIdsOrKey?: readonly string[] | string | Absent,
-  locale?: string,
+  locale?: string | Absent,
+  multiline?: typeof MULTILINE | Absent,
 ];
 
 const segmentsOf = (path: string): string[] => path.split(FIELD_PATH_SEPARATOR);
@@ -88,6 +92,7 @@ export const toStegaPayload = ({
   key,
   kind,
   locale,
+  multiline,
   path,
 }: VeIdentity): StegaPayload =>
   withoutAbsentTail([
@@ -96,7 +101,8 @@ export const toStegaPayload = ({
     docId ?? ABSENT,
     path,
     key === undefined ? ABSENT : (rowIdsOf(path, key) ?? key),
-    locale,
+    locale ?? ABSENT,
+    multiline ? MULTILINE : ABSENT,
   ]);
 
 const keyOfPayload = (path: string, rowIdsOrKey: unknown): string | undefined => {
@@ -113,12 +119,14 @@ const identityOfPayload = ([
   path,
   rowIdsOrKey,
   locale,
+  multiline,
 ]: readonly unknown[]): unknown => ({
   collectionSlug,
   docId: optionalString(docId),
   key: typeof path === "string" ? keyOfPayload(path, rowIdsOrKey) : undefined,
   kind: typeof kindCode === "number" ? DOC_KINDS[kindCode] : undefined,
   locale,
+  multiline: multiline === MULTILINE,
   path,
 });
 
@@ -127,10 +135,11 @@ export const fromStegaPayload = (payload: unknown): VeIdentity | null => {
   if (!isPlainObject(decoded) || typeof decoded.path !== "string" || !isVeDocument(decoded)) {
     return null;
   }
-  return veIdentityOf({
+  const identity = veIdentityOf({
     ...veDocumentOf(decoded),
     key: optionalString(decoded.key),
     locale: optionalString(decoded.locale),
     path: decoded.path,
   });
+  return decoded.multiline === true ? { ...identity, multiline: true } : identity;
 };

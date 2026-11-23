@@ -50,7 +50,7 @@ describe("a draft read through Payload with instantPreview", () => {
   it("states no key for a field outside any row", () => {
     expect(markersAt(home, "title")).toEqual([{ ...page(site.home), path: "title" }]);
     expect(markersAt(home, "seo.description")).toEqual([
-      { ...page(site.home), path: "seo.description" },
+      { ...page(site.home), multiline: true, path: "seo.description" },
     ]);
   });
 
@@ -62,15 +62,33 @@ describe("a draft read through Payload with instantPreview", () => {
     ]);
   });
 
-  it("states no key in the _meta of an upload or a related document in a row", () => {
+  it("states the stable key of an upload or a related document in a row in its _meta", () => {
+    const blockId = valueAt(home, "layout.0.id");
+
     expect(metaAt(home, "layout.0.image")).toEqual({
       ...page(site.home),
+      key: `layout.${blockId}.image`,
       path: "layout.0.image",
       terminal: true,
     });
     expect(metaAt(home, "layout.0.picked")).toEqual({
       ...page(site.home),
+      key: `layout.${blockId}.picked`,
       path: "layout.0.picked",
+      terminal: true,
+    });
+  });
+
+  it("states no key in the _meta of an upload or a related document outside any row", () => {
+    expect(metaAt(home, "image")).toEqual({ ...page(site.home), path: "image", terminal: true });
+    expect(metaAt(home, "gallery.0")).toEqual({
+      ...page(site.home),
+      path: "gallery",
+      terminal: true,
+    });
+    expect(metaAt(home, "related")).toEqual({
+      ...page(site.home),
+      path: "related",
       terminal: true,
     });
   });

@@ -246,6 +246,17 @@ describe("the payload of a marker", () => {
       { ...pageInfo, key: "layout.row-a", path: "layout.0.heading" },
     ],
     ["a field named like an index", { ...pageInfo, key: "layout.row-a.0", path: "layout.0.0" }],
+    ["a field of several lines", { ...pageInfo, multiline: true, path: "summary" }],
+    [
+      "a field of several lines of one locale in a row",
+      {
+        ...pageInfo,
+        key: "layout.row-a.body",
+        locale: "de",
+        multiline: true,
+        path: "layout.0.body",
+      },
+    ],
   ])("is read back as the identity it was written from for %s", (_name, identity) => {
     expect(fromStegaPayload(toStegaPayload(identity))).toEqual(identity);
   });
@@ -265,6 +276,19 @@ describe("the payload of a marker", () => {
 
   it("ends at the path for a field outside any row", () => {
     expect(toStegaPayload({ ...pageInfo, path: "title" })).toEqual([0, "pages", "page-1", "title"]);
+  });
+
+  it("says that a field holds several lines in one more entry, and that a field of one line does not in none", () => {
+    expect(toStegaPayload({ ...pageInfo, multiline: true, path: "summary" })).toEqual([
+      0,
+      "pages",
+      "page-1",
+      "summary",
+      0,
+      0,
+      1,
+    ]);
+    expect(toStegaPayload({ ...pageInfo, path: "title" })).toHaveLength(4);
   });
 
   it("is written into the text of a draft read", () => {

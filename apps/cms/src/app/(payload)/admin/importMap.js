@@ -39,6 +39,9 @@ import { default as default_587142b484744b5573788fdf4a68522a } from '@focus-reac
 import { PreviewPageBridge as PreviewPageBridge_ec3bc0b0b5b9a6c0c60998da34f40f5d } from '@focus-reactive/payload-plugin-visual-editing/admin'
 import { OpenFormAnnouncer as OpenFormAnnouncer_ec3bc0b0b5b9a6c0c60998da34f40f5d } from '@focus-reactive/payload-plugin-visual-editing/admin'
 import { InstantPreviewBroadcaster as InstantPreviewBroadcaster_ec3bc0b0b5b9a6c0c60998da34f40f5d } from '@focus-reactive/payload-plugin-visual-editing/admin'
+import { InlineEditReceiver as InlineEditReceiver_ec3bc0b0b5b9a6c0c60998da34f40f5d } from '@focus-reactive/payload-plugin-visual-editing/admin'
+import { MediaPickReceiver as MediaPickReceiver_ec3bc0b0b5b9a6c0c60998da34f40f5d } from '@focus-reactive/payload-plugin-visual-editing/admin'
+import { RichTextEditReceiver as RichTextEditReceiver_ec3bc0b0b5b9a6c0c60998da34f40f5d } from '@focus-reactive/payload-plugin-visual-editing/admin'
 import { VisualPreviewButton as VisualPreviewButton_809e4dae2cde944461a83ddb2ad7664d } from '../../../components/admin/VisualPreviewButton'
 import { BlocksFeatureClient as BlocksFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { RowLabelGroupName as RowLabelGroupName_7f4fa5fc68fb5a0a92393f6444a57fbd } from '@/components/admin/RowLabel'
@@ -108,6 +111,9 @@ export const importMap = {
   "@focus-reactive/payload-plugin-visual-editing/admin#PreviewPageBridge": PreviewPageBridge_ec3bc0b0b5b9a6c0c60998da34f40f5d,
   "@focus-reactive/payload-plugin-visual-editing/admin#OpenFormAnnouncer": OpenFormAnnouncer_ec3bc0b0b5b9a6c0c60998da34f40f5d,
   "@focus-reactive/payload-plugin-visual-editing/admin#InstantPreviewBroadcaster": InstantPreviewBroadcaster_ec3bc0b0b5b9a6c0c60998da34f40f5d,
+  "@focus-reactive/payload-plugin-visual-editing/admin#InlineEditReceiver": InlineEditReceiver_ec3bc0b0b5b9a6c0c60998da34f40f5d,
+  "@focus-reactive/payload-plugin-visual-editing/admin#MediaPickReceiver": MediaPickReceiver_ec3bc0b0b5b9a6c0c60998da34f40f5d,
+  "@focus-reactive/payload-plugin-visual-editing/admin#RichTextEditReceiver": RichTextEditReceiver_ec3bc0b0b5b9a6c0c60998da34f40f5d,
   "/components/admin/VisualPreviewButton#VisualPreviewButton": VisualPreviewButton_809e4dae2cde944461a83ddb2ad7664d,
   "@payloadcms/richtext-lexical/client#BlocksFeatureClient": BlocksFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@/components/admin/RowLabel#RowLabelGroupName": RowLabelGroupName_7f4fa5fc68fb5a0a92393f6444a57fbd,

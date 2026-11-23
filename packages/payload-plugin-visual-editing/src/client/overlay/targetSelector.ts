@@ -1,4 +1,5 @@
 import { DATA_VE_TARGET_ATTR } from "./constants.js";
+import { targetWithArea } from "./targetArea.js";
 
 function walkAncestors<T>(
   start: Element | null,
@@ -17,7 +18,7 @@ function walkAncestors<T>(
 
 export function findTargetAncestor(el: Element | null): HTMLElement | null {
   return walkAncestors(el, (cur) =>
-    cur instanceof HTMLElement && cur.hasAttribute(DATA_VE_TARGET_ATTR) ? cur : null
+    cur instanceof HTMLElement && cur.hasAttribute(DATA_VE_TARGET_ATTR) ? cur : targetWithArea(cur)
   );
 }
 

@@ -14,6 +14,8 @@ const ROW_INDEX = /^\d+$/u;
 export const fieldKeyOf = (steps: readonly FieldStep[]): string =>
   steps.map((step) => ("rowId" in step ? step.rowId : step.name)).join(FIELD_PATH_SEPARATOR);
 
+export const topLevelNameOf = (key: string): string => key.split(FIELD_PATH_SEPARATOR)[0] ?? key;
+
 export const isRowIndex = (segment: string): boolean => ROW_INDEX.test(segment);
 
 export const pathOf = (segments: readonly string[]): string => segments.join(FIELD_PATH_SEPARATOR);
