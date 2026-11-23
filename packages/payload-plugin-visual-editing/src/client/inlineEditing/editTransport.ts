@@ -230,11 +230,11 @@ export function createEditTransport(
   const isChangedElsewhere = (address: string): boolean =>
     failed.get(address)?.refusal === CHANGED_ELSEWHERE;
 
-  const rememberSaved = (edit: VeEdit, continued: SavedEdit | null, stored: unknown) => {
+  const rememberSaved = (edit: VeEdit, stored: unknown) => {
     if (edit.base === undefined) return;
     savedEdits.set(editedFieldAddressOf(edit), {
       sent: valueOf(edit),
-      startedFrom: continued?.startedFrom ?? edit.base,
+      startedFrom: edit.base,
       stored: storedValueOf(edit, stored),
     });
   };
@@ -268,7 +268,7 @@ export function createEditTransport(
       givenToForm.delete(address);
       unsavedInForm.delete(address);
       postedToAdmin.delete(address);
-      rememberSaved(edit, continued, stored);
+      rememberSaved(edit, stored);
     }
     return { isLatest, refusal };
   };

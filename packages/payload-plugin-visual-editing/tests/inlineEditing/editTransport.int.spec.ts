@@ -679,6 +679,50 @@ describe("the transport of an edit", () => {
         expect(basesSent()).toEqual(["Shown", "Typed"]);
       });
 
+      describe("of an edit begun from what an earlier edit of the field saved", () => {
+        const storedAsSent = (_url: string, init: RequestInit) => {
+          const { state, value } = JSON.parse(init.body as string) as Record<string, unknown>;
+          return Promise.resolve(storedAnswerOf(state ?? value));
+        };
+
+        beforeEach(() => {
+          fetchEndpoint.mockImplementation(storedAsSent);
+        });
+
+        it("is the text the field holds after each save of it", async () => {
+          save(TITLE, "Shown", "Shown T0");
+          await settle();
+
+          const edit = beginEdit(TITLE, "Shown T0");
+          edit.change("Shown T0 T1");
+          await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+          edit.change("Shown T0 T1 T2");
+          await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+          edit.end();
+          await settle();
+
+          expect(basesSent()).toEqual(["Shown", "Shown T0", "Shown T0 T1"]);
+        });
+
+        it("is the rich text state the field holds after each save of it", async () => {
+          const typed = editorState(paragraph(textNode("Hello T0")));
+          const typedOn = editorState(paragraph(textNode("Hello T0 T1")));
+          const madeBold = editorState(paragraph(textNode("Hello T0 T1", 1)));
+          saveRichText(BODY, STATE, typed);
+          await settle();
+
+          const edit = beginRichTextEdit(BODY, typed);
+          edit.change(typedOn);
+          await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+          edit.change(madeBold);
+          await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+          edit.end();
+          await settle();
+
+          expect(basesSent()).toEqual([STATE, typed, typedOn]);
+        });
+      });
+
       it("is the value an edit began from when it began from something this page did not save", async () => {
         save(TITLE, "Shown", "Typed");
         await settle();

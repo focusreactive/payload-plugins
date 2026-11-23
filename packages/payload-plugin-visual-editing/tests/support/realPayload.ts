@@ -170,6 +170,7 @@ type ReadPage = (page: Record<string, unknown>) => void;
 
 export type RealPayloadOptions = {
   name: string;
+  autosave?: boolean;
   plugin?: VisualEditingPluginConfig;
   onPageReadBeforeThePlugin?: ReadPage;
   canRead?: Access;
@@ -183,6 +184,7 @@ const ignoreReadPage: ReadPage = () => undefined;
 
 export async function startRealPayload({
   name,
+  autosave = false,
   canRead,
   canReadGuardedBody,
   canReadMedia,
@@ -238,7 +240,7 @@ export async function startRealPayload({
         },
       ],
     },
-    versions: { drafts: true },
+    versions: { drafts: autosave ? { autosave: true } : true },
   };
   const config = await buildConfig({
     blocks: [quoteBlock],
