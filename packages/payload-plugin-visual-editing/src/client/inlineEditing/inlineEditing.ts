@@ -80,20 +80,22 @@ export function createInlineEditing(
     return isTold ? adminWindow : null;
   };
 
-  const pinnedAdmins = new Map<string, Window | null>();
-
-  const pinAdmin = (field: VeEditedField) => {
-    pinnedAdmins.set(editedFieldAddressOf(field), findAdmin());
-  };
+  const pinnedAdmins = new Map<string, { field: VeEditedField; admin: Window | null }>();
 
   const adminOf = (field: VeEditedField): Window | null => {
-    const address = editedFieldAddressOf(field);
-    if (!pinnedAdmins.has(address)) return findAdmin();
-    const pinned = pinnedAdmins.get(address) ?? null;
-    return pinned && pinned === findAdmin() ? pinned : null;
+    const pinned = pinnedAdmins.get(editedFieldAddressOf(field));
+    if (!pinned) return findAdmin();
+    return pinned.admin && pinned.admin === findAdmin() ? pinned.admin : null;
   };
 
   const transport = createEditTransport(getCtx, showStatus, window, adminOf);
+
+  const pinAdmin = (field: VeEditedField) => {
+    for (const [address, pinned] of pinnedAdmins) {
+      if (!transport.isUnsaved(pinned.field)) pinnedAdmins.delete(address);
+    }
+    pinnedAdmins.set(editedFieldAddressOf(field), { admin: findAdmin(), field });
+  };
   const holdsFormOf = openForms && ((document: VeDocument) => openForms.holdsFormOf(document));
 
   const editedFieldOf = (match: FieldMatch) => {
