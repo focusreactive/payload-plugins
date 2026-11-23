@@ -1,6 +1,6 @@
 {
   "name": "@focus-reactive/payload-plugin-audit-log",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Audit log for Payload CMS: document, global and auth changes, with API keys and AI agents (MCP) as actors, and CSV / NDJSON export",
   "keywords": [
     "payload-cms",
@@ -16,7 +16,7 @@
     "url": "https://github.com/focusreactive/payload-plugins",
     "directory": "packages/payload-plugin-audit-log"
   },
-  "private": true,
+  "private": false,
   "publishConfig": {
     "access": "public"
   },
