@@ -374,8 +374,8 @@ export function createEditTransport(
     const address = editedFieldAddressOf(edit);
     supersede(address);
     watchedSaves.set(address, onSaveEnded);
-    report("unsaved");
     deliver(edit);
+    report("unsaved");
   };
 
   const holdInForm = (field: VeEditedField) => {

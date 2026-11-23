@@ -614,6 +614,21 @@ describe("the transport of an edit", () => {
       ]);
     });
 
+    it("saves a pick the form refused through the endpoint on Retry once that window was replaced, even after the admin saved its document", async () => {
+      const replacement = { closed: false, postMessage: vi.fn() };
+      holdsAnyForm = true;
+      transport.beginImageEdit(IMAGE, pageImage()).use(LIGHTHOUSE);
+      postFromAdmin({ ...IMAGE, type: VE_FIELD_EDIT_REFUSED_TYPE }, { source: admin });
+      postFromAdmin({ ...TITLE, type: VE_DOCUMENT_SAVED_TYPE }, { source: admin });
+      stubOpenerWindow(replacement);
+
+      transport.retry();
+      await settle();
+
+      expect(replacement.postMessage).not.toHaveBeenCalled();
+      expect(sentBodies()).toEqual([{ ...IMAGE, value: "9" }]);
+    });
+
     it("saves a picked image again through the endpoint on Retry once the admin told of a form", async () => {
       fetchEndpoint.mockImplementationOnce(() => Promise.resolve(answerOf(false)));
       transport.beginImageEdit(IMAGE, pageImage()).use(LIGHTHOUSE);
