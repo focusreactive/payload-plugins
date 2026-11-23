@@ -1,0 +1,509 @@
+/* Workflow drawer: what the indicator opens. Payload tokens only. */
+
+.workflows-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--base) * 1.5);
+  max-width: calc(var(--base) * 38);
+  padding-bottom: calc(var(--base) * 2);
+  font-size: 13px;
+  color: var(--theme-elevation-800);
+}
+
+.workflows-section-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--theme-elevation-500);
+}
+
+.workflows-drawer__start {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--base) / 2);
+}
+
+.workflows-drawer__start-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(var(--base) / 4) calc(var(--base) / 2);
+}
+
+.workflows-drawer__start-item .field-description {
+  margin: 0;
+}
+
+.workflows-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- A run ---------------------------------------------------------------------------------- */
+
+.workflows-run {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base);
+}
+
+.workflows-run + .workflows-run {
+  padding-top: calc(var(--base) * 1.5);
+  border-top: 1px solid var(--theme-elevation-150);
+}
+
+.workflows-run__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--base) / 2);
+  min-width: 0;
+}
+
+.workflows-run__title {
+  margin: 0;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.workflows-run__summary {
+  min-width: 0;
+  font-weight: 500;
+}
+
+.workflows-run__status {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--base) / 5);
+}
+
+.workflows-run__waiting {
+  margin: 0;
+  font-weight: 500;
+}
+
+.workflows-run__meta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--theme-elevation-500);
+}
+
+.workflows-run__activities {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--base) * 0.75);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.workflows-run__footer {
+  display: flex;
+  padding-top: calc(var(--base) / 2);
+  border-top: 1px solid var(--theme-elevation-100);
+}
+
+/* Abort is last and quiet: muted until hovered, the confirmation names what is lost. */
+.btn.workflows-run__abort {
+  padding: 0;
+  font-size: 12px;
+  color: var(--theme-elevation-500);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 150ms ease;
+}
+
+.btn.workflows-run__abort:hover:not(:disabled) {
+  color: var(--theme-error-750);
+}
+
+.workflows-pill.pill {
+  flex-shrink: 0;
+  max-width: 60%;
+}
+
+.workflows-pill .pill__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- Stage stepper -------------------------------------------------------------------------- */
+
+.workflows-stepper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--base) / 4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.workflows-stepper__step {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: calc(var(--base) / 5);
+  min-width: calc(var(--base) * 2.5);
+}
+
+.workflows-stepper__bar {
+  display: block;
+  height: 4px;
+  border-radius: var(--style-radius-s);
+  background: var(--theme-elevation-150);
+  transition: background-color 150ms ease;
+}
+
+.workflows-stepper__label {
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--theme-elevation-500);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workflows-stepper__step[data-state="past"] .workflows-stepper__bar {
+  background: var(--theme-elevation-500);
+}
+
+.workflows-stepper__step[data-state="current"] .workflows-stepper__bar {
+  background: var(--theme-elevation-800);
+}
+
+.workflows-stepper__step[data-state="current"] .workflows-stepper__label {
+  font-weight: 600;
+  color: var(--theme-elevation-800);
+}
+
+/* ---- Notices (guards, stuck, errors) -------------------------------------------------------- */
+
+.workflows-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(var(--base) / 5);
+  margin: 0;
+  padding: calc(var(--base) / 2.5) calc(var(--base) / 2);
+  border-left: 3px solid var(--theme-warning-500);
+  border-radius: var(--style-radius-s);
+  background: var(--theme-warning-100);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--theme-warning-750);
+}
+
+.workflows-notice[data-tone="error"] {
+  border-left-color: var(--theme-error-500);
+  background: var(--theme-error-100);
+  color: var(--theme-error-750);
+}
+
+.workflows-notice__title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ---- Activities and actions ----------------------------------------------------------------- */
+
+.workflows-activity {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--base) / 4);
+  padding: calc(var(--base) * 0.6) calc(var(--base) * 0.75);
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: var(--style-radius-m);
+  background: var(--theme-elevation-0);
+}
+
+.workflows-activity[data-status="done"],
+.workflows-activity[data-status="skipped"] {
+  background: transparent;
+}
+
+.workflows-activity__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--base) / 2);
+}
+
+.workflows-activity__title {
+  min-width: 0;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.workflows-activity[data-status="skipped"] .workflows-activity__title {
+  color: var(--theme-elevation-500);
+}
+
+.workflows-activity__meta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--theme-elevation-500);
+}
+
+.workflows-activity__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: calc(var(--base) / 2);
+  margin: calc(var(--base) / 4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.workflows-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(var(--base) / 5) calc(var(--base) / 2);
+}
+
+.workflows-action .btn {
+  margin: 0;
+}
+
+.workflows-action__reason {
+  font-size: 12px;
+  color: var(--theme-elevation-500);
+}
+
+/* ---- History timeline --------------------------------------------------------------------- */
+
+.workflows-history {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--base) / 2);
+  min-width: 0;
+}
+
+.workflows-history__day {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--base) / 5);
+}
+
+.workflows-history__day-label {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--theme-elevation-400);
+}
+
+.workflows-history__list,
+.workflows-history__steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.workflows-history__row {
+  padding: calc(var(--base) / 5) 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.workflows-history__row + .workflows-history__row {
+  border-top: 1px solid var(--theme-elevation-100);
+}
+
+.workflows-history__line {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: calc(var(--base) / 2);
+}
+
+.workflows-history__time {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--theme-elevation-500);
+}
+
+.workflows-history__dot {
+  align-self: center;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-blue-500);
+}
+
+.workflows-history__dot[data-kind="agent"] {
+  background: var(--theme-warning-500);
+  /* A different shape as well as a different hue. */
+  border-radius: 2px;
+  transform: rotate(45deg) scale(0.9);
+}
+
+.workflows-history__dot[data-kind="system"] {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--theme-elevation-400);
+}
+
+.workflows-history__text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.workflows-history__who {
+  font-weight: 500;
+}
+
+.workflows-history__row[data-kind="system"] .workflows-history__who {
+  font-weight: 400;
+  color: var(--theme-elevation-500);
+}
+
+.workflows-history__marker {
+  margin-left: calc(var(--base) / 4);
+  padding: 0 4px;
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: var(--style-radius-s);
+  font-size: 11px;
+  color: var(--theme-elevation-500);
+}
+
+.workflows-history__what {
+  color: var(--theme-elevation-500);
+}
+
+.workflows-history__end {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--base) / 4);
+}
+
+.workflows-history__badge {
+  padding: 0 6px;
+  border-radius: var(--style-radius-s);
+  background: var(--theme-elevation-100);
+  font-size: 11px;
+  line-height: 18px;
+  color: var(--theme-elevation-600);
+  white-space: nowrap;
+}
+
+.workflows-history__toggle,
+.workflows-history__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  color: var(--theme-elevation-500);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+
+.workflows-history__toggle .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.workflows-history__toggle .stroke {
+  stroke: currentColor;
+}
+
+.workflows-history__more {
+  align-self: flex-start;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.workflows-history__toggle:hover,
+.workflows-history__more:hover {
+  color: var(--theme-elevation-800);
+}
+
+.workflows-history__toggle:focus-visible,
+.workflows-history__more:focus-visible,
+.workflows-drawer .btn:focus-visible {
+  outline: 2px solid var(--theme-elevation-800);
+  outline-offset: 2px;
+}
+
+/* The row's inputs (a reason) stay visible: aligned under the text, not folded. */
+.workflows-history__detail {
+  margin: 2px 0 0;
+  padding-left: calc(var(--base) * 0.5);
+  margin-left: var(--workflows-history-indent, calc(var(--base) * 3));
+  border-left: 2px solid var(--theme-elevation-150);
+  font-size: 12px;
+  color: var(--theme-elevation-800);
+  overflow-wrap: anywhere;
+}
+
+.workflows-history__detail[data-tone="error"] {
+  border-left-color: var(--theme-error-500);
+  color: var(--theme-error-750);
+}
+
+.workflows-history__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: calc(var(--base) / 5) 0 0 var(--workflows-history-indent, calc(var(--base) * 3));
+}
+
+.workflows-history__step {
+  display: flex;
+  gap: calc(var(--base) / 2);
+  font-size: 12px;
+  color: var(--theme-elevation-500);
+}
+
+/* ---- Param form (in a nested drawer) ------------------------------------------------------------ */
+
+.workflows-params {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base);
+  max-width: calc(var(--base) * 30);
+  padding-bottom: var(--base);
+}
+
+.workflows-params__field .field-type {
+  margin-bottom: 0;
+}
+
+.workflows-params__error {
+  margin: calc(var(--base) / 4) 0 0;
+  font-size: 12px;
+  color: var(--theme-error-750);
+}
+
+.workflows-params__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--base) / 2);
+}
+
+.workflows-params__actions .btn {
+  margin: 0;
+}
+
+p.workflows-action__reason {
+  margin: 0;
+}

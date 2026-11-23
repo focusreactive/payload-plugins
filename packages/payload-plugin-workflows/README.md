@@ -2,14 +2,15 @@
 
 [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-workflows)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-workflows)
 
-Editorial workflows for [Payload CMS](https://payloadcms.com/): draft → review → approve, or any process you describe, defined in TypeScript next to your collections. Editors move a document through it from a panel in the document's sidebar. Agents move it with the same operations, and the same permissions, through a set of tools. Every run keeps its state and a full audit history in a collection of its own, never in the document.
+Editorial workflows for [Payload CMS](https://payloadcms.com/): draft → review → approve, or any process you describe, defined in TypeScript next to your collections. Editors move a document through it from a small indicator next to Save and Publish, which opens a drawer with everything else. Agents move it with the same operations, and the same permissions, through a set of tools. Every run keeps its state and a full audit history in a collection of its own, never in the document.
 
 The model is a port of [Sanity Workflows](https://www.sanity.io/workflows). It uses the same vocabulary (workflow, stage, activity, action, transition, field, guard, effect) and the same semantics, so their guides transfer. The differences are listed under [Good to know](#good-to-know).
 
 ## What it does
 
-- **Workflow panel** in the sidebar of every document a workflow runs on. It shows where the document is (a stage stepper), what is left to do and who it waits on, and one button per action. A disabled button says why it is disabled. An action that needs input (a reason, a date, a choice) opens a small form in a drawer first. The run's history reads as sentences ("Ann chose “Request changes” on Review the page. Reason: …"). Abort sits behind a confirmation.
-- **Guards that hold for every writer.** A stage can refuse publishing, saving or deleting the document while a run sits in it. The refusal is enforced in collection hooks, so it applies to the admin, REST, GraphQL and the Local API alike. The panel shows each guard that is holding, so an editor knows why Publish was refused.
+- **Workflow indicator and drawer** on every document a workflow runs on. Next to Save and Publish, one compact button says where the document is: the current stage with a dot that marks whether it waits on you (or a guard holds the document), on someone else, or is stuck; "Workflow" when nothing runs but something can be started; nothing at all otherwise. Clicking it opens a drawer — no navigation, so unsaved changes in the form stay — with the stage stepper and who the run waits on, the guards holding, the current activities with one button per action (a disabled button says why), the history and, last, abort behind a confirmation. An action that needs input (a reason, a date, a choice) opens a small form in a nested drawer first. A reviewer approves in two clicks: the indicator, then **Approve**.
+- **History as a timeline.** One line per step, newest first and grouped by day: time, a dot and a name that tell a person, a person through the API, an AI agent ("Ann via agent") and the workflow itself ("Automated") apart, then what happened ("Request changes → moved to Drafting"). The automatic steps an action caused (transitions, automatic actions, effects) fold under it; an action's inputs, such as the reason changes were requested, stay visible under its line.
+- **Guards that hold for every writer.** A stage can refuse publishing, saving or deleting the document while a run sits in it. The refusal is enforced in collection hooks, so it applies to the admin, REST, GraphQL and the Local API alike. The indicator and the drawer show each guard that is holding, so an editor knows why Publish was refused.
 - **Workflows view** at `/admin/workflows`, linked from the nav. **For me** lists the runs waiting on you or one of your roles. **All open** lists every active run. Pick a workflow to get a board with one column per stage.
 - **Effects.** An action can trigger server code (notify someone, call an LLM, ping an approval service) as a Payload job, queued in the same transaction as the state change. The job is retried on failure, so a handler may run more than once: make it idempotent. A handler can report back by returning `{ set }`, which moves the run.
 - **Agents.** `workflowAgentTools()` gives AI-SDK-shaped tools that list, inspect, start and advance runs as a given user. The history records that an agent did it.
@@ -137,7 +138,7 @@ export default buildConfig({
 });
 ```
 
-The plugin adds the panel and the hooks to the collections your workflows name. It also adds the `workflow-instances` collection, the endpoints, two jobs tasks, the view with its nav link, and the admin strings.
+The plugin adds the indicator (in `admin.components.edit.beforeDocumentControls`) and the hooks to the collections your workflows name; it adds no fields to them. It also adds the `workflow-instances` collection, the endpoints, two jobs tasks, the view with its nav link, and the admin strings.
 
 ### 4. Regenerate the import map
 
@@ -151,7 +152,7 @@ The plugin adds the `workflow-instances` collection. On Postgres or SQLite witho
 
 ### 6. Try it
 
-Open a page and press **Start Editorial review** in the sidebar. Then **Submit for review**, **Take this review**, and try **Publish changes**: it is refused with "Publishing is held until review is approved". **Approve** completes the run, and publishing goes through.
+Save a page, press **Workflow** next to Save and Publish, and press **Start Editorial review** in the drawer. Then **Submit for review**, **Take this review**, and try **Publish changes**: it is refused with "Publishing is held until review is approved". **Approve** completes the run, and publishing goes through.
 
 ## Concepts
 
@@ -213,7 +214,7 @@ const inbox = await listWorkflowInstances(payload, { scope: "mine", status: "act
 await tickWorkflows(payload); // { checked, advanced }
 ```
 
-The operations return an `InstanceView`, the projection the panel and the agents render. It holds the stage, the stepper, the current activities with each action's `allowed` and `reason` (from the same check that `fire` runs, so an enabled button never fails for a reason the UI could have known), the guards holding, who it waits on, the fields and the history. A disallowed action also has a `reasonCode`: `filter` (its own `filter` is false right now), `assignment`, `roles`, `not-active` or `error`. The panel hides actions refused by their own `filter` and shows the others disabled with their reason. `getWorkflowState` and `listWorkflowInstances` also return `userLabels`: display names for the user ids they mention, read with the caller's access.
+The operations return an `InstanceView`, the projection the drawer and the agents render. It holds the stage, the stepper, the current activities with each action's `allowed` and `reason` (from the same check that `fire` runs, so an enabled button never fails for a reason the UI could have known), the guards holding, who it waits on, the fields and the history. A disallowed action also has a `reasonCode`: `filter` (its own `filter` is false right now), `assignment`, `roles`, `not-active` or `error`. The drawer hides actions refused by their own `filter` and shows the others disabled with their reason. `getWorkflowState` and `listWorkflowInstances` also return `userLabels`: display names for the user ids they mention, read with the caller's access.
 
 `listWorkflowInstances` leaves out runs whose document the caller cannot read. It does so before paginating, so `totalDocs` and `totalPages` count only the runs the caller can see. To do that it reads the matching runs as a slim list (id and document) and checks the documents in one query per collection, then loads only the requested page.
 
@@ -281,7 +282,7 @@ The simulator also has `.setDoc(doc)` (as saving the document would), `.advance(
 ## Good to know
 
 - **Where the model differs from Sanity.** Conditions are TypeScript functions, not GROQ. Definitions live in code and are not deployed or versioned. Field writes are a single `set` (a patch, or a function returning one), not `ops`. Guards are enforced on the server for every writer, where Sanity's are advisory in Studio. Effects are Payload jobs, not Sanity Functions. There are no subworkflows, partitions or reader models.
-- **Changing a definition.** Runs follow the definition currently in code. A run whose stage was removed is reported **stuck**: the panel says so, and it can only be aborted. The current stage's activities are read from the definition too: an activity removed from code no longer holds the stage, and one added while a run sits in the stage is active and can be acted on.
+- **Changing a definition.** Runs follow the definition currently in code. A run whose stage was removed is reported **stuck**: the indicator and the drawer say so, and it can only be aborted. The current stage's activities are read from the definition too: an activity removed from code no longer holds the stage, and one added while a run sits in the stage is active and can be acted on.
 - **When effects run.** An effect runs inline, right after its change commits and in the same request, when that change committed its own transaction or there was none. Otherwise its job stays queued for the host's jobs runner on the `workflows` queue. That is the case when a Local API call passes a `req` that already carries a transaction (the jobs are not visible until the caller commits), and when a document save settles a run or auto-starts one while the database has transactions on (Postgres, MongoDB with a replica set, SQLite with `transactionOptions`). Without database transactions, those save effects run inline. An effect that fails inline also stays queued, with its retries. If your workflows declare effects, or set `tick`, and `jobs.autoRun` has no entry for the `workflows` queue, the plugin logs one warning at startup that says what will wait. Configure `jobs: { autoRun: [{ queue: "workflows" }] }` or another runner for that queue.
 - **Effects are at least once.** A job is retried after a failure, and a handler can also run again if recording its outcome fails after it ran. With Payload's `jobs.runHooks: true` (some plugins set it), Payload 3.90 fails to record a successful task, so the job can run again. Write handlers that are safe to repeat.
 - **The tick only fires if something runs it.** `tick: { cron }` attaches a schedule to the `workflowTick` task, but Payload only acts on schedules when `jobs.autoRun` covers the `workflows` queue. You can also call `tickWorkflows(payload)` from your own cron.

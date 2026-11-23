@@ -202,7 +202,7 @@ bun add @focus-reactive/payload-plugin-stacked-editing
 
 ## Workflows Plugin for Payload CMS
 
-The editorial process as code, next to the content: stages, activities, actions, guards and effects in TypeScript, a port of Sanity Workflows. Editors move a document through it from a sidebar panel, with a stage stepper, the actions they may take and a readable history. A Workflows view lists what waits on them, with a board per workflow. Guards hold publishing for every writer until review is done, and agents move runs with the same operations and permissions as people.
+The editorial process as code, next to the content: stages, activities, actions, guards and effects in TypeScript, a port of Sanity Workflows. Editors see where a document is from one compact indicator next to Save and Publish, and open a drawer with the stage stepper, the actions they may take and a timeline of who (a person, an agent or the workflow) did what. A Workflows view lists what waits on them, with a board per workflow. Guards hold publishing for every writer until review is done, and agents move runs with the same operations and permissions as people.
 
 ```bash
 npm install @focus-reactive/payload-plugin-workflows

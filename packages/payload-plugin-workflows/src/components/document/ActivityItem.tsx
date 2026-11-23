@@ -37,6 +37,13 @@ export const ActivityItem = ({
   const actions = activity.actions.filter(
     (action) => action.allowed || action.reasonCode !== "filter"
   );
+  // Every action refused for the same reason (e.g. assigned to someone else): say it once.
+  const refused = actions.filter((action) => !action.allowed);
+  const sharedReason =
+    refused.length > 1 && refused.every((action) => action.reason === refused[0]?.reason)
+      ? refused[0]?.reason
+      : undefined;
+  const sharedReasonId = `${idPrefix}-${activity.name}-reason`;
   const who = activity.assignee
     ? personName(activity.assignee, people, t)
     : (activity.roles ?? []).map((role) => t("roleLabel", { role })).join(", ");
@@ -57,7 +64,9 @@ export const ActivityItem = ({
       {active && actions.length > 0 ? (
         <ul className="workflows-activity__actions">
           {actions.map((action) => {
-            const reasonId = `${idPrefix}-${activity.name}-${action.name}-reason`;
+            const reasonId = sharedReason
+              ? sharedReasonId
+              : `${idPrefix}-${activity.name}-${action.name}-reason`;
             return (
               <li className="workflows-action" data-allowed={action.allowed} key={action.name}>
                 <Button
@@ -73,7 +82,7 @@ export const ActivityItem = ({
                   {action.title}
                   {action.params.length > 0 ? "…" : ""}
                 </Button>
-                {action.allowed ? null : (
+                {action.allowed || sharedReason ? null : (
                   <span className="workflows-action__reason" id={reasonId}>
                     {action.reason}
                   </span>
@@ -82,6 +91,11 @@ export const ActivityItem = ({
             );
           })}
         </ul>
+      ) : null}
+      {active && sharedReason ? (
+        <p className="workflows-action__reason" id={sharedReasonId}>
+          {sharedReason}
+        </p>
       ) : null}
     </li>
   );

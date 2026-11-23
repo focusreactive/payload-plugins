@@ -26,9 +26,9 @@ import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BlocksFieldWithPresets as BlocksFieldWithPresets_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { VariantsField as VariantsField_1e5bf2338fb8c7d4f6284f3e67c93951 } from '@focus-reactive/payload-plugin-ab/admin/VariantsField'
-import { WorkflowPanel as WorkflowPanel_c0254a23581be1e2c7ce6529fe39f8a8 } from '@focus-reactive/payload-plugin-workflows/client'
 import { default as default_5a9e6bfe3379b31c0258f532ec5399fb } from '@focus-reactive/payload-plugin-translator/client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.server'
 import { default as default_587142b484744b5573788fdf4a68522a } from '@focus-reactive/payload-plugin-translator/client/widgets/translate-document/ui/TranslateDocument.server'
+import { WorkflowIndicator as WorkflowIndicator_c0254a23581be1e2c7ce6529fe39f8a8 } from '@focus-reactive/payload-plugin-workflows/client'
 import { BlockLabelWithPresets as BlockLabelWithPresets_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { PresetAdminComponentPreview as PresetAdminComponentPreview_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { PresetAdminComponentCellWrapper as PresetAdminComponentCellWrapper_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
@@ -70,9 +70,9 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@focus-reactive/payload-plugin-presets/client#BlocksFieldWithPresets": BlocksFieldWithPresets_f0a4a6f21f15d606fa328a5e35f17d11,
   "@focus-reactive/payload-plugin-ab/admin/VariantsField#VariantsField": VariantsField_1e5bf2338fb8c7d4f6284f3e67c93951,
-  "@focus-reactive/payload-plugin-workflows/client#WorkflowPanel": WorkflowPanel_c0254a23581be1e2c7ce6529fe39f8a8,
   "@focus-reactive/payload-plugin-translator/client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.server#default": default_5a9e6bfe3379b31c0258f532ec5399fb,
   "@focus-reactive/payload-plugin-translator/client/widgets/translate-document/ui/TranslateDocument.server#default": default_587142b484744b5573788fdf4a68522a,
+  "@focus-reactive/payload-plugin-workflows/client#WorkflowIndicator": WorkflowIndicator_c0254a23581be1e2c7ce6529fe39f8a8,
   "@focus-reactive/payload-plugin-presets/client#BlockLabelWithPresets": BlockLabelWithPresets_f0a4a6f21f15d606fa328a5e35f17d11,
   "@focus-reactive/payload-plugin-presets/client#PresetAdminComponentPreview": PresetAdminComponentPreview_f0a4a6f21f15d606fa328a5e35f17d11,
   "@focus-reactive/payload-plugin-presets/client#PresetAdminComponentCellWrapper": PresetAdminComponentCellWrapper_f0a4a6f21f15d606fa328a5e35f17d11,

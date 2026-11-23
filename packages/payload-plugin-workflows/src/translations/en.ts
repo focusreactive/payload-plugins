@@ -2,13 +2,27 @@
 // Server messages (refusal reasons, guard titles) come from the server and the definitions as-is.
 
 export const en = {
-  // Panel
-  panelLabel: "Workflow",
+  // Indicator (beside Save / Publish)
+  indicatorLabel: "Workflow",
+  indicatorOpen: "Open workflow.",
+  indicatorWaitingYou: "waiting on you",
+  indicatorWaitingOn: "waiting on {{who}}",
+  indicatorWaitingAnyone: "anyone can act",
+  indicatorStuck: "stuck, it can only be aborted",
+  indicatorHeld: "Held in this stage: {{operations}}.",
+  indicatorNone: "nothing running",
+  indicatorFailed: "could not be loaded",
+  indicatorMore_one: "{{count}} more workflow is running.",
+  indicatorMore_other: "{{count}} more workflows are running.",
+
+  // Drawer
+  drawerTitle: "Workflow",
   loading: "Loading workflow…",
   loadFailed: "The workflow could not be loaded.",
   retry: "Try again",
   start: "Start {{title}}",
-  startDescription: "Not running on this document.",
+  startHeading: "Start a workflow",
+  startOther: "Start another workflow",
   stageProgress: "Stage {{current}} of {{total}}: {{stage}}",
   stagePast: "done",
   stageCurrent: "current",
@@ -39,20 +53,36 @@ export const en = {
   cancel: "Cancel",
   finishedCompleted: "{{title}} completed {{when}}",
   finishedAborted: "{{title}} was aborted {{when}}",
-  showHistory_one: "Show history ({{count}} entry)",
-  showHistory_other: "Show history ({{count}} entries)",
-  hideHistory: "Hide history",
   somethingWentWrong: "Something went wrong.",
 
   // Param form
-  paramsSubmit: "Confirm",
   paramsRequired: "{{label}} is required.",
   paramsNumber: "{{label}} must be a number.",
   paramsDate: "{{label}} must be a date.",
   paramsChoose: "Choose…",
-  paramsYes: "Yes",
 
-  // History sentences
+  // History timeline
+  historyHeading: "History",
+  timelineToday: "Today",
+  timelineYesterday: "Yesterday",
+  timelineAutomated: "Automated",
+  timelineViaAgent: "{{name}} via agent",
+  timelineApi: "API",
+  timelineKindPerson: "Person",
+  timelineKindApi: "Person, through the API",
+  timelineKindAgent: "AI agent",
+  timelineKindSystem: "Automated",
+  timelineStarted: "Started in {{stage}}",
+  timelineAborted: "Aborted the run",
+  timelineMovedTo: "moved to {{stage}}",
+  timelineCompleted: "completed",
+  timelineSteps_one: "{{count}} automatic step",
+  timelineSteps_other: "{{count}} automatic steps",
+  timelineLatest: "Latest",
+  timelineShowOlder_one: "Show {{count}} older entry",
+  timelineShowOlder_other: "Show {{count}} older entries",
+
+  // History sentences (the automatic steps under a timeline row)
   actorSystem: "The workflow",
   actorYou: "You",
   actorAgent: "{{name}} (via an agent)",
@@ -87,7 +117,7 @@ export const en = {
   emptyMineAction: "See all open runs",
   emptyAllTitle: "No workflow is running.",
   emptyAllBody:
-    "Start one from the Workflow panel in the sidebar of a document. Open runs show up here.",
+    "Start one from the Workflow button next to Save on a document. Open runs show up here.",
   boardEmptyColumn: "No runs",
   boardStuck: "Stuck",
   runs_one: "{{count}} run",

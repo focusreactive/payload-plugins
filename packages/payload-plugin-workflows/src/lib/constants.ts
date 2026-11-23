@@ -1,4 +1,6 @@
-export const PANEL_COMPONENT = "@focus-reactive/payload-plugin-workflows/client#WorkflowPanel";
+/** The indicator beside Save / Publish on subject documents; it opens the workflow drawer. */
+export const INDICATOR_COMPONENT =
+  "@focus-reactive/payload-plugin-workflows/client#WorkflowIndicator";
 
 /** A server component: renders the client view inside the admin's default template (nav + header). */
 export const VIEW_COMPONENT = "@focus-reactive/payload-plugin-workflows/rsc#WorkflowsViewServer";
@@ -10,9 +12,6 @@ export const DEFAULT_INSTANCES_SLUG = "workflow-instances";
 
 /** Admin route of the workflows view, relative to the admin root. */
 export const VIEW_PATH = "/workflows";
-
-/** Name of the sidebar `ui` field injected into every subject collection. */
-export const PANEL_FIELD = "workflowPanel";
 
 export const ENDPOINT_PREFIX = "/workflows";
 

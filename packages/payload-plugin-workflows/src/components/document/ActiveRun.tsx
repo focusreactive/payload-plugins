@@ -29,7 +29,10 @@ interface Props {
   onAbort: () => Promise<void>;
 }
 
-/** An active run: stepper, guard notices, the current stage's activities, history, abort. */
+/**
+ * An active run in the workflow drawer, in the order a person reads it: where it is and what it
+ * waits on, what holds the document, what to do now, what happened, and abort last.
+ */
 export const ActiveRun = ({ view, people, busy, onFire, onAbort }: Props) => {
   const { t } = useWorkflowsT();
   const { openModal, closeModal } = useModal();
@@ -40,7 +43,7 @@ export const ActiveRun = ({ view, people, busy, onFire, onAbort }: Props) => {
   );
   const key = (view.id ?? view.workflow).replace(/[^a-zA-Z0-9-]/gu, "");
   const paramsSlug = formatDrawerSlug({ slug: `workflow-params-${key}`, depth });
-  const abortSlug = `workflow-abort-${key}`;
+  const abortSlug = formatDrawerSlug({ slug: `workflow-abort-${key}`, depth });
 
   const act = (activity: ViewActivity, action: ViewAction) => {
     if (action.params.length > 0) {
@@ -69,12 +72,14 @@ export const ActiveRun = ({ view, people, busy, onFire, onAbort }: Props) => {
 
   return (
     <section
-      aria-label={view.title}
+      aria-labelledby={`${idPrefix}-title`}
       className="workflows-run"
       data-status={view.stuck ? "stuck" : view.status}
     >
       <div className="workflows-run__header">
-        <span className="workflows-run__title">{view.title}</span>
+        <h3 className="workflows-run__title" id={`${idPrefix}-title`}>
+          {view.title}
+        </h3>
         {view.stuck ? (
           <StatusPill status="stuck" />
         ) : (
@@ -90,9 +95,14 @@ export const ActiveRun = ({ view, people, busy, onFire, onAbort }: Props) => {
         </p>
       ) : (
         <>
-          {view.stage.description ? (
-            <p className="workflows-run__meta">{view.stage.description}</p>
-          ) : null}
+          <div className="workflows-run__status">
+            <p className="workflows-run__waiting">
+              {waiting ? t("waitingOn", { who: waiting }) : t("waitingOnAnyone")}
+            </p>
+            {view.stage.description ? (
+              <p className="workflows-run__meta">{view.stage.description}</p>
+            ) : null}
+          </div>
           {view.guards.map((guard) => (
             <div className="workflows-notice" data-tone="warning" key={guard.name} role="note">
               <strong className="workflows-notice__title">{guard.title}</strong>
@@ -103,9 +113,6 @@ export const ActiveRun = ({ view, people, busy, onFire, onAbort }: Props) => {
               </span>
             </div>
           ))}
-          <p className="workflows-run__meta">
-            {waiting ? t("waitingOn", { who: waiting }) : t("waitingOnAnyone")}
-          </p>
           <ul className="workflows-run__activities">
             {view.activities.map((activity) => (
               <ActivityItem
@@ -122,11 +129,11 @@ export const ActiveRun = ({ view, people, busy, onFire, onAbort }: Props) => {
           </ul>
         </>
       )}
-      <div className="workflows-run__footer">
-        <HistoryList people={people} view={view} />
-        {view.canAbort ? (
+      <HistoryList people={people} view={view} />
+      {view.canAbort ? (
+        <div className="workflows-run__footer">
           <Button
-            buttonStyle="subtle"
+            buttonStyle="none"
             className="workflows-run__abort"
             disabled={busy}
             margin={false}
@@ -135,8 +142,8 @@ export const ActiveRun = ({ view, people, busy, onFire, onAbort }: Props) => {
           >
             {t("abort")}
           </Button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
       {view.canAbort ? (
         <ConfirmationModal
           body={t("abortBody", { stage: view.stage.title })}

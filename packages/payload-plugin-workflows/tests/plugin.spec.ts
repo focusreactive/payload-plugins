@@ -82,23 +82,30 @@ describe("workflowsPlugin", () => {
     });
   });
 
-  it("injects the panel and the hooks into subject collections only", () => {
-    const result = run();
-    const pages = bySlug(result, "pages");
-    expect(pages.fields.at(-1)).toEqual({
-      name: "workflowPanel",
-      type: "ui",
-      admin: {
-        position: "sidebar",
-        disableListColumn: true,
-        components: {
-          Field: {
-            path: "@focus-reactive/payload-plugin-workflows/client#WorkflowPanel",
-            clientProps: client,
-          },
+  it("injects the indicator and the hooks into subject collections only, with no sidebar field", () => {
+    const result = workflowsPlugin({
+      workflows: [editorialReview],
+      effects: { "notify-author": notify },
+    })({
+      ...config(),
+      collections: [
+        {
+          ...config().collections![0]!,
+          admin: { components: { edit: { beforeDocumentControls: ["x"] } } },
         },
+        { slug: "posts", fields: [] },
+      ],
+    } as Config) as Config;
+    const pages = bySlug(result, "pages");
+    expect(pages.fields).toEqual([{ name: "title", type: "text" }]);
+    expect(pages.admin?.components?.edit?.beforeDocumentControls).toEqual([
+      "x",
+      {
+        path: "@focus-reactive/payload-plugin-workflows/client#WorkflowIndicator",
+        clientProps: client,
       },
-    });
+    ]);
+    expect(bySlug(run(), "pages").admin?.components?.edit?.beforeDocumentControls).toHaveLength(1);
     expect(pages.hooks?.afterChange).toHaveLength(2);
     expect(pages.hooks?.beforeChange).toHaveLength(1);
     expect(pages.hooks?.beforeDelete).toHaveLength(1);

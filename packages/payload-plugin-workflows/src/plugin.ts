@@ -1,4 +1,4 @@
-import type { CollectionConfig, Config, Field, Payload, Plugin } from "payload";
+import type { CollectionConfig, Config, Payload, Plugin } from "payload";
 
 import { instancesCollection } from "./collection.js";
 import { workflowEndpoints } from "./endpoints.js";
@@ -7,9 +7,8 @@ import {
   DEFAULT_INSTANCES_SLUG,
   ENDPOINT_PREFIX,
   JOBS_QUEUE,
+  INDICATOR_COMPONENT,
   NAV_LINK_COMPONENT,
-  PANEL_COMPONENT,
-  PANEL_FIELD,
   TICK_TASK,
   VIEW_COMPONENT,
   VIEW_PATH,
@@ -121,19 +120,26 @@ export const warnWithoutRunner = async (
   );
 };
 
-/** Sidebar panel on every subject collection; hidden by the component until the doc has an id. */
-const withPanel = (collection: CollectionConfig, clientProps: object): CollectionConfig => {
-  const panel: Field = {
-    name: PANEL_FIELD,
-    type: "ui",
-    admin: {
-      position: "sidebar",
-      disableListColumn: true,
-      components: { Field: { path: PANEL_COMPONENT, clientProps } },
+/**
+ * The workflow indicator beside Save / Publish on every subject collection (the same slot as the
+ * document's own controls, inside its form); hidden by the component until the doc has an id.
+ */
+const withIndicator = (collection: CollectionConfig, clientProps: object): CollectionConfig => ({
+  ...collection,
+  admin: {
+    ...collection.admin,
+    components: {
+      ...collection.admin?.components,
+      edit: {
+        ...collection.admin?.components?.edit,
+        beforeDocumentControls: [
+          ...(collection.admin?.components?.edit?.beforeDocumentControls ?? []),
+          { path: INDICATOR_COMPONENT, clientProps },
+        ],
+      },
     },
-  };
-  return { ...collection, fields: [...collection.fields, panel] };
-};
+  },
+});
 
 export const workflowsPlugin =
   (options: WorkflowsPluginOptions): Plugin =>
@@ -172,7 +178,7 @@ export const workflowsPlugin =
       collections: [
         ...(config.collections ?? []).map((collection) =>
           subjects.has(collection.slug)
-            ? withPanel(withWorkflowHooks(collection), client)
+            ? withIndicator(withWorkflowHooks(collection), client)
             : collection
         ),
         instancesCollection(instancesSlug, options.overrides),
