@@ -143,7 +143,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
 }
 ```
 
-- `VisualEditing.Toggle` is the floating Off / Hover / Always control. It starts on **Off**: a page shows no outlines until the editor picks **Hover** or **Always**. The chosen mode is kept in `localStorage` under the key `visual-editing`, per origin of the page. It starts in the top right corner and can be dragged anywhere in the window; the place it was dropped is kept in `localStorage` under `visual-editing-toggle-position`.
+- `VisualEditing.Toggle` is the floating Off / Hover / Always control. It starts on **Off**: a page shows no outlines until the editor picks **Hover** or **Always**. With [editing on the page](#editing-on-the-page) it starts on **Hover** instead. A mode the editor picked, **Off** too, is used from then on. The chosen mode is kept in `localStorage` under the key `visual-editing`, per origin of the page. It starts in the top right corner and can be dragged anywhere in the window; the place it was dropped is kept in `localStorage` under `visual-editing-toggle-position`.
 - `VisualEditing.Overlay` scans its children for markers. Content outside it is not touched.
 
 ### 7. Mark rich text, uploads and relationships
@@ -582,7 +582,7 @@ mountVisualEditing({
 
 Without `richTextEditor` a click on rich text opens the field in the admin, and the page loads nothing of Lexical.
 
-Editing on the page then runs whenever the toggle is on **Hover** or **Always**; there is nothing more to turn on. On **Off** the page shows no frames and edits nothing, as without visual editing.
+Editing on the page then runs whenever the toggle is on **Hover** or **Always**; there is nothing more to turn on. The toggle starts on **Hover** for an editor who has not picked a mode on the site yet, so the page can be edited at once. On **Off** the page shows no frames and edits nothing, as without visual editing; an editor who picked **Off** keeps it.
 
 ### Using it
 
@@ -797,7 +797,7 @@ What to pass depends on what the page should do:
 | Text shows while it is typed | `instantPreview: true` | `adminOrigin`; `onSave`, or a reload of your own after a save |
 | Paragraphs, lists and formatting show before the save | `instantPreview: true` | also `richTextAttributes(value)` on the wrapper of the rich text and `renderRichTextValue`, see [Unsaved rich text on a page without React](#unsaved-rich-text-on-a-page-without-react) |
 
-The toggle starts on **Off**, as on a React page: the mode is kept in `localStorage` under `visual-editing`, per origin, so an editor picks **Hover** or **Always** once on each site.
+The toggle starts on **Off**, or on **Hover** with `inlineEditing`, as on a React page: the mode is kept in `localStorage` under `visual-editing`, per origin, so an editor picks **Hover** or **Always** once on each site.
 
 Nothing reloads the page after a save unless you say so. `onSave` is called each time the editor saves the document, autosave included, and never when the page loads; `() => location.reload()` is the usual value. Without `onSave` and without a reload of your own, the page keeps the content it loaded with: typed text stays on screen through instant preview, and everything that waits for the save never appears. A site that already reloads its preview after a save should leave `onSave` out, or it reloads twice.
 

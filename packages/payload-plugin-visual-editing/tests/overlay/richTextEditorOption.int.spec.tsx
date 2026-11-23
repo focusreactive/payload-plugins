@@ -40,7 +40,6 @@ describe("the rich text editor a site hands the page", () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    localStorage.setItem(STORAGE_KEY, "hover");
     startEditSession = vi.fn(() => ({ end: () => undefined }));
     richTextEditor = vi.fn(() => Promise.resolve({ richTextEditor: { startEditSession } }));
     vi.stubGlobal(

@@ -46,7 +46,7 @@ describe("page store", () => {
 
     expect(store.read()).toEqual({
       isFramed: true,
-      mode: "hover",
+      chosenMode: "hover",
       pageOrigin: window.location.origin,
     });
   });
@@ -64,15 +64,15 @@ describe("page store", () => {
 
   it.each([
     ["true", "always"],
-    ["nonsense", "off"],
-    [null, "off"],
-  ])("reads a stored %s as %s", (stored, mode) => {
+    ["nonsense", null],
+    [null, null],
+  ])("reads a stored %s as the choice %s", (stored, mode) => {
     if (stored !== null) localStorage.setItem(STORAGE_KEY, stored);
     const store = createPageStore();
 
     store.attach(window);
 
-    expect(store.read().mode).toBe(mode);
+    expect(store.read().chosenMode).toBe(mode);
   });
 
   it("stores a chosen mode and tells every subscriber", () => {
@@ -83,17 +83,17 @@ describe("page store", () => {
 
     store.setMode("hover");
 
-    expect(store.read().mode).toBe("hover");
+    expect(store.read().chosenMode).toBe("hover");
     expect(localStorage.getItem(STORAGE_KEY)).toBe("hover");
     expect(listener).toHaveBeenCalledTimes(2);
   });
 
-  it("reads the mode as off on a page whose storage is blocked", () => {
+  it("reads no chosen mode on a page whose storage is blocked", () => {
     const store = createPageStore();
 
     expect(() => store.attach(pageWithBlockedStorage())).not.toThrow();
 
-    expect(store.read().mode).toBe("off");
+    expect(store.read().chosenMode).toBeNull();
   });
 
   it("keeps a chosen mode for the page when its storage is blocked", () => {
@@ -102,7 +102,7 @@ describe("page store", () => {
 
     expect(() => store.setMode("always")).not.toThrow();
 
-    expect(store.read().mode).toBe("always");
+    expect(store.read().chosenMode).toBe("always");
   });
 
   it("keeps a chosen mode for the page when its storage is full", () => {
@@ -115,7 +115,7 @@ describe("page store", () => {
     expect(() => store.setMode("hover")).not.toThrow();
     setItem.mockRestore();
 
-    expect(store.read().mode).toBe("hover");
+    expect(store.read().chosenMode).toBe("hover");
   });
 
   it("stops telling a subscriber that unsubscribed", () => {
@@ -134,7 +134,7 @@ const NO_ORIGINS = ["cms.example.com", "localhost:3000", "//cms.example.com", "f
 describe("session", () => {
   const framedPage = {
     isFramed: true,
-    mode: "always" as const,
+    chosenMode: "always" as const,
     pageOrigin: "https://site.example",
   };
 
@@ -152,7 +152,9 @@ describe("session", () => {
 
   it("is enabled when available and the mode is not off", () => {
     expect(sessionOf({ available: true }, framedPage).enabled).toBe(true);
-    expect(sessionOf({ available: true }, { ...framedPage, mode: "off" }).enabled).toBe(false);
+    expect(sessionOf({ available: true }, { ...framedPage, chosenMode: "off" }).enabled).toBe(
+      false
+    );
   });
 
   it("takes the admin origin of the site, else the origin of the page", () => {
@@ -225,7 +227,7 @@ describe("session", () => {
 describe("editing on the page", () => {
   const page = {
     isFramed: false,
-    mode: "hover" as const,
+    chosenMode: "hover" as const,
     pageOrigin: "https://site.example",
   };
 
@@ -233,8 +235,8 @@ describe("editing on the page", () => {
     const options = { available: true, inlineEditing: true };
 
     expect(sessionOf(options, page).isInlineEditingOn).toBe(true);
-    expect(sessionOf(options, { ...page, mode: "always" }).isInlineEditingOn).toBe(true);
-    expect(sessionOf(options, { ...page, mode: "off" }).isInlineEditingOn).toBe(false);
+    expect(sessionOf(options, { ...page, chosenMode: "always" }).isInlineEditingOn).toBe(true);
+    expect(sessionOf(options, { ...page, chosenMode: "off" }).isInlineEditingOn).toBe(false);
     expect(sessionOf({ available: true }, page).isInlineEditingOn).toBe(false);
     expect(sessionOf({ ...options, available: false }, page).isInlineEditingOn).toBe(false);
   });
@@ -249,6 +251,40 @@ describe("editing on the page", () => {
     expect(
       sessionOf({ available: true, inlineEditing: true }, store.read()).isInlineEditingOn
     ).toBe(true);
+  });
+
+  it("starts on Hover where the site offers it and the editor chose no mode yet", () => {
+    const store = createPageStore();
+
+    store.attach(window);
+
+    expect(sessionOf({ available: true, inlineEditing: true }, store.read())).toMatchObject({
+      isInlineEditingOn: true,
+      mode: "hover",
+    });
+  });
+
+  it("starts on Off where the site does not offer it and the editor chose no mode yet", () => {
+    const store = createPageStore();
+
+    store.attach(window);
+
+    expect(sessionOf({ available: true }, store.read())).toMatchObject({
+      enabled: false,
+      mode: "off",
+    });
+  });
+
+  it("stays on Off where the editor chose Off", () => {
+    localStorage.setItem(STORAGE_KEY, "off");
+    const store = createPageStore();
+
+    store.attach(window);
+
+    expect(sessionOf({ available: true, inlineEditing: true }, store.read())).toMatchObject({
+      isInlineEditingOn: false,
+      mode: "off",
+    });
   });
 
   it("is offered only where visual editing is available", () => {

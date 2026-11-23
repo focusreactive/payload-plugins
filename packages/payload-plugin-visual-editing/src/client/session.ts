@@ -32,7 +32,7 @@ export type Session = {
 };
 
 export type PageState = {
-  mode: VisualEditingMode;
+  chosenMode: VisualEditingMode | null;
   isFramed: boolean;
   pageOrigin: string;
 };
@@ -45,8 +45,8 @@ export interface PageStore {
 }
 
 export const DETACHED_PAGE: PageState = {
+  chosenMode: "off",
   isFramed: false,
-  mode: "off",
   pageOrigin: "",
 };
 
@@ -94,12 +94,15 @@ const store = (win: Window, key: string, value: string): void => {
   }
 };
 
-const readStoredMode = (win: Window): VisualEditingMode => {
+const readStoredMode = (win: Window): VisualEditingMode | null => {
   const stored = storedUnder(win, STORAGE_KEY);
   if (stored === "always" || stored === "hover" || stored === "off") return stored;
   if (stored === "true") return "always";
-  return "off";
+  return null;
 };
+
+const modeOf = (chosenMode: VisualEditingMode | null, inlineEditing: boolean): VisualEditingMode =>
+  chosenMode ?? (inlineEditing ? "hover" : "off");
 
 export const toggledMode = (mode: VisualEditingMode): VisualEditingMode =>
   mode === "off" ? "always" : "off";
@@ -125,13 +128,13 @@ export function createPageStore(): PageStore {
     attach(win) {
       attachedWindow = win;
       change({
+        chosenMode: readStoredMode(win),
         isFramed: win.self !== win.top || findAdminWindow(win) !== null,
-        mode: readStoredMode(win),
         pageOrigin: win.location.origin,
       });
     },
     setMode(mode) {
-      change({ ...state, mode });
+      change({ ...state, chosenMode: mode });
       if (attachedWindow) store(attachedWindow, STORAGE_KEY, mode);
     },
   };
@@ -142,8 +145,9 @@ export const sessionOf = (options: SessionOptions, page: PageState): Session => 
   const available = isDraft && (!options.framedOnly || page.isFramed);
   const instantPreview = options.instantPreview ?? true;
   const adminOrigin = originOf(options.adminOrigin) ?? page.pageOrigin;
-  const enabled = available && page.mode !== "off";
   const inlineEditing = available && Boolean(options.inlineEditing);
+  const mode = modeOf(page.chosenMode, inlineEditing);
+  const enabled = available && mode !== "off";
   return {
     adminBasePath: options.adminBasePath ?? DEFAULT_ADMIN_BASE_PATH,
     adminOrigin,
@@ -155,7 +159,7 @@ export const sessionOf = (options: SessionOptions, page: PageState): Session => 
     isDraft,
     isInlineEditingOn: enabled && inlineEditing,
     isInstantPreviewOn: available && instantPreview,
-    mode: page.mode,
+    mode,
     payloadApi: options.payloadApi ?? `${adminOrigin}${DEFAULT_API_PATH}`,
   };
 };
