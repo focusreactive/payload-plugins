@@ -1,138 +1,152 @@
 ---
 name: payload-plugins-add-package
-description: Use when adding or publishing a new plugin package in this monorepo, or when CI fails with "cannot publish over previously published versions" after a first manual publish.
+description: Use when adding a new plugin package to this monorepo or doing its first (initial) npm release, or when the Release workflow fails with "ENONPMTOKEN No npm token specified" or "cannot publish over previously published versions" for a new package.
 ---
 
-# Add a New Plugin Package (payload-plugins)
+# Add a plugin package and do its first release
 
 ## How it works
 
-semantic-release decides what version to publish by finding the last git tag for the package. For new packages, you publish `1.0.0` manually once, then create the matching git tag — this anchors semantic-release's history. After that, all future releases are fully automated by CI.
+CI (`.github/workflows/release.yml`, on every push to `main`) runs multi-semantic-release over every package that is not `private`.
+For each package it finds the last git tag `@focus-reactive/<name>@<version>` and releases the commits since then.
+CI authenticates to npm only through npm Trusted Publishing (OIDC), and npm can only attach a trusted publisher to a package that already exists.
 
-## Prerequisites
+So the first version is published by hand, and two things must exist before the package becomes non-private on `main`:
 
-- `gh` CLI authenticated (`gh auth status`)
-- `npm` logged in (`npm whoami`)
-- `bun` installed
+1. A trusted publisher for the package on npmjs.com.
+2. The git tag of the hand-published version.
+
+If the package lands on `main` as non-private without both, every Release run fails (`ENONPMTOKEN` or "cannot publish over previously published versions").
+That failure blocks releases of all plugins, not just the new one.
+
+## Order (do not reorder)
+
+1. The plugin code is merged to `main` with `"private": true`.
+2. A branch flips it to publishable. Open a PR, do not merge it.
+3. Publish the first version from that branch, by hand.
+4. Add the trusted publisher on npmjs.com.
+5. Create the version tag on `main`.
+6. Merge the PR.
+7. The next `fix:`/`feat:`/`docs:` commit in the package is released by CI.
 
 ---
 
-## Steps
+## 1. Package requirements
 
-### 1. Create the package
-
-In `packages/your-plugin-name/`, create `package.json` with these required fields:
+`packages/<name>/package.json`, while the plugin is being developed:
 
 ```json
 {
-  "name": "@focus-reactive/your-plugin-name",
+  "name": "@focus-reactive/<name>",
   "version": "1.0.0",
-  "private": false,
+  "private": true,
   "publishConfig": { "access": "public" },
   "repository": {
     "type": "git",
     "url": "https://github.com/focusreactive/payload-plugins",
-    "directory": "packages/your-plugin-name"
+    "directory": "packages/<name>"
   },
-  "scripts": {
-    "build": "tsup"
-  }
+  "files": ["dist"],
+  "scripts": { "build": "tsup" }
 }
 ```
 
-**Critical — `repository.url` must be exactly:**
+- `repository.url` must be exactly `https://github.com/focusreactive/payload-plugins`, with no `.git` suffix and no hyphen in `focusreactive`. Otherwise semantic-release fails with git error 128.
+  When publishing, npm warns that it "normalized" this URL. That warning is harmless.
+- Keep `"private": true` until step 6, so CI ignores the package (`--ignore-private-packages`).
+- Use `1.0.0`: it is semantic-release's initial version and how the other plugins started.
 
-```
-https://github.com/focusreactive/payload-plugins
-```
-
-No `.git` suffix. Wrong URL → semantic-release fails with git error 128.
-
----
-
-### 2. Build locally
+## 2. Make it publishable (PR, not merged)
 
 ```bash
-cd packages/your-plugin-name
-bun run build
+git checkout -b chore/<name>-first-publish origin/main
+# in packages/<name>/package.json: "private": false, "version": "1.0.0"
+git commit -am "chore(<name>): make the package publishable for its first 1.0.0 release"
+git push -u origin HEAD
+gh pr create ...   # say in the body: do not merge before the tag exists
 ```
 
-Verify `dist/` exists before publishing.
+Use `chore:` so merging it later does not trigger a release by itself.
 
----
-
-### 3. First manual publish
-
-From inside the package directory:
+Verify before publishing:
 
 ```bash
+cd packages/<name>
+bun run build && bun run test && bunx ultracite check
+npm pack --dry-run   # expect only dist/, README.md, package.json; check name and version
+```
+
+## 3. First publish (by hand)
+
+Needs an npm account with write access to the `@focus-reactive` scope.
+
+```bash
+npm whoami                       # 401 -> run `npm login` first
+npm access list packages @focus-reactive | head -3   # expect read-write
+cd packages/<name>
 npm publish --access public
 ```
 
-This creates `1.0.0` on npm. npm may warn about normalizing `repository.url` — that's fine, not an error.
-
----
-
-### 4. Link repo as trusted publisher on npm
-
-Required so CI can publish with provenance (`"provenance": true` in `.releaserc.json`).
-
-1. Go to [npmjs.com](https://npmjs.com) → your package → **Settings**
-2. Under **Publishing** → **Trusted Publishers**
-3. Add GitHub Actions: repo `focusreactive/payload-plugins`, workflow `release.yml`
-
----
-
-### 5. Create the git tag + GitHub release
-
-This is the critical step. Without it, semantic-release thinks `1.0.0` was never released, tries to publish it again, and CI fails.
-
-Find the full SHA of the commit that represents your `1.0.0` state (the last commit before any docs/fix commits you intend to be the first automated release):
+- npm asks for 2FA, either in the browser (press ENTER) or with an OTP. Agents: run it with `--otp=<code>` from the user, or ask the user to run it in their own terminal.
+- In the user's own terminal, the command must not start with `!`. zsh reads `! cmd && npm publish` as a negation, and `npm publish` silently never runs.
+- Success line: `+ @focus-reactive/<name>@1.0.0`. The registry can take a few minutes to show a new package:
 
 ```bash
-git log --oneline | head -10   # find the right commit
-git rev-parse <short-sha>       # get full SHA — required, short SHA causes HTTP 422
+curl -s -o /dev/null -w '%{http_code}\n' https://registry.npmjs.org/@focus-reactive%2f<name>   # 200 when visible
 ```
 
-Create the release:
+## 4. Trusted publisher (before merging)
+
+npmjs.com -> `@focus-reactive/<name>` -> Settings -> Trusted Publisher -> GitHub Actions:
+
+- Organization or user: `focusreactive`
+- Repository: `payload-plugins`
+- Workflow filename: `release.yml`
+- Environment: leave empty
+
+This is a web-only step; no CLI does it.
+Without it, CI fails with `ENONPMTOKEN No npm token specified`.
+
+## 5. Tag the published version
+
+Tag the current `main` commit that holds the plugin code you published (not the step 2 PR commit, which is not on `main` yet).
+Use the full SHA; a short one gives HTTP 422.
 
 ```bash
-gh release create "@focus-reactive/your-plugin-name@1.0.0" \
-  --target <full-sha> \
-  --title "your-plugin-name v1.0.0" \
+git fetch origin main
+SHA=$(git rev-parse origin/main)
+gh release create "@focus-reactive/<name>@1.0.0" \
+  --target "$SHA" \
+  --title "<name> v1.0.0" \
   --notes "Initial release" \
   --repo focusreactive/payload-plugins
 ```
 
----
+## 6. Merge the PR
 
-### 6. Trigger the first automated release
-
-The release workflow **only runs on push to main** — it cannot be triggered manually (`workflow_dispatch` is not configured). Push a `docs:` or `fix:` commit touching a file inside the package:
+Merge the step 2 PR.
+The Release run on the merge commit must succeed and release nothing for the package:
 
 ```bash
-# e.g. edit packages/your-plugin-name/README.md
-git commit -m "docs(your-plugin-name): trigger first automated release"
-git push
+gh run list --repo focusreactive/payload-plugins --workflow release.yml --limit 1
 ```
 
----
+## 7. First automated release
 
-### 7. Verify
-
-- GitHub Actions → Release workflow → should show `1.0.1` published
-- `npm view @focus-reactive/your-plugin-name versions` → should list `["1.0.0", "1.0.1"]`
-- GitHub Releases → new release `@focus-reactive/your-plugin-name@1.0.1` should appear
+The workflow runs only on push to `main`; there is no manual trigger, and re-running a failed job does not help.
+Push a `docs:`, `fix:` or `feat:` commit that touches a file inside `packages/<name>/` (a `chore:` commit releases nothing).
+Expected result: the run publishes `1.0.1` (or `1.1.0` for `feat:`), `npm view @focus-reactive/<name> versions` lists it, and a GitHub release appears.
 
 ---
 
-## Common Mistakes
+## Common mistakes
 
-| Mistake                          | Error                                                      | Fix                                       |
-| -------------------------------- | ---------------------------------------------------------- | ----------------------------------------- |
-| Missing git tag before CI        | "cannot publish over previously published versions: 1.0.0" | Run step 5 (`gh release create`)          |
-| Short SHA in `gh release create` | HTTP 422: target_commitish invalid                         | Use full SHA: `git rev-parse <short-sha>` |
-| Re-running failed workflow job   | "Local branch is behind remote — 0 packages released"      | Push a new commit instead (step 6)        |
-| Wrong `repository.url`           | semantic-release git error 128                             | Must match exactly, no `.git` suffix      |
-| `chore:` commit to test release  | No release triggered                                       | Use `docs:`, `fix:`, or `feat:`           |
-| Trusted publisher not set up     | CI publish fails with 401/403                              | Complete step 4 on npmjs.com              |
+| Mistake | Error | Fix |
+| --- | --- | --- |
+| Merged non-private package before the trusted publisher was set | `ENONPMTOKEN No npm token specified`; Release fails for every package | Add the trusted publisher (step 4), then push any commit to `main` |
+| Merged non-private package before the tag existed | "cannot publish over previously published versions: 1.0.0" | Create the tag (step 5), then push a new commit |
+| Short SHA in `gh release create` | HTTP 422: target_commitish invalid | `git rev-parse` for the full SHA |
+| Re-running the failed workflow job | "Local branch is behind remote - 0 packages released" | Push a new commit instead |
+| Wrong `repository.url` | semantic-release git error 128 | Exactly `https://github.com/focusreactive/payload-plugins` |
+| `chore:` commit to trigger a release | Nothing released | Use `docs:`, `fix:` or `feat:` |
+| `! cd ... && npm publish` typed in a normal terminal | No output, nothing published | Drop the leading `!` |
