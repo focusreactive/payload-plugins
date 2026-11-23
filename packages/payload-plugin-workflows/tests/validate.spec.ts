@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { defineWorkflow } from "../src/define.js";
+import { defineWorkflow, definitionIssues } from "../src/define.js";
 import type { WorkflowDefinition } from "../src/types.js";
-import { definitionIssues } from "../src/validate.js";
 import { editorialReview, minimal } from "./fixtures.js";
 
 const issuesOf = (change: (def: WorkflowDefinition) => void): string[] => {
@@ -91,7 +90,7 @@ describe("validateDefinition", () => {
         (d) => (d.stages[1]!.activities = [{ name: "w", actions: [{ name: "x", status: "done" }] }])
       )
     ).toEqual([
-      'stages[1].activities: terminal stage "b" (no transitions) cannot declare activities',
+      'stages[1].activities: terminal stage "b" (no transitions) cannot declare actions or activities',
     ]);
   });
 
@@ -190,10 +189,69 @@ describe("reserved names", () => {
   });
 });
 
+describe("plain stage actions", () => {
+  /** `minimal()` with stage "a" written with plain `actions`. */
+  const plain = (change: (stage: WorkflowDefinition["stages"][number]) => void = () => {}) => {
+    const def = minimal();
+    def.stages[0] = {
+      name: "a",
+      assignee: "owner",
+      actions: [{ name: "finish", status: "done" }],
+      transitions: [{ name: "next", to: "b" }],
+    };
+    change(def.stages[0]);
+    return def;
+  };
+
+  it("are valid on their own, and checked at the stage's path", () => {
+    expect(definitionIssues(plain())).toEqual([]);
+    expect(definitionIssues(plain((stage) => (stage.actions = [{ name: "note" }])))).toEqual([
+      'stages[0].actions: stage "a" needs at least one action with a status, or it can never finish',
+    ]);
+    expect(definitionIssues(plain((stage) => (stage.assignee = "nobody")))).toEqual([
+      'stages[0].assignee: assignee "nobody" is not a declared field of type "user"',
+    ]);
+  });
+
+  it("cannot be mixed with activities, and the stage's assignee and roles need them", () => {
+    expect(
+      definitionIssues(
+        plain(
+          (stage) => (stage.activities = [{ name: "w", actions: [{ name: "x", status: "done" }] }])
+        )
+      )
+    ).toEqual([
+      'stages[0].activities: stage "a" declares both `actions` and `activities`: use `actions` for one task, `activities` for several',
+    ]);
+    const def = minimal();
+    def.stages[0]!.roles = ["editor"];
+    expect(definitionIssues(def)).toEqual([
+      "stages[0].roles: a stage's `assignee` and `roles` apply to its plain `actions`; with `activities`, set them on each activity",
+    ]);
+  });
+
+  it("are not allowed on a terminal stage", () => {
+    const def = minimal();
+    def.stages[1] = { name: "b", actions: [{ name: "x", status: "done" }] };
+    expect(definitionIssues(def)).toEqual([
+      'stages[1].actions: terminal stage "b" (no transitions) cannot declare actions or activities',
+    ]);
+  });
+
+  it("become one activity named after the stage", () => {
+    const [stage] = defineWorkflow(plain()).stages;
+    expect(stage).toEqual({
+      name: "a",
+      activities: [{ name: "a", assignee: "owner", actions: [{ name: "finish", status: "done" }] }],
+      transitions: [{ name: "next", to: "b" }],
+    });
+  });
+});
+
 describe("defineWorkflow", () => {
   it("returns the definition when valid", () => {
     const def = minimal();
-    expect(defineWorkflow(def)).toBe(def);
+    expect(defineWorkflow(def)).toEqual(def);
   });
 
   it("throws one error collecting every problem, path-prefixed", () => {

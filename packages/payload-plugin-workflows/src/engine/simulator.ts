@@ -1,3 +1,4 @@
+import { defineWorkflow } from "../define.js";
 import type {
   Caller,
   Env,
@@ -5,11 +6,10 @@ import type {
   InstanceView,
   Patch,
   QueuedEffect,
+  Result,
   WorkflowDefinition,
 } from "../types.js";
-import { assertValidDefinition } from "../validate.js";
-import { abort, fire, patchFields, start } from "./operations.js";
-import { settle } from "./settle.js";
+import { SYSTEM, abort, fire, patchFields, settle, start } from "./engine.js";
 import { view } from "./view.js";
 
 export interface SimulatedCaller {
@@ -25,25 +25,22 @@ const callerOf = (who: SimulatedCaller = {}): Caller => ({
 
 /**
  * An in-memory run over the same engine functions the server uses, for testing a definition's
- * every path before an editor sees it.
+ * every path before an editor sees it. Each step returns the new state.
  */
 export const createWorkflowSimulator = (
-  def: WorkflowDefinition,
+  definition: WorkflowDefinition,
   options: { fields?: Patch; doc?: Record<string, unknown> | null; now?: Date } = {}
 ) => {
-  assertValidDefinition(def);
+  const def = defineWorkflow(definition);
   const env: Env = { doc: options.doc ?? null, now: options.now ?? new Date() };
   const effects: QueuedEffect[] = [];
-  const first = start(def, { fields: options.fields, actor: { system: true } }, env);
-  let state: InstanceState = first.state;
-  effects.push(...first.effects);
-
-  // Each step answers with the new state.
-  const apply = (result: { state: InstanceState; effects: QueuedEffect[] }): InstanceState => {
+  let state: InstanceState;
+  const apply = (result: Result): InstanceState => {
     state = result.state;
     effects.push(...result.effects);
     return state;
   };
+  apply(start(def, { fields: options.fields, actor: SYSTEM }, env));
 
   return {
     get state(): InstanceState {
@@ -53,11 +50,14 @@ export const createWorkflowSimulator = (
     get effects(): QueuedEffect[] {
       return [...effects];
     },
+    /** Fires an action, as a person or agent would; `activity` only when the stage has several. */
     fire: (
-      activity: string,
       action: string,
-      who: SimulatedCaller & { params?: Record<string, unknown> } = {}
-    ) => apply(fire(def, state, { activity, action, params: who.params }, callerOf(who), env)),
+      who: SimulatedCaller & { activity?: string; params?: Record<string, unknown> } = {}
+    ) =>
+      apply(
+        fire(def, state, { activity: who.activity, action, params: who.params }, callerOf(who), env)
+      ),
     /** Replaces the subject document and settles, as saving it would. */
     setDoc: (doc: Record<string, unknown> | null) => {
       env.doc = doc;
@@ -70,7 +70,7 @@ export const createWorkflowSimulator = (
     },
     /** An effect reporting back. */
     patch: (values: Patch) => apply(patchFields(def, state, values, env)),
-    abort: (reason?: string) => apply(abort(def, state, { reason, actor: { system: true } }, env)),
+    abort: (reason?: string) => apply(abort(state, { reason, actor: SYSTEM }, env)),
     view: (who?: SimulatedCaller): InstanceView => view(def, state, callerOf(who), env),
   };
 };

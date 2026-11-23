@@ -3,71 +3,20 @@
 import { ChevronIcon } from "@payloadcms/ui";
 import { useId, useState } from "react";
 
-import type { HistoryEntry, InstanceView } from "../../types.js";
-import { formatDateTime, historySentence, personName, titleIn } from "../shared/format.js";
+import type { InstanceView } from "../../types.js";
+import { formatDateTime } from "../shared/format.js";
 import type { People, T } from "../shared/format.js";
-import { TIMELINE_VISIBLE, groupByDay, timelineRows } from "../shared/timeline.js";
-import type { ActorKind, TimelineDay, TimelineRow } from "../shared/timeline.js";
+import {
+  TIMELINE_VISIBLE,
+  groupByDay,
+  rowDetails,
+  rowWhat,
+  rowWho,
+  stepSentence,
+  timelineRows,
+} from "../shared/history.js";
+import type { ActorKind, TimelineDay, TimelineRow } from "../shared/history.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
-
-type Titles = Pick<InstanceView, "titles">;
-
-const capitalize = (text: string): string =>
-  text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
-
-const paramText = (value: unknown): string =>
-  typeof value === "string" ? value : JSON.stringify(value);
-
-/** Who did the row's step, as its line names them. */
-const whoOf = (row: TimelineRow, people: People, t: T): string => {
-  if (row.kind === "system" || row.actor.id === undefined) {
-    return t("timelineAutomated");
-  }
-  // "You" starts the line; other names stay as written (an email is not capitalised).
-  const name = row.actor.id === people.me ? t("actorYou") : personName(row.actor.id, people, t);
-  return row.kind === "agent" ? t("timelineViaAgent", { name }) : name;
-};
-
-/** What happened, after the dot: "Approve → moved to Approved → completed". */
-const whatOf = (row: TimelineRow, view: Titles, people: People, t: T): string => {
-  const stage = (name: string) => titleIn(view.titles, name, name);
-  const parts: string[] = [];
-  const first = row.lead ?? row.steps[0];
-  if (first?.type === "action" && row.lead) {
-    const base = `${first.stage}/${first.activity}`;
-    parts.push(titleIn(view.titles, `${base}/${first.action}`, first.action));
-  } else if (first?.type === "started") {
-    parts.push(t("timelineStarted", { stage: stage(first.stage) }));
-  } else if (first?.type === "aborted") {
-    parts.push(t("timelineAborted"));
-  }
-  if (row.movedTo !== undefined) {
-    parts.push(t("timelineMovedTo", { stage: stage(row.movedTo) }));
-  }
-  if (row.completed) {
-    parts.push(t("timelineCompleted"));
-  }
-  if (parts.length === 0 && row.steps.length === 1 && row.steps[0]) {
-    return historySentence(row.steps[0], view, people, t);
-  }
-  return capitalize(parts.join(" → "));
-};
-
-/** The row's inputs, under its line: the reason a change was requested, an abort's reason. */
-const detailsOf = (entry: HistoryEntry | undefined, view: Titles): string[] => {
-  if (entry?.type === "aborted") {
-    return entry.reason ? [entry.reason] : [];
-  }
-  if (entry?.type !== "action") {
-    return [];
-  }
-  const base = `${entry.stage}/${entry.activity}/${entry.action}`;
-  return Object.entries(entry.params ?? {})
-    .filter(([, value]) => value !== undefined && value !== null && value !== "")
-    .map(
-      ([name, value]) => `${titleIn(view.titles, `${base}/${name}`, name)}: ${paramText(value)}`
-    );
-};
 
 const KIND_LABEL: Record<ActorKind, Parameters<T>[0]> = {
   person: "timelineKindPerson",
@@ -97,7 +46,7 @@ const Row = ({
   const { t, language } = useWorkflowsT();
   const [open, setOpen] = useState(false);
   const stepsId = useId();
-  const details = detailsOf(row.lead, view);
+  const details = rowDetails(row, view.titles);
   // A single automatic step is the row's own text: nothing to fold.
   const folded = row.lead ? row.steps : row.steps.length > 1 ? row.steps : [];
   return (
@@ -117,13 +66,13 @@ const Row = ({
           role="img"
         />
         <span className="workflows-history__text">
-          <span className="workflows-history__who">{whoOf(row, people, t)}</span>
+          <span className="workflows-history__who">{rowWho(row, people, t)}</span>
           {row.kind === "api" ? (
             <span className="workflows-history__marker">{t("timelineApi")}</span>
           ) : null}
           <span className="workflows-history__what">
             <span aria-hidden="true"> · </span>
-            {whatOf(row, view, people, t)}
+            {rowWhat(row, view.titles, t)}
           </span>
         </span>
         <span className="workflows-history__end">
@@ -149,7 +98,7 @@ const Row = ({
       ))}
       {row.failed.map((entry, index) => (
         <p className="workflows-history__detail" data-tone="error" key={`${entry.at}-${index}`}>
-          {historySentence(entry, view, people, t)}
+          {stepSentence(entry, view.titles, t)}
         </p>
       ))}
       {open && folded.length > 0 ? (
@@ -159,7 +108,7 @@ const Row = ({
               <time className="workflows-history__time" dateTime={entry.at}>
                 {timeOf(entry.at, language)}
               </time>
-              <span>{historySentence(entry, view, people, t)}</span>
+              <span>{stepSentence(entry, view.titles, t)}</span>
             </li>
           ))}
         </ol>

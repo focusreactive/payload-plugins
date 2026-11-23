@@ -4,7 +4,7 @@ import { redirect } from "next/navigation.js";
 import type { AdminViewServerProps } from "payload";
 import { formatAdminURL } from "payload/shared";
 
-import type { WorkflowsClientProps } from "../shared/types.js";
+import { VIEW_PATH } from "../../constants.js";
 import { WorkflowsView } from "./WorkflowsView.js";
 
 /**
@@ -15,21 +15,17 @@ export const WorkflowsViewServer = ({
   initPageResult,
   params,
   searchParams,
-  endpoints,
-  instancesSlug,
-  viewPath,
-}: AdminViewServerProps & Partial<WorkflowsClientProps>) => {
+}: AdminViewServerProps) => {
   const { req, permissions, locale, visibleEntities } = initPageResult;
   const { i18n, payload, user } = req;
   const adminRoute = payload.config.routes.admin;
   if (!user) {
     // Custom views are public to Payload; this one is not.
-    const back = formatAdminURL({ adminRoute, path: (viewPath ?? "/workflows") as `/${string}` });
+    const back = formatAdminURL({ adminRoute, path: VIEW_PATH });
     redirect(
       `${formatAdminURL({ adminRoute, path: "/login" })}?redirect=${encodeURIComponent(back)}`
     );
   }
-  const client = (payload.config.admin?.custom?.workflows ?? {}) as Partial<WorkflowsClientProps>;
   return (
     <DefaultTemplate
       i18n={i18n}
@@ -44,11 +40,7 @@ export const WorkflowsViewServer = ({
       visibleEntities={visibleEntities}
     >
       <Gutter>
-        <WorkflowsView
-          endpoints={endpoints ?? client.endpoints}
-          instancesSlug={instancesSlug ?? client.instancesSlug}
-          viewPath={viewPath ?? client.viewPath}
-        />
+        <WorkflowsView />
       </Gutter>
     </DefaultTemplate>
   );

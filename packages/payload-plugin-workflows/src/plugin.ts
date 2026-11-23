@@ -1,33 +1,80 @@
-import type { CollectionConfig, Config, Payload, Plugin } from "payload";
+import type { Config, Payload, PayloadRequest, Plugin, TypedUser } from "payload";
 
-import { instancesCollection } from "./collection.js";
+import { JOBS_QUEUE, VIEW_PATH } from "./constants.js";
+import { activitiesWithPaths, defineWorkflow, definitionIssues, formatIssues } from "./define.js";
 import { workflowEndpoints } from "./endpoints.js";
-import { withWorkflowHooks } from "./hooks.js";
-import {
-  DEFAULT_INSTANCES_SLUG,
-  ENDPOINT_PREFIX,
-  JOBS_QUEUE,
-  INDICATOR_COMPONENT,
-  NAV_LINK_COMPONENT,
-  TICK_TASK,
-  VIEW_COMPONENT,
-  VIEW_PATH,
-} from "./lib/constants.js";
-import type { ResolvedWorkflows, WorkflowsPluginOptions } from "./options.js";
-import { defaultRoles } from "./server/config.js";
+import { hasDrafts, withWorkflowHooks } from "./hooks.js";
 import { effectTask, tickTask } from "./server/effects.js";
-import { mergeTranslations } from "./translations/merge.js";
-import { definitionIssues, formatIssues } from "./validate.js";
+import { runsCollection } from "./server/store.js";
+import { NAMESPACE, en } from "./translations.js";
+import type { InstanceView, Patch, QueuedEffect, WorkflowDefinition } from "./types.js";
 
-const hasDrafts = (collection: CollectionConfig): boolean =>
-  Boolean(
-    collection.versions && typeof collection.versions === "object" && collection.versions.drafts
-  );
+// ---- Options --------------------------------------------------------------------------------
 
-/** Every problem with the options against the config, in one error. */
+export interface EffectHandlerArgs {
+  payload: Payload;
+  req: PayloadRequest;
+  /** The run as the system sees it, with `id` and `subject`. */
+  instance: InstanceView;
+  /** The subject document (latest draft), or `null` when it is gone. */
+  doc: Record<string, unknown> | null;
+  effect: QueuedEffect;
+}
+
+/**
+ * Runs after the change that queued it is committed, as a Payload job (retried on throw). Return
+ * `{ set }` to write workflow fields and move the run: how an async step reports back.
+ */
+export type EffectHandler = (
+  args: EffectHandlerArgs
+) => Promise<void | { set?: Patch }> | void | { set?: Patch };
+
+export interface WorkflowAccessArgs {
+  req: PayloadRequest;
+  /** Who is asking: the `user` passed to the operation, not necessarily `req.user`. */
+  user: TypedUser;
+  workflow: WorkflowDefinition;
+  /** The subject document's collection and id. */
+  collection: string;
+  id: string;
+  /** The subject document (latest draft), read with `user`'s access. */
+  doc: Record<string, unknown> | null;
+}
+
+export type WorkflowAccess = (args: WorkflowAccessArgs) => boolean | Promise<boolean>;
+
+export interface WorkflowsPluginOptions {
+  /** Default `true`. */
+  enabled?: boolean;
+  workflows: WorkflowDefinition[];
+  effects?: Record<string, EffectHandler>;
+  /** Roles of a user. Default: `user.roles` (array) or `user.role` (string), else none. */
+  roles?: (user: TypedUser) => string[];
+  /**
+   * Who may start a run, fire an action or abort a run. Only `true` allows. Default: a user of the
+   * admin user collection (`admin.user`). The document is always read with the user's access
+   * first, so someone who cannot read it is refused before these run.
+   */
+  access?: { start?: WorkflowAccess; fire?: WorkflowAccess; abort?: WorkflowAccess };
+}
+
+/** The options as the server reads them back (`config.custom.workflows`), defaults filled in. */
+export type WorkflowsSettings = Required<Omit<WorkflowsPluginOptions, "enabled">>;
+
+const defaultRoles = (user: TypedUser): string[] => {
+  const record = user as unknown as Record<string, unknown>;
+  if (Array.isArray(record.roles)) {
+    return record.roles.filter((role): role is string => typeof role === "string");
+  }
+  return typeof record.role === "string" && record.role ? [record.role] : [];
+};
+
+// ---- Checks against the config --------------------------------------------------------------
+
+/** Every problem with the options against the config, in one list. */
 const optionIssues = (options: WorkflowsPluginOptions, config: Config): string[] => {
   const issues: string[] = [];
-  const slugs = new Set((config.collections ?? []).map((collection) => collection.slug));
+  const collections = config.collections ?? [];
   const effects = options.effects ?? {};
   const seen = new Set<string>();
   options.workflows.forEach((def, i) => {
@@ -37,17 +84,18 @@ const optionIssues = (options: WorkflowsPluginOptions, config: Config): string[]
       issues.push(`${path}.name: duplicate workflow name "${def.name}"`);
     }
     seen.add(def.name);
-    (def.collections ?? []).forEach((slug, c) => {
-      if (!slugs.has(slug)) {
+    const slugs = def.collections ?? [];
+    slugs.forEach((slug, c) => {
+      if (!collections.some((collection) => collection.slug === slug)) {
         issues.push(`${path}.collections[${c}]: collection "${slug}" is not in the config`);
       }
     });
     // A `publish` guard needs drafts: without them every save writes the live document.
-    const draftless = (def.collections ?? []).filter((slug) => {
-      const collection = (config.collections ?? []).find((entry) => entry.slug === slug);
+    const draftless = slugs.filter((slug) => {
+      const collection = collections.find((entry) => entry.slug === slug);
       return collection && !hasDrafts(collection);
     });
-    (def.stages ?? []).forEach((stage, s) =>
+    (def.stages ?? []).forEach((stage, s) => {
       (stage.guards ?? []).forEach((guard, g) => {
         if (!(guard.operations ?? []).includes("publish")) {
           return;
@@ -57,90 +105,64 @@ const optionIssues = (options: WorkflowsPluginOptions, config: Config): string[]
             `${path}.stages[${s}].guards[${g}]: workflow "${def.name}" stage "${stage.name}" guard "${guard.name}" holds "publish", but collection "${slug}" has no drafts (versions.drafts), so it has no publish to hold. Enable drafts on "${slug}" or guard "update" instead`
           );
         }
-      })
-    );
-    def.stages.forEach((stage, s) =>
-      (stage.activities ?? []).forEach((activity, a) =>
-        activity.actions.forEach((action, k) =>
+      });
+      for (const entry of activitiesWithPaths(stage, `${path}.stages[${s}]`)) {
+        (entry.activity.actions ?? []).forEach((action, k) =>
           (action.effects ?? []).forEach((name, e) => {
             if (!effects[name]) {
               issues.push(
-                `${path}.stages[${s}].activities[${a}].actions[${k}].effects[${e}]: no handler is registered for effect "${name}"`
+                `${entry.path}.actions[${k}].effects[${e}]: no handler is registered for effect "${name}"`
               );
             }
           })
-        )
-      )
-    );
+        );
+      }
+    });
   });
   return issues;
 };
 
-/** Whether `jobs.autoRun` runs the `workflows` queue (an entry for it, or one for all queues). */
-const autoRunCovers = async (payload: Payload): Promise<boolean> => {
-  const autoRun = payload.config.jobs?.autoRun;
-  const entries = typeof autoRun === "function" ? await autoRun(payload) : (autoRun ?? []);
-  return entries.some((entry) => entry.allQueues === true || entry.queue === JOBS_QUEUE);
-};
-
 /**
- * Logs once at init when work would wait for a jobs runner that is not configured: effects run
- * inline only when the change that queued them owns its commit, and the tick only on a schedule.
+ * Logs once at init when effects would wait for a jobs runner that is not configured: they run
+ * inline only when the change that queued them owns its commit.
  */
 export const warnWithoutRunner = async (
   payload: Payload,
-  options: WorkflowsPluginOptions
+  workflows: WorkflowDefinition[]
 ): Promise<void> => {
-  const effects = new Set<string>();
-  for (const def of options.workflows) {
-    for (const stage of def.stages) {
-      for (const activity of stage.activities ?? []) {
-        for (const action of activity.actions) {
-          for (const name of action.effects ?? []) {
-            effects.add(name);
-          }
-        }
-      }
-    }
-  }
-  if ((effects.size === 0 && !options.tick) || (await autoRunCovers(payload))) {
+  const effects = new Set(
+    workflows.flatMap((def) =>
+      def.stages.flatMap((stage) =>
+        (stage.activities ?? []).flatMap((activity) =>
+          activity.actions.flatMap((action) => action.effects ?? [])
+        )
+      )
+    )
+  );
+  if (effects.size === 0) {
     return;
   }
-  const waiting: string[] = [];
-  if (effects.size > 0) {
-    waiting.push(
-      `effects (${[...effects].map((name) => `"${name}"`).join(", ")}) queued while a transaction is open — by a document save that settles a run or auto-starts one (with database transactions on), or by a Local API call given a \`req\` that carries a transaction — and effects that failed inline and wait for a retry`
-    );
-  }
-  if (options.tick) {
-    waiting.push(`the scheduled "${TICK_TASK}" task (tick: { cron: "${options.tick.cron}" })`);
+  const autoRun = payload.config.jobs?.autoRun;
+  const entries = typeof autoRun === "function" ? await autoRun(payload) : (autoRun ?? []);
+  if (entries.some((entry) => entry.allQueues === true || entry.queue === JOBS_QUEUE)) {
+    return;
   }
   payload.logger.warn(
-    `workflows: no jobs runner covers the "${JOBS_QUEUE}" queue, so ${waiting.join("; and ")} will wait until something runs it. Add \`jobs: { autoRun: [{ queue: "${JOBS_QUEUE}", cron: "* * * * *" }] }\` to your Payload config, or run that queue another way (e.g. the jobs run endpoint from a cron).`
+    `workflows: no jobs runner covers the "${JOBS_QUEUE}" queue, so effects (${[...effects].map((name) => `"${name}"`).join(", ")}) queued while a transaction is open — by a document save that settles a run or auto-starts one (with database transactions on), or by a Local API call given a \`req\` that carries a transaction — and effects that failed inline and wait for a retry will wait until something runs it. Add \`jobs: { autoRun: [{ queue: "${JOBS_QUEUE}", cron: "* * * * *" }] }\` to your Payload config, or run that queue another way (e.g. the jobs run endpoint from a cron).`
   );
 };
 
-/**
- * The workflow indicator beside Save / Publish on every subject collection (the same slot as the
- * document's own controls, inside its form); hidden by the component until the doc has an id.
- */
-const withIndicator = (collection: CollectionConfig, clientProps: object): CollectionConfig => ({
-  ...collection,
-  admin: {
-    ...collection.admin,
-    components: {
-      ...collection.admin?.components,
-      edit: {
-        ...collection.admin?.components?.edit,
-        beforeDocumentControls: [
-          ...(collection.admin?.components?.edit?.beforeDocumentControls ?? []),
-          { path: INDICATOR_COMPONENT, clientProps },
-        ],
-      },
-    },
-  },
-});
+// ---- The plugin -----------------------------------------------------------------------------
 
+const component = (entry: "client" | "rsc", name: string) =>
+  `@focus-reactive/payload-plugin-workflows/${entry}#${name}`;
+
+/**
+ * Adds to each collection a workflow runs on: the indicator beside Save / Publish (it opens the
+ * drawer) and the hooks (guards, auto-start, settle on save, abort on delete). Adds the runs
+ * collection, the endpoints, the effect and tick jobs, the workflows view and its nav link, and the
+ * admin strings.
+ */
 export const workflowsPlugin =
   (options: WorkflowsPluginOptions): Plugin =>
   (config: Config): Config => {
@@ -151,70 +173,79 @@ export const workflowsPlugin =
     if (issues.length > 0) {
       throw new Error(formatIssues("workflowsPlugin()", issues));
     }
-    const instancesSlug = options.instancesSlug ?? DEFAULT_INSTANCES_SLUG;
-    const resolved: ResolvedWorkflows = {
-      definitions: options.workflows,
+    const settings: WorkflowsSettings = {
+      workflows: options.workflows.map(defineWorkflow),
       effects: options.effects ?? {},
       roles: options.roles ?? defaultRoles,
       access: options.access ?? {},
-      instancesSlug,
     };
-    const subjects = new Set(options.workflows.flatMap((def) => def.collections));
-    // What the admin components need; endpoint paths are relative to the API route.
-    const client = {
-      instancesSlug,
-      endpoints: {
-        state: `${ENDPOINT_PREFIX}/state`,
-        start: `${ENDPOINT_PREFIX}/start`,
-        fire: `${ENDPOINT_PREFIX}/fire`,
-        abort: `${ENDPOINT_PREFIX}/abort`,
-        instances: `${ENDPOINT_PREFIX}/instances`,
-        definitions: `${ENDPOINT_PREFIX}/definitions`,
-      },
-      viewPath: VIEW_PATH,
-    };
+    const subjects = new Set(settings.workflows.flatMap((def) => def.collections));
+    const translations = (config.i18n?.translations ?? {}) as Record<
+      string,
+      Record<string, unknown>
+    >;
     return {
       ...config,
       collections: [
-        ...(config.collections ?? []).map((collection) =>
-          subjects.has(collection.slug)
-            ? withIndicator(withWorkflowHooks(collection), client)
-            : collection
-        ),
-        instancesCollection(instancesSlug, options.overrides),
+        ...(config.collections ?? []).map((collection) => {
+          if (!subjects.has(collection.slug)) {
+            return collection;
+          }
+          const edit = collection.admin?.components?.edit;
+          return withWorkflowHooks({
+            ...collection,
+            admin: {
+              ...collection.admin,
+              components: {
+                ...collection.admin?.components,
+                edit: {
+                  ...edit,
+                  beforeDocumentControls: [
+                    ...(edit?.beforeDocumentControls ?? []),
+                    component("client", "WorkflowIndicator"),
+                  ],
+                },
+              },
+            },
+          });
+        }),
+        runsCollection,
       ],
       endpoints: [...(config.endpoints ?? []), ...workflowEndpoints()],
+      // English strings for every locale, under the host's own translations of them.
       i18n: {
         ...config.i18n,
-        translations: mergeTranslations(config.i18n, options.translations),
+        translations: Object.fromEntries(
+          [...new Set(["en", ...Object.keys(translations)])].map((locale) => {
+            const current = translations[locale] ?? {};
+            const own = (current[NAMESPACE] as object | undefined) ?? {};
+            return [locale, { ...current, [NAMESPACE]: { ...en, ...own } }];
+          })
+        ) as NonNullable<Config["i18n"]>["translations"],
       },
-      jobs: {
-        ...config.jobs,
-        tasks: [...(config.jobs?.tasks ?? []), effectTask, tickTask(options.tick?.cron)],
-      },
+      jobs: { ...config.jobs, tasks: [...(config.jobs?.tasks ?? []), effectTask, tickTask] },
       admin: {
         ...config.admin,
         components: {
           ...config.admin?.components,
           afterNavLinks: [
             ...(config.admin?.components?.afterNavLinks ?? []),
-            { path: NAV_LINK_COMPONENT, clientProps: client },
+            component("client", "WorkflowsNavLink"),
           ],
           views: {
             ...config.admin?.components?.views,
             workflows: {
-              Component: { path: VIEW_COMPONENT, clientProps: client },
+              Component: component("rsc", "WorkflowsViewServer"),
               path: VIEW_PATH,
               exact: true,
             },
           },
         },
-        custom: { ...config.admin?.custom, workflows: client },
       },
-      custom: { ...config.custom, workflows: resolved },
+      custom: { ...config.custom, workflows: settings },
       onInit: async (payload) => {
         await config.onInit?.(payload);
-        await warnWithoutRunner(payload, options);
+        await warnWithoutRunner(payload, settings.workflows);
       },
     };
   };

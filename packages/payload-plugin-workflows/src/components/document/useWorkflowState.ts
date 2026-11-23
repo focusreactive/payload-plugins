@@ -3,8 +3,8 @@
 import { toast } from "@payloadcms/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { ENDPOINTS } from "../../constants.js";
 import type { WorkflowState } from "../../server/queries.js";
-import type { WorkflowsClientProps } from "../shared/types.js";
 import { useWorkflowsApi } from "../shared/useWorkflowsApi.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
 
@@ -12,12 +12,7 @@ import { useWorkflowsT } from "../shared/useWorkflowsT.js";
  * The document's workflow state as the server reports it. Refetches when `refreshKey` changes
  * (the document was saved) and after every operation, whether it worked or not: no optimistic UI.
  */
-export const useWorkflowState = (
-  endpoints: WorkflowsClientProps["endpoints"],
-  collection: string,
-  id: string,
-  refreshKey: unknown
-) => {
+export const useWorkflowState = (collection: string, id: string, refreshKey: unknown) => {
   const api = useWorkflowsApi();
   const { t } = useWorkflowsT();
   const [state, setState] = useState<WorkflowState | null>(null);
@@ -30,7 +25,7 @@ export const useWorkflowState = (
     const controller = new AbortController();
     latest.current = controller;
     try {
-      const next = await api<WorkflowState>(endpoints.state, {
+      const next = await api<WorkflowState>(ENDPOINTS.state, {
         query: { collection, id },
         signal: controller.signal,
       });
@@ -43,7 +38,7 @@ export const useWorkflowState = (
         setError(caught instanceof Error ? caught.message : t("loadFailed"));
       }
     }
-  }, [api, endpoints.state, collection, id, t]);
+  }, [api, collection, id, t]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: refreshKey is the save signal
   useEffect(() => {
@@ -70,13 +65,13 @@ export const useWorkflowState = (
     error,
     busy,
     reload: load,
-    start: (workflow: string) => run(endpoints.start, { workflow, collection, id }),
+    start: (workflow: string) => run(ENDPOINTS.start, { workflow, collection, id }),
     fire: (
       instanceId: string,
       activity: string,
       action: string,
       params?: Record<string, unknown>
-    ) => run(endpoints.fire, { instanceId, activity, action, ...(params ? { params } : {}) }),
-    abort: (instanceId: string) => run(endpoints.abort, { instanceId }),
+    ) => run(ENDPOINTS.fire, { instanceId, activity, action, ...(params ? { params } : {}) }),
+    abort: (instanceId: string) => run(ENDPOINTS.abort, { instanceId }),
   };
 };

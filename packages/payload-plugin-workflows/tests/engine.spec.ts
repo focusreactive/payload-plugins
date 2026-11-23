@@ -1,10 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import { WorkflowError } from "../src/engine/errors.js";
-import { abort, fire, patchFields, start } from "../src/engine/operations.js";
-import { CASCADE_LIMIT, settle } from "../src/engine/settle.js";
+import {
+  CASCADE_LIMIT,
+  abort,
+  fire,
+  patchFields,
+  settle,
+  start,
+  validateParams,
+} from "../src/engine/engine.js";
 import { createWorkflowSimulator } from "../src/engine/simulator.js";
-import { validateParams } from "../src/engine/params.js";
 import { view } from "../src/engine/view.js";
 import type {
   ActivityDef,
@@ -83,28 +89,45 @@ const guardedDef = (unless: () => boolean): WorkflowDefinition => ({
   ],
 });
 
+describe("plain stage actions", () => {
+  it("are one activity named after the stage, with the stage's title, assignee and roles", () => {
+    const review = editorialReview.stages[1];
+    expect(review?.actions).toBeUndefined();
+    expect(review?.assignee).toBeUndefined();
+    expect(review?.activities?.map(({ actions: _a, ...rest }) => rest)).toEqual([
+      { name: "review", title: "Review", assignee: "reviewer", roles: ["editor"] },
+    ]);
+    expect(review?.activities?.[0]?.actions.map((action) => action.name)).toEqual([
+      "reset",
+      "claim",
+      "approve",
+      "reject",
+    ]);
+  });
+});
+
 describe("editorial review end to end", () => {
   it("runs submit -> claim -> reject -> back to drafting -> submit -> approve -> completed", () => {
     const sim = createWorkflowSimulator(editorialReview, { now: NOW });
     expect(sim.state.stage).toBe("drafting");
-    expect(sim.state.activities).toEqual({ write: { status: "active" } });
+    expect(sim.state.activities).toEqual({ drafting: { status: "active" } });
 
-    sim.fire("write", "submit", author);
+    sim.fire("submit", author);
     expect(sim.state.stage).toBe("review");
     // `reset` fired on entry.
     expect(sim.state.fired).toEqual(["review/reset"]);
 
-    sim.fire("review", "claim", editor);
+    sim.fire("claim", editor);
     expect(sim.state.fields.reviewer).toBe("u-editor");
     expect(sim.state.stage).toBe("review");
 
-    sim.fire("review", "reject", { ...editor, params: { reason: "Too long" } });
+    sim.fire("reject", { ...editor, params: { reason: "Too long" } });
     expect(sim.state.stage).toBe("drafting");
     expect(sim.state.fields).toMatchObject({ decision: "rejected", reason: "Too long" });
-    expect(sim.state.activities).toEqual({ write: { status: "active" } });
+    expect(sim.state.activities).toEqual({ drafting: { status: "active" } });
     expect(sim.state.fired).toEqual([]);
 
-    sim.fire("write", "submit", author);
+    sim.fire("submit", author);
     expect(sim.state.stage).toBe("review");
     // `reset` fired again on re-entry and cleared the previous decision.
     expect(sim.state.fields.decision).toBeUndefined();
@@ -114,20 +137,20 @@ describe("editorial review end to end", () => {
       sim.view(otherEditor).activities[0]?.actions.find((a) => a.name === "approve")?.allowed
     ).toBe(false);
 
-    sim.fire("review", "approve", editor);
+    sim.fire("approve", editor);
     expect(sim.state.status).toBe("completed");
     expect(sim.state.stage).toBe("approved");
     expect(sim.state.completedAt).toBe(NOW.toISOString());
     expect(sim.effects).toEqual([{ name: "notify-author", activity: "review", action: "approve" }]);
     expect(historyTypes(sim.state)).toEqual([
       "started",
-      "action:write/submit",
+      "action:drafting/submit",
       "transition:drafting->review",
       "action:review/reset(auto)",
       "action:review/claim",
       "action:review/reject",
       "transition:review->drafting",
-      "action:write/submit",
+      "action:drafting/submit",
       "transition:drafting->review",
       "action:review/reset(auto)",
       "action:review/approve",
@@ -183,9 +206,9 @@ describe("auto actions", () => {
     sim.advance(new Date(NOW.getTime() + 1000));
     sim.setDoc({ any: true });
     expect(sim.state.fields.count).toBe(1);
-    sim.fire("work", "finish");
+    sim.fire("finish", { activity: "work" });
     expect(sim.state.stage).toBe("b");
-    sim.fire("work", "back");
+    sim.fire("back", { activity: "work" });
     expect(sim.state.stage).toBe("a");
     expect(sim.state.fields.count).toBe(2);
   });
@@ -202,7 +225,7 @@ describe("auto actions", () => {
 
   it("is not callable", () => {
     const sim = createWorkflowSimulator(def, { now: NOW });
-    expect(codeOf(() => sim.fire("work", "bump"))).toBe("not-callable");
+    expect(codeOf(() => sim.fire("bump", { activity: "work" }))).toBe("not-callable");
     expect(sim.view().activities[0]?.actions.map((a) => a.name)).toEqual(["finish", "redo"]);
   });
 
@@ -234,7 +257,7 @@ describe("auto actions", () => {
       ],
     };
     const sim = createWorkflowSimulator(resolved, { now: NOW });
-    sim.fire("one", "done");
+    sim.fire("done", { activity: "one" });
     sim.patch({ flag: true });
     expect(sim.state.fields.seen).toBeUndefined();
   });
@@ -308,7 +331,7 @@ describe("transitions", () => {
       ],
     };
     const sim = createWorkflowSimulator(def, { now: NOW });
-    sim.fire("w", "fail");
+    sim.fire("fail", { activity: "w" });
     expect(sim.state.stage).toBe("c");
   });
 });
@@ -317,15 +340,15 @@ describe("activity filter", () => {
   it("skips an activity whose filter is false at stage entry; skipped counts as done", () => {
     const sim = createWorkflowSimulator(filteredDef(true), { now: NOW, doc: { sensitive: false } });
     expect(sim.state.activities.legal).toEqual({ status: "skipped", at: NOW.toISOString() });
-    expect(codeOf(() => sim.fire("legal", "ok"))).toBe("activity-not-active");
-    sim.fire("copy", "ok");
+    expect(codeOf(() => sim.fire("ok", { activity: "legal" }))).toBe("activity-not-active");
+    sim.fire("ok", { activity: "copy" });
     expect(sim.state.status).toBe("completed");
   });
 
   it("keeps an activity whose filter is true", () => {
     const sim = createWorkflowSimulator(filteredDef(true), { now: NOW, doc: { sensitive: true } });
     expect(sim.state.activities.legal?.status).toBe("active");
-    sim.fire("copy", "ok");
+    sim.fire("ok", { activity: "copy" });
     expect(sim.state.stage).toBe("a");
   });
 
@@ -416,14 +439,20 @@ describe("assignment and availability", () => {
 describe("fire rejections", () => {
   const base = () => start(editorialReview, { actor: { system: true } }, env()).state;
   const inReview = () =>
-    fire(editorialReview, base(), { activity: "write", action: "submit" }, caller("a"), env())
+    fire(editorialReview, base(), { activity: "drafting", action: "submit" }, caller("a"), env())
       .state;
 
   it("instance-not-active", () => {
-    const aborted = abort(editorialReview, base(), { actor: { system: true } }, env()).state;
+    const aborted = abort(base(), { actor: { system: true } }, env()).state;
     expect(
       codeOf(() =>
-        fire(editorialReview, aborted, { activity: "write", action: "submit" }, caller("a"), env())
+        fire(
+          editorialReview,
+          aborted,
+          { activity: "drafting", action: "submit" },
+          caller("a"),
+          env()
+        )
       )
     ).toBe("instance-not-active");
   });
@@ -432,16 +461,14 @@ describe("fire rejections", () => {
     const stuck = { ...base(), stage: "gone" };
     expect(
       codeOf(() =>
-        fire(editorialReview, stuck, { activity: "write", action: "submit" }, caller("a"), env())
+        fire(editorialReview, stuck, { activity: "drafting", action: "submit" }, caller("a"), env())
       )
     ).toBe("unknown-stage");
     const v = view(editorialReview, stuck, caller("a"), env());
     expect(v.stuck).toBe("unknown-stage");
     expect(v.activities).toEqual([]);
     expect(settle(editorialReview, stuck, env()).state).toBe(stuck);
-    expect(abort(editorialReview, stuck, { actor: { system: true } }, env()).state.status).toBe(
-      "aborted"
-    );
+    expect(abort(stuck, { actor: { system: true } }, env()).state.status).toBe("aborted");
   });
 
   it("unknown-activity, unknown-action, not-callable", () => {
@@ -461,6 +488,24 @@ describe("fire rejections", () => {
         fire(editorialReview, state, { activity: "review", action: "reset" }, caller("a"), env())
       )
     ).toBe("not-callable");
+  });
+
+  it("fires on the stage's only activity when none is named; asks for one when there are several", () => {
+    const state = fire(editorialReview, base(), { action: "submit" }, caller("a"), env()).state;
+    expect(state.stage).toBe("review");
+    const two = filteredDef(true);
+    const begun = start(two, { actor: { system: true } }, env({ doc: { sensitive: true } })).state;
+    const error = (() => {
+      try {
+        fire(two, begun, { action: "ok" }, caller("a"), env());
+      } catch (caught) {
+        return caught as WorkflowError;
+      }
+    })();
+    expect(error?.code).toBe("unknown-activity");
+    expect(error?.message).toBe(
+      'Stage "a" has several activities ("legal", "copy"); name the activity to fire on.'
+    );
   });
 
   it("activity-not-active", () => {
@@ -680,11 +725,11 @@ describe("view and fire agree", () => {
     const states: InstanceState[] = [];
     const sim = createWorkflowSimulator(editorialReview, { now: NOW });
     states.push(sim.state);
-    sim.fire("write", "submit", author);
+    sim.fire("submit", author);
     states.push(sim.state);
-    sim.fire("review", "claim", editor);
+    sim.fire("claim", editor);
     states.push(sim.state);
-    states.push(abort(editorialReview, sim.state, { actor: { system: true } }, env()).state);
+    states.push(abort(sim.state, { actor: { system: true } }, env()).state);
     let checked = 0;
     for (const state of states) {
       for (const who of callers) {
@@ -720,7 +765,7 @@ describe("guards", () => {
   it("are listed only while the instance holds in their stage", () => {
     const sim = createWorkflowSimulator(editorialReview, { now: NOW });
     expect(sim.view().guards).toEqual([]);
-    sim.fire("write", "submit", author);
+    sim.fire("submit", author);
     expect(sim.view().guards).toEqual([
       {
         name: "hold-publish",
@@ -728,7 +773,7 @@ describe("guards", () => {
         operations: ["publish"],
       },
     ]);
-    sim.fire("review", "approve", editor);
+    sim.fire("approve", editor);
     expect(sim.view().guards).toEqual([]);
   });
 
@@ -745,7 +790,7 @@ describe("guards", () => {
 
   it("are not listed for an aborted instance", () => {
     const sim = createWorkflowSimulator(editorialReview, { now: NOW });
-    sim.fire("write", "submit", author);
+    sim.fire("submit", author);
     sim.abort("stop");
     expect(sim.view().guards).toEqual([]);
   });
@@ -828,7 +873,7 @@ describe("doc-based conditions", () => {
 describe("patchFields", () => {
   it("writes declared fields, unsets with null, and settles", () => {
     const sim = createWorkflowSimulator(editorialReview, { now: NOW });
-    sim.fire("write", "submit", author);
+    sim.fire("submit", author);
     sim.patch({ reviewer: "u-bot" });
     expect(sim.state.fields.reviewer).toBe("u-bot");
     sim.patch({ decision: "approved" });
@@ -840,7 +885,7 @@ describe("patchFields", () => {
     expect(codeOf(() => patchFields(editorialReview, state, { nope: 1 }, env()))).toBe(
       "invalid-patch"
     );
-    const aborted = abort(editorialReview, state, { actor: { system: true } }, env()).state;
+    const aborted = abort(state, { actor: { system: true } }, env()).state;
     expect(codeOf(() => patchFields(editorialReview, aborted, { reviewer: "x" }, env()))).toBe(
       "instance-not-active"
     );
@@ -921,7 +966,6 @@ describe("abort", () => {
   it("ends the run with a reason and cannot abort twice", () => {
     const { state } = start(editorialReview, { actor: { system: true } }, env());
     const aborted = abort(
-      editorialReview,
       state,
       { reason: "Subject deleted", actor: { system: true } },
       env()
@@ -929,7 +973,7 @@ describe("abort", () => {
     expect(aborted.status).toBe("aborted");
     expect(aborted.completedAt).toBe(NOW.toISOString());
     expect(aborted.history.at(-1)).toMatchObject({ type: "aborted", reason: "Subject deleted" });
-    expect(codeOf(() => abort(editorialReview, aborted, { actor: { system: true } }, env()))).toBe(
+    expect(codeOf(() => abort(aborted, { actor: { system: true } }, env()))).toBe(
       "instance-not-active"
     );
   });
@@ -942,7 +986,7 @@ describe("immutability", () => {
     const review = fire(
       editorialReview,
       state,
-      { activity: "write", action: "submit" },
+      { activity: "drafting", action: "submit" },
       caller("a"),
       env()
     ).state;
@@ -963,7 +1007,7 @@ describe("immutability", () => {
       env()
     );
     patchFields(editorialReview, review, { decision: "approved" }, env());
-    abort(editorialReview, review, { actor: { system: true } }, env());
+    abort(review, { actor: { system: true } }, env());
     settle(editorialReview, review, env({ now: new Date() }));
     view(editorialReview, review, caller("e", ["editor"]), env()).fields.decision = "mutated";
     expect(review).toEqual(reviewCopy);
@@ -1186,8 +1230,8 @@ describe("params read own properties only", () => {
 describe("why an action is not allowed (reasonCode)", () => {
   it("tells the action's own filter apart from assignment and roles", () => {
     const sim = createWorkflowSimulator(editorialReview, { now: NOW });
-    sim.fire("write", "submit", author);
-    sim.fire("review", "claim", editor);
+    sim.fire("submit", author);
+    sim.fire("claim", editor);
     const actions = (who: { user: string; roles: string[] }) =>
       Object.fromEntries(
         sim.view(who).activities[0]?.actions.map((a) => [a.name, a.reasonCode ?? "allowed"]) ?? []

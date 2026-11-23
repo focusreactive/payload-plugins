@@ -5,9 +5,9 @@ import "./WorkflowsView.css";
 import { Button, Pagination, SelectInput, SetStepNav, toast } from "@payloadcms/ui";
 import { useEffect, useState } from "react";
 
+import { ENDPOINTS } from "../../constants.js";
 import type { DefinitionSummary, InstanceSummary } from "../../server/queries.js";
-import type { WorkflowsClientProps } from "../shared/types.js";
-import { useWorkflowsApi } from "../shared/useWorkflowsApi.js";
+import { usePeople, useWorkflowsApi } from "../shared/useWorkflowsApi.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
 import { RunsBoard } from "./RunsBoard.js";
 import { RunsTable } from "./RunsTable.js";
@@ -25,7 +25,7 @@ const LIST_LIMIT = 20;
 const BOARD_LIMIT = 100;
 
 /** The inbox at `/admin/workflows`: runs waiting on me, or every open run; a board per workflow. */
-export const WorkflowsView = ({ endpoints }: Partial<WorkflowsClientProps>) => {
+export const WorkflowsView = () => {
   const { t } = useWorkflowsT();
   const api = useWorkflowsApi();
   const [scope, setScope] = useState<Scope>("mine");
@@ -34,34 +34,27 @@ export const WorkflowsView = ({ endpoints }: Partial<WorkflowsClientProps>) => {
   const [definitions, setDefinitions] = useState<DefinitionSummary[]>([]);
   const [result, setResult] = useState<Page | null>(null);
 
-  const definitionsPath = endpoints?.definitions;
-  const instancesPath = endpoints?.instances;
+  const people = usePeople(result?.docs.flatMap((run) => run.waitingOn.users) ?? []);
 
   useEffect(() => {
-    if (!definitionsPath) {
-      return;
-    }
     const load = async () => {
       try {
-        const body = await api<{ definitions: DefinitionSummary[] }>(definitionsPath);
+        const body = await api<{ definitions: DefinitionSummary[] }>(ENDPOINTS.definitions);
         setDefinitions(body.definitions);
       } catch (error) {
         toast.error((error as Error).message);
       }
     };
     void load();
-  }, [api, definitionsPath]);
+  }, [api]);
 
   const board = definitions.find((def) => def.name === workflow);
   useEffect(() => {
-    if (!instancesPath) {
-      return;
-    }
     const controller = new AbortController();
     setResult(null);
     const load = async () => {
       try {
-        const body = await api<Page>(instancesPath, {
+        const body = await api<Page>(ENDPOINTS.instances, {
           query: {
             scope,
             status: "active",
@@ -83,7 +76,7 @@ export const WorkflowsView = ({ endpoints }: Partial<WorkflowsClientProps>) => {
     };
     void load();
     return () => controller.abort();
-  }, [api, instancesPath, scope, workflow, page]);
+  }, [api, scope, workflow, page]);
 
   const choose = (next: Scope) => {
     setScope(next);
@@ -158,9 +151,9 @@ export const WorkflowsView = ({ endpoints }: Partial<WorkflowsClientProps>) => {
           ) : null}
         </div>
       ) : board ? (
-        <RunsBoard definition={board} runs={result.docs} />
+        <RunsBoard definition={board} people={people} runs={result.docs} />
       ) : (
-        <RunsTable runs={result.docs} />
+        <RunsTable people={people} runs={result.docs} />
       )}
       {result && result.totalPages > 1 ? (
         <div className="workflows-view__pagination">

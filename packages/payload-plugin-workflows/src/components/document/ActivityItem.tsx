@@ -18,6 +18,8 @@ interface Props {
   idPrefix: string;
   /** Say who this activity waits on; off when the run's own line already says it. */
   showWaiting: boolean;
+  /** The stage's only task (plain `actions`): the stage already names it, so no heading. */
+  implicit: boolean;
 }
 
 /** One activity of the current stage: status, who it waits on, its actions. */
@@ -29,6 +31,7 @@ export const ActivityItem = ({
   onAction,
   idPrefix,
   showWaiting,
+  implicit,
 }: Props) => {
   const { t } = useWorkflowsT();
   const active = activity.status === "active";
@@ -49,10 +52,12 @@ export const ActivityItem = ({
     : (activity.roles ?? []).map((role) => t("roleLabel", { role })).join(", ");
   return (
     <li className="workflows-activity" data-status={activity.status}>
-      <div className="workflows-activity__head">
-        <span className="workflows-activity__title">{activity.title}</span>
-        <StatusPill status={activity.status} />
-      </div>
+      {implicit ? null : (
+        <div className="workflows-activity__head">
+          <span className="workflows-activity__title">{activity.title}</span>
+          <StatusPill status={activity.status} />
+        </div>
+      )}
       {activity.description ? (
         <p className="workflows-activity__meta">{activity.description}</p>
       ) : null}

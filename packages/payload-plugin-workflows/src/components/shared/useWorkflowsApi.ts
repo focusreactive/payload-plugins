@@ -1,8 +1,10 @@
 "use client";
 
-import { useConfig } from "@payloadcms/ui";
+import { useAuth, useConfig } from "@payloadcms/ui";
 import { formatAdminURL } from "payload/shared";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+
+import type { People } from "./format.js";
 
 type Query = Record<string, string | number | undefined>;
 
@@ -14,8 +16,8 @@ const messageOf = (body: unknown): string | undefined => {
 };
 
 /**
- * The one way the admin UI talks to the plugin's endpoints. Resolves with the JSON body, rejects
- * with an `Error` carrying the server's message (shown with `toast.error`).
+ * The one way the admin UI talks to the API. Resolves with the JSON body, rejects with an `Error`
+ * carrying the server's message (shown with `toast.error`).
  */
 export const useWorkflowsApi = () => {
   const {
@@ -53,4 +55,50 @@ export const useWorkflowsApi = () => {
     },
     [apiRoute]
   );
+};
+
+/**
+ * Names for user ids: the signed-in user, and display names (the user collection's `useAsTitle`,
+ * else the email) read over the REST API with the viewer's own access. Ids the viewer may not
+ * read stay ids.
+ */
+export const usePeople = (ids: string[]): People => {
+  const api = useWorkflowsApi();
+  const { user } = useAuth();
+  const { config, getEntityConfig } = useConfig();
+  const slug = config.admin.user;
+  const titleField = getEntityConfig({ collectionSlug: slug })?.admin?.useAsTitle;
+  const wanted = [...new Set(ids)].filter(Boolean).sort().join(",");
+  const [labels, setLabels] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!wanted) {
+      return;
+    }
+    const controller = new AbortController();
+    const load = async () => {
+      try {
+        const body = await api<{ docs: Record<string, unknown>[] }>(`/${slug}`, {
+          query: { "where[id][in]": wanted, depth: 0, limit: wanted.split(",").length },
+          signal: controller.signal,
+        });
+        const next: Record<string, string> = {};
+        for (const doc of body.docs) {
+          const label = [titleField && titleField !== "id" ? doc[titleField] : undefined, doc.email]
+            .filter((value): value is string => typeof value === "string" && value.trim() !== "")
+            .at(0);
+          if (label) {
+            next[String(doc.id)] = label;
+          }
+        }
+        setLabels(next);
+      } catch {
+        // Unreadable users stay ids.
+      }
+    };
+    void load();
+    return () => controller.abort();
+  }, [api, slug, titleField, wanted]);
+
+  return { me: user ? String(user.id) : undefined, labels };
 };

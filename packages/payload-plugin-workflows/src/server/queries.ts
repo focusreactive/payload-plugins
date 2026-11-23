@@ -1,96 +1,42 @@
-import type { CollectionSlug, Payload, SelectType, TypedUser, Where } from "payload";
+// The reads: the runs on one document, the inbox, the configured workflows. Runs are read with the
+// caller's access, and a run on a document the caller cannot read is never shown.
 
-import { findStage } from "../engine/context.js";
+import type {
+  CollectionSlug,
+  Payload,
+  PayloadRequest,
+  SelectType,
+  TypedUser,
+  Where,
+} from "payload";
+
+import { RUNS_SLUG } from "../constants.js";
+import { findStage } from "../engine/engine.js";
 import { WorkflowError } from "../engine/errors.js";
 import type { InstanceState, InstanceView } from "../types.js";
-import { allowedBy, callerOf, requireUser, resolvedOf } from "./config.js";
-import type { Via } from "./config.js";
-import { assertSubjectCollection, contextFor } from "./operations.js";
-import { definitionForDoc, presentInstance, titleOf } from "./present.js";
-import { SETTLE_SELECT, findInstances, subjectWhere } from "./store.js";
+import {
+  allowedBy,
+  assertSubjectCollection,
+  definitionOrStandIn,
+  loadSubject,
+  presentRun,
+  requestFor,
+  requireUser,
+  settingsOf,
+  titleOf,
+} from "./operations.js";
+import { subjectWhere } from "./store.js";
 import type { InstanceDoc } from "./store.js";
-import { loadSubject } from "./subject.js";
 
-/**
- * Display names for user ids, in one query with the caller's access: the admin user collection's
- * `useAsTitle`, else its email. Ids the caller may not read, or that are gone, are left out.
- */
-export const userLabelsFor = async (
-  payload: Payload,
-  ctx: Awaited<ReturnType<typeof contextFor>>,
-  user: TypedUser,
-  ids: Iterable<string>
-): Promise<Record<string, string>> => {
-  const wanted = [...new Set(ids)].filter(Boolean);
-  const slug = payload.config.admin?.user as CollectionSlug | undefined;
-  const collection = slug ? payload.collections[slug] : undefined;
-  if (!slug || !collection || wanted.length === 0) {
-    return {};
-  }
-  const field = collection.config.admin?.useAsTitle;
-  const found = await payload
-    .find({
-      collection: slug,
-      where: { id: { in: wanted } },
-      depth: 0,
-      limit: wanted.length,
-      pagination: false,
-      overrideAccess: false,
-      user,
-      req: ctx.req,
-    })
-    .catch(() => ({ docs: [] }));
-  const labels: Record<string, string> = {};
-  for (const doc of found.docs as Record<string, unknown>[]) {
-    const value = [field && field !== "id" ? doc[field] : undefined, doc.email].find(
-      (candidate) => typeof candidate === "string" && candidate.trim() !== ""
-    );
-    if (typeof value === "string") {
-      labels[String(doc.id)] = value;
-    }
-  }
-  return labels;
-};
-
-const pick = (labels: Record<string, string>, ids: Iterable<string>): Record<string, string> => {
-  const picked: Record<string, string> = {};
-  for (const id of ids) {
-    const label = labels[id];
-    if (label !== undefined) {
-      picked[id] = label;
-    }
-  }
-  return picked;
-};
-
-/** The user ids a view names: who it waits on, assignees and the people in its history. */
-const userIdsOf = (view: InstanceView, usersSlug: string | undefined): string[] => [
-  ...view.waitingOn.users,
-  ...view.activities.flatMap((activity) => (activity.assignee ? [activity.assignee] : [])),
-  ...view.history.flatMap((entry) =>
-    entry.actor.id !== undefined && entry.actor.collection === usersSlug ? [entry.actor.id] : []
-  ),
-];
-
-export interface WorkflowState {
-  /** Runs on this document, newest first: active ones and finished ones. */
-  instances: InstanceView[];
-  /** Workflows for this collection that are not running and the caller may start. */
-  available: { name: string; title: string; description?: string }[];
-}
-
-/**
- * Runs as `user` may read them: the instances collection's `read` access (default: a user of the
- * admin user collection). Refused reading is `not-allowed`.
- */
+/** Runs as `user` may read them (the runs collection's `read` access); refused is `not-allowed`. */
 const readRuns = async (
-  ctx: Awaited<ReturnType<typeof contextFor>>,
+  req: PayloadRequest,
   user: TypedUser,
   args: { where: Where; sort: string; select?: SelectType }
 ): Promise<InstanceDoc[]> => {
-  const found = await ctx.payload
+  const found = await req.payload
     .find({
-      collection: ctx.resolved.instancesSlug as CollectionSlug,
+      collection: RUNS_SLUG as CollectionSlug,
       where: args.where,
       depth: 0,
       limit: 0,
@@ -98,7 +44,7 @@ const readRuns = async (
       sort: args.sort,
       overrideAccess: false,
       user,
-      req: ctx.req,
+      req,
       ...(args.select ? { select: args.select } : {}),
     })
     .catch((error: unknown) => {
@@ -110,52 +56,38 @@ const readRuns = async (
   return found.docs as unknown as InstanceDoc[];
 };
 
-/** Everything the document panel needs, read with the caller's access. */
+export interface WorkflowState {
+  /** Runs on this document, newest first: active ones and finished ones. */
+  instances: InstanceView[];
+  /** Workflows for this collection that are not running and the caller may start. */
+  available: { name: string; title: string; description?: string }[];
+}
+
+/** The runs on one document and what the caller may start there. */
 export const getWorkflowState = async (
   payload: Payload,
-  args: { collection: string; id: string | number; user: TypedUser | null | undefined; via?: Via }
+  args: { collection: string; id: string | number; user: TypedUser | null | undefined }
 ): Promise<WorkflowState> => {
   const user = requireUser(args.user);
-  const ctx = await contextFor(payload, user);
-  assertSubjectCollection(ctx, args.collection);
+  const req = await requestFor(payload, user);
+  assertSubjectCollection(payload, args.collection);
   const subject = { collection: args.collection, id: String(args.id) };
-  const doc = await loadSubject(payload, subject, user, ctx.req);
-  const docs = await readRuns(ctx, user, {
+  const doc = await loadSubject(req, subject, user);
+  const docs = await readRuns(req, user, {
     where: subjectWhere(subject, false),
     sort: "-createdAt",
   });
-  const caller = callerOf(ctx.resolved, user, args.via ?? "admin");
-  const presented = await Promise.all(
-    docs.map((entry) => presentInstance(ctx, entry, caller, doc, user))
-  );
-  const usersSlug = payload.config.admin?.user;
-  const labels = await userLabelsFor(
-    payload,
-    ctx,
-    user,
-    presented.flatMap((view) => userIdsOf(view, usersSlug))
-  );
-  const instances = presented.map((view) => ({
-    ...view,
-    userLabels: pick(labels, userIdsOf(view, usersSlug)),
-  }));
+  const instances = await Promise.all(docs.map((entry) => presentRun(req, entry, doc, user)));
   const running = new Set(
     docs.filter((entry) => entry.status === "active").map((entry) => entry.workflow)
   );
+  const settings = settingsOf(payload);
   const available: WorkflowState["available"] = [];
-  for (const def of ctx.resolved.definitions) {
+  for (const def of settings.workflows) {
     if (!def.collections.includes(args.collection) || running.has(def.name)) {
       continue;
     }
-    if (
-      await allowedBy(ctx.resolved.access.start, {
-        req: ctx.req,
-        user,
-        workflow: def,
-        ...subject,
-        doc,
-      })
-    ) {
+    if (await allowedBy(settings.access.start, { req, user, workflow: def, ...subject, doc })) {
       available.push({
         name: def.name,
         title: def.title ?? def.name,
@@ -175,8 +107,6 @@ export interface InstanceSummary {
   stage: { name: string; title: string };
   subject: { collection: string; id: string; title?: string };
   waitingOn: { users: string[]; roles: string[] };
-  /** Display names of the users in `waitingOn`, keyed by id; unreadable ids are left out. */
-  userLabels?: Record<string, string>;
   createdAt: string;
   updatedAt: string;
 }
@@ -190,17 +120,32 @@ export interface ListArgs {
   user: TypedUser | null | undefined;
 }
 
-/** Ids per `IN (…)` query when checking which subjects the caller may read. */
+/** The columns a summary needs: everything but the run's state and history. */
+const SUMMARY_SELECT: SelectType = {
+  workflow: true,
+  subjectCollection: true,
+  subjectId: true,
+  stage: true,
+  status: true,
+  assignedUsers: true,
+  assignedRoles: true,
+  createdAt: true,
+  updatedAt: true,
+};
+
+const keyOf = (doc: Pick<InstanceDoc, "subjectCollection" | "subjectId">) =>
+  `${doc.subjectCollection}:${doc.subjectId}`;
+
+/** Ids per `IN (…)` query when checking which documents the caller may read. */
 const SUBJECT_CHUNK = 200;
 
 /**
- * Which subjects `user` may read (latest draft, the user's access), with their titles, keyed by
- * `collection:id`. One query per collection (per chunk of ids); a collection that is gone, or a
- * failing query, reads as nothing readable.
+ * The documents of `docs` that `user` may read (latest draft, the user's access), with their
+ * titles, keyed by `collection:id`. One query per collection and chunk of ids; a collection that
+ * is gone, or a failing query, reads as nothing readable.
  */
 const readableSubjects = async (
-  payload: Payload,
-  ctx: Awaited<ReturnType<typeof contextFor>>,
+  req: PayloadRequest,
   user: TypedUser,
   docs: InstanceDoc[]
 ): Promise<Map<string, string | undefined>> => {
@@ -208,11 +153,10 @@ const readableSubjects = async (
   const byCollection = new Map<string, Set<string>>();
   for (const doc of docs) {
     const ids = byCollection.get(doc.subjectCollection) ?? new Set<string>();
-    ids.add(doc.subjectId);
-    byCollection.set(doc.subjectCollection, ids);
+    byCollection.set(doc.subjectCollection, ids.add(doc.subjectId));
   }
   for (const [collection, idSet] of byCollection) {
-    const config = payload.collections[collection as CollectionSlug]?.config;
+    const config = req.payload.collections[collection as CollectionSlug]?.config;
     if (!config) {
       continue;
     }
@@ -221,7 +165,7 @@ const readableSubjects = async (
     const ids = [...idSet];
     for (let from = 0; from < ids.length; from += SUBJECT_CHUNK) {
       const chunk = ids.slice(from, from + SUBJECT_CHUNK);
-      const found = await payload
+      const found = await req.payload
         .find({
           collection: collection as CollectionSlug,
           where: { id: { in: chunk } },
@@ -232,11 +176,12 @@ const readableSubjects = async (
           pagination: false,
           overrideAccess: false,
           user,
-          req: ctx.req,
+          req,
         })
         .catch(() => ({ docs: [] }));
       for (const subject of found.docs as Record<string, unknown>[]) {
-        readable.set(`${collection}:${String(subject.id)}`, titleOf(ctx, collection, subject));
+        const key = keyOf({ subjectCollection: collection, subjectId: String(subject.id) });
+        readable.set(key, titleOf(req.payload, collection, subject));
       }
     }
   }
@@ -244,17 +189,16 @@ const readableSubjects = async (
 };
 
 /**
- * The inbox: runs waiting on the caller (`mine`) or every run (`all`), newest change first. Runs
- * whose document the caller cannot read are left out before paginating, so `totalDocs` and
- * `totalPages` count only what the caller can see: the matching runs are read as a slim list
- * (ids and subjects), filtered, and only the requested page is loaded whole.
+ * The inbox: runs waiting on the caller (`mine`) or every run (`all`), newest change first. The
+ * matching runs are read as summaries, those whose document the caller cannot read are dropped,
+ * and then the page is cut, so `totalDocs` and `totalPages` count only what the caller can see.
  */
 export const listWorkflowInstances = async (
   payload: Payload,
   args: ListArgs
 ): Promise<{ docs: InstanceSummary[]; totalDocs: number; page: number; totalPages: number }> => {
   const user = requireUser(args.user);
-  const ctx = await contextFor(payload, user);
+  const req = await requestFor(payload, user);
   const and: Where[] = [];
   if (args.workflow) {
     and.push({ workflow: { equals: args.workflow } });
@@ -263,7 +207,7 @@ export const listWorkflowInstances = async (
     and.push({ status: { equals: args.status } });
   }
   if (args.scope === "mine") {
-    const roles = ctx.resolved.roles(user);
+    const roles = settingsOf(payload).roles(user);
     and.push({
       or: [
         { assignedUsers: { in: [String(user.id)] } },
@@ -273,61 +217,35 @@ export const listWorkflowInstances = async (
   }
   const page = Math.max(1, Math.floor(args.page ?? 1));
   const limit = Math.min(100, Math.max(1, Math.floor(args.limit ?? 20)));
-  const matching = await readRuns(ctx, user, {
+  const matching = await readRuns(req, user, {
     where: { and },
     sort: "-updatedAt",
-    select: { subjectCollection: true, subjectId: true },
+    select: SUMMARY_SELECT,
   });
-  const readable = await readableSubjects(payload, ctx, user, matching);
-  const visible = matching.filter((doc) =>
-    readable.has(`${doc.subjectCollection}:${doc.subjectId}`)
-  );
-  const pageIds = visible.slice((page - 1) * limit, page * limit).map((doc) => doc.id);
-  const loaded =
-    pageIds.length === 0
-      ? []
-      : await findInstances(
-          payload,
-          ctx.resolved.instancesSlug,
-          { id: { in: pageIds } },
-          ctx.req,
-          SETTLE_SELECT
-        );
-  const byId = new Map(loaded.map((doc) => [String(doc.id), doc]));
-  const docs = pageIds.flatMap((id) => byId.get(String(id)) ?? []);
-  const labels = await userLabelsFor(
-    payload,
-    ctx,
-    user,
-    docs.flatMap((doc) => doc.assignedUsers ?? [])
-  );
-  return {
-    docs: docs.map((doc) => {
-      const def = definitionForDoc(ctx, doc);
-      const stage = findStage(def, doc.stage);
-      const title = readable.get(`${doc.subjectCollection}:${doc.subjectId}`);
-      return {
-        id: String(doc.id),
-        workflow: doc.workflow,
-        workflowTitle: def.title ?? def.name,
-        status: doc.status,
-        ...(stage ? {} : { stuck: "unknown-stage" as const }),
-        stage: { name: doc.stage, title: stage?.title ?? doc.stage },
-        subject: {
-          collection: doc.subjectCollection,
-          id: doc.subjectId,
-          ...(title === undefined ? {} : { title }),
-        },
-        waitingOn: { users: doc.assignedUsers ?? [], roles: doc.assignedRoles ?? [] },
-        userLabels: pick(labels, doc.assignedUsers ?? []),
-        createdAt: doc.createdAt,
-        updatedAt: doc.updatedAt,
-      };
-    }),
-    totalDocs: visible.length,
-    page,
-    totalPages: Math.ceil(visible.length / limit),
-  };
+  const readable = await readableSubjects(req, user, matching);
+  const visible = matching.filter((doc) => readable.has(keyOf(doc)));
+  const docs = visible.slice((page - 1) * limit, page * limit).map((doc): InstanceSummary => {
+    const def = definitionOrStandIn(payload, doc);
+    const stage = findStage(def, doc.stage);
+    const title = readable.get(keyOf(doc));
+    return {
+      id: String(doc.id),
+      workflow: doc.workflow,
+      workflowTitle: def.title ?? def.name,
+      status: doc.status,
+      ...(stage ? {} : { stuck: "unknown-stage" as const }),
+      stage: { name: doc.stage, title: stage?.title ?? doc.stage },
+      subject: {
+        collection: doc.subjectCollection,
+        id: doc.subjectId,
+        ...(title === undefined ? {} : { title }),
+      },
+      waitingOn: { users: doc.assignedUsers ?? [], roles: doc.assignedRoles ?? [] },
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+    };
+  });
+  return { docs, totalDocs: visible.length, page, totalPages: Math.ceil(visible.length / limit) };
 };
 
 export interface DefinitionSummary {
@@ -342,7 +260,7 @@ export interface DefinitionSummary {
 export const listWorkflowDefinitions = (
   payload: Payload
 ): { definitions: DefinitionSummary[] } => ({
-  definitions: resolvedOf(payload).definitions.map((def) => ({
+  definitions: settingsOf(payload).workflows.map((def) => ({
     name: def.name,
     title: def.title ?? def.name,
     ...(def.description ? { description: def.description } : {}),

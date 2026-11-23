@@ -2,7 +2,7 @@ import type { CollectionBeforeChangeHook, CollectionConfig, PayloadRequest } fro
 import { describe, expect, it } from "vitest";
 
 import { withWorkflowHooks } from "../src/hooks.js";
-import type { ResolvedWorkflows } from "../src/options.js";
+import type { WorkflowsSettings } from "../src/plugin.js";
 import { editorialReview } from "./fixtures.js";
 
 // A run of the editorial review sitting in "review", where "hold-publish" holds.
@@ -22,18 +22,17 @@ const inReview = {
   updatedAt: "2026-01-01T00:00:00.000Z",
 };
 
-const resolved: ResolvedWorkflows = {
-  definitions: [editorialReview],
+const settings: WorkflowsSettings = {
+  workflows: [editorialReview],
   effects: {},
   roles: () => [],
   access: {},
-  instancesSlug: "workflow-instances",
 };
 
 const req = {
   context: {},
   payload: {
-    config: { custom: { workflows: resolved } },
+    config: { custom: { workflows: settings } },
     find: async () => ({ docs: [inReview] }),
   },
 } as unknown as PayloadRequest;

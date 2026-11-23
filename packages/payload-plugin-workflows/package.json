@@ -2,7 +2,7 @@
   "name": "@focus-reactive/payload-plugin-workflows",
   "version": "1.0.0",
   "private": false,
-  "description": "Editorial workflows for Payload CMS: stages, activities, actions, guards and effects defined in code, run by people and agents alike",
+  "description": "Editorial workflows for Payload CMS: stages, actions, transitions, guards and effects defined in code, run by people and agents alike",
   "license": "MIT",
   "author": "FocusReactive <ship@focusreactive.com>",
   "type": "module",

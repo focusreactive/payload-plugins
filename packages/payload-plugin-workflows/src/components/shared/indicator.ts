@@ -52,30 +52,39 @@ export const toneOf = (view: InstanceView, me: string | undefined): IndicatorTon
   return view.waitingOn.users.length > 0 || view.waitingOn.roles.length > 0 ? "others" : "anyone";
 };
 
-/** The one run the indicator names: the first that waits on `me`, else the first active one. */
-export const indicatorOf = (state: WorkflowState, me: string | undefined): Indicator => {
+/**
+ * The runs the indicator and the drawer show: the active ones, the one waiting on `me` first, and
+ * the latest finished run (`instances` is newest first).
+ */
+export const runsOf = (
+  state: WorkflowState,
+  me: string | undefined
+): { active: InstanceView[]; finished?: InstanceView } => {
   const active = state.instances.filter((view) => view.status === "active");
-  const named = active.find((view) => waitsOn(view, me)) ?? active[0];
+  const first = active.find((view) => waitsOn(view, me));
+  const finished = state.instances.find((view) => view.status !== "active");
+  return {
+    active: first ? [first, ...active.filter((view) => view !== first)] : active,
+    ...(finished ? { finished } : {}),
+  };
+};
+
+/** What the indicator names: the first active run, else a finished one or something to start. */
+export const indicatorOf = (state: WorkflowState, me: string | undefined): Indicator => {
+  const { active, finished } = runsOf(state, me);
+  const named = active[0];
   if (named) {
+    const waitsOnMe = waitsOn(named, me);
     return {
       kind: "run",
       view: named,
       tone: toneOf(named, me),
-      waitsOnMe: waitsOn(named, me),
+      waitsOnMe,
       more: active.length - 1,
     };
   }
-  // `instances` is newest first, so the first finished one is the latest.
-  const finished = state.instances.find((view) => view.status !== "active");
   if (!finished && state.available.length === 0) {
     return { kind: "none" };
   }
   return finished ? { kind: "idle", finished } : { kind: "idle" };
-};
-
-/** Active runs with the one the indicator names first, so the drawer opens on it. */
-export const activeRunsFor = (state: WorkflowState, me: string | undefined): InstanceView[] => {
-  const active = state.instances.filter((view) => view.status === "active");
-  const first = active.find((view) => waitsOn(view, me));
-  return first ? [first, ...active.filter((view) => view !== first)] : active;
 };

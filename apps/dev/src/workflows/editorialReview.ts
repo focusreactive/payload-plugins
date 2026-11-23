@@ -2,7 +2,7 @@ import { defineWorkflow } from "@focus-reactive/payload-plugin-workflows";
 import type { EffectHandler } from "@focus-reactive/payload-plugin-workflows";
 
 /**
- * The spec's editorial review on `pages`. Dev users have no roles, so review uses the claim
+ * The README's editorial review on `pages`. Dev users have no roles, so review uses the claim
  * pattern: anyone may take the review, after which only the reviewer may decide.
  */
 export const editorialReview = defineWorkflow({
@@ -20,13 +20,7 @@ export const editorialReview = defineWorkflow({
     {
       name: "drafting",
       title: "Drafting",
-      activities: [
-        {
-          name: "write",
-          title: "Write the page",
-          actions: [{ name: "submit", title: "Submit for review", status: "done" }],
-        },
-      ],
+      actions: [{ name: "submit", title: "Submit for review", status: "done" }],
       transitions: [{ name: "to-review", to: "review" }],
     },
     {
@@ -39,42 +33,32 @@ export const editorialReview = defineWorkflow({
           operations: ["publish"],
         },
       ],
-      activities: [
+      assignee: "reviewer",
+      actions: [
+        { name: "reset", when: () => true, set: { decision: null, reason: null } },
         {
-          name: "review",
-          title: "Review the page",
-          assignee: "reviewer",
-          actions: [
-            { name: "reset", when: () => true, set: { decision: null, reason: null } },
-            {
-              name: "claim",
-              title: "Take this review",
-              filter: ({ fields }) => !fields.reviewer,
-              set: ({ actor }) => ({ reviewer: actor.id }),
-            },
-            {
-              name: "approve",
-              title: "Approve",
-              status: "done",
-              set: { decision: "approved" },
-              effects: ["notify-author"],
-            },
-            {
-              name: "reject",
-              title: "Request changes",
-              status: "done",
-              params: [{ name: "reason", type: "text", title: "Reason", required: true }],
-              set: ({ params }) => ({ decision: "rejected", reason: params.reason }),
-            },
-          ],
+          name: "claim",
+          title: "Take this review",
+          filter: ({ fields }) => !fields.reviewer,
+          set: ({ actor }) => ({ reviewer: actor.id }),
+        },
+        {
+          name: "approve",
+          title: "Approve",
+          status: "done",
+          set: { decision: "approved" },
+          effects: ["notify-author"],
+        },
+        {
+          name: "reject",
+          title: "Request changes",
+          status: "done",
+          params: [{ name: "reason", type: "text", title: "Reason", required: true }],
+          set: ({ params }) => ({ decision: "rejected", reason: params.reason }),
         },
       ],
       transitions: [
-        {
-          name: "approved",
-          to: "approved",
-          when: ({ fields }) => fields.decision === "approved",
-        },
+        { name: "approved", to: "approved", when: ({ fields }) => fields.decision === "approved" },
         { name: "back", to: "drafting", when: ({ fields }) => fields.decision === "rejected" },
       ],
     },

@@ -6,7 +6,7 @@ import { Button } from "@payloadcms/ui";
 
 import type { WorkflowState } from "../../server/queries.js";
 import type { People } from "../shared/format.js";
-import { activeRunsFor } from "../shared/indicator.js";
+import { runsOf } from "../shared/indicator.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
 import { ActiveRun } from "./ActiveRun.js";
 import { FinishedRun } from "./FinishedRun.js";
@@ -18,13 +18,8 @@ interface Props extends Pick<
   Controls,
   "state" | "error" | "busy" | "reload" | "start" | "fire" | "abort"
 > {
-  me: string | undefined;
+  people: People;
 }
-
-const peopleOf = (me: string | undefined, labels: Record<string, string> | undefined): People => ({
-  me,
-  labels,
-});
 
 const StartItem = ({
   def,
@@ -84,12 +79,12 @@ export const WorkflowDrawerBody = ({
   start,
   fire,
   abort,
-  me,
+  people,
 }: Props) => {
   const { t } = useWorkflowsT();
   if (!state) {
     return (
-      <div className="workflows-drawer" data-loading={!error}>
+      <div className="workflows-drawer">
         {error ? (
           <div className="workflows-notice" data-tone="error" role="alert">
             <span className="workflows-notice__body">{error}</span>
@@ -108,10 +103,9 @@ export const WorkflowDrawerBody = ({
       </div>
     );
   }
-  const active = activeRunsFor(state, me);
-  // `instances` is newest first, so the first finished one is the latest.
-  const finished =
-    active.length === 0 ? state.instances.find((view) => view.status !== "active") : undefined;
+  const runs = runsOf(state, people.me);
+  const { active } = runs;
+  const finished = active.length === 0 ? runs.finished : undefined;
   return (
     <div aria-busy={busy} className="workflows-drawer">
       {error ? (
@@ -125,11 +119,11 @@ export const WorkflowDrawerBody = ({
           key={view.id ?? view.workflow}
           onAbort={() => abort(view.id ?? "")}
           onFire={(activity, action, params) => fire(view.id ?? "", activity, action, params)}
-          people={peopleOf(me, view.userLabels)}
+          people={people}
           view={view}
         />
       ))}
-      {finished ? <FinishedRun people={peopleOf(me, finished.userLabels)} view={finished} /> : null}
+      {finished ? <FinishedRun people={people} view={finished} /> : null}
       {state.available.length > 0 ? (
         <StartList
           available={state.available}

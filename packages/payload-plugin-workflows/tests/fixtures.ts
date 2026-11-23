@@ -1,7 +1,7 @@
 import { defineWorkflow } from "../src/define.js";
 import type { WorkflowDefinition } from "../src/types.js";
 
-/** The spec's editorial-review example, verbatim. */
+/** The README's editorial review: stages with plain `actions`. */
 export const editorialReview = defineWorkflow({
   name: "editorial-review",
   title: "Editorial review",
@@ -16,18 +16,14 @@ export const editorialReview = defineWorkflow({
     {
       name: "drafting",
       title: "Drafting",
-      activities: [
-        {
-          name: "write",
-          title: "Write the page",
-          actions: [{ name: "submit", title: "Submit for review", status: "done" }],
-        },
-      ],
+      actions: [{ name: "submit", title: "Submit for review", status: "done" }],
       transitions: [{ name: "to-review", to: "review" }],
     },
     {
       name: "review",
       title: "Review",
+      assignee: "reviewer",
+      roles: ["editor"],
       guards: [
         {
           name: "hold-publish",
@@ -35,35 +31,27 @@ export const editorialReview = defineWorkflow({
           operations: ["publish"],
         },
       ],
-      activities: [
+      actions: [
+        { name: "reset", when: () => true, set: { decision: null, reason: null } },
         {
-          name: "review",
-          title: "Review the page",
-          assignee: "reviewer",
-          roles: ["editor"],
-          actions: [
-            { name: "reset", when: () => true, set: { decision: null, reason: null } },
-            {
-              name: "claim",
-              title: "Take this review",
-              filter: ({ fields }) => !fields.reviewer,
-              set: ({ actor }) => ({ reviewer: actor.id }),
-            },
-            {
-              name: "approve",
-              title: "Approve",
-              status: "done",
-              set: { decision: "approved" },
-              effects: ["notify-author"],
-            },
-            {
-              name: "reject",
-              title: "Request changes",
-              status: "done",
-              params: [{ name: "reason", type: "text", title: "Reason", required: true }],
-              set: ({ params }) => ({ decision: "rejected", reason: params.reason }),
-            },
-          ],
+          name: "claim",
+          title: "Take this review",
+          filter: ({ fields }) => !fields.reviewer,
+          set: ({ actor }) => ({ reviewer: actor.id }),
+        },
+        {
+          name: "approve",
+          title: "Approve",
+          status: "done",
+          set: { decision: "approved" },
+          effects: ["notify-author"],
+        },
+        {
+          name: "reject",
+          title: "Request changes",
+          status: "done",
+          params: [{ name: "reason", type: "text", title: "Reason", required: true }],
+          set: ({ params }) => ({ decision: "rejected", reason: params.reason }),
         },
       ],
       transitions: [

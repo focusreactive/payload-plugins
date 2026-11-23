@@ -16,7 +16,7 @@ import { sqliteAdapter } from "@payloadcms/db-sqlite";
 import { buildConfig, getPayload } from "payload";
 import type { Config, Payload } from "payload";
 
-/** The spec's editorial review, with a role pool so the inbox query is exercised. */
+/** The editorial review in the short form (plain stage `actions`), with a role pool for the inbox. */
 export const review = defineWorkflow({
   name: "review",
   title: "Review",
@@ -30,7 +30,7 @@ export const review = defineWorkflow({
   stages: [
     {
       name: "drafting",
-      activities: [{ name: "write", actions: [{ name: "submit", status: "done" }] }],
+      actions: [{ name: "submit", status: "done" }],
       transitions: [{ name: "to-review", to: "review" }],
     },
     {
@@ -42,31 +42,26 @@ export const review = defineWorkflow({
           operations: ["publish"],
         },
       ],
-      activities: [
+      assignee: "reviewer",
+      roles: ["editor"],
+      actions: [
+        { name: "reset", when: () => true, set: { decision: null, reason: null } },
         {
-          name: "review",
-          assignee: "reviewer",
-          roles: ["editor"],
-          actions: [
-            { name: "reset", when: () => true, set: { decision: null, reason: null } },
-            {
-              name: "claim",
-              filter: ({ fields }) => !fields.reviewer,
-              set: ({ actor }) => ({ reviewer: actor.id }),
-            },
-            {
-              name: "approve",
-              status: "done",
-              set: { decision: "approved" },
-              effects: ["notify-author"],
-            },
-            {
-              name: "reject",
-              status: "done",
-              params: [{ name: "reason", type: "text", required: true }],
-              set: ({ params }) => ({ decision: "rejected", reason: params.reason }),
-            },
-          ],
+          name: "claim",
+          filter: ({ fields }) => !fields.reviewer,
+          set: ({ actor }) => ({ reviewer: actor.id }),
+        },
+        {
+          name: "approve",
+          status: "done",
+          set: { decision: "approved" },
+          effects: ["notify-author"],
+        },
+        {
+          name: "reject",
+          status: "done",
+          params: [{ name: "reason", type: "text", required: true }],
+          set: ({ params }) => ({ decision: "rejected", reason: params.reason }),
         },
       ],
       transitions: [

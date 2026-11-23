@@ -1,3 +1,4 @@
+export { defineWorkflow } from "./define.js";
 export { workflowsPlugin } from "./plugin.js";
 export type {
   EffectHandler,
@@ -5,16 +6,7 @@ export type {
   WorkflowAccess,
   WorkflowAccessArgs,
   WorkflowsPluginOptions,
-} from "./options.js";
-export {
-  defineAction,
-  defineActivity,
-  defineField,
-  defineGuard,
-  defineStage,
-  defineTransition,
-  defineWorkflow,
-} from "./define.js";
+} from "./plugin.js";
 export type {
   ActionContext,
   ActionDef,
@@ -34,9 +26,13 @@ export type {
 } from "./types.js";
 export { WorkflowError, isWorkflowError } from "./engine/errors.js";
 export type { WorkflowErrorCode } from "./engine/errors.js";
-export type { InstanceSummary } from "./server/queries.js";
 export { createWorkflowSimulator } from "./engine/simulator.js";
-export { WORKFLOW_BYPASS } from "./lib/constants.js";
-export { abortWorkflow, fireWorkflowAction, startWorkflow } from "./server/operations.js";
+export { WORKFLOW_BYPASS } from "./constants.js";
+export {
+  abortWorkflow,
+  fireWorkflowAction,
+  startWorkflow,
+  tickWorkflows,
+} from "./server/operations.js";
 export { getWorkflowState, listWorkflowInstances } from "./server/queries.js";
-export { tickWorkflows } from "./server/tick.js";
+export type { InstanceSummary } from "./server/queries.js";

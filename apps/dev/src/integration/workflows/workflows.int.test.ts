@@ -92,7 +92,6 @@ describe("workflows against a real Payload", () => {
 
     const submitted = await fireWorkflowAction(payload, {
       instanceId: id,
-      activity: "write",
       action: "submit",
       user: author,
     });
@@ -279,7 +278,6 @@ describe("workflows against a real Payload", () => {
       bumps = 1;
       const moved = await fireWorkflowAction(payload, {
         instanceId: id,
-        activity: "write",
         action: "submit",
         user: author,
       });
@@ -339,7 +337,6 @@ describe("workflows against a real Payload", () => {
     const id = run.id as string;
     await fireWorkflowAction(payload, {
       instanceId: id,
-      activity: "write",
       action: "submit",
       user: author,
     });
@@ -392,7 +389,7 @@ describe("workflows against a real Payload", () => {
     expect(tick.advanced).toBe(0);
   });
 
-  it("names people for the admin UI: state and inbox resolve user ids to display names", async () => {
+  it("names people by id: the admin resolves display names itself, with the viewer's access", async () => {
     const page = await createPage("Named");
     const run = await startWorkflow(payload, {
       workflow: "review",
@@ -403,7 +400,6 @@ describe("workflows against a real Payload", () => {
     const id = run.id as string;
     await fireWorkflowAction(payload, {
       instanceId: id,
-      activity: "write",
       action: "submit",
       user: author,
     });
@@ -419,15 +415,17 @@ describe("workflows against a real Payload", () => {
       user: author,
     });
     const view = state.instances.find((entry) => entry.id === id);
-    // The users collection has no `useAsTitle`, so the email stands in.
-    expect(view?.userLabels).toEqual({
-      [String(author.id)]: "author@test.local",
-      [String(editor.id)]: "editor@test.local",
-    });
+    expect(view?.waitingOn).toEqual({ users: [String(editor.id)], roles: [] });
+    expect(view?.activities[0]?.assignee).toBe(String(editor.id));
+    expect(view?.history.map((entry) => entry.actor.id).filter(Boolean)).toEqual([
+      String(author.id),
+      String(author.id),
+      String(editor.id),
+    ]);
     const inbox = await listWorkflowInstances(payload, { scope: "mine", user: editor });
-    expect(inbox.docs.find((entry) => entry.id === id)?.userLabels).toEqual({
-      [String(editor.id)]: "editor@test.local",
-    });
+    expect(inbox.docs.find((entry) => entry.id === id)?.waitingOn.users).toEqual([
+      String(editor.id),
+    ]);
   });
 
   it("deleting the subject aborts its active runs", async () => {

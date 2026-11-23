@@ -1,16 +1,15 @@
 import type { Endpoint, PayloadRequest, TypedUser } from "payload";
 
+import { ENDPOINTS } from "./constants.js";
 import { isWorkflowError } from "./engine/errors.js";
 import type { WorkflowErrorCode } from "./engine/errors.js";
-import { ENDPOINT_PREFIX } from "./lib/constants.js";
-import type { Via } from "./server/config.js";
 import { abortWorkflow, fireWorkflowAction, startWorkflow } from "./server/operations.js";
 import {
   getWorkflowState,
   listWorkflowDefinitions,
   listWorkflowInstances,
 } from "./server/queries.js";
-import type { InstanceState } from "./types.js";
+import type { InstanceState, UserActor } from "./types.js";
 
 const json = (body: unknown, status = 200) =>
   Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
@@ -58,14 +57,14 @@ const record = (value: unknown): Record<string, unknown> | undefined =>
     : undefined;
 
 // An API key is a script; any other session is someone in the admin.
-const viaOf = (user: TypedUser): Via =>
+const viaOf = (user: TypedUser): UserActor["via"] =>
   (user as { _strategy?: string })._strategy === "api-key" ? "api" : "admin";
 
 const missing = (names: string[]) => fail(`Missing ${names.join(", ")}.`, 400);
 
 type Handler = (req: PayloadRequest, user: TypedUser) => Promise<unknown>;
 
-/** Thin: authenticate, parse, call the server function, map its errors. */
+/** Authenticate, parse, call the server operation, map its refusals to status codes. */
 const handle =
   (run: Handler) =>
   async (req: PayloadRequest): Promise<Response> => {
@@ -96,7 +95,7 @@ const STATUSES: InstanceState["status"][] = ["active", "completed", "aborted"];
 
 export const workflowEndpoints = (): Endpoint[] => [
   {
-    path: `${ENDPOINT_PREFIX}/state`,
+    path: ENDPOINTS.state,
     method: "get",
     handler: handle(async (req, user) => {
       const query = queryOf(req);
@@ -105,11 +104,11 @@ export const workflowEndpoints = (): Endpoint[] => [
       if (!collection || !id) {
         return missing(["collection", "id"]);
       }
-      return getWorkflowState(req.payload, { collection, id, user, via: viaOf(user) });
+      return getWorkflowState(req.payload, { collection, id, user });
     }),
   },
   {
-    path: `${ENDPOINT_PREFIX}/start`,
+    path: ENDPOINTS.start,
     method: "post",
     handler: handle(async (req, user) => {
       const body = await readBody(req);
@@ -131,19 +130,18 @@ export const workflowEndpoints = (): Endpoint[] => [
     }),
   },
   {
-    path: `${ENDPOINT_PREFIX}/fire`,
+    path: ENDPOINTS.fire,
     method: "post",
     handler: handle(async (req, user) => {
       const body = await readBody(req);
       const instanceId = str(body.instanceId);
-      const activity = str(body.activity);
       const action = str(body.action);
-      if (!instanceId || !activity || !action) {
-        return missing(["instanceId", "activity", "action"]);
+      if (!instanceId || !action) {
+        return missing(["instanceId", "action"]);
       }
       return fireWorkflowAction(req.payload, {
         instanceId,
-        activity,
+        activity: str(body.activity),
         action,
         params: record(body.params),
         user,
@@ -153,7 +151,7 @@ export const workflowEndpoints = (): Endpoint[] => [
     }),
   },
   {
-    path: `${ENDPOINT_PREFIX}/abort`,
+    path: ENDPOINTS.abort,
     method: "post",
     handler: handle(async (req, user) => {
       const body = await readBody(req);
@@ -171,7 +169,7 @@ export const workflowEndpoints = (): Endpoint[] => [
     }),
   },
   {
-    path: `${ENDPOINT_PREFIX}/instances`,
+    path: ENDPOINTS.instances,
     method: "get",
     handler: handle(async (req, user) => {
       const query = queryOf(req);
@@ -189,7 +187,7 @@ export const workflowEndpoints = (): Endpoint[] => [
     }),
   },
   {
-    path: `${ENDPOINT_PREFIX}/definitions`,
+    path: ENDPOINTS.definitions,
     method: "get",
     handler: handle(async (req) => listWorkflowDefinitions(req.payload)),
   },

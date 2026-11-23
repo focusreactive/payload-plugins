@@ -1,6 +1,7 @@
 "use client";
 
 import type { DefinitionSummary, InstanceSummary } from "../../server/queries.js";
+import type { People } from "../shared/format.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
 import { LastChanged, SubjectLink, WaitingOn } from "./RunParts.js";
 
@@ -8,9 +9,11 @@ import { LastChanged, SubjectLink, WaitingOn } from "./RunParts.js";
 export const RunsBoard = ({
   definition,
   runs,
+  people,
 }: {
   definition: DefinitionSummary;
   runs: InstanceSummary[];
+  people: People;
 }) => {
   const { t } = useWorkflowsT();
   const columns = definition.stages.map((stage) => ({
@@ -40,7 +43,7 @@ export const RunsBoard = ({
                 <li className="workflows-board__card" key={run.id}>
                   <SubjectLink run={run} />
                   <span className="workflows-board__meta">
-                    <WaitingOn prefixed run={run} />
+                    <WaitingOn people={people} prefixed run={run} />
                   </span>
                   <span className="workflows-board__meta">
                     <LastChanged run={run} />

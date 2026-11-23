@@ -2,13 +2,20 @@
 
 import "./WorkflowIndicator.css";
 
-import { Button, Drawer, useAuth, useDocumentInfo, useDrawerSlug, useModal } from "@payloadcms/ui";
+import {
+  Button,
+  Drawer,
+  useConfig,
+  useDocumentInfo,
+  useDrawerSlug,
+  useModal,
+} from "@payloadcms/ui";
 
-import type { T } from "../shared/format.js";
-import { formatRelative, waitingOnText } from "../shared/format.js";
+import { formatRelative, operationsText, userIdsIn, waitingOnText } from "../shared/format.js";
+import type { People, T } from "../shared/format.js";
 import { indicatorOf } from "../shared/indicator.js";
 import type { Indicator } from "../shared/indicator.js";
-import type { WorkflowsClientProps } from "../shared/types.js";
+import { usePeople } from "../shared/useWorkflowsApi.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
 import { useWorkflowState } from "./useWorkflowState.js";
 import { WorkflowDrawerBody } from "./WorkflowDrawer.js";
@@ -16,10 +23,10 @@ import { WorkflowDrawerBody } from "./WorkflowDrawer.js";
 /** What the button shows, and its full accessible name. */
 const describe = (
   indicator: Indicator,
-  me: string | undefined,
+  people: People,
   t: T,
   language: string
-): { text: string; label: string; tone: string; held: boolean } => {
+): { text: string; label: string; tone: string } => {
   const open = t("indicatorOpen");
   if (indicator.kind !== "run") {
     const finished = indicator.kind === "idle" ? indicator.finished : undefined;
@@ -36,11 +43,9 @@ const describe = (
       text: t("indicatorLabel"),
       label: `${t("indicatorLabel")}: ${summary}. ${open}`,
       tone: "idle",
-      held: false,
     };
   }
   const { view, tone, waitsOnMe, more } = indicator;
-  const people = { me, labels: view.userLabels };
   let waiting: string;
   if (tone === "stuck") {
     waiting = t("indicatorStuck");
@@ -50,47 +55,40 @@ const describe = (
     const who = waitingOnText(view.waitingOn, people, t);
     waiting = who ? t("indicatorWaitingOn", { who }) : t("indicatorWaitingAnyone");
   }
-  const operations: Record<string, string> = {
-    publish: t("operationPublish"),
-    update: t("operationUpdate"),
-    delete: t("operationDelete"),
-  };
   const heldOps = [...new Set(view.guards.flatMap((guard) => guard.operations))];
   const held =
     tone !== "stuck" && heldOps.length > 0
-      ? ` ${t("indicatorHeld", { operations: heldOps.map((op) => operations[op] ?? op).join(", ") })}`
+      ? ` ${t("indicatorHeld", { operations: operationsText(heldOps, t) })}`
       : "";
   const extra = more > 0 ? ` ${t("indicatorMore", { count: more })}` : "";
   return {
     text: view.stage.title,
     label: `${view.title}: ${view.stage.title}, ${waiting}.${held} ${open}${extra}`,
     tone,
-    held: held !== "",
   };
 };
 
 const IndicatorBody = ({
-  endpoints,
   collection,
   id,
   refreshKey,
-}: Pick<WorkflowsClientProps, "endpoints"> & {
+}: {
   collection: string;
   id: string;
   refreshKey: unknown;
 }) => {
   const { t, language } = useWorkflowsT();
-  const { user } = useAuth();
-  const me = user ? String(user.id) : undefined;
+  const { config } = useConfig();
   const { openModal, isModalOpen } = useModal();
   const drawerSlug = useDrawerSlug("workflow");
-  const controls = useWorkflowState(endpoints, collection, id, refreshKey);
+  const controls = useWorkflowState(collection, id, refreshKey);
   const { state, error, reload } = controls;
+  const people = usePeople(userIdsIn(state?.instances ?? [], config.admin.user));
   const isOpen = isModalOpen(drawerSlug);
 
   let indicator: Indicator | null = null;
   if (state) {
-    indicator = indicatorOf(state, me);
+    indicator = indicatorOf(state, people.me);
   } else if (error) {
     indicator = { kind: "idle" };
   }
@@ -99,7 +97,7 @@ const IndicatorBody = ({
     return null;
   }
   const shown = indicator && indicator.kind !== "none" ? indicator : { kind: "idle" as const };
-  const look = describe(shown, me, t, language);
+  const look = describe(shown, people, t, language);
   const failed = !state && Boolean(error);
   const more = shown.kind === "run" ? shown.more : 0;
 
@@ -115,7 +113,6 @@ const IndicatorBody = ({
         className="workflows-indicator"
         extraButtonProps={{
           "data-tone": failed ? "stuck" : look.tone,
-          "data-held": look.held,
           "aria-haspopup": "dialog",
           title: failed ? undefined : look.label,
         }}
@@ -138,8 +135,8 @@ const IndicatorBody = ({
           ) : null}
         </span>
       </Button>
-      <Drawer className="workflows-drawer-modal" slug={drawerSlug} title={t("drawerTitle")}>
-        <WorkflowDrawerBody me={me} {...controls} />
+      <Drawer slug={drawerSlug} title={t("drawerTitle")}>
+        <WorkflowDrawerBody people={people} {...controls} />
       </Drawer>
     </>
   );
@@ -151,17 +148,10 @@ const IndicatorBody = ({
  * one fetch, refetched on save (`lastUpdateTime`) and after every action; the drawer gets it as
  * props. A drawer, not a page: the document form and its unsaved changes stay as they are.
  */
-export const WorkflowIndicator = ({ endpoints }: Partial<WorkflowsClientProps>) => {
+export const WorkflowIndicator = () => {
   const { id, collectionSlug, lastUpdateTime } = useDocumentInfo();
-  if (id === undefined || id === null || id === "" || !collectionSlug || !endpoints) {
+  if (id === undefined || id === null || id === "" || !collectionSlug) {
     return null;
   }
-  return (
-    <IndicatorBody
-      collection={collectionSlug}
-      endpoints={endpoints}
-      id={String(id)}
-      refreshKey={lastUpdateTime}
-    />
-  );
+  return <IndicatorBody collection={collectionSlug} id={String(id)} refreshKey={lastUpdateTime} />;
 };

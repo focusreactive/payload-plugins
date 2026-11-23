@@ -3,7 +3,7 @@
 import { useTranslation } from "@payloadcms/ui";
 import { useCallback } from "react";
 
-import { NAMESPACE } from "../../translations/merge.js";
+import { NAMESPACE } from "../../translations.js";
 import type { T } from "./format.js";
 
 /** `t` for the plugin's own strings, plus the admin language for dates. */

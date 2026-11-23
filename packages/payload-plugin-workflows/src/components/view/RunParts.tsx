@@ -1,10 +1,11 @@
 "use client";
 
-import { Link, useAuth, useConfig } from "@payloadcms/ui";
+import { Link, useConfig } from "@payloadcms/ui";
 import { formatAdminURL } from "payload/shared";
 
 import type { InstanceSummary } from "../../server/queries.js";
 import { formatDateTime, formatRelative, waitingOnText } from "../shared/format.js";
+import type { People } from "../shared/format.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
 
 /** The run's document, linked to its edit view. */
@@ -29,18 +30,15 @@ export const SubjectLink = ({ run }: { run: InstanceSummary }) => {
 /** Who the run waits on; `prefixed` says so in a sentence, for places without a column header. */
 export const WaitingOn = ({
   run,
+  people,
   prefixed = false,
 }: {
   run: InstanceSummary;
+  people: People;
   prefixed?: boolean;
 }) => {
   const { t } = useWorkflowsT();
-  const { user } = useAuth();
-  const text = waitingOnText(
-    run.waitingOn,
-    { me: user ? String(user.id) : undefined, labels: run.userLabels },
-    t
-  );
+  const text = waitingOnText(run.waitingOn, people, t);
   if (prefixed) {
     return (
       <span className="workflows-runs__waiting">

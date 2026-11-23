@@ -3,12 +3,13 @@
 import { Pill } from "@payloadcms/ui";
 
 import type { InstanceSummary } from "../../server/queries.js";
+import type { People } from "../shared/format.js";
 import { StatusPill } from "../shared/StatusPill.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
 import { LastChanged, SubjectLink, WaitingOn } from "./RunParts.js";
 
 /** Runs as rows: document, workflow, stage, who it waits on, last change. */
-export const RunsTable = ({ runs }: { runs: InstanceSummary[] }) => {
+export const RunsTable = ({ runs, people }: { runs: InstanceSummary[]; people: People }) => {
   const { t } = useWorkflowsT();
   return (
     <div className="workflows-runs">
@@ -39,7 +40,7 @@ export const RunsTable = ({ runs }: { runs: InstanceSummary[] }) => {
                 )}
               </td>
               <td data-label={t("columnWaitingOn")}>
-                <WaitingOn run={run} />
+                <WaitingOn people={people} run={run} />
               </td>
               <td data-label={t("columnUpdated")}>
                 <LastChanged run={run} />

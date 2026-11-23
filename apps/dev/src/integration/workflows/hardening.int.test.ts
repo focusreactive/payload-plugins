@@ -139,7 +139,6 @@ const inReview = async (title: string) => {
   });
   await fireWorkflowAction(payload, {
     instanceId: run.id as string,
-    activity: "write",
     action: "submit",
     user: author,
   });
@@ -179,9 +178,7 @@ describe("who may see and move a workflow", () => {
       ).toBe("unauthorized");
       expect(await codeOf(abortWorkflow(payload, { instanceId, user }))).toBe("unauthorized");
       expect(
-        await codeOf(
-          fireWorkflowAction(payload, { instanceId, activity: "write", action: "submit", user })
-        )
+        await codeOf(fireWorkflowAction(payload, { instanceId, action: "submit", user }))
       ).toBe("unauthorized");
       expect(
         await codeOf(getWorkflowState(payload, { collection: "pages", id: page.id, user }))
@@ -211,7 +208,6 @@ describe("who may see and move a workflow", () => {
       await codeOf(
         fireWorkflowAction(payload, {
           instanceId,
-          activity: "write",
           action: "submit",
           user: client,
         })
@@ -315,7 +311,6 @@ describe("guards", () => {
     });
     await fireWorkflowAction(payload, {
       instanceId: run.id as string,
-      activity: "write",
       action: "submit",
       user: author,
     });
@@ -342,7 +337,6 @@ describe("guards", () => {
     });
     await fireWorkflowAction(payload, {
       instanceId: second.id as string,
-      activity: "write",
       action: "submit",
       user: author,
     });
@@ -372,7 +366,6 @@ describe("guards", () => {
     });
     await fireWorkflowAction(payload, {
       instanceId: run.id as string,
-      activity: "write",
       action: "submit",
       user: author,
     });

@@ -1,3 +1,7 @@
+// The hooks on every collection a workflow runs on. `beforeChange` / `beforeDelete` enforce the
+// guards for every writer (admin, REST, GraphQL, Local API); `afterChange` / `afterDelete` start,
+// settle and abort runs, and never throw: a workflow bug must not break saving content.
+
 import type {
   CollectionAfterChangeHook,
   CollectionAfterDeleteHook,
@@ -8,42 +12,42 @@ import type {
 } from "payload";
 import { APIError } from "payload";
 
-import { holdingGuards } from "./engine/guards.js";
-import { WORKFLOW_BYPASS } from "./lib/constants.js";
-import type { GuardDef, GuardOperation, StartMode, WorkflowDefinition } from "./types.js";
-import type { Ctx, JobId } from "./server/commit.js";
-import { resolvedOf } from "./server/config.js";
-import { runJobsInline } from "./server/inline.js";
-import { abortIn, canRunInline, settleIn, startIn } from "./server/operations.js";
-import { SETTLE_SELECT, findInstances, subjectWhere, toState } from "./server/store.js";
-
-const ctxOf = (req: PayloadRequest): Ctx => ({
-  payload: req.payload,
-  req,
-  resolved: resolvedOf(req.payload),
-});
+import { WORKFLOW_BYPASS } from "./constants.js";
+import { holdingGuards } from "./engine/engine.js";
+import {
+  abortRun,
+  canRunInline,
+  runJobsInline,
+  settingsOf,
+  settleRun,
+  startRun,
+} from "./server/operations.js";
+import { WITHOUT_HISTORY, findRuns, subjectWhere, toState } from "./server/store.js";
+import type { JobId } from "./server/store.js";
+import type { GuardDef, GuardOperation, StartMode } from "./types.js";
 
 /** One query for a document's active runs, without their history (not needed to guard or settle). */
-const activeRuns = (ctx: Ctx, collection: string, id: string | number) =>
-  findInstances(
-    ctx.payload,
-    ctx.resolved.instancesSlug,
-    subjectWhere({ collection, id: String(id) }, true),
-    ctx.req,
-    SETTLE_SELECT
+const activeRuns = (req: PayloadRequest, collection: string, id: string | number) =>
+  findRuns(req, subjectWhere({ collection, id: String(id) }, true), WITHOUT_HISTORY);
+
+export const hasDrafts = (collection: CollectionConfig | undefined): boolean =>
+  Boolean(
+    collection?.versions && typeof collection.versions === "object" && collection.versions.drafts
   );
 
-/** Guards holding on a document right now, across all its active runs. */
+// ---- Guards ---------------------------------------------------------------------------------
+
+/** The guards holding on a document right now, across all its active runs. */
 const holdingOn = async (
   req: PayloadRequest,
   collection: string,
   id: string | number,
   doc: Record<string, unknown> | null
 ): Promise<GuardDef[]> => {
-  const ctx = ctxOf(req);
+  const { workflows } = settingsOf(req.payload);
   const holding: GuardDef[] = [];
-  for (const run of await activeRuns(ctx, collection, id)) {
-    const def = ctx.resolved.definitions.find((entry) => entry.name === run.workflow);
+  for (const run of await activeRuns(req, collection, id)) {
+    const def = workflows.find((entry) => entry.name === run.workflow);
     if (def) {
       holding.push(...holdingGuards(def, toState(run), { doc, now: new Date() }));
     }
@@ -51,12 +55,7 @@ const holdingOn = async (
   return holding;
 };
 
-const blocked = (guard: GuardDef) => new APIError(guard.title ?? guard.name, 403, null, true);
-
-const hasDrafts = (collection: CollectionConfig): boolean =>
-  Boolean(
-    collection.versions && typeof collection.versions === "object" && collection.versions.drafts
-  );
+const refusal = (guard: GuardDef) => new APIError(guard.title ?? guard.name, 403, null, true);
 
 const bypassed = (req: PayloadRequest) => req.context?.[WORKFLOW_BYPASS] === true;
 
@@ -100,7 +99,7 @@ const guardChange: CollectionBeforeChangeHook = async ({
       ? holds(guard, "delete")
       : holds(guard, "update") || (publishing && holds(guard, "publish"));
     if (refused) {
-      throw blocked(guard);
+      throw refusal(guard);
     }
   }
   return data;
@@ -124,10 +123,12 @@ const guardDelete: CollectionBeforeDeleteHook = async ({ collection, id, req }) 
     .catch(() => null)) as Record<string, unknown> | null;
   for (const guard of await holdingOn(req, collection.slug, id, doc)) {
     if (holds(guard, "delete")) {
-      throw blocked(guard);
+      throw refusal(guard);
     }
   }
 };
+
+// ---- Following the document -----------------------------------------------------------------
 
 const startsOnCreate = (start: StartMode | undefined, doc: Record<string, unknown>): boolean => {
   if (start === "onCreate") {
@@ -140,17 +141,11 @@ const logged = (req: PayloadRequest, msg: string, error: unknown) =>
   req.payload.logger.error({ err: error, msg: `workflows: ${msg}` });
 
 /** Ends a document's active runs, as the system. Never throws. */
-const abortRuns = async (
-  req: PayloadRequest,
-  collection: string,
-  id: string | number,
-  reason: string
-) => {
+const abortRuns = async (req: PayloadRequest, collection: string, id: string | number) => {
   try {
-    const ctx = ctxOf(req);
-    for (const run of await activeRuns(ctx, collection, id)) {
+    for (const run of await activeRuns(req, collection, id)) {
       try {
-        await abortIn(ctx, { instanceId: run.id, reason, user: null });
+        await abortRun(req, { instanceId: run.id, reason: "Subject deleted", user: null });
       } catch (error) {
         logged(req, `could not abort run ${run.id}`, error);
       }
@@ -160,7 +155,6 @@ const abortRuns = async (
   }
 };
 
-// Never throws: a workflow bug must not break saving content.
 const followChange: CollectionAfterChangeHook = async ({
   collection,
   doc,
@@ -168,17 +162,13 @@ const followChange: CollectionAfterChangeHook = async ({
   previousDoc,
   req,
 }) => {
-  const ctx = ctxOf(req);
   const subject = doc as Record<string, unknown>;
   if (operation === "create") {
-    const starting = ctx.resolved.definitions.filter((def: WorkflowDefinition) =>
-      def.collections.includes(collection.slug)
-    );
-    for (const def of starting) {
+    for (const def of settingsOf(req.payload).workflows) {
       try {
-        if (startsOnCreate(def.start, subject)) {
+        if (def.collections.includes(collection.slug) && startsOnCreate(def.start, subject)) {
           // Runs its effects inline only when the save has no transaction (see `canRunInline`).
-          await startIn(ctx, {
+          await startRun(req, {
             workflow: def.name,
             collection: collection.slug,
             id: doc.id,
@@ -192,14 +182,14 @@ const followChange: CollectionAfterChangeHook = async ({
     return doc;
   }
   if (isTrashing(subject, previousDoc as Record<string, unknown> | undefined)) {
-    await abortRuns(req, collection.slug, doc.id, "Subject deleted");
+    await abortRuns(req, collection.slug, doc.id);
     return doc;
   }
   const jobs: JobId[] = [];
   try {
-    for (const run of await activeRuns(ctx, collection.slug, doc.id)) {
+    for (const run of await activeRuns(req, collection.slug, doc.id)) {
       try {
-        jobs.push(...(await settleIn(ctx, run, subject)).jobs);
+        jobs.push(...(await settleRun(req, run, subject)).jobs);
       } catch (error) {
         logged(req, `could not settle run ${run.id}`, error);
       }
@@ -214,10 +204,9 @@ const followChange: CollectionAfterChangeHook = async ({
   return doc;
 };
 
-const abortOnDelete: CollectionAfterDeleteHook = async ({ collection, id, req }) =>
-  abortRuns(req, collection.slug, id, "Subject deleted");
+const abortOnDelete: CollectionAfterDeleteHook = ({ collection, id, req }) =>
+  abortRuns(req, collection.slug, id);
 
-/** Guards (enforced for every writer), auto-start, settle-on-save and abort-on-delete. */
 export const withWorkflowHooks = (collection: CollectionConfig): CollectionConfig => ({
   ...collection,
   hooks: {

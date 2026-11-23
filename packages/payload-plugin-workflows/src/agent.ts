@@ -1,8 +1,7 @@
 import type { Payload, TypedUser } from "payload";
 import { z } from "zod";
 
-import { requireUser } from "./server/config.js";
-import { fireWorkflowAction, startWorkflow } from "./server/operations.js";
+import { fireWorkflowAction, requireUser, startWorkflow } from "./server/operations.js";
 import {
   getWorkflowState,
   listWorkflowDefinitions,
@@ -70,7 +69,6 @@ export const workflowAgentTools = ({
         collection: input.collectionSlug,
         id: input.documentId,
         user,
-        via: "agent",
       })
   ),
   workflows_start: tool(
@@ -93,10 +91,10 @@ export const workflowAgentTools = ({
       })
   ),
   workflows_fire_action: tool(
-    "Fire an action of an activity in a workflow run, exactly as a person clicking its button. Use workflows_get_state first to see which actions are allowed and what params they need.",
+    "Fire an action in a workflow run, exactly as a person clicking its button. Use workflows_get_state first to see which actions are allowed and what params they need. Name the activity only when the current stage has several.",
     z.object({
       instanceId: z.string(),
-      activity: z.string(),
+      activity: z.string().optional(),
       action: z.string(),
       params: z.record(z.string(), z.unknown()).optional(),
     }),

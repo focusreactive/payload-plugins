@@ -1,5 +1,8 @@
-// Every string the admin UI shows, under the `workflows` namespace (`t("workflows:start")`).
-// Server messages (refusal reasons, guard titles) come from the server and the definitions as-is.
+// Every string the admin UI shows, under the `workflows` namespace (`t("workflows:start")`). A host
+// translates them with its own `i18n.translations.<locale>.workflows`. Server messages (refusal
+// reasons, guard titles) come from the server and the definitions as-is.
+
+export const NAMESPACE = "workflows";
 
 export const en = {
   // Indicator (beside Save / Publish)
@@ -82,21 +85,16 @@ export const en = {
   timelineShowOlder_one: "Show {{count}} older entry",
   timelineShowOlder_other: "Show {{count}} older entries",
 
-  // History sentences (the automatic steps under a timeline row)
-  actorSystem: "The workflow",
+  // History sentences (the automatic steps folded under a timeline row)
   actorYou: "You",
-  actorAgent: "{{name}} (via an agent)",
-  actorApi: "{{name}} (via the API)",
-  historyStarted: "{{actor}} started the run in {{stage}}.",
-  historyAction: "{{actor}} chose “{{action}}” on {{activity}}.",
-  historyActionAuto: "“{{action}}” ran on {{activity}}.",
+  historyStarted: "Started in {{stage}}.",
+  historyAction: "“{{action}}” ran on {{activity}}.",
   historyTransition: "Moved from {{from}} to {{to}}.",
   historyEffectQueued: "Queued {{effect}}.",
   historyEffectDone: "{{effect}} finished.",
   historyEffectFailed: "{{effect}} failed: {{error}}",
   historyCompleted: "The run completed.",
-  historyAborted: "{{actor}} aborted the run.",
-  historyAbortedReason: "{{actor}} aborted the run: {{reason}}",
+  historyAborted: "Aborted the run.",
 
   // View
   viewTitle: "Workflows",
@@ -125,6 +123,3 @@ export const en = {
 };
 
 export type WorkflowsTranslations = typeof en;
-
-/** Per-locale overrides, merged over the English defaults. */
-export type WorkflowsTranslationsOption = Record<string, Partial<WorkflowsTranslations>>;

@@ -2,7 +2,7 @@ import type { CollectionConfig, Config, Payload } from "payload";
 import { describe, expect, it, vi } from "vitest";
 
 import { warnWithoutRunner, workflowsPlugin } from "../src/plugin.js";
-import type { ResolvedWorkflows } from "../src/options.js";
+import type { WorkflowsSettings } from "../src/plugin.js";
 import { editorialReview, minimal } from "./fixtures.js";
 
 const config = (): Config =>
@@ -29,19 +29,6 @@ const run = (options: Partial<Parameters<typeof workflowsPlugin>[0]> = {}) =>
     effects: { "notify-author": notify },
     ...options,
   })(config()) as Config;
-
-const client = {
-  instancesSlug: "workflow-instances",
-  endpoints: {
-    state: "/workflows/state",
-    start: "/workflows/start",
-    fire: "/workflows/fire",
-    abort: "/workflows/abort",
-    instances: "/workflows/instances",
-    definitions: "/workflows/definitions",
-  },
-  viewPath: "/workflows",
-};
 
 const bySlug = (result: Config, slug: string) =>
   result.collections?.find((collection) => collection.slug === slug) as CollectionConfig;
@@ -100,10 +87,7 @@ describe("workflowsPlugin", () => {
     expect(pages.fields).toEqual([{ name: "title", type: "text" }]);
     expect(pages.admin?.components?.edit?.beforeDocumentControls).toEqual([
       "x",
-      {
-        path: "@focus-reactive/payload-plugin-workflows/client#WorkflowIndicator",
-        clientProps: client,
-      },
+      "@focus-reactive/payload-plugin-workflows/client#WorkflowIndicator",
     ]);
     expect(bySlug(run(), "pages").admin?.components?.edit?.beforeDocumentControls).toHaveLength(1);
     expect(pages.hooks?.afterChange).toHaveLength(2);
@@ -114,23 +98,16 @@ describe("workflowsPlugin", () => {
   });
 
   it("registers the view, the nav link, endpoints, jobs and its config", () => {
-    const result = run({ tick: { cron: "*/5 * * * *" } });
+    const result = run();
     expect(result.admin?.components?.afterNavLinks).toEqual([
       "x",
-      {
-        path: "@focus-reactive/payload-plugin-workflows/client#WorkflowsNavLink",
-        clientProps: client,
-      },
+      "@focus-reactive/payload-plugin-workflows/client#WorkflowsNavLink",
     ]);
     expect(result.admin?.components?.views?.workflows).toEqual({
-      Component: {
-        path: "@focus-reactive/payload-plugin-workflows/rsc#WorkflowsViewServer",
-        clientProps: client,
-      },
+      Component: "@focus-reactive/payload-plugin-workflows/rsc#WorkflowsViewServer",
       path: "/workflows",
       exact: true,
     });
-    expect(result.admin?.custom?.workflows).toEqual(client);
     expect(result.endpoints?.map((e) => `${e.method} ${e.path}`)).toEqual([
       "get /workflows/state",
       "post /workflows/start",
@@ -142,24 +119,28 @@ describe("workflowsPlugin", () => {
     const tasks = result.jobs?.tasks ?? [];
     expect(tasks.map((t) => t.slug)).toEqual(["mine", "workflowEffect", "workflowTick"]);
     expect(tasks[1]?.retries).toBe(2);
-    expect(tasks[2]?.schedule).toEqual([{ cron: "*/5 * * * *", queue: "workflows" }]);
-    const resolved = result.custom?.workflows as ResolvedWorkflows;
+    // The tick is not scheduled: a host that needs it queues it itself.
+    expect(tasks[2]?.schedule).toBeUndefined();
+    const settings = result.custom?.workflows as WorkflowsSettings;
     expect(result.custom?.keep).toBe(1);
-    expect(resolved.definitions).toEqual([editorialReview]);
-    expect(resolved.instancesSlug).toBe("workflow-instances");
-    expect(resolved.roles({ roles: ["a", 1], collection: "users" } as never)).toEqual(["a"]);
-    expect(resolved.roles({ role: "b" } as never)).toEqual(["b"]);
-    expect(resolved.roles({} as never)).toEqual([]);
+    expect(settings.workflows).toEqual([editorialReview]);
+    expect(settings.roles({ roles: ["a", 1], collection: "users" } as never)).toEqual(["a"]);
+    expect(settings.roles({ role: "b" } as never)).toEqual(["b"]);
+    expect(settings.roles({} as never)).toEqual([]);
   });
 
-  it("merges its English strings under `workflows`, keeps the host's, applies overrides", () => {
+  it("adds its English strings under `workflows` for every locale, under the host's own", () => {
     const result = workflowsPlugin({
       workflows: [editorialReview],
       effects: { "notify-author": notify },
-      translations: { de: { viewTitle: "Arbeitsabläufe" }, en: { tabMine: "Mine" } },
     })({
       ...config(),
-      i18n: { translations: { en: { custom: { hello: "Hi" } } } },
+      i18n: {
+        translations: {
+          en: { custom: { hello: "Hi" }, workflows: { tabMine: "Mine" } },
+          de: { workflows: { viewTitle: "Arbeitsabläufe" } },
+        },
+      },
     } as unknown as Config) as Config;
     const translations = result.i18n?.translations as Record<
       string,
@@ -170,23 +151,6 @@ describe("workflowsPlugin", () => {
     expect(translations.en?.workflows?.tabMine).toBe("Mine");
     expect(translations.de?.workflows?.viewTitle).toBe("Arbeitsabläufe");
     expect(translations.de?.workflows?.tabAll).toBe("All open");
-  });
-
-  it("schedules no tick without the option", () => {
-    expect(run().jobs?.tasks?.[2]?.schedule).toBeUndefined();
-  });
-
-  it("honours instancesSlug and overrides", () => {
-    const result = run({
-      instancesSlug: "runs",
-      overrides: {
-        admin: { hidden: false },
-        fields: (fields) => [...fields, { name: "extra", type: "text" }],
-      },
-    });
-    const runs = bySlug(result, "runs");
-    expect(runs.admin?.hidden).toBe(false);
-    expect(runs.fields.at(-1)).toEqual({ name: "extra", type: "text" });
   });
 
   it("does nothing when disabled", () => {
@@ -254,7 +218,7 @@ describe("jobs runner warning at init", () => {
   it("warns once, naming the effects and how to configure the runner, when nothing runs the queue", async () => {
     for (const autoRun of [undefined, [{ queue: "default" }], () => [{ queue: "other" }]]) {
       const { payload, warn } = payloadWith(autoRun);
-      await warnWithoutRunner(payload, options);
+      await warnWithoutRunner(payload, options.workflows);
       expect(warn).toHaveBeenCalledTimes(1);
       expect(warn.mock.calls[0]?.[0]).toContain('"notify-author"');
       expect(warn.mock.calls[0]?.[0]).toContain('autoRun: [{ queue: "workflows"');
@@ -268,18 +232,12 @@ describe("jobs runner warning at init", () => {
       async () => [{ queue: "workflows" }],
     ]) {
       const { payload, warn } = payloadWith(autoRun);
-      await warnWithoutRunner(payload, options);
+      await warnWithoutRunner(payload, options.workflows);
       expect(warn).not.toHaveBeenCalled();
     }
     const { payload, warn } = payloadWith(undefined);
-    await warnWithoutRunner(payload, { workflows: [minimal()] });
+    await warnWithoutRunner(payload, [minimal()]);
     expect(warn).not.toHaveBeenCalled();
-  });
-
-  it("warns for the tick alone", async () => {
-    const { payload, warn } = payloadWith(undefined);
-    await warnWithoutRunner(payload, { workflows: [minimal()], tick: { cron: "* * * * *" } });
-    expect(warn.mock.calls[0]?.[0]).toContain('"workflowTick"');
   });
 
   it("is wired into onInit after the host's own", async () => {

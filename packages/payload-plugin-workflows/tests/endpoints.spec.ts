@@ -89,6 +89,13 @@ describe("workflow endpoints", () => {
     });
   });
 
+  it("fires without an activity: the stage's only one", async () => {
+    const result = await call("post", "fire", req({ body: { instanceId: "5", action: "submit" } }));
+    expect(result.status).toBe(200);
+    expect(calls.args[0]).toMatchObject({ args: { instanceId: "5", action: "submit" } });
+    expect((calls.args[0] as { args: { activity?: string } }).args.activity).toBeUndefined();
+  });
+
   it("marks API-key callers as api", async () => {
     await call(
       "post",

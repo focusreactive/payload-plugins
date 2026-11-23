@@ -1,15 +1,32 @@
 import { describe, expect, it } from "vitest";
 
+import type { T } from "../src/components/shared/format.js";
 import {
   actorKind,
   dayKey,
   groupByDay,
   isAutomatic,
+  rowDetails,
+  rowWhat,
+  rowWho,
+  stepSentence,
   timelineRows,
-} from "../src/components/shared/timeline.js";
+} from "../src/components/shared/history.js";
 import { createWorkflowSimulator } from "../src/engine/simulator.js";
+import { en } from "../src/translations.js";
 import type { HistoryEntry } from "../src/types.js";
 import { editor, editorialReview } from "./fixtures.js";
+
+/** Payload's interpolation and `_one` / `_other` plurals over the English strings. */
+const t: T = (key, vars = {}) => {
+  const table = en as Record<string, string>;
+  const count = vars.count;
+  const template =
+    (typeof count === "number" ? table[`${key}_${count === 1 ? "one" : "other"}`] : undefined) ??
+    table[key] ??
+    key;
+  return template.replace(/\{\{(\w+)\}\}/gu, (_, name: string) => String(vars[name] ?? ""));
+};
 
 const SYSTEM = { system: true } as const;
 const ann = { id: "u1", collection: "users", via: "admin" as const };
@@ -57,11 +74,11 @@ describe("actor kinds", () => {
 describe("timelineRows", () => {
   it("folds a full run with a rejection loop into one row per human step, newest first", () => {
     const sim = createWorkflowSimulator(editorialReview);
-    sim.fire("write", "submit", { user: "u-author" });
-    sim.fire("review", "claim", editor);
-    sim.fire("review", "reject", { ...editor, params: { reason: "Too long" } });
-    sim.fire("write", "submit", { user: "u-author" });
-    sim.fire("review", "approve", editor);
+    sim.fire("submit", { user: "u-author" });
+    sim.fire("claim", editor);
+    sim.fire("reject", { ...editor, params: { reason: "Too long" } });
+    sim.fire("submit", { user: "u-author" });
+    sim.fire("approve", editor);
     const history = sim.state.history;
     const rows = timelineRows(history);
 
@@ -159,5 +176,67 @@ describe("groupByDay", () => {
       [dayKey(new Date(2026, 0, 3)), "yesterday", 1],
       [dayKey(new Date(2026, 0, 1)), null, 1],
     ]);
+  });
+});
+
+describe("how rows read", () => {
+  it("names who acted and what happened, with the definition's titles, even for stages the run left", () => {
+    const sim = createWorkflowSimulator(editorialReview);
+    sim.fire("submit", { user: "u1" });
+    sim.fire("claim", { user: "u2", roles: ["editor"] });
+    sim.fire("reject", { user: "u2", roles: ["editor"], params: { reason: "Too long" } });
+    const { titles } = sim.view({ user: "u1" });
+    const people = { me: "u1", labels: { u2: "Bea" } };
+    const lines = timelineRows(sim.state.history).map((row) => [
+      rowWho(row, people, t),
+      rowWhat(row, titles, t),
+      rowDetails(row, titles),
+    ]);
+    expect(lines).toEqual([
+      ["Bea", "Request changes → moved to Drafting", ["Reason: Too long"]],
+      ["Bea", "Take this review", []],
+      ["You", "Submit for review → moved to Review", []],
+      ["Automated", "Started in Drafting", []],
+    ]);
+    const reset = sim.state.history.find((entry) => entry.type === "action" && entry.auto);
+    expect(reset && stepSentence(reset, titles, t)).toBe("“Reset” ran on Review.");
+  });
+
+  it("an agent acts for a person; a system abort keeps its reason", () => {
+    const at = local(1, 9);
+    const [agentRow] = timelineRows([
+      { at, actor: { ...ann, via: "agent" }, type: "aborted", reason: "Duplicate" },
+    ]);
+    expect(agentRow && rowWho(agentRow, { labels: { u1: "Ann" } }, t)).toBe("Ann via agent");
+    const [systemRow] = timelineRows([
+      { at, actor: SYSTEM, type: "aborted", reason: "Subject deleted" },
+    ]);
+    expect(systemRow && [rowWho(systemRow, {}, t), rowWhat(systemRow, {}, t)]).toEqual([
+      "Automated",
+      "Aborted the run",
+    ]);
+    expect(systemRow && rowDetails(systemRow, {})).toEqual(["Subject deleted"]);
+  });
+
+  it("says each automatic step as a sentence", () => {
+    const at = local(1, 9);
+    const say = (entry: HistoryEntry) => stepSentence(entry, {}, t);
+    expect(say({ at, actor: SYSTEM, type: "started", stage: "drafting" })).toBe(
+      "Started in Drafting."
+    );
+    expect(
+      say({
+        at,
+        actor: SYSTEM,
+        type: "effect",
+        effect: "notify-author",
+        status: "failed",
+        error: "SMTP down",
+      })
+    ).toBe("Notify author failed: SMTP down");
+    expect(
+      say({ at, actor: SYSTEM, type: "effect", effect: "notify-author", status: "done" })
+    ).toBe("Notify author finished.");
+    expect(say({ at, actor: SYSTEM, type: "completed" })).toBe("The run completed.");
   });
 });

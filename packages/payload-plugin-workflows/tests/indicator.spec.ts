@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { activeRunsFor, indicatorOf, toneOf, waitsOn } from "../src/components/shared/indicator.js";
+import { indicatorOf, runsOf, toneOf, waitsOn } from "../src/components/shared/indicator.js";
 import { createWorkflowSimulator } from "../src/engine/simulator.js";
 import type { WorkflowState } from "../src/server/queries.js";
 import type { InstanceView } from "../src/types.js";
@@ -10,9 +10,9 @@ const available = [{ name: "editorial-review", title: "Editorial review" }];
 
 const inReview = (claimedBy?: string) => {
   const sim = createWorkflowSimulator(editorialReview);
-  sim.fire("write", "submit", { user: "u-author" });
+  sim.fire("submit", { user: "u-author" });
   if (claimedBy) {
-    sim.fire("review", "claim", { user: claimedBy, roles: ["editor"] });
+    sim.fire("claim", { user: claimedBy, roles: ["editor"] });
   }
   return sim;
 };
@@ -27,7 +27,7 @@ describe("indicatorOf", () => {
 
   it("keeps a finished run reachable, even with nothing to start", () => {
     const sim = inReview(editor.user);
-    sim.fire("review", "approve", editor);
+    sim.fire("approve", editor);
     const finished = sim.view(editor);
     expect(finished.status).toBe("completed");
     expect(indicatorOf({ instances: [finished], available: [] }, editor.user)).toEqual({
@@ -79,7 +79,7 @@ describe("indicatorOf", () => {
     const review = withId(inReview(editor.user).view(editor), "b");
     const state: WorkflowState = { instances: [drafting, review], available: [] };
     expect(indicatorOf(state, editor.user)).toMatchObject({ kind: "run", view: review, more: 1 });
-    expect(activeRunsFor(state, editor.user)).toEqual([review, drafting]);
+    expect(runsOf(state, editor.user)).toEqual({ active: [review, drafting] });
     expect(indicatorOf(state, "u-nobody")).toMatchObject({ view: drafting, more: 1 });
   });
 });

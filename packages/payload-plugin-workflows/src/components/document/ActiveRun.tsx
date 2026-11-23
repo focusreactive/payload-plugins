@@ -12,7 +12,7 @@ import {
 import { useId, useState } from "react";
 
 import type { InstanceView, ViewAction, ViewActivity } from "../../types.js";
-import { waitingOnText } from "../shared/format.js";
+import { operationsText, waitingOnText } from "../shared/format.js";
 import type { People } from "../shared/format.js";
 import { StatusPill } from "../shared/StatusPill.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
@@ -64,11 +64,8 @@ export const ActiveRun = ({ view, people, busy, onFire, onAbort }: Props) => {
     )
     .at(0);
   const waiting = waitingOnText(view.waitingOn, people, t);
-  const operations: Record<string, string> = {
-    publish: t("operationPublish"),
-    update: t("operationUpdate"),
-    delete: t("operationDelete"),
-  };
+  // A stage with plain `actions` has one activity named after it: no heading of its own.
+  const implicit = view.activities.length === 1 && view.activities[0]?.name === view.stage.name;
 
   return (
     <section
@@ -107,9 +104,7 @@ export const ActiveRun = ({ view, people, busy, onFire, onAbort }: Props) => {
             <div className="workflows-notice" data-tone="warning" key={guard.name} role="note">
               <strong className="workflows-notice__title">{guard.title}</strong>
               <span className="workflows-notice__body">
-                {t("guardHolds", {
-                  operations: guard.operations.map((op) => operations[op] ?? op).join(", "),
-                })}
+                {t("guardHolds", { operations: operationsText(guard.operations, t) })}
               </span>
             </div>
           ))}
@@ -119,6 +114,7 @@ export const ActiveRun = ({ view, people, busy, onFire, onAbort }: Props) => {
                 activity={activity}
                 busy={busy}
                 idPrefix={idPrefix}
+                implicit={implicit}
                 key={activity.name}
                 onAction={act}
                 people={people}

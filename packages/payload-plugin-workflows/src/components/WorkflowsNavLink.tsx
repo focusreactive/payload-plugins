@@ -6,11 +6,11 @@ import { Link, useConfig } from "@payloadcms/ui";
 import { usePathname } from "next/navigation.js";
 import { formatAdminURL } from "payload/shared";
 
-import type { WorkflowsClientProps } from "./shared/types.js";
+import { VIEW_PATH } from "../constants.js";
 import { useWorkflowsT } from "./shared/useWorkflowsT.js";
 
 /** "Workflows" in the admin nav, built from Payload's own nav link classes and active state. */
-export const WorkflowsNavLink = ({ viewPath = "/workflows" }: Partial<WorkflowsClientProps>) => {
+export const WorkflowsNavLink = () => {
   const { t } = useWorkflowsT();
   const pathname = usePathname();
   const {
@@ -18,7 +18,7 @@ export const WorkflowsNavLink = ({ viewPath = "/workflows" }: Partial<WorkflowsC
       routes: { admin: adminRoute },
     },
   } = useConfig();
-  const href = formatAdminURL({ adminRoute, path: viewPath as `/${string}` });
+  const href = formatAdminURL({ adminRoute, path: VIEW_PATH });
   const active = pathname === href || pathname.startsWith(`${href}/`);
   const label = (
     <>

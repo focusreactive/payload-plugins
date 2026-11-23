@@ -1,5 +1,6 @@
-// The authoring vocabulary (Sanity's: workflow / stage / activity / action / transition / field /
-// guard / effect) plus the instance state the engine works on. Pure types — no Payload imports.
+// The vocabulary: a workflow is a list of stages; a stage has actions (grouped in activities when
+// it has several parallel tasks) and transitions; a document's run holds the current stage, the
+// run's fields and its history. Types only: the engine that works on them never touches Payload.
 
 export type UserActor = { id: string; collection: string; via: "admin" | "api" | "agent" };
 /** The engine itself (cascade, hooks, tick, effects). `id` is declared so `actor.id` reads as optional. */
@@ -70,7 +71,7 @@ interface ActionBase {
   name: string;
   title?: string;
   description?: string;
-  /** Resolves the firing activity. */
+  /** Resolves the action's activity (for a stage with plain `actions`: the stage's task). */
   status?: ResolvedStatus;
   /** Names of effect handlers registered in the plugin options. */
   effects?: string[];
@@ -96,15 +97,20 @@ export interface AutoActionDef extends ActionBase {
 
 export type ActionDef = CallerActionDef | AutoActionDef;
 
-export interface ActivityDef {
+/** Who may act on a task: a held `user` field shadows the role pool; neither means everyone. */
+interface Assignment {
+  /** Name of a `user` field; when it holds a user only that user is assigned. */
+  assignee?: string;
+  roles?: string[];
+}
+
+/** One of several parallel tasks in a stage. */
+export interface ActivityDef extends Assignment {
   name: string;
   title?: string;
   description?: string;
   /** Existence, evaluated once at stage entry; `false` => `skipped`. */
   filter?: Condition;
-  /** Name of a `user` field; when it holds a user only that user is assigned. */
-  assignee?: string;
-  roles?: string[];
   actions: ActionDef[];
 }
 
@@ -112,7 +118,7 @@ export interface TransitionDef {
   name: string;
   title?: string;
   to: string;
-  /** Defaults to `allActivitiesDone`. */
+  /** Defaults to "every activity is done or skipped". */
   when?: Condition;
 }
 
@@ -125,12 +131,18 @@ export interface GuardDef {
   unless?: Condition;
 }
 
-export interface StageDef {
+/**
+ * A stage declares its task either as plain `actions` (with `assignee` / `roles`), or, when it has
+ * several parallel tasks, as `activities`, never both. `defineWorkflow` turns plain `actions` into
+ * one activity named after the stage, so the engine only ever sees `activities`.
+ */
+export interface StageDef extends Assignment {
   name: string;
   title?: string;
   description?: string;
+  actions?: ActionDef[];
   activities?: ActivityDef[];
-  /** None => terminal: entering the stage completes the instance. */
+  /** None => terminal: entering the stage completes the run. */
   transitions?: TransitionDef[];
   guards?: GuardDef[];
 }
@@ -151,7 +163,7 @@ export interface WorkflowDefinition {
   stages: StageDef[];
 }
 
-// ---- Instance state -----------------------------------------------------------------------
+// ---- A run ----------------------------------------------------------------------------------
 
 export interface ActivityState {
   status: ActivityStatus;
@@ -177,12 +189,13 @@ export type HistoryEntry = { at: string; actor: Actor } & (
 
 export type InstanceStatus = "active" | "completed" | "aborted";
 
+/** A run: the current stage, the run's fields and its history. */
 export interface InstanceState {
   workflow: string;
   stage: string;
   status: InstanceStatus;
   fields: Record<string, unknown>;
-  /** Current stage visit. */
+  /** Statuses of the current stage's activities, this visit. */
   activities: Record<string, ActivityState>;
   /** `activity/action` auto actions already fired this stage visit. */
   fired: string[];
@@ -191,6 +204,7 @@ export interface InstanceState {
   completedAt?: string;
 }
 
+/** What conditions read besides the run: the document and the clock. */
 export interface Env {
   doc: Record<string, unknown> | null;
   now: Date;
@@ -207,10 +221,13 @@ export interface QueuedEffect {
   action: string;
 }
 
+/** What every engine operation returns: the new state and the effects it queued. */
 export interface Result {
   state: InstanceState;
   effects: QueuedEffect[];
 }
+
+// ---- The view: what the drawer and agents render --------------------------------------------
 
 export interface ViewAction {
   name: string;
@@ -250,20 +267,16 @@ export interface InstanceView {
   stages: { name: string; title: string; state: "past" | "current" | "upcoming" }[];
   activities: ViewActivity[];
   guards: { name: string; title: string; operations: string[] }[];
+  /** User ids and roles the run waits on. */
   waitingOn: { users: string[]; roles: string[] };
   fields: Record<string, unknown>;
   history: HistoryEntry[];
   /**
-   * Titles of the stages, activities, actions and params `history` names, keyed by `stage`,
-   * `stage/activity`, `stage/activity/action` and `stage/activity/action/param`. Names without a
-   * declared title are left out.
+   * The definition's titles, so the history can name what it records even after the run left the
+   * stage. Keyed by `stage`, `stage/activity`, `stage/activity/action` and
+   * `stage/activity/action/param`; names without a declared title are left out.
    */
-  titles?: Record<string, string>;
+  titles: Record<string, string>;
   canAbort: boolean;
   subject?: { collection: string; id: string; title?: string };
-  /**
-   * Display names of the users this view names (waiting on, assignees, history actors), keyed by
-   * user id. Filled by `getWorkflowState`; ids the caller may not read are left out.
-   */
-  userLabels?: Record<string, string>;
 }

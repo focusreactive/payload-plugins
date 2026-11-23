@@ -1,8 +1,8 @@
-// Pure helpers behind the admin UI: history sentences, param form validation, dates. No React,
+// Pure helpers behind the admin UI: names, who a run waits on, the param form, dates. No React,
 // no Payload imports, so they are unit-tested directly.
 
-import type { WorkflowsTranslations } from "../../translations/en.js";
-import type { Actor, HistoryEntry, InstanceView, ParamDef } from "../../types.js";
+import type { WorkflowsTranslations } from "../../translations.js";
+import type { InstanceView, ParamDef } from "../../types.js";
 
 type Key = keyof WorkflowsTranslations;
 type PluralBase<K> = K extends `${infer Base}_one` ? Base : never;
@@ -24,8 +24,8 @@ export const titleIn = (
   name: string
 ): string => titles?.[key] ?? humanize(name);
 
+/** How to name users: the signed-in one is "you", others by display name, else by id. */
 export interface People {
-  /** The signed-in user, to say "you". */
   me?: string;
   labels?: Record<string, string>;
 }
@@ -34,68 +34,15 @@ export interface People {
 export const personName = (id: string, people: People, t: T): string =>
   id === people.me ? t("you") : (people.labels?.[id] ?? id);
 
-export const actorName = (actor: Actor, people: People, t: T): string => {
-  if (actor.id === undefined) {
-    return t("actorSystem");
-  }
-  const name = actor.id === people.me ? t("actorYou") : (people.labels?.[actor.id] ?? actor.id);
-  if (actor.via === "agent") {
-    return t("actorAgent", { name });
-  }
-  return actor.via === "api" ? t("actorApi", { name }) : name;
-};
-
-const paramText = (value: unknown): string =>
-  typeof value === "string" ? value : JSON.stringify(value);
-
-/** One history entry as a sentence: "You chose “Request changes” on Review the page." */
-export const historySentence = (
-  entry: HistoryEntry,
-  view: Pick<InstanceView, "titles">,
-  people: People,
-  t: T
-): string => {
-  const actor = actorName(entry.actor, people, t);
-  const stage = (name: string) => titleIn(view.titles, name, name);
-  switch (entry.type) {
-    case "started":
-      return t("historyStarted", { actor, stage: stage(entry.stage) });
-    case "action": {
-      const base = `${entry.stage}/${entry.activity}`;
-      const action = titleIn(view.titles, `${base}/${entry.action}`, entry.action);
-      const activity = titleIn(view.titles, base, entry.activity);
-      const sentence = entry.auto
-        ? t("historyActionAuto", { action, activity })
-        : t("historyAction", { actor, action, activity });
-      const params = Object.entries(entry.params ?? {})
-        .filter(([, value]) => value !== undefined && value !== null && value !== "")
-        .map(
-          ([name, value]) =>
-            `${titleIn(view.titles, `${base}/${entry.action}/${name}`, name)}: ${paramText(value)}`
-        );
-      return params.length > 0 ? `${sentence} ${params.join("; ")}` : sentence;
-    }
-    case "transition":
-      return t("historyTransition", { from: stage(entry.from), to: stage(entry.to) });
-    case "effect": {
-      const effect = humanize(entry.effect);
-      if (entry.status === "failed") {
-        return t("historyEffectFailed", { effect, error: entry.error ?? "" });
-      }
-      return entry.status === "done"
-        ? t("historyEffectDone", { effect })
-        : t("historyEffectQueued", { effect });
-    }
-    case "completed":
-      return t("historyCompleted");
-    case "aborted":
-      return entry.reason
-        ? t("historyAbortedReason", { actor, reason: entry.reason })
-        : t("historyAborted", { actor });
-    default:
-      return "";
-  }
-};
+/** The user ids runs name: who they wait on, assignees, and people in their history. */
+export const userIdsIn = (views: InstanceView[], usersSlug: string): string[] =>
+  views.flatMap((view) => [
+    ...view.waitingOn.users,
+    ...view.activities.flatMap((activity) => (activity.assignee ? [activity.assignee] : [])),
+    ...view.history.flatMap((entry) =>
+      entry.actor.id !== undefined && entry.actor.collection === usersSlug ? [entry.actor.id] : []
+    ),
+  ]);
 
 /** Who a run waits on, in words: "you, editor (role)". Empty when anyone may act. */
 export const waitingOnText = (waitingOn: InstanceView["waitingOn"], people: People, t: T): string =>
@@ -103,6 +50,16 @@ export const waitingOnText = (waitingOn: InstanceView["waitingOn"], people: Peop
     ...waitingOn.users.map((id) => personName(id, people, t)),
     ...waitingOn.roles.map((role) => t("roleLabel", { role })),
   ].join(", ");
+
+/** A guard's operations in words: "publishing, saving". */
+export const operationsText = (operations: string[], t: T): string => {
+  const words: Record<string, string> = {
+    publish: t("operationPublish"),
+    update: t("operationUpdate"),
+    delete: t("operationDelete"),
+  };
+  return operations.map((operation) => words[operation] ?? operation).join(", ");
+};
 
 // ---- Param form ------------------------------------------------------------------------------
 

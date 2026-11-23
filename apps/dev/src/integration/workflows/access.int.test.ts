@@ -150,7 +150,6 @@ describe("access options", () => {
     expect(view.canAbort).toBe(true);
     const fired = await fireWorkflowAction(payload, {
       instanceId: view.id as string,
-      activity: "write",
       action: "submit",
       user: starter,
       req: await createLocalReq({ user: aborter }, payload),
@@ -179,7 +178,6 @@ describe("access options", () => {
       await codeOf(
         fireWorkflowAction(payload, {
           instanceId,
-          activity: "write",
           action: "submit",
           user: starter,
         })
