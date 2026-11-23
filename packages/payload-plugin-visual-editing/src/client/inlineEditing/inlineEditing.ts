@@ -1,24 +1,24 @@
 import type { SaveRefusal } from "../../shared/fieldEdit.js";
-import type { VeDocument } from "../../shared/protocol.js";
 import type { BadgeAction } from "../overlay/editBadge.js";
 import type { VeEditedField } from "../../shared/protocol.js";
 import type { FieldMatch, FieldTracker } from "../overlay/fieldTracker.js";
 import type { ClickTaken } from "../overlay/editTargets.js";
 import type { EditStatus, OnDelivered } from "./editTransport.js";
+import type { OpenForms } from "./pageFields.js";
 import type { RichTextEditorLoader } from "./richTextEditor.js";
 import type { SaveStatus } from "./saveStatus.js";
 
-import { fieldKeyOfMarker } from "../../shared/fieldKey.js";
 import { readEditedField, readSaveRefusal } from "../../shared/fieldEdit.js";
 import { isMessageFrom } from "../../shared/messageSource.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import { VE_FIELD_EDIT_REFUSED_TYPE } from "../../shared/protocol.js";
-import { editedFieldAddressOf, veDocumentOf } from "../../shared/veDocument.js";
+import { editedFieldAddressOf } from "../../shared/veDocument.js";
 import { adminOriginOf, findAdminWindow, isFramedByAdmin } from "../adminWindow.js";
 import { listenToSaves } from "../saveEvents.js";
 import { CLICK_LEFT_TO_THE_PAGE } from "../overlay/editTargets.js";
 import { createEditTransport } from "./editTransport.js";
 import { createImageReplacement } from "./imageReplacement.js";
+import { createPageFields, isPageField } from "./pageFields.js";
 import { createRichTextEditing } from "./richTextEditing.js";
 import { createSaveStatus } from "./saveStatus.js";
 import { createTextEditing } from "./textEditing.js";
@@ -30,12 +30,6 @@ export type InlineEditingCtx = {
   inlineEditing: boolean;
   onEdited?: () => void;
   richTextEditor?: RichTextEditorLoader;
-};
-
-export type OpenForms = {
-  holdsValueOf(document: VeDocument, key: string): boolean;
-  holdsFormOf(document: VeDocument): boolean;
-  holdsAnyForm(): boolean;
 };
 
 const PAGE_LEFT_EVENT = "pagehide";
@@ -57,9 +51,6 @@ const isBesideTheTextOfAControl = ({ textNode }: FieldMatch, event: MouseEvent):
   if (!textElement || !control || control === textElement) return false;
   return !(event.target instanceof Node && textElement.contains(event.target));
 };
-
-const isPlainTextOfOneLocale = ({ holder, locale, richText }: FieldMatch): boolean =>
-  holder !== undefined && richText === undefined && locale === undefined;
 
 export function createInlineEditing(
   tracker: FieldTracker,
@@ -96,15 +87,19 @@ export function createInlineEditing(
     }
     pinnedAdmins.set(editedFieldAddressOf(field), { admin: findAdmin(), field });
   };
-  const holdsFormOf = openForms && ((document: VeDocument) => openForms.holdsFormOf(document));
+  const pageFields = createPageFields({
+    getLocale: () => getCtx().locale,
+    isNextToAdmin: () => findAdmin() !== null,
+    openForms,
+  });
 
-  const editedFieldOf = (match: FieldMatch) => {
-    const key = fieldKeyOfMarker(match);
-    const { locale } = getCtx();
-    return key === null
-      ? null
-      : { ...veDocumentOf(match), key, ...(locale !== undefined && { locale }) };
+  const editedFieldOf = (match: FieldMatch): VeEditedField | null => {
+    const answer = pageFields.fieldOf(match);
+    return isPageField(answer) ? answer.field : null;
   };
+
+  const isPlainTextOfThePage = (match: FieldMatch): boolean =>
+    match.richText === undefined && editedFieldOf(match) !== null;
 
   const send = (
     match: FieldMatch,
@@ -131,8 +126,8 @@ export function createInlineEditing(
     flush: transport.flush,
     getCtx,
     holdUnsaved: transport.hold,
-    holdsFormOf,
     isUnsaved: transport.isUnsaved,
+    pageFields,
     pinAdmin,
     send: transport.send,
     tracker,
@@ -140,24 +135,24 @@ export function createInlineEditing(
   const imageReplacement = createImageReplacement({
     findAdmin,
     getCtx,
-    holdsFormOf,
     isInsideRichText: richTextEditing.isInsideRichText,
     holdInForm: transport.holdInForm,
+    pageFields,
     refuseAsked: transport.refuseAsked,
     save: transport.sendNow,
     tracker,
   });
   saveStatus = createSaveStatus(document, transport.retry);
 
-  const isWrittenSomewhere = (match: FieldMatch, key: string): boolean => {
-    if (!findAdmin()) return true;
-    return openForms?.holdsValueOf(veDocumentOf(match), key) ?? false;
+  const textFieldEditedHereOf = (match: FieldMatch | undefined): VeEditedField | null => {
+    const answer = match && pageFields.editableFieldOf(match, "text");
+    return answer && isPageField(answer) ? answer.field : null;
   };
 
   const stopTracking = tracker.subscribe({
     onFields: (_root, matches) => {
       for (const match of matches) {
-        if (match.holder && isPlainTextOfOneLocale(match)) fields.set(match.holder, match);
+        if (match.holder && isPlainTextOfThePage(match)) fields.set(match.holder, match);
       }
     },
     onContentRemoved: () => {
@@ -201,10 +196,9 @@ export function createInlineEditing(
     richTextEditing.commit();
   };
 
-  const editTextInPlace = (match: FieldMatch, event: MouseEvent): boolean => {
+  const editTextInPlace = (match: FieldMatch, field: VeEditedField, event: MouseEvent): boolean => {
     richTextEditing.commit();
-    const field = editedFieldOf(match);
-    if (field) pinAdmin(field);
+    pinAdmin(field);
     return textEditing.begin(match, { x: event.clientX, y: event.clientY });
   };
 
@@ -236,11 +230,10 @@ export function createInlineEditing(
     editInPlace(target, event, openField) {
       if (!getCtx().inlineEditing) return false;
       const match = fields.get(target);
-      const key = match && fieldKeyOfMarker(match);
-      const isEditedHere = match && key && isWrittenSomewhere(match, key);
-      if (isEditedHere && isBesideTheTextOfAControl(match, event)) return CLICK_LEFT_TO_THE_PAGE;
+      const field = textFieldEditedHereOf(match);
+      if (match && field && isBesideTheTextOfAControl(match, event)) return CLICK_LEFT_TO_THE_PAGE;
       if (textEditing.isEditing(target)) return true;
-      if (isEditedHere) return editTextInPlace(match, event);
+      if (match && field) return editTextInPlace(match, field, event);
       return richTextEditing.editInPlace(target, event, openField);
     },
     sync() {

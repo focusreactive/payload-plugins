@@ -9,10 +9,10 @@ import type {
 import type { VeRichTextFormats } from "../../shared/richText/formats.js";
 import type { FieldTracker } from "../overlay/fieldTracker.js";
 import type { Point, TextPosition } from "./caret.js";
+import type { PageFields } from "./pageFields.js";
 import type { EditSession, RichTextEditor, RichTextEditorLoader } from "./richTextEditor.js";
 
 import { readEditedField, readRichTextEdit } from "../../shared/fieldEdit.js";
-import { fieldKeyOfMarker } from "../../shared/fieldKey.js";
 import { isMessageFrom } from "../../shared/messageSource.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import {
@@ -44,6 +44,7 @@ import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
 import { readMarkerFromAttrs } from "../overlay/markerExtractor.js";
 import { textPositionAtPoint } from "./caret.js";
 import { endpointAnswerOf } from "./endpointAnswer.js";
+import { isPageField } from "./pageFields.js";
 import { editorOf } from "./richTextEditor.js";
 import {
   contentOf,
@@ -65,7 +66,7 @@ export type RichTextEditingCtx = {
 export type RichTextEditingDeps = {
   tracker: FieldTracker;
   getCtx: () => RichTextEditingCtx;
-  holdsFormOf: ((document: VeDocument) => boolean) | null;
+  pageFields: PageFields;
   send(edit: VeRichTextEdit, onDelivered?: () => void): void;
   holdUnsaved(edit: VeRichTextEdit): void;
   dropUnsaved(field: VeEditedField): void;
@@ -167,8 +168,8 @@ export function createRichTextEditing({
   flush,
   getCtx,
   holdUnsaved,
-  holdsFormOf,
   isUnsaved,
+  pageFields,
   pinAdmin,
   send,
   tracker,
@@ -205,18 +206,12 @@ export function createRichTextEditing({
     return false;
   };
 
-  const isWrittenSomewhere = (field: VeEditedField): boolean =>
-    !findAdmin() || (holdsFormOf?.(veDocumentOf(field)) ?? false);
-
   const fieldOf = (wrapper: HTMLElement): VeEditedField | null => {
     const marker = readMarkerFromAttrs(wrapper);
-    const key = marker && fieldKeyOfMarker(marker);
-    if (!marker || !key || marker.locale !== undefined || isRichTextNodeKey(key)) return null;
+    const answer = marker && pageFields.editableFieldOf(marker, "rich-text");
+    if (!answer || !isPageField(answer) || isRichTextNodeKey(answer.field.key)) return null;
     if (!tracker.isIdentifiedByThePage(wrapper) || !showsRichText(wrapper)) return null;
-    if (isInsideRichText(wrapper)) return null;
-    const { locale } = getCtx();
-    const field = { ...veDocumentOf(marker), key, ...(locale !== undefined && { locale }) };
-    return isWrittenSomewhere(field) ? field : null;
+    return isInsideRichText(wrapper) ? null : answer.field;
   };
 
   const isBeingAsked = (address: string): boolean => {

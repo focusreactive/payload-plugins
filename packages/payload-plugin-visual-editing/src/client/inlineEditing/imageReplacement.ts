@@ -1,5 +1,4 @@
 import type {
-  VeDocument,
   VeEditedField,
   VeFieldEdit,
   VeMediaOption,
@@ -10,9 +9,9 @@ import type { BadgeAction } from "../overlay/editBadge.js";
 import type { FieldTracker } from "../overlay/fieldTracker.js";
 import type { SaveRefusal } from "../../shared/fieldEdit.js";
 import type { OnSaveEnded, RetryRefused } from "./editTransport.js";
+import type { PageFields } from "./pageFields.js";
 
 import { readEditedField, readSaveRefusal } from "../../shared/fieldEdit.js";
-import { fieldKeyOfMarker } from "../../shared/fieldKey.js";
 import { readPickedMedia } from "../../shared/mediaOption.js";
 import { isMessageFrom } from "../../shared/messageSource.js";
 import { isPlainObject } from "../../shared/plainObject.js";
@@ -24,13 +23,14 @@ import {
   VE_MEDIA_PICKED_TYPE,
   VE_PICK_MEDIA_TYPE,
 } from "../../shared/protocol.js";
-import { editedFieldAddressOf, veDocumentOf } from "../../shared/veDocument.js";
+import { editedFieldAddressOf } from "../../shared/veDocument.js";
 import type { FindAdminWindow } from "../adminWindow.js";
 
 import { adminOriginOf, findAdminWindow, isFramedByAdmin } from "../adminWindow.js";
 import { readMarkerFromAttrs } from "../overlay/markerExtractor.js";
 import { createMediaLibrary } from "./mediaLibrary.js";
 import { createMediaPicker } from "./mediaPicker.js";
+import { isPageField } from "./pageFields.js";
 import { absoluteUrlOf, showMedia } from "./shownImage.js";
 
 export type ImageReplacementCtx = {
@@ -43,7 +43,7 @@ export type ImageReplacementCtx = {
 export type ImageReplacementOptions = {
   tracker: FieldTracker;
   getCtx: () => ImageReplacementCtx;
-  holdsFormOf: ((document: VeDocument) => boolean) | null;
+  pageFields: PageFields;
   isInsideRichText: (target: Element) => boolean;
   save: (edit: VeFieldEdit, onSaveEnded: OnSaveEnded) => void;
   holdInForm: (field: VeEditedField) => void;
@@ -85,8 +85,8 @@ export function createImageReplacement({
   findAdmin = () => findAdminWindow(window),
   getCtx,
   holdInForm,
-  holdsFormOf,
   isInsideRichText,
+  pageFields,
   refuseAsked,
   save,
   tracker,
@@ -114,15 +114,14 @@ export function createImageReplacement({
 
   const replaceableImageOf = (target: HTMLElement): ReplaceableImage | null => {
     const marker = readMarkerFromAttrs(target);
-    const key = marker && fieldKeyOfMarker(marker);
-    if (!marker || !key || marker.locale !== undefined) return null;
+    const answer = marker && pageFields.editableFieldOf(marker, "image");
+    if (!answer || !isPageField(answer)) return null;
     if (!tracker.isIdentifiedByThePage(target)) return null;
     if (target.hasAttribute(DATA_VE_LIVE_RICH_TEXT_ATTR) || isInsideRichText(target)) return null;
     const image = onlyImageOf(target);
     if (!image || showsTrackedText(target)) return null;
-    const { locale } = getCtx();
     return {
-      field: { ...veDocumentOf(marker), key, ...(locale !== undefined && { locale }) },
+      field: answer.field,
       image,
       shownMediaId: target.getAttribute(DATA_VE_VALUE_ID_ATTR),
     };
@@ -192,12 +191,6 @@ export function createImageReplacement({
     picker.open(replaceable.field, (media) => takeChosen(replaceable, openField, media), openField);
   };
 
-  const isOffered = ({ field }: ReplaceableImage): boolean => {
-    if (!getCtx().inlineEditing) return false;
-    if (!findAdmin()) return true;
-    return holdsFormOf?.(veDocumentOf(field)) ?? false;
-  };
-
   const takeAsked = (field: VeEditedField | null): AskedOfAdmin | null => {
     const asked = field && askedOfAdmin.get(editedFieldAddressOf(field));
     if (!field || !asked) return null;
@@ -240,7 +233,7 @@ export function createImageReplacement({
   return {
     actionOf(target) {
       const replaceable = replaceableImageOf(target);
-      if (!replaceable || !isOffered(replaceable)) return null;
+      if (!getCtx().inlineEditing || !replaceable) return null;
       return {
         label: REPLACE_IMAGE_LABEL,
         run: (openField) => replace(replaceable, openField),
