@@ -9,10 +9,13 @@ const PRUNE_PATHS = [
   // Plugin source — users consume them as published npm packages instead.
   "packages/payload-plugin-ab",
   "packages/payload-plugin-analytics",
+  "packages/payload-plugin-audit-log",
   "packages/payload-plugin-comments",
+  "packages/payload-plugin-json-form-builder",
   "packages/payload-plugin-presets",
   "packages/payload-plugin-scheduling",
   "packages/payload-plugin-seo",
+  "packages/payload-plugin-stacked-editing",
   "packages/payload-plugin-translator",
   "packages/payload-plugin-visual-editing",
   "packages/payload-plugin-ai-page-builder",
