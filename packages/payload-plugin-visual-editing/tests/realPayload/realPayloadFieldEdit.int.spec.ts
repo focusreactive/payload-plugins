@@ -228,6 +228,28 @@ describe("the field edit endpoint", () => {
     expect(withoutUpdatedAt(await read(docId, true))).toEqual(withoutUpdatedAt(expected));
   });
 
+  it("keeps both of two saves of sibling block rows that run at the same time", async () => {
+    const docId = await createDraft({
+      layout: [
+        { blockType: "hero", heading: "First" },
+        { blockType: "hero", heading: "Second" },
+      ],
+    });
+    const [first, second] = (await read(docId, true)).layout as Row[];
+
+    const answers = await Promise.all([
+      edit({ ...page(docId), base: "First", key: `layout.${first!.id}.heading`, value: "One" }),
+      edit({ ...page(docId), base: "Second", key: `layout.${second!.id}.heading`, value: "Two" }),
+    ]);
+
+    expect(answers).toEqual([
+      { saved: true, status: 200 },
+      { saved: true, status: 200 },
+    ]);
+    const rows = (await read(docId, true)).layout as Row[];
+    expect(rows.map(({ heading }) => heading)).toEqual(["One", "Two"]);
+  });
+
   it("writes a field of a global and leaves its other fields empty in that locale", async () => {
     await payload.updateGlobal({
       data: { banner: { subtitle: "Subtitle", title: "Title" } },

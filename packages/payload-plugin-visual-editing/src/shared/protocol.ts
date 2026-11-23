@@ -6,6 +6,7 @@ export const DATA_VE_COLLECTION_ATTR = "data-ve-collection";
 export const DATA_VE_KIND_ATTR = "data-ve-kind";
 export const DATA_VE_LOCALE_ATTR = "data-ve-locale";
 export const DATA_VE_KEY_ATTR = "data-ve-key";
+export const DATA_VE_VALUE_ID_ATTR = "data-ve-value-id";
 
 export const VE_IDENTITY_ATTRS: readonly string[] = [
   DATA_VE_PATH_ATTR,

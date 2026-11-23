@@ -18,6 +18,7 @@ import { isMessageFrom } from "../../shared/messageSource.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import {
   DATA_VE_LIVE_RICH_TEXT_ATTR,
+  DATA_VE_VALUE_ID_ATTR,
   VE_FIELD_EDIT_REFUSED_TYPE,
   VE_MEDIA_PICK_CANCELLED_TYPE,
   VE_MEDIA_PICKED_TYPE,
@@ -57,7 +58,11 @@ export interface ImageReplacement {
 
 export const REPLACE_IMAGE_LABEL = "Replace image";
 
-type ReplaceableImage = { field: VeEditedField; image: HTMLImageElement };
+type ReplaceableImage = {
+  field: VeEditedField;
+  image: HTMLImageElement;
+  shownMediaId: string | null;
+};
 
 type AskedOfAdmin = ReplaceableImage & {
   openField: () => void;
@@ -119,6 +124,7 @@ export function createImageReplacement({
     return {
       field: { ...veDocumentOf(marker), key, ...(locale !== undefined && { locale }) },
       image,
+      shownMediaId: target.getAttribute(DATA_VE_VALUE_ID_ATTR),
     };
   };
 
@@ -162,7 +168,9 @@ export function createImageReplacement({
       else putBack?.();
       if (!isSaved) putBack = null;
     };
-    save({ ...replaceable.field, value: String(media.id) }, followTheSave);
+    const { field, shownMediaId } = replaceable;
+    const base = shownMediaId === null ? {} : { base: shownMediaId };
+    save({ ...field, ...base, value: String(media.id) }, followTheSave);
   };
 
   const takeChosen = (

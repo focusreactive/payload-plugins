@@ -10,7 +10,7 @@ import { VE_FIELD_EDIT_PATH, VE_MEDIA_OPTIONS_PATH } from "../../src/shared/prot
 
 import { START_TIMEOUT_MS, startRealPayload } from "../support/realPayload";
 import { page } from "../support/richTextPages";
-import { EDITOR, OUTSIDER, signIn, WRITER } from "../support/unsavedRichTextRequests";
+import { EDITOR, OUTSIDER, READER, signIn, WRITER } from "../support/unsavedRichTextRequests";
 
 type Answered<Body> = { body: Body; status: number };
 
@@ -36,6 +36,8 @@ const everyoneButTheOutsider = failsToReadADocumentFor(
   ({ req }) => req.user?.email !== OUTSIDER.email
 );
 
+const everyoneButTheReader: Access = ({ req }) => req.user?.email !== READER.email;
+
 const whatIsNotPrivate = failsToReadADocumentFor(LIBRARIAN.email, () => ({
   alt: { not_equals: PRIVATE_ALT },
 }));
@@ -46,6 +48,7 @@ describe("replacing an image through the endpoints", () => {
   let outsider: Headers;
   let writer: Headers;
   let librarian: Headers;
+  let reader: Headers;
   let harbour: string;
   let lighthouse: string;
   let secretPhoto: string;
@@ -69,6 +72,9 @@ describe("replacing an image through the endpoints", () => {
     const answer = await post<{ saved: unknown }>(VE_FIELD_EDIT_PATH, body, headers);
     return { saved: answer.body.saved, status: answer.status };
   };
+
+  const refusalOf = async (body: object) =>
+    (await post<{ reason?: unknown }>(VE_FIELD_EDIT_PATH, body, editor)).body.reason;
 
   const options = (body: object, headers = editor): Promise<Answered<VeMediaOptions>> =>
     post<VeMediaOptions>(VE_MEDIA_OPTIONS_PATH, { page: 1, search: "", ...body }, headers);
@@ -106,6 +112,7 @@ describe("replacing an image through the endpoints", () => {
     payload = await startRealPayload({
       canRead: everyoneButTheOutsider,
       canReadMedia: whatIsNotPrivate,
+      canUpdate: everyoneButTheReader,
       name: "image-replacement",
       plugin: { inlineEditing: true, instantPreview: true },
     });
@@ -113,6 +120,7 @@ describe("replacing an image through the endpoints", () => {
     outsider = await signIn(payload, OUTSIDER);
     writer = await signIn(payload, WRITER);
     librarian = await signIn(payload, LIBRARIAN);
+    reader = await signIn(payload, READER);
     harbour = await upload("media", "harbour.txt", "A harbour");
     lighthouse = await upload("media", "lighthouse.txt", "A lighthouse");
     secretPhoto = await upload("media", "secret.txt", PRIVATE_ALT);
@@ -154,6 +162,41 @@ describe("replacing an image through the endpoints", () => {
 
       expect(String((await read(docId, true, "de")).localizedImage)).toBe(lighthouse);
       expect(String((await read(docId, true, "en")).localizedImage)).toBe(harbour);
+    });
+
+    it("is saved when the draft holds the media it began from", async () => {
+      const docId = await publish({ image: Number(harbour) });
+
+      const answer = await replace({
+        ...page(docId),
+        base: harbour,
+        key: "image",
+        value: lighthouse,
+      });
+
+      expect(answer).toEqual({ saved: true, status: 200 });
+      expect(String((await read(docId, true)).image)).toBe(lighthouse);
+    });
+
+    it("is refused as changed when the field was given other media after the page showed it", async () => {
+      const docId = await publish({ image: Number(harbour) });
+      await payload.update({
+        collection: "pages",
+        data: { image: Number(secretPhoto) },
+        draft: true,
+        id: docId,
+        locale: "en",
+      });
+
+      const reason = await refusalOf({
+        ...page(docId),
+        base: harbour,
+        key: "image",
+        value: lighthouse,
+      });
+
+      expect(reason).toBe("changed");
+      expect(String((await read(docId, true)).image)).toBe(secretPhoto);
     });
 
     describe("saves nothing", () => {
@@ -333,6 +376,13 @@ describe("replacing an image through the endpoints", () => {
         expect(await options({ ...page(docId), key })).toEqual({
           body: { ...NOTHING_LISTED, reason: "not-editable" },
           status: 422,
+        });
+      });
+
+      it("for a user who may read the document and not update it", async () => {
+        expect(await options({ ...page(docId), key: "image" }, reader)).toEqual({
+          body: { ...NOTHING_LISTED, reason: "not-editable" },
+          status: 403,
         });
       });
 

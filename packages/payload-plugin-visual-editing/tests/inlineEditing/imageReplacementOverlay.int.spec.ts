@@ -17,6 +17,7 @@ import {
   DATA_VE_LIVE_RICH_TEXT_ATTR,
   DATA_VE_LOCALE_ATTR,
   DATA_VE_PATH_ATTR,
+  DATA_VE_VALUE_ID_ATTR,
   VE_DOCUMENT_SAVED_TYPE,
   VE_FIELD_EDIT_REFUSED_TYPE,
   VE_FIELD_SNAPSHOT_TYPE,
@@ -278,6 +279,35 @@ describe("replacing an image on the page", () => {
       expect(image.hasAttribute("srcset")).toBe(false);
       expect(requestsTo("/visual-editing/field-edit")).toEqual([{ ...IMAGE_FIELD, value: "9" }]);
       expect(statusLabel()).toBe("Saved");
+    });
+
+    it("names the media the page shows as the one the save began from", async () => {
+      image.setAttribute(DATA_VE_VALUE_ID_ATTR, "4");
+
+      await useLighthouse();
+
+      expect(requestsTo("/visual-editing/field-edit")).toEqual([
+        { ...IMAGE_FIELD, base: "4", value: "9" },
+      ]);
+    });
+
+    it("says the image was changed elsewhere when the endpoint refuses it as changed", async () => {
+      image.setAttribute(DATA_VE_VALUE_ID_ATTR, "4");
+      const answer = fetchApi.getMockImplementation() as (url: string) => Promise<Response>;
+      fetchApi.mockImplementation((url: string) =>
+        url.endsWith("/field-edit")
+          ? Promise.resolve({
+              json: () => Promise.resolve({ reason: "changed", saved: false }),
+              ok: false,
+              status: 412,
+            } as Response)
+          : answer(url)
+      );
+
+      await useLighthouse();
+
+      expect(statusLabel()).toBe("Changed elsewhere, reload the page");
+      expect(image.getAttribute("src")).toBe("/old.jpg");
     });
 
     it("says so when the save is refused, and saves again on Retry", async () => {

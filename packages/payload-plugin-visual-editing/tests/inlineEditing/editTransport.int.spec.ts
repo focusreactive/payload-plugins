@@ -581,6 +581,35 @@ describe("the transport of an edit", () => {
       ).toEqual(["title", "body", "lead"]);
     });
 
+    it("keeps the saves of one top-level field of a document one after the other when the page is left", async () => {
+      const answers: ((answer: Response) => void)[] = [];
+      fetchEndpoint.mockImplementation(
+        () => new Promise<Response>((resolve) => answers.push(resolve))
+      );
+      const sentKeys = () =>
+        fetchEndpoint.mock.calls.map(
+          ([, init]) => (JSON.parse((init as RequestInit).body as string) as { key: string }).key
+        );
+      transport.send({ ...TITLE, key: "layout.a.heading", value: "One" });
+      transport.flush();
+      transport.send({ ...TITLE, key: "layout.b.heading", value: "Two" });
+      transport.send({ ...TITLE, docId: "2", key: "layout.a.heading", value: "Other" });
+      transport.send({ ...TITLE, value: "Title" });
+      transport.flushBeforeLeaving();
+      await settle();
+      expect(sentKeys()).toEqual(["layout.a.heading", "layout.a.heading", "title"]);
+
+      answers[0]?.(answerOf(true));
+      await settle();
+
+      expect(sentKeys()).toEqual([
+        "layout.a.heading",
+        "layout.a.heading",
+        "title",
+        "layout.b.heading",
+      ]);
+    });
+
     describe("a save of a field whose earlier save is still on the way when the page is left", () => {
       let answers: ((answer: Response) => void)[];
 
@@ -602,21 +631,29 @@ describe("the transport of an edit", () => {
         await settle();
       });
 
-      it("is sent at once and names the value of the earlier one, which may land first", () => {
+      it("waits for the earlier one and begins from the value it was answered", async () => {
+        expect(sentBodies()).toEqual([{ ...TITLE, base: "Shown", value: "First" }]);
+
+        answers[0]?.(storedAnswerOf("First"));
+        await settle();
+
         expect(sentBodies()).toEqual([
           { ...TITLE, base: "Shown", value: "First" },
-          { ...TITLE, base: "Shown", sentBefore: "First", value: "Second" },
+          { ...TITLE, base: "First", value: "Second" },
         ]);
-      });
-
-      it("decides the status alone, whatever the earlier one is answered", async () => {
         answers[1]?.(answerOf(true));
         await settle();
+        expect(statuses.at(-1)).toBe("saved");
+        expect(transport.isUnsaved(TITLE)).toBe(false);
+      });
+
+      it("is not sent once the earlier one is refused as changed elsewhere", async () => {
         answers[0]?.(refusalOf("changed"));
         await settle();
 
-        expect(statuses.at(-1)).toBe("saved");
-        expect(transport.isUnsaved(TITLE)).toBe(false);
+        expect(sentBodies()).toHaveLength(1);
+        expect(statuses.at(-1)).toBe("failed");
+        expect(refusals.at(-1)).toBe("changed");
       });
     });
 

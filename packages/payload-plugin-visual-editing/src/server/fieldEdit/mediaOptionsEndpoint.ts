@@ -1,9 +1,10 @@
 import type { Endpoint, Payload, PayloadRequest, Where } from "payload";
 
-import { headersWithCors } from "payload";
+import { docAccessOperation, docAccessOperationGlobal, headersWithCors } from "payload";
 
 import type { SaveRefusal } from "../../shared/fieldEdit.js";
 import type { VeMediaOptions, VeMediaOptionsRequest } from "../../shared/protocol.js";
+import type { DocumentToRead } from "../unsavedRichText/postedRequest.js";
 import type { User } from "./draftField.js";
 
 import { readEditedField, REQUEST_UNREADABLE } from "../../shared/fieldEdit.js";
@@ -16,6 +17,7 @@ import {
   draftFieldOf,
   inLocaleOfProject,
   FIELD_NOT_EDITABLE,
+  FORBIDDEN,
   isRefusal,
   refusalOfStatus,
   SIGNED_OUT,
@@ -73,6 +75,17 @@ const orderOf = (payload: Payload, collection: string): string[] =>
 const filesNamedLike = (search: string): Where | undefined =>
   search === "" ? undefined : { filename: { contains: search } };
 
+const mayUpdate = async (req: PayloadRequest, document: DocumentToRead): Promise<boolean> => {
+  if (document.kind === "collection") {
+    const collection = req.payload.collections[document.collection];
+    return Boolean(
+      collection && (await docAccessOperation({ collection, id: document.id, req })).update
+    );
+  }
+  const globalConfig = req.payload.config.globals.find(({ slug }) => slug === document.slug);
+  return Boolean(globalConfig && (await docAccessOperationGlobal({ globalConfig, req })).update);
+};
+
 const listMedia = async (
   payload: Payload,
   user: User,
@@ -114,6 +127,7 @@ export const mediaOptionsEndpoint: Endpoint = {
 
       const collection = shownUploadCollectionOf(field.shown, field.schema, request.key);
       if (collection === null) return refuse(FIELD_NOT_EDITABLE, req);
+      if (!(await mayUpdate(req, field.document))) return refuse(FORBIDDEN, req);
 
       return answer(await listMedia(payload, user, collection, request), ANSWERED, req);
     } catch (error) {

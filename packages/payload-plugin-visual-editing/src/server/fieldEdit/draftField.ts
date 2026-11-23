@@ -6,7 +6,7 @@ import type { VeEditedField } from "../../shared/protocol.js";
 import type { DocumentToRead } from "../unsavedRichText/postedRequest.js";
 
 import { CHANGED_ELSEWHERE, SAVE_FAILED } from "../../shared/fieldEdit.js";
-import { FIELD_PATH_SEPARATOR } from "../../shared/fieldKey.js";
+import { topLevelNameOf } from "../../shared/fieldKey.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import { isLocaleOf } from "../localeCodesKeyingValues.js";
 import { schemaCacheOf } from "../schemaCache.js";
@@ -86,7 +86,7 @@ export const inLocaleOfProject = <Field extends VeEditedField>(
 ): Field => (payload.config.localization ? field : { ...field, locale: undefined });
 
 const selectOf = (key: string): SelectType => ({
-  [key.split(FIELD_PATH_SEPARATOR)[0] ?? key]: true,
+  [topLevelNameOf(key)]: true,
 });
 
 export const readDraft = (

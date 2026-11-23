@@ -20,6 +20,8 @@ import { rootOf } from "../../shared/richText/editorNodes.js";
 import { NO_FORMATS } from "../../shared/richText/formats.js";
 import { isSameValue } from "../../shared/sameValue.js";
 import { withoutMarker } from "../../shared/stegaText.js";
+import { isPlainObject } from "../../shared/plainObject.js";
+import { documentAddressOf, idOf } from "../../shared/veDocument.js";
 import { jsonBodyOf } from "../endpointJson.js";
 import {
   ANSWERED,
@@ -101,8 +103,11 @@ export const isLeftAsItWas = (
   );
 };
 
-const shownAs = (value: unknown): unknown =>
-  typeof value === "string" ? withoutMarker(value) : value;
+const shownAs = (value: unknown): unknown => {
+  if (typeof value === "string") return withoutMarker(value);
+  const id = idOf(isPlainObject(value) ? value.id : value);
+  return id === null ? value : String(id);
+};
 
 const holdsTheBaseOf = (edit: VeEdit, documents: readonly unknown[]): boolean => {
   const { base, key, sentBefore } = edit;
@@ -178,6 +183,28 @@ const savedEdit = async (
   return answer({ autosave: field.drafts.autosave, saved: true, ...value }, ANSWERED, req);
 };
 
+const savesOfDocuments = new Map<string, Promise<void>>();
+
+const afterEarlierSavesOf = async <Result>(
+  edit: VeEdit,
+  save: () => Promise<Result>
+): Promise<Result> => {
+  const address = documentAddressOf(edit);
+  const earlierSaves = savesOfDocuments.get(address);
+  let endTheSave: (() => void) | undefined;
+  const ended = new Promise<void>((resolve) => {
+    endTheSave = resolve;
+  });
+  savesOfDocuments.set(address, ended);
+  try {
+    await earlierSaves;
+    return await save();
+  } finally {
+    endTheSave?.();
+    if (savesOfDocuments.get(address) === ended) savesOfDocuments.delete(address);
+  }
+};
+
 export const fieldEditEndpoint: Endpoint = {
   handler: async (req) => {
     const { payload, user } = req;
@@ -187,7 +214,8 @@ export const fieldEditEndpoint: Endpoint = {
     if (!posted) return refuse(UNREADABLE_REQUEST, req, REQUEST_UNREADABLE);
 
     try {
-      return await savedEdit(payload, user, inLocaleOfProject(payload, posted), req);
+      const edit = inLocaleOfProject(payload, posted);
+      return await afterEarlierSavesOf(edit, () => savedEdit(payload, user, edit, req));
     } catch (error) {
       return refuse(statusOfFailure(error), req);
     }

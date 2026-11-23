@@ -765,24 +765,28 @@ describe("editing rich text on the page", () => {
       expect(requestsTo(VE_FIELD_EDIT_PATH)).toHaveLength(1);
     });
 
-    it("saves the last state at once when the page is left while an earlier save is on the way", async () => {
+    it("saves the last state once the earlier save is answered when the page is left while it is on the way", async () => {
       const twin = await beginEdit();
-      fetchApi.mockImplementationOnce(() => new Promise(() => undefined));
+      const answers: ((answer: Response) => void)[] = [];
+      fetchApi.mockImplementationOnce(() => new Promise((resolve) => answers.push(resolve)));
+      const hello = stateOf(paragraph(text("Hello there")), CALLOUT);
       typeInto(twin, "Hello there");
       await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
       typeInto(twin, "Hello again");
 
       window.dispatchEvent(new Event("pagehide"));
       await settle();
+      expect(requestsTo(VE_FIELD_EDIT_PATH)).toEqual([{ ...BODY, base: STATE, state: hello }]);
+
+      answers[0]?.({
+        json: () => Promise.resolve({ saved: true, value: hello }),
+        ok: true,
+      } as Response);
+      await settle();
 
       expect(requestsTo(VE_FIELD_EDIT_PATH)).toEqual([
-        { ...BODY, base: STATE, state: stateOf(paragraph(text("Hello there")), CALLOUT) },
-        {
-          ...BODY,
-          base: STATE,
-          sentBefore: stateOf(paragraph(text("Hello there")), CALLOUT),
-          state: stateOf(paragraph(text("Hello again")), CALLOUT),
-        },
+        { ...BODY, base: STATE, state: hello },
+        { ...BODY, base: hello, state: stateOf(paragraph(text("Hello again")), CALLOUT) },
       ]);
     });
 
