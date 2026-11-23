@@ -2,7 +2,7 @@
 // No React, no Payload imports, so it is unit-tested directly.
 
 import type { WorkflowState } from "../../server/queries.js";
-import type { InstanceView } from "../../types.js";
+import type { InstanceView, ViewAction, ViewActivity } from "../../types.js";
 
 /**
  * The run's state from the reader's side: it waits on them, a guard holds the document, it waits
@@ -88,3 +88,60 @@ export const indicatorOf = (state: WorkflowState, me: string | undefined): Indic
   }
   return finished ? { kind: "idle", finished } : { kind: "idle" };
 };
+
+/**
+ * Whose turn it is, from the reader's side: the one line the drawer leads with. `you` carries the
+ * roles when the reader acts as a member of a role pool rather than by name.
+ */
+export type Turn =
+  | { kind: "stuck" }
+  | { kind: "completed" }
+  | { kind: "aborted" }
+  | { kind: "you"; roles: string[] }
+  | { kind: "anyone" }
+  | { kind: "others"; users: string[]; roles: string[] }
+  | { kind: "nobody" };
+
+export const turnOf = (view: InstanceView, me: string | undefined): Turn => {
+  if (view.stuck) {
+    return { kind: "stuck" };
+  }
+  if (view.status !== "active") {
+    return { kind: view.status };
+  }
+  if (waitsOn(view, me)) {
+    const named = me !== undefined && view.waitingOn.users.includes(me);
+    return { kind: "you", roles: named ? [] : [...view.waitingOn.roles] };
+  }
+  const { users, roles } = view.waitingOn;
+  if (users.length > 0 || roles.length > 0) {
+    return { kind: "others", users: [...users], roles: [...roles] };
+  }
+  const canAct = view.activities.some(
+    (activity) => activity.status === "active" && activity.actions.some((action) => action.allowed)
+  );
+  return { kind: canAct ? "anyone" : "nobody" };
+};
+
+/**
+ * The actions an activity shows the reader. None while it is not active, or when the reader may
+ * take none of them (the turn line already says who may). Otherwise the allowed ones, plus those
+ * refused for a reason the reader can act on (roles); an action its own `filter` turned off (e.g.
+ * "Take this review" once taken) is simply not there.
+ */
+export const shownActions = (activity: ViewActivity): ViewAction[] => {
+  if (activity.status !== "active" || !activity.actions.some((action) => action.allowed)) {
+    return [];
+  }
+  return activity.actions.filter((action) => action.allowed || action.reasonCode === "roles");
+};
+
+/** The first action the reader may take: the one primary button, `activity/action`. */
+export const primaryActionOf = (view: InstanceView): string | undefined =>
+  view.activities
+    .flatMap((activity) =>
+      shownActions(activity)
+        .filter((action) => action.allowed)
+        .map((action) => `${activity.name}/${action.name}`)
+    )
+    .at(0);

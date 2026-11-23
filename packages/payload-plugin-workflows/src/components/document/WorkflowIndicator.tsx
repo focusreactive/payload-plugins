@@ -11,7 +11,7 @@ import {
   useModal,
 } from "@payloadcms/ui";
 
-import { formatRelative, operationsText, userIdsIn, waitingOnText } from "../shared/format.js";
+import { operationsText, userIdsIn, waitingOnText } from "../shared/format.js";
 import type { People, T } from "../shared/format.js";
 import { indicatorOf } from "../shared/indicator.js";
 import type { Indicator } from "../shared/indicator.js";
@@ -24,20 +24,17 @@ import { WorkflowDrawerBody } from "./WorkflowDrawer.js";
 const describe = (
   indicator: Indicator,
   people: People,
-  t: T,
-  language: string
+  t: T
 ): { text: string; label: string; tone: string } => {
   const open = t("indicatorOpen");
   if (indicator.kind !== "run") {
     const finished = indicator.kind === "idle" ? indicator.finished : undefined;
-    const at = finished?.history.at(-1)?.at;
     let summary = t("indicatorNone");
     if (finished) {
-      const when = at ? formatRelative(at, new Date(), language) : "";
       summary =
         finished.status === "aborted"
-          ? t("finishedAborted", { title: finished.title, when })
-          : t("finishedCompleted", { title: finished.title, when });
+          ? t("indicatorAborted", { title: finished.title })
+          : t("indicatorCompleted", { title: finished.title });
     }
     return {
       text: t("indicatorLabel"),
@@ -77,7 +74,7 @@ const IndicatorBody = ({
   id: string;
   refreshKey: unknown;
 }) => {
-  const { t, language } = useWorkflowsT();
+  const { t } = useWorkflowsT();
   const { config } = useConfig();
   const { openModal, isModalOpen } = useModal();
   const drawerSlug = useDrawerSlug("workflow");
@@ -97,7 +94,7 @@ const IndicatorBody = ({
     return null;
   }
   const shown = indicator && indicator.kind !== "none" ? indicator : { kind: "idle" as const };
-  const look = describe(shown, people, t, language);
+  const look = describe(shown, people, t);
   const failed = !state && Boolean(error);
   const more = shown.kind === "run" ? shown.more : 0;
 
@@ -135,8 +132,8 @@ const IndicatorBody = ({
           ) : null}
         </span>
       </Button>
-      <Drawer slug={drawerSlug} title={t("drawerTitle")}>
-        <WorkflowDrawerBody people={people} {...controls} />
+      <Drawer className="workflows-drawer-modal" gutter={false} Header={null} slug={drawerSlug}>
+        <WorkflowDrawerBody drawerSlug={drawerSlug} people={people} {...controls} />
       </Drawer>
     </>
   );

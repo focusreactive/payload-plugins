@@ -1,59 +1,67 @@
-/* Workflows view at /admin/workflows. Payload tokens only. */
+/*
+ * Workflows view at /admin/workflows. Header, table, empty state and page controls use Payload's
+ * own classes (`list-header`, `table`, `no-results`, `page-controls`); this file lays them out
+ * like the collection list and draws the controls bar and the board on Payload tokens.
+ */
 
 .workflows-view {
   display: flex;
   flex-direction: column;
   gap: var(--base);
-  padding: var(--base) 0 calc(var(--base) * 2);
-  color: var(--theme-elevation-800);
-}
-
-.workflows-view__header {
-  display: flex;
-  flex-direction: column;
-  gap: calc(var(--base) / 4);
-}
-
-.workflows-view__title {
-  margin: 0;
+  padding-bottom: var(--spacing-view-bottom);
+  color: var(--theme-text);
 }
 
 .workflows-view__description {
+  flex-basis: 100%;
+  padding-top: calc(var(--base) * 0.25);
+}
+
+.workflows-view__description .view-description {
   margin: 0;
   color: var(--theme-elevation-500);
 }
 
+/* The bar under the title, drawn like the list view's search bar. */
 .workflows-view__controls {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: calc(var(--base) / 2) var(--base);
+  gap: calc(var(--base) / 2);
+  min-height: 46px;
+  padding: calc(var(--base) * 0.25);
+  border-radius: var(--style-radius-m);
+  background: var(--theme-elevation-50);
 }
 
-.workflows-view__tabs {
+.workflows-view__group {
   display: flex;
-  gap: calc(var(--base) / 2);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(var(--base) / 4);
 }
 
 .workflows-view__tab.btn {
   margin: 0;
 }
 
-/* Payload's own tab style for the current tab (its list tabs mark it by disabling the button). */
-.workflows-view__tab.btn[data-active="true"] {
+/* The current tab, as Payload marks it. */
+.workflows-view__tab.btn[aria-pressed="true"] {
   --btn-font-weight: 600;
-  --bg-color: var(--theme-elevation-100);
-  --hover-bg: var(--theme-elevation-100);
+  --bg-color: var(--theme-elevation-150);
+  --hover-bg: var(--theme-elevation-150);
 }
 
-.workflows-view__tab.btn:focus-visible {
-  outline: 2px solid var(--theme-elevation-800);
-  outline-offset: 2px;
+.workflows-view__tab.btn:focus-visible,
+.workflows-runs__subject:focus-visible,
+.workflows-view .btn:focus-visible {
+  outline: var(--accessibility-outline);
+  outline-offset: var(--accessibility-outline-offset);
 }
 
 .workflows-view__filter {
-  width: calc(var(--base) * 14);
+  width: calc(var(--base) * 11);
   max-width: 100%;
 }
 
@@ -61,120 +69,49 @@
   margin-bottom: 0;
 }
 
-.workflows-view__status {
-  margin: 0;
-  color: var(--theme-elevation-500);
+/* The bar has no labels; the select keeps its label for screen readers only. */
+.workflows-view__filter .field-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.workflows-view__filter .rs__control {
+  min-height: calc(var(--base) * 1.8);
+  background: var(--theme-elevation-0);
+}
+
+.workflows-view__loading .shimmer-effect + .shimmer-effect,
+.workflows-view__loading > div > div + div {
+  margin-top: 8px;
 }
 
 .workflows-view__empty {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: calc(var(--base) / 2);
-  padding: calc(var(--base) * 1.5) var(--base);
-  border: 1px solid var(--theme-elevation-150);
-  border-radius: var(--style-radius-m);
+  padding-top: var(--base);
 }
 
-.workflows-view__empty-title {
-  margin: 0;
-  font-weight: 600;
-}
-
-.workflows-view__empty-body {
-  margin: 0;
-  color: var(--theme-elevation-500);
-}
-
-.workflows-view__empty .btn,
-.workflows-view__pagination .btn {
-  margin: 0;
+.workflows-view__pages {
+  padding-top: 0;
 }
 
 /* ---- List ----------------------------------------------------------------------------------- */
 
-.workflows-runs {
-  overflow-x: auto;
-}
-
-.workflows-runs__table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.workflows-runs__table th {
-  padding: calc(var(--base) / 2) calc(var(--base) * 0.6);
-  font-weight: 400;
-  color: var(--theme-elevation-500);
-  text-align: left;
-  white-space: nowrap;
-}
-
-.workflows-runs__table td {
-  min-height: 36px;
-  padding: calc(var(--base) / 2) calc(var(--base) * 0.6);
-  border-top: 1px solid var(--theme-elevation-150);
-  vertical-align: middle;
-}
-
-.workflows-runs__table tbody tr:hover {
-  background: var(--theme-elevation-50);
+.workflows-runs .table {
+  margin-bottom: 0;
 }
 
 .workflows-runs__subject {
-  font-weight: 500;
-  color: var(--theme-elevation-800);
-  text-decoration: none;
-}
-
-.workflows-runs__subject:hover {
+  color: var(--theme-text);
   text-decoration: underline;
-}
-
-.workflows-runs__subject:focus-visible {
-  outline: 2px solid var(--theme-elevation-800);
-  outline-offset: 2px;
-}
-
-.workflows-runs__waiting {
-  color: var(--theme-elevation-800);
+  text-underline-offset: 2px;
 }
 
 .workflows-runs__time {
-  color: var(--theme-elevation-500);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-}
-
-/* Narrow screens: each run becomes a stacked block with its column names. */
-@media (max-width: 768px) {
-  .workflows-runs__table thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-  }
-
-  .workflows-runs__table tr {
-    display: block;
-    padding: calc(var(--base) / 2) 0;
-    border-top: 1px solid var(--theme-elevation-150);
-  }
-
-  .workflows-runs__table td {
-    display: flex;
-    gap: calc(var(--base) / 2);
-    padding: calc(var(--base) / 5) 0;
-    border-top: 0;
-  }
-
-  .workflows-runs__table td::before {
-    content: attr(data-label);
-    flex: 0 0 calc(var(--base) * 5);
-    color: var(--theme-elevation-500);
-  }
 }
 
 /* ---- Board ---------------------------------------------------------------------------------- */
@@ -193,6 +130,7 @@
   flex-direction: column;
   gap: calc(var(--base) / 2);
   min-width: 0;
+  min-height: calc(var(--base) * 8);
   padding: calc(var(--base) / 2);
   border-radius: var(--style-radius-m);
   background: var(--theme-elevation-50);
@@ -200,24 +138,25 @@
 
 .workflows-board__header {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  align-items: center;
   gap: calc(var(--base) / 2);
+  padding: calc(var(--base) / 4) calc(var(--base) / 4) 0;
 }
 
 .workflows-board__title {
+  margin: 0;
+  font-size: var(--base-body-size);
   font-weight: 600;
+  line-height: var(--base);
 }
 
-.workflows-board__count {
-  font-size: 12px;
-  color: var(--theme-elevation-500);
+.workflows-board__count.pill {
   font-variant-numeric: tabular-nums;
 }
 
 .workflows-board__empty {
   margin: 0;
-  font-size: 12px;
+  padding: 0 calc(var(--base) / 4);
   color: var(--theme-elevation-400);
 }
 
@@ -233,8 +172,8 @@
 .workflows-board__card {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--base) / 5);
-  padding: calc(var(--base) / 2);
+  gap: calc(var(--base) / 4);
+  padding: calc(var(--base) * 0.6);
   border: 1px solid var(--theme-elevation-150);
   border-radius: var(--style-radius-m);
   background: var(--theme-elevation-0);
@@ -245,11 +184,33 @@
   border-color: var(--theme-elevation-250);
 }
 
+.workflows-board__card .workflows-runs__subject {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.workflows-board__card .workflows-runs__subject:hover {
+  text-decoration: underline;
+}
+
 .workflows-board__meta {
   font-size: 12px;
+  line-height: var(--base);
   color: var(--theme-elevation-500);
 }
 
-.workflows-board__meta .workflows-runs__waiting {
-  color: inherit;
+@media (max-width: 768px) {
+  .workflows-view__controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .workflows-view__group--end {
+    justify-content: space-between;
+  }
+
+  .workflows-view__filter {
+    flex: 1 1 auto;
+    width: auto;
+  }
 }

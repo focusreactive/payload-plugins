@@ -151,3 +151,24 @@ export const formatDateTime = (iso: string, locale: string): string =>
   new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(
     new Date(iso)
   );
+
+// ---- Feedback --------------------------------------------------------------------------------
+
+/**
+ * The toast after an action worked, from the run before and after it: "Approve — moved to
+ * Approved", "Approve — workflow complete", or "Take this review — done".
+ */
+export const actionToast = (
+  action: string,
+  before: InstanceView | undefined,
+  after: InstanceView | undefined,
+  t: T
+): string => {
+  if (after?.status === "completed") {
+    return t("toastCompleted", { action });
+  }
+  if (after && before && after.stage.name !== before.stage.name) {
+    return t("toastMoved", { action, stage: after.stage.title });
+  }
+  return t("toastDone", { action });
+};

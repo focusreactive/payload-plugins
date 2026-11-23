@@ -12,7 +12,7 @@ Editorial workflows for [Payload CMS](https://payloadcms.com/), defined in TypeS
 4. A stage's **guard** refuses publishing (or saving, or deleting) the document while a run sits in that stage.
 5. A person and an agent do the same thing: **fire an action**, with the same permissions.
 
-Editors see the run in a small indicator next to Save and Publish. It opens a drawer with the stages, the actions they may take and the history. Agents use the same operations through a set of tools.
+Editors see the run in a small indicator next to Save and Publish. It opens a drawer laid out like Payload's document view: in the main column the stages, whose turn it is, what is on hold and the actions they may take; in the sidebar the key facts and the history. Stopping a workflow lives in the drawer's "…" menu. Agents use the same operations through a set of tools.
 
 ## Example
 
@@ -92,7 +92,7 @@ export default buildConfig({
 
 Then run `pnpm payload generate:importmap`, and on SQL databases without `push` create a migration (the plugin adds the `workflow-instances` collection).
 
-The plugin adds, to each collection a workflow names, the indicator (`admin.components.edit.beforeDocumentControls`) and the hooks; it adds no fields to them. It also adds the runs collection, the endpoints, two jobs tasks, the **Workflows** view at `/admin/workflows` (runs waiting on you, all open runs, a board per workflow) and the admin strings.
+The plugin adds, to each collection a workflow names, the indicator (`admin.components.edit.beforeDocumentControls`) and the hooks; it adds no fields to them. It also adds the runs collection, the endpoints, two jobs tasks, the **Workflows** view at `/admin/workflows` (a Payload-style list of what waits on you or of all open workflows, or a board of one workflow's stages) and the admin strings.
 
 To try it: save a page, press **Workflow** next to Save, start **Editorial review**, **Submit for review**, **Take this review**, and press Publish: it is refused with the guard's title. **Approve** completes the run and publishing goes through.
 

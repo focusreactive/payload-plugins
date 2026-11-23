@@ -2,74 +2,219 @@
 
 import "./WorkflowDrawer.css";
 
-import { Button } from "@payloadcms/ui";
+import {
+  Banner,
+  Button,
+  ConfirmationModal,
+  Drawer,
+  Gutter,
+  Popup,
+  PopupList,
+  ShimmerEffect,
+  XIcon,
+  formatDrawerSlug,
+  useEditDepth,
+  useModal,
+} from "@payloadcms/ui";
+import { useId, useState } from "react";
+import type { ReactNode } from "react";
 
 import type { WorkflowState } from "../../server/queries.js";
+import type { InstanceView, ViewAction, ViewActivity } from "../../types.js";
 import type { People } from "../shared/format.js";
 import { runsOf } from "../shared/indicator.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
-import { ActiveRun } from "./ActiveRun.js";
-import { FinishedRun } from "./FinishedRun.js";
+import { HistoryList } from "./HistoryList.js";
+import { ParamForm } from "./ParamForm.js";
+import { RunFacts } from "./RunFacts.js";
+import { RunMain, StartAgain } from "./RunMain.js";
+import { StageStepper } from "./StageStepper.js";
 import type { useWorkflowState } from "./useWorkflowState.js";
 
 type Controls = ReturnType<typeof useWorkflowState>;
+type Available = WorkflowState["available"][number];
 
 interface Props extends Pick<
   Controls,
   "state" | "error" | "busy" | "reload" | "start" | "fire" | "abort"
 > {
   people: People;
+  drawerSlug: string;
 }
 
-const StartItem = ({
-  def,
+interface MenuItem {
+  key: string;
+  label: string;
+  onClick: () => void;
+}
+
+/**
+ * The drawer's header, as Payload's document drawer draws it: one title, a divider under it, the
+ * close button, and the rare actions (stop, start another) in a "…" menu beside it.
+ */
+const Header = ({
+  title,
+  menu,
+  busy,
+  onClose,
+}: {
+  title: string;
+  menu: MenuItem[];
+  busy: boolean;
+  onClose: () => void;
+}) => {
+  const { t } = useWorkflowsT();
+  return (
+    <Gutter className="doc-drawer__header workflows-drawer__header">
+      <div className="doc-drawer__header-content">
+        <h2 className="doc-drawer__header-text">{title}</h2>
+        <div className="workflows-drawer__header-actions">
+          {menu.length > 0 ? (
+            <Popup
+              button={
+                <div className="doc-controls__dots">
+                  <div />
+                  <div />
+                  <div />
+                  <span className="workflows-sr-only">{t("moreActions")}</span>
+                </div>
+              }
+              className="workflows-drawer__menu"
+              disabled={busy}
+              horizontalAlign="right"
+              render={({ close }) => (
+                <PopupList.ButtonGroup>
+                  {menu.map((item) => (
+                    <PopupList.Button
+                      key={item.key}
+                      onClick={() => {
+                        close();
+                        item.onClick();
+                      }}
+                    >
+                      {item.label}
+                    </PopupList.Button>
+                  ))}
+                </PopupList.ButtonGroup>
+              )}
+              size="large"
+              verticalAlign="bottom"
+            />
+          ) : null}
+          <button
+            aria-label={t("close")}
+            className="doc-drawer__header-close"
+            onClick={onClose}
+            type="button"
+          >
+            <XIcon />
+          </button>
+        </div>
+      </div>
+    </Gutter>
+  );
+};
+
+/**
+ * Payload's document edit layout: a main column and a sidebar behind a divider, stacking into one
+ * column on narrow screens. The same classes, so it moves with Payload's breakpoints and gutters.
+ */
+const Layout = ({ main, sidebar }: { main: ReactNode; sidebar: ReactNode }) => (
+  <div className="document-fields document-fields--has-sidebar workflows-drawer__layout">
+    <div className="document-fields__main">
+      <Gutter className="document-fields__edit">
+        <div className="workflows-drawer__main">{main}</div>
+      </Gutter>
+    </div>
+    <div className="document-fields__sidebar-wrap">
+      <div className="document-fields__sidebar">
+        <div className="document-fields__sidebar-fields workflows-drawer__sidebar">{sidebar}</div>
+      </div>
+    </div>
+  </div>
+);
+
+const previewStages = (def: Available) =>
+  def.stages.map((stage) => ({ ...stage, state: "upcoming" as const }));
+
+/** Nothing running: what the workflow is, its stages, one primary Start (or a choice of them). */
+const StartPanel = ({
+  available,
   busy,
   start,
 }: {
-  def: WorkflowState["available"][number];
+  available: Available[];
   busy: boolean;
   start: Controls["start"];
 }) => {
   const { t } = useWorkflowsT();
+  const [only] = available;
+  if (available.length === 1 && only) {
+    return (
+      <>
+        {only.description ? <p className="workflows-lead">{only.description}</p> : null}
+        <StageStepper stages={previewStages(only)} />
+        <div className="workflows-actions">
+          <Button
+            buttonStyle="primary"
+            disabled={busy}
+            margin={false}
+            onClick={() => void start(only)}
+            size="medium"
+          >
+            {t("startWorkflow")}
+          </Button>
+        </div>
+        {only.stages[0] ? (
+          <p className="field-description">{t("startHint", { stage: only.stages[0].title })}</p>
+        ) : null}
+      </>
+    );
+  }
   return (
-    <div className="workflows-drawer__start-item">
-      <Button
-        buttonStyle="secondary"
-        disabled={busy}
-        margin={false}
-        onClick={() => void start(def.name)}
-        size="medium"
-      >
-        {t("start", { title: def.title })}
-      </Button>
-      {def.description ? <p className="field-description">{def.description}</p> : null}
+    <>
+      <p className="workflows-lead">{t("startChoose")}</p>
+      <ul className="workflows-choices">
+        {available.map((def) => (
+          <li className="workflows-choice" key={def.name}>
+            <div className="workflows-choice__text">
+              <h3 className="workflows-choice__title">{def.title}</h3>
+              {def.description ? <p className="field-description">{def.description}</p> : null}
+              <StageStepper stages={previewStages(def)} />
+            </div>
+            <Button
+              buttonStyle="secondary"
+              disabled={busy}
+              margin={false}
+              onClick={() => void start(def)}
+              size="medium"
+            >
+              {t("start", { title: def.title })}
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+};
+
+/** Payload's loading look: shimmer blocks where the stepper, the turn line and buttons will be. */
+const Loading = () => {
+  const { t } = useWorkflowsT();
+  return (
+    <div aria-busy="true" aria-label={t("loading")} className="workflows-loading" role="status">
+      <ShimmerEffect height={28} />
+      <ShimmerEffect height={20} width="40%" />
+      <ShimmerEffect height={20} width="70%" />
+      <ShimmerEffect height={40} width={240} />
     </div>
   );
 };
 
-const StartList = ({
-  available,
-  busy,
-  heading,
-  start,
-}: {
-  available: WorkflowState["available"];
-  busy: boolean;
-  heading: string;
-  start: Controls["start"];
-}) => (
-  <section aria-label={heading} className="workflows-drawer__start">
-    <h3 className="workflows-section-title">{heading}</h3>
-    {available.map((def) => (
-      <StartItem busy={busy} def={def} key={def.name} start={start} />
-    ))}
-  </section>
-);
-
 /**
- * What the workflow drawer holds: the active runs (the one waiting on the reader first), else the
- * latest finished run, then what may be started. It stays open across actions and shows the new
- * state; the state itself lives in the indicator.
+ * Everything the workflow drawer shows: the document's workflow (the one waiting on the reader
+ * first, a tab per workflow when several run), else the latest finished one, else what may be
+ * started. It stays open across actions and shows the new state.
  */
 export const WorkflowDrawerBody = ({
   state,
@@ -80,58 +225,168 @@ export const WorkflowDrawerBody = ({
   fire,
   abort,
   people,
+  drawerSlug,
 }: Props) => {
   const { t } = useWorkflowsT();
+  const { openModal, closeModal } = useModal();
+  const depth = useEditDepth();
+  const idPrefix = useId();
+  const [selected, setSelected] = useState<string | undefined>(undefined);
+  const [pending, setPending] = useState<{ activity: ViewActivity; action: ViewAction } | null>(
+    null
+  );
+  const paramsSlug = formatDrawerSlug({ slug: "workflow-params", depth });
+  const abortSlug = "workflow-abort";
+  const close = () => closeModal(drawerSlug);
+
   if (!state) {
     return (
       <div className="workflows-drawer">
-        {error ? (
-          <div className="workflows-notice" data-tone="error" role="alert">
-            <span className="workflows-notice__body">{error}</span>
-            <Button
-              buttonStyle="secondary"
-              margin={false}
-              onClick={() => void reload()}
-              size="small"
-            >
-              {t("retry")}
-            </Button>
-          </div>
-        ) : (
-          <p className="field-description">{t("loading")}</p>
-        )}
+        <Header busy={busy} menu={[]} onClose={close} title={t("drawerTitle")} />
+        <Layout
+          main={
+            error ? (
+              <Banner className="workflows-banner" type="error">
+                <span className="workflows-banner__row">
+                  {error}
+                  <Button
+                    buttonStyle="secondary"
+                    margin={false}
+                    onClick={() => void reload()}
+                    size="small"
+                  >
+                    {t("retry")}
+                  </Button>
+                </span>
+              </Banner>
+            ) : (
+              <Loading />
+            )
+          }
+          sidebar={null}
+        />
       </div>
     );
   }
+
   const runs = runsOf(state, people.me);
   const { active } = runs;
-  const finished = active.length === 0 ? runs.finished : undefined;
-  return (
-    <div aria-busy={busy} className="workflows-drawer">
-      {error ? (
-        <div className="workflows-notice" data-tone="error" role="alert">
-          <span className="workflows-notice__body">{error}</span>
+  const view: InstanceView | undefined =
+    active.find((entry) => entry.id === selected) ?? active[0] ?? runs.finished;
+  const finished = view && view.status !== "active";
+  const again = finished ? state.available.find((def) => def.name === view.workflow) : undefined;
+
+  const menu: MenuItem[] = [];
+  if (view) {
+    for (const def of state.available) {
+      if (def !== again) {
+        menu.push({
+          key: `start-${def.name}`,
+          label: t("start", { title: def.title }),
+          onClick: () => void start(def),
+        });
+      }
+    }
+    if (view.canAbort) {
+      menu.push({ key: "abort", label: t("abort"), onClick: () => openModal(abortSlug) });
+    }
+  }
+
+  let title = t("drawerTitle");
+  if (active.length > 1) {
+    title = t("drawerTitleMany");
+  } else if (view) {
+    title = view.title;
+  } else if (state.available.length === 1 && state.available[0]) {
+    title = state.available[0].title;
+  }
+
+  const act = (activity: ViewActivity, action: ViewAction) => {
+    if (!view) {
+      return;
+    }
+    if (action.params.length > 0) {
+      setPending({ activity, action });
+      openModal(paramsSlug);
+      return;
+    }
+    void fire(view, activity, action);
+  };
+
+  const main = view ? (
+    <>
+      {active.length > 1 ? (
+        <div className="workflows-tabs">
+          {active.map((entry) => (
+            <Button
+              buttonStyle="tab"
+              disabled={entry === view}
+              extraButtonProps={{ "aria-pressed": entry === view }}
+              key={entry.id ?? entry.workflow}
+              margin={false}
+              onClick={() => setSelected(entry.id)}
+              size="medium"
+            >
+              {entry.title}
+            </Button>
+          ))}
         </div>
       ) : null}
-      {active.map((view) => (
-        <ActiveRun
-          busy={busy}
-          key={view.id ?? view.workflow}
-          onAbort={() => abort(view.id ?? "")}
-          onFire={(activity, action, params) => fire(view.id ?? "", activity, action, params)}
-          people={people}
-          view={view}
-        />
-      ))}
-      {finished ? <FinishedRun people={people} view={finished} /> : null}
-      {state.available.length > 0 ? (
-        <StartList
-          available={state.available}
-          busy={busy}
-          heading={active.length > 0 || finished ? t("startOther") : t("startHeading")}
-          start={start}
+      {error ? (
+        <Banner className="workflows-banner" type="error">
+          {error}
+        </Banner>
+      ) : null}
+      <RunMain busy={busy} idPrefix={idPrefix} onAction={act} people={people} view={view} />
+      {again ? (
+        <StartAgain busy={busy} onStart={() => void start(again)} title={again.title} />
+      ) : null}
+    </>
+  ) : (
+    <StartPanel available={state.available} busy={busy} start={start} />
+  );
+
+  return (
+    <div aria-busy={busy} className="workflows-drawer">
+      <Header busy={busy} menu={menu} onClose={close} title={title} />
+      <Layout
+        main={main}
+        sidebar={
+          <>
+            <RunFacts people={people} view={view} />
+            <HistoryList key={view?.id} people={people} view={view} />
+          </>
+        }
+      />
+      {view?.canAbort ? (
+        <ConfirmationModal
+          body={t("abortBody", { stage: view.stage.title })}
+          cancelLabel={t("cancel")}
+          confirmingLabel={t("aborting")}
+          confirmLabel={t("abortConfirm")}
+          heading={t("abortHeading", { title: view.title })}
+          modalSlug={abortSlug}
+          onConfirm={() => abort(view)}
         />
       ) : null}
+      <Drawer slug={paramsSlug} title={pending?.action.title ?? ""}>
+        {pending && view ? (
+          <ParamForm
+            defs={pending.action.params}
+            key={`${pending.activity.name}/${pending.action.name}`}
+            onCancel={() => {
+              closeModal(paramsSlug);
+              setPending(null);
+            }}
+            onSubmit={(params) => {
+              closeModal(paramsSlug);
+              setPending(null);
+              void fire(view, pending.activity, pending.action, params);
+            }}
+            submitLabel={pending.action.title}
+          />
+        ) : null}
+      </Drawer>
     </div>
   );
 };

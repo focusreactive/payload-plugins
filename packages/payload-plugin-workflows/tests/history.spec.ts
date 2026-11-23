@@ -5,10 +5,12 @@ import {
   actorKind,
   dayKey,
   groupByDay,
+  lastStepOf,
   isAutomatic,
   rowDetails,
   rowWhat,
   rowWho,
+  startOf,
   stepSentence,
   timelineRows,
 } from "../src/components/shared/history.js";
@@ -199,7 +201,7 @@ describe("how rows read", () => {
       ["Automated", "Started in Drafting", []],
     ]);
     const reset = sim.state.history.find((entry) => entry.type === "action" && entry.auto);
-    expect(reset && stepSentence(reset, titles, t)).toBe("“Reset” ran on Review.");
+    expect(reset && stepSentence(reset, titles, t)).toBe("“Reset” on Review.");
   });
 
   it("an agent acts for a person; a system abort keeps its reason", () => {
@@ -213,7 +215,7 @@ describe("how rows read", () => {
     ]);
     expect(systemRow && [rowWho(systemRow, {}, t), rowWhat(systemRow, {}, t)]).toEqual([
       "Automated",
-      "Aborted the run",
+      "Stopped the workflow",
     ]);
     expect(systemRow && rowDetails(systemRow, {})).toEqual(["Subject deleted"]);
   });
@@ -237,6 +239,21 @@ describe("how rows read", () => {
     expect(
       say({ at, actor: SYSTEM, type: "effect", effect: "notify-author", status: "done" })
     ).toBe("Notify author finished.");
-    expect(say({ at, actor: SYSTEM, type: "completed" })).toBe("The run completed.");
+    expect(say({ at, actor: SYSTEM, type: "completed" })).toBe("The workflow completed.");
+  });
+});
+
+describe("startOf and lastStepOf", () => {
+  it("names who started the workflow and the last step a person took", () => {
+    const sim = createWorkflowSimulator(editorialReview);
+    sim.fire("submit", { user: "u-author" });
+    sim.fire("claim", { user: "u-editor", roles: ["editor"] });
+    sim.fire("approve", { user: "u-editor", roles: ["editor"] });
+    const view = sim.view({ user: "u-editor" });
+    expect(startOf(view.history)?.actor.id).toBeUndefined();
+    const last = lastStepOf(view);
+    expect(last.actor?.id).toBe("u-editor");
+    expect(last.action).toBe("Approve");
+    expect(last.at).toBe(view.history.at(-1)?.at);
   });
 });

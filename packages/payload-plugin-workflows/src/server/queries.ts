@@ -60,7 +60,13 @@ export interface WorkflowState {
   /** Runs on this document, newest first: active ones and finished ones. */
   instances: InstanceView[];
   /** Workflows for this collection that are not running and the caller may start. */
-  available: { name: string; title: string; description?: string }[];
+  available: {
+    name: string;
+    title: string;
+    description?: string;
+    /** Its stages in order, so the drawer can show what starting it leads to. */
+    stages: { name: string; title: string }[];
+  }[];
 }
 
 /** The runs on one document and what the caller may start there. */
@@ -92,6 +98,7 @@ export const getWorkflowState = async (
         name: def.name,
         title: def.title ?? def.name,
         ...(def.description ? { description: def.description } : {}),
+        stages: def.stages.map((stage) => ({ name: stage.name, title: stage.title ?? stage.name })),
       });
     }
   }

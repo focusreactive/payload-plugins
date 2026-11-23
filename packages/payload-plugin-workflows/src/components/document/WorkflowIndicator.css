@@ -58,7 +58,8 @@
   color: var(--theme-elevation-500);
 }
 
+/* Payload's own focus ring, not a home-made one. */
 .workflows-indicator:focus-visible {
-  outline: 2px solid var(--theme-elevation-800);
-  outline-offset: 2px;
+  outline: var(--accessibility-outline);
+  outline-offset: var(--accessibility-outline-offset);
 }

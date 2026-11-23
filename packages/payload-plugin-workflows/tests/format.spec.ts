@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  actionToast,
   formatRelative,
   humanize,
   operationsText,
@@ -30,7 +31,7 @@ describe("waiting on", () => {
         { me: "u1", labels: { u2: "Bea" } },
         t
       )
-    ).toBe("you, Bea, u3, editor (role)");
+    ).toBe("you, Bea, u3, anyone with the editor role");
     expect(waitingOnText({ users: [], roles: [] }, {}, t)).toBe("");
   });
 
@@ -86,5 +87,23 @@ describe("helpers", () => {
     const now = new Date("2026-01-01T12:00:00.000Z");
     expect(formatRelative("2026-01-01T11:57:00.000Z", now, "en")).toBe("3 minutes ago");
     expect(formatRelative("2026-01-01T11:59:59.000Z", now, "en")).toBe("now");
+  });
+});
+
+const view = (stage: string, status: "active" | "completed" = "active") =>
+  ({ status, stage: { name: stage, title: stage.toUpperCase() } }) as never;
+
+describe("action toast", () => {
+  it("says where the action moved the workflow, that it finished, or just that it is done", () => {
+    expect(actionToast("Submit", view("drafting"), view("review"), t)).toBe(
+      "Submit — moved to REVIEW"
+    );
+    expect(actionToast("Approve", view("review"), view("approved", "completed"), t)).toBe(
+      "Approve — workflow complete"
+    );
+    expect(actionToast("Take this review", view("review"), view("review"), t)).toBe(
+      "Take this review — done"
+    );
+    expect(actionToast("Approve", view("review"), undefined, t)).toBe("Approve — done");
   });
 });

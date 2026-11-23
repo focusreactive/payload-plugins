@@ -2,7 +2,7 @@
 // automatic steps it caused folded under it, purely automatic stretches as one row, rows grouped
 // by day. Pure (no React, no Payload), so it is unit-tested directly. The stored history is untouched.
 
-import type { Actor, HistoryEntry } from "../../types.js";
+import type { Actor, HistoryEntry, InstanceView } from "../../types.js";
 import { humanize, personName, titleIn } from "./format.js";
 import type { People, T } from "./format.js";
 
@@ -224,4 +224,28 @@ export const rowDetails = (row: TimelineRow, titles: Titles): string[] => {
       ([name, value]) =>
         `${titleIn(titles, `${base}/${name}`, name)}: ${typeof value === "string" ? value : JSON.stringify(value)}`
     );
+};
+
+/** Who started the run and when, from its first entry. */
+export const startOf = (history: HistoryEntry[]): { actor: Actor; at: string } | undefined => {
+  const first = history.find((entry) => entry.type === "started");
+  return first ? { actor: first.actor, at: first.at } : undefined;
+};
+
+/**
+ * The last step a person or agent took and when the run last changed: what a finished run's
+ * summary names ("last step “Approve” by Bea").
+ */
+export const lastStepOf = (view: InstanceView): { actor?: Actor; action?: string; at?: string } => {
+  const row = timelineRows(view.history).find((entry) => entry.lead);
+  const lead = row?.lead;
+  const action =
+    lead?.type === "action"
+      ? titleIn(view.titles, `${lead.stage}/${lead.activity}/${lead.action}`, lead.action)
+      : undefined;
+  return {
+    ...(lead ? { actor: lead.actor } : {}),
+    ...(action ? { action } : {}),
+    ...(view.history.at(-1)?.at ? { at: view.history.at(-1)?.at } : {}),
+  };
 };
