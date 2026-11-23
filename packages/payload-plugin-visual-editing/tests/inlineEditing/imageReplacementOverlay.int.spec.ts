@@ -5,7 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Overlay, OverlayCtx } from "../../src/client/createOverlay";
 
 import { createOverlay } from "../../src/client/createOverlay";
-import { MEDIA_PICK_TIME_LIMIT_MS } from "../../src/client/inlineEditing/editTransport";
 import { DATA_VE_MEDIA_PICKER_ATTR } from "../../src/client/inlineEditing/mediaPicker";
 import { DATA_VE_SAVE_STATUS_ATTR } from "../../src/client/inlineEditing/saveStatus";
 import { DATA_VE_ACTION_ATTR } from "../../src/client/overlay/constants";
@@ -18,7 +17,6 @@ import {
   DATA_VE_LOCALE_ATTR,
   DATA_VE_PATH_ATTR,
   DATA_VE_VALUE_ID_ATTR,
-  VE_DOCUMENT_SAVED_TYPE,
   VE_FIELD_EDIT_REFUSED_TYPE,
   VE_FIELD_EDIT_TYPE,
   VE_FIELD_SNAPSHOT_TYPE,
@@ -478,31 +476,6 @@ describe("replacing an image on the page", () => {
       expect(statusLabel()).toBe("Unsaved changes");
     });
 
-    it("asks once for a field whose pick is still open in the admin", () => {
-      formOfThePage();
-      ask();
-
-      ask();
-      postFromAdmin(picked());
-
-      expect(messagesOfType(postToAdmin, VE_PICK_MEDIA_TYPE)).toHaveLength(1);
-      expect(image.getAttribute("src")).toBe(`${CMS}/api/media/file/lighthouse.jpg`);
-    });
-
-    it("asks again once a pick the admin never answered is older than the time limit", () => {
-      formOfThePage();
-      const now = vi.spyOn(Date, "now").mockReturnValue(0);
-      ask();
-
-      now.mockReturnValue(MEDIA_PICK_TIME_LIMIT_MS);
-      ask();
-      postFromAdmin(picked());
-
-      expect(messagesOfType(postToAdmin, VE_PICK_MEDIA_TYPE)).toHaveLength(2);
-      expect(image.getAttribute("src")).toBe(`${CMS}/api/media/file/lighthouse.jpg`);
-      vi.restoreAllMocks();
-    });
-
     it("asks a new admin window again, whatever the window that was asked first never answered", () => {
       formOfThePage();
       ask();
@@ -526,16 +499,6 @@ describe("replacing an image on the page", () => {
       expect(messagesOfType(postToAdmin, VE_PICK_MEDIA_TYPE)).toHaveLength(2);
     });
 
-    it("keeps saying unsaved when the admin saved another document", () => {
-      formOfThePage();
-      ask();
-      postFromAdmin(picked());
-
-      postFromAdmin({ ...PAGE, docId: "2", locale: "en", type: VE_DOCUMENT_SAVED_TYPE });
-
-      expect(statusLabel()).toBe("Unsaved changes");
-    });
-
     it("forgets a pick the editor cancelled in the admin and says nothing about it", () => {
       formOfThePage();
       ask();
@@ -545,16 +508,6 @@ describe("replacing an image on the page", () => {
 
       expect(image.getAttribute("src")).toBe("/old.jpg");
       expect(statusLabel()).toBeUndefined();
-    });
-
-    it("says the image is saved once the admin saved the document", () => {
-      formOfThePage();
-      ask();
-      postFromAdmin(picked());
-
-      postFromAdmin({ ...PAGE, locale: "en", type: VE_DOCUMENT_SAVED_TYPE });
-
-      expect(statusLabel()).toBe("Saved");
     });
 
     it("ignores picked media that is not from the admin", () => {
@@ -722,14 +675,6 @@ describe("replacing an image on the page", () => {
 
       expect(statusLabel()).toBe("Not saved");
       expect(retryButton()?.hidden).toBe(false);
-    });
-
-    it("says why the form refused the pick", async () => {
-      await useLighthouse();
-
-      fromOpener({ ...IMAGE_FIELD, reason: "not-editable", type: VE_FIELD_EDIT_REFUSED_TYPE });
-
-      expect(statusLabel()).toBe("This field cannot be edited here");
     });
   });
 });

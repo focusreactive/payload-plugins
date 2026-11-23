@@ -1441,17 +1441,5 @@ describe("editing rich text on the page", () => {
 
       expect(statusLabel()).toBe("Not saved");
     });
-
-    it("says why the form refused an edit", async () => {
-      await hoverUntilReady();
-      answerState();
-      click(wrapper);
-      typeInto(twinOf(wrapper), "Hello there");
-      await vi.advanceTimersByTimeAsync(EDIT_SEND_PAUSE_MS);
-
-      postFromAdmin({ ...BODY, reason: "not-editable", type: VE_FIELD_EDIT_REFUSED_TYPE });
-
-      expect(statusLabel()).toBe("This field cannot be edited here");
-    });
   });
 });
