@@ -191,7 +191,10 @@ export function createEditTransport(
   const latestRefusal = (): SaveRefusal | undefined => [...failed.values()].at(-1)?.refusal;
 
   const isUnsaved = (address: string): boolean =>
-    waiting.has(address) || savesOnTheWay.has(address) || failed.has(address);
+    waiting.has(address) ||
+    savesOnTheWay.has(address) ||
+    failed.has(address) ||
+    unsavedInForm.has(address);
 
   const isFinished = (field: VeEditedField): boolean => {
     const address = editedFieldAddressOf(field);

@@ -372,6 +372,17 @@ describe("the transport of an edit", () => {
       expect(statuses).toEqual([]);
     });
 
+    it("counts an edit the form holds as unsaved until the admin saved its document", () => {
+      const edit = beginEdit(TITLE, "Shown");
+      edit.change("Hello");
+      vi.advanceTimersByTime(EDIT_SEND_PAUSE_MS);
+      expect(edit.isUnsaved()).toBe(true);
+
+      savedInTheAdmin(TITLE);
+
+      expect(edit.isUnsaved()).toBe(false);
+    });
+
     it("says the value is unsaved, because the form holds it", () => {
       beginEdit(TITLE, "Shown").change("Hello");
       vi.advanceTimersByTime(EDIT_SEND_PAUSE_MS);
@@ -585,6 +596,22 @@ describe("the transport of an edit", () => {
 
       expect(admin.postMessage).toHaveBeenCalledTimes(1);
       expect(sentBodies().map(({ base }) => base)).toEqual(["Shown", "Shown"]);
+    });
+
+    it("keeps the route of an edit the form holds, so its Retry goes to the endpoint once that window was replaced", async () => {
+      const replacement = { closed: false, postMessage: vi.fn() };
+      holdsAnyForm = true;
+      save(TITLE, "Shown", "Hello");
+      postFromAdmin({ ...TITLE, type: VE_FIELD_EDIT_REFUSED_TYPE }, { source: admin });
+      stubOpenerWindow(replacement);
+
+      transport.retry();
+      await settle();
+
+      expect(replacement.postMessage).not.toHaveBeenCalled();
+      expect(sentBodies()).toEqual([
+        { ...TITLE, base: "Shown", sentBefore: "Hello", value: "Hello" },
+      ]);
     });
 
     it("saves a picked image again through the endpoint on Retry once the admin told of a form", async () => {
