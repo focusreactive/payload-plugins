@@ -174,7 +174,7 @@ bun add @focus-reactive/payload-plugin-netlify-deploy
 
 ## Visual Editing Plugin for Payload CMS
 
-Click-to-edit for React/Next.js frontends. Draft content read through the Local API carries invisible field-path markers (Vercel stega); a frontend overlay turns them into Edit badges, and a click opens the exact document and field in the admin — tabs, collapsibles and array rows expanded, the input scrolled into view and focused. Works in Live Preview and in a separate tab.
+Click-to-edit for React/Next.js frontends. Draft content read through the Local API carries invisible field-path markers (Vercel stega); a frontend overlay turns them into Edit badges, and a click opens the exact document and field in the admin — tabs, collapsibles and array rows expanded, the input scrolled into view and focused. Works in Live Preview and in a separate tab. Optional instant preview shows text typed in the admin before it is saved, and editing on the page lets editors change text, rich text and images right in the preview. The package README has an AI prompt that wires it into an existing project.
 
 ```bash
 npm install @focus-reactive/payload-plugin-visual-editing

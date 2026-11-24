@@ -2,6 +2,64 @@
 
 Click-to-edit for Payload CMS. On draft reads the plugin writes an invisible marker into every text value. The frontend overlay finds those markers in the rendered page, frames the elements and adds an **Edit** badge. A click focuses the field in the Payload admin. With the optional instant preview, text typed in the admin form appears in the Live Preview before it is saved.
 
+## AI Integration Prompt
+
+> Copy and paste this prompt into your AI assistant (Cursor, Claude, etc.) to integrate the plugin into an existing Payload project.
+
+```
+Add click-to-edit to my Payload CMS v3 project with @focus-reactive/payload-plugin-visual-editing.
+
+What it does: draft reads get invisible markers in their text values. An overlay on the frontend frames
+the marked elements with an Edit badge, and a click focuses that field in the admin (in Live Preview or
+in a new admin tab). Markers are removed from every write, and published reads stay clean.
+First find out how my frontend renders: React / Next.js (step 4a) or no React, such as a static site
+generator, server templates, Vue or Svelte (step 4b).
+
+1. Install: bun add @focus-reactive/payload-plugin-visual-editing
+   (payload and @payloadcms/ui 3.79+, react 19 in the admin; a React frontend needs react 18.2+,
+   a frontend without React needs nothing)
+
+2. In payload.config.ts:
+
+   import { visualEditingPlugin } from '@focus-reactive/payload-plugin-visual-editing'
+
+   visualEditingPlugin({ enrichment: 'explicit' })   // optionally: instantPreview: true
+
+3. Editable collections and globals need versions: { drafts: true } and admin.livePreview.url pointing
+   at the preview of the page. On Next.js that is a route that enables draft mode and redirects to the
+   page (/next/preview?path=/<slug>), plus /next/exit-preview. Accept only paths that start with one "/".
+   Then run: payload generate:importmap
+
+4a. React / Next.js frontend:
+   - Read with the draft mode flag:
+     const { isEnabled: draft } = await draftMode()
+     payload.find({ collection: 'pages', draft, depth: 1, context: { visualEditing: draft }, where: ... })
+   - Wrap the layout:
+     import { VisualEditing } from '@focus-reactive/payload-plugin-visual-editing/client'
+     <VisualEditing.Provider available={isEnabled} framedOnly adminBasePath="/admin">
+       <VisualEditing.Toggle />
+       <VisualEditing.Overlay>{children}</VisualEditing.Overlay>
+     </VisualEditing.Provider>
+   - Rich text, uploads and relationships: spread withVisualEditingPath(value) from /client on the
+     element that renders them, e.g. <img {...withVisualEditingPath(page.image)} />
+
+4b. Frontend without React:
+   - Read drafts over REST or GraphQL with draft=true, the x-visual-editing header and the session of a
+     Payload user (a service user that may only read drafts: Authorization: JWT <token>, or
+     users API-Key <key>). Leave the header out of production builds.
+   - In the preview only, after the page has rendered:
+     import { mountVisualEditing } from '@focus-reactive/payload-plugin-visual-editing/dom'
+     mountVisualEditing({ adminOrigin: 'https://cms.example.com', framedOnly: true,
+                          onSave: () => location.reload() })
+   - Rich text, uploads and relationships: print the attributes of withVisualEditingPath(value) from
+     /dom on the element that renders them. Where a template turns text into an id, slug or selector,
+     clean it with stripMarkers(value) first.
+
+Check: open a page in the admin, open Live Preview, set the toggle to Always, click a heading and see
+its field focused in the form. Instant preview of rich text structure, editing on the page and the
+options: see the plugin README.
+```
+
 ## Installation
 
 ```bash
