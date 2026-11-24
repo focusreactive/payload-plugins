@@ -168,6 +168,7 @@ export function wireTranslateRunner({
   const taskRunnerFactory: TaskRunnerFactory = {
     create: (payload) => runner.create(payload, runnerContext),
     capabilities: runner.capabilities,
+    report: runnerContext.report,
   };
 
   return { taskRunnerFactory, configModifier: runner.configure(runnerContext) };

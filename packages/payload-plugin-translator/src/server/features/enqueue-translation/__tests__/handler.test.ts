@@ -58,6 +58,7 @@ describe("EnqueueTranslationHandler", () => {
     mockTaskRunnerFactory = {
       create: vi.fn().mockReturnValue(mockTaskRunner),
       capabilities: { stop: true, run: true },
+      report: vi.fn(),
     };
 
     config = {

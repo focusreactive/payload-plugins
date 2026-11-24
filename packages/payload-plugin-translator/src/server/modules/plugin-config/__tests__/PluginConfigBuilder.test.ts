@@ -14,7 +14,7 @@ const deps = (collections: Array<{ slug: string }> = []) => ({
   collections: collections as unknown as CollectionConfig[],
   settings: resolveSettings({}),
   access: new AnyAccessGuard(),
-  taskRunnerFactory: { create: vi.fn(), capabilities: { stop: true, run: true } },
+  taskRunnerFactory: { create: vi.fn(), capabilities: { stop: true, run: true }, report: vi.fn() },
   runRecordStoreFactory: () => storeDouble(),
   schemaMap: new Map(),
   translationProvider: { translate: vi.fn() },

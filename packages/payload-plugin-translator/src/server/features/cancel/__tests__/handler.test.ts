@@ -44,6 +44,7 @@ describe("CancelHandler", () => {
     mockTaskRunnerFactory = {
       create: vi.fn().mockReturnValue(mockTaskRunner),
       capabilities: { stop: true, run: true },
+      report: vi.fn(),
     };
 
     runs = storeDouble({
@@ -183,7 +184,11 @@ describe("CancelHandler", () => {
       const cannotStop = { enqueue: vi.fn() } as unknown as TaskRunner;
       const cannotStopHandler = new CancelHandler(
         AVAILABLE,
-        { create: vi.fn().mockReturnValue(cannotStop), capabilities: { stop: false, run: false } },
+        {
+          create: vi.fn().mockReturnValue(cannotStop),
+          capabilities: { stop: false, run: false },
+          report: vi.fn(),
+        },
         () => runs
       );
 

@@ -64,7 +64,11 @@ describe("enqueue asks about every document it was named", () => {
       stop: vi.fn(),
       run: vi.fn(),
     };
-    factory = { create: vi.fn().mockReturnValue(runner), capabilities: { stop: true, run: true } };
+    factory = {
+      create: vi.fn().mockReturnValue(runner),
+      capabilities: { stop: true, run: true },
+      report: vi.fn(),
+    };
     handler = new EnqueueTranslationHandler(
       {
         availableCollections: new Set(["posts"] as CollectionSlug[]),
@@ -168,6 +172,7 @@ describe("a document the caller may not read, where the write is live", () => {
       {
         create: vi.fn().mockReturnValue(runner),
         capabilities: { stop: true, run: true },
+        report: vi.fn(),
       } as unknown as TaskRunnerFactory,
       () => storeDouble()
     );

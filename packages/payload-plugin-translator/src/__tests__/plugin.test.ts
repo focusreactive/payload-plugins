@@ -34,6 +34,7 @@ const makeCollection = () => ({
 });
 const makeRunner = () => ({
   capabilities: { stop: true, run: true },
+  report: vi.fn(),
   create: vi.fn(),
   configure: vi.fn().mockReturnValue((c: Config) => c),
 });
@@ -268,6 +269,7 @@ describe("translatorPlugin — provenance (opt-in)", () => {
         create: vi.fn(),
         configure: vi.fn().mockReturnValue((c: Config) => c),
         capabilities: { stop: true, run: true },
+        report: vi.fn(),
       },
       modules: [documentTranslation()],
       components: [translateDocumentControl(), bulkTranslationDashboard()],
@@ -297,6 +299,7 @@ describe("translatorPlugin — provenance (opt-in)", () => {
           create: vi.fn(),
           configure: vi.fn().mockReturnValue((c: Config) => c),
           capabilities: { stop: true, run: true },
+          report: vi.fn(),
         },
         modules: [documentTranslation()],
         components: [translateDocumentControl(), bulkTranslationDashboard()],
@@ -341,6 +344,7 @@ describe("translatorPlugin — provenance (opt-in)", () => {
         create: vi.fn(),
         configure: vi.fn().mockReturnValue((c: Config) => c),
         capabilities: { stop: true, run: true },
+        report: vi.fn(),
       },
       modules: [documentTranslation()],
       components: [translateDocumentControl(), bulkTranslationDashboard()],
@@ -508,6 +512,7 @@ describe("translatorPlugin — lifecycle callbacks", () => {
       let captured: TaskRunnerContext | undefined;
       const runner = {
         capabilities: { stop: true, run: true },
+        report: vi.fn(),
         create: vi.fn().mockReturnValue({
           enqueue: vi.fn().mockResolvedValue([]),
           stop: vi.fn(),

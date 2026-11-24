@@ -30,6 +30,7 @@ const boot = async (
     access: new AnyAccessGuard(),
     runner: {
       capabilities: { stop: true, run: true },
+      report: vi.fn(),
       create: vi.fn(),
       configure: () => (config: Config) => config,
     },

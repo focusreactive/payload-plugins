@@ -60,6 +60,7 @@ describe("POST /enqueue refuses an unnameable actor before asking about anything
       {
         create: vi.fn().mockReturnValue({ enqueue: vi.fn().mockResolvedValue([]) }),
         capabilities: { stop: true, run: true },
+        report: vi.fn(),
       },
       () => storeDouble()
     );

@@ -61,7 +61,11 @@ describe("DELETE /cancel asks about every document behind the runs it would stop
     });
     handler = new CancelHandler(
       AVAILABLE,
-      { create: vi.fn().mockReturnValue(runner), capabilities: { stop: true, run: true } },
+      {
+        create: vi.fn().mockReturnValue(runner),
+        capabilities: { stop: true, run: true },
+        report: vi.fn(),
+      },
       () => runs
     );
   });

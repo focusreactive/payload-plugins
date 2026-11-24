@@ -30,6 +30,7 @@ const availableCollections = new Set<CollectionSlug>();
 const taskRunnerFactory: TaskRunnerFactory = {
   create: unreachable,
   capabilities: { stop: true, run: true },
+  report: vi.fn(),
 };
 const stalenessFactory: DocumentStalenessFactory = unreachable;
 const translationProvider: TranslationProvider = { translate: unreachable };

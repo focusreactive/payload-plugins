@@ -12,7 +12,7 @@ const OPEN_ON_PURPOSE = new AnyAccessGuard();
 // the doc + collection levels (deduped), so "all endpoints, right paths/methods"
 // must not drift. Each route's own wiring is pinned by its sibling route.test.ts.
 const deps = (basePath?: string): TranslationRoutesDeps => ({
-  taskRunnerFactory: { create: vi.fn(), capabilities: { stop: true, run: true } },
+  taskRunnerFactory: { create: vi.fn(), capabilities: { stop: true, run: true }, report: vi.fn() },
   runRecordStoreFactory: () => storeDouble(),
   collectionConfig: { availableCollections: new Set() },
   schemaMap: new Map(),

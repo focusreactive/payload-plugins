@@ -16,6 +16,7 @@ const provider: TranslationProvider = { translate: vi.fn().mockResolvedValue({})
 
 const runner = {
   capabilities: { stop: true, run: true },
+  report: vi.fn(),
   create: () => ({
     enqueue: async () => [],
     stop: async (): Promise<void> => undefined,

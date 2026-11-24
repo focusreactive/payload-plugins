@@ -22,7 +22,7 @@ const noRuns = () => storeDouble();
 describe("createEnqueueRoute (contract)", () => {
   it("registers POST at {basePath}/enqueue with the default basePath", () => {
     const endpoint = createEnqueueRoute(
-      { create: vi.fn(), capabilities: { stop: true, run: true } },
+      { create: vi.fn(), capabilities: { stop: true, run: true }, report: vi.fn() },
       noRuns,
       config,
       OPEN_ON_PURPOSE
@@ -33,7 +33,7 @@ describe("createEnqueueRoute (contract)", () => {
 
   it("honors a custom basePath", () => {
     const endpoint = createEnqueueRoute(
-      { create: vi.fn(), capabilities: { stop: true, run: true } },
+      { create: vi.fn(), capabilities: { stop: true, run: true }, report: vi.fn() },
       noRuns,
       config,
       OPEN_ON_PURPOSE,
@@ -46,6 +46,7 @@ describe("createEnqueueRoute (contract)", () => {
     const taskRunnerFactory: TaskRunnerFactory = {
       create: vi.fn(),
       capabilities: { stop: true, run: true },
+      report: vi.fn(),
     };
     const endpoint = createEnqueueRoute(taskRunnerFactory, noRuns, config, denyAccess);
 

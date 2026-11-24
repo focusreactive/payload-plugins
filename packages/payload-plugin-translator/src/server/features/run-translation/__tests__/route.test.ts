@@ -22,7 +22,7 @@ describe("createRunRoute (contract)", () => {
   it("registers POST at the document's address with the default basePath", () => {
     const endpoint = createRunRoute(
       AVAILABLE,
-      { create: vi.fn(), capabilities: { stop: true, run: true } },
+      { create: vi.fn(), capabilities: { stop: true, run: true }, report: vi.fn() },
       noRuns,
       OPEN_ON_PURPOSE
     );
@@ -33,7 +33,7 @@ describe("createRunRoute (contract)", () => {
   it("honors a custom basePath", () => {
     const endpoint = createRunRoute(
       AVAILABLE,
-      { create: vi.fn(), capabilities: { stop: true, run: true } },
+      { create: vi.fn(), capabilities: { stop: true, run: true }, report: vi.fn() },
       noRuns,
       OPEN_ON_PURPOSE,
       "/i18n"
@@ -45,6 +45,7 @@ describe("createRunRoute (contract)", () => {
     const taskRunnerFactory: TaskRunnerFactory = {
       create: vi.fn(),
       capabilities: { stop: true, run: true },
+      report: vi.fn(),
     };
     const endpoint = createRunRoute(AVAILABLE, taskRunnerFactory, noRuns, denyAccess);
 

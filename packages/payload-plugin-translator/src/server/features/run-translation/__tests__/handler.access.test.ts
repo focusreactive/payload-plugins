@@ -44,7 +44,11 @@ describe("POST /run asks about the document it was given", () => {
     const runs = storeDouble({ findByDocument: vi.fn().mockResolvedValue(rows) });
     handler = new RunTranslationHandler(
       AVAILABLE,
-      { create: vi.fn().mockReturnValue(runner), capabilities: { stop: true, run: true } },
+      {
+        create: vi.fn().mockReturnValue(runner),
+        capabilities: { stop: true, run: true },
+        report: vi.fn(),
+      },
       () => runs
     );
   };
