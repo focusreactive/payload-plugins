@@ -2150,7 +2150,7 @@ describe("collection hooks", () => {
           doc: { id: 1, seo: { description: "e" }, items: [{ id: "a", label: "z" }] },
         }
       );
-      expect(firstEvent(create)?.changes).toEqual(["seo.description", "items.0.label", "items.1"]);
+      expect(firstEvent(create)?.changes).toEqual(["seo.description", "items", "items.0.label"]);
     });
 
     it("still compares a selected rich text value as a whole", async () => {

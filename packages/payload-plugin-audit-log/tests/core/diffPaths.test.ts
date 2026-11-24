@@ -38,29 +38,131 @@ const block = (author: unknown) => ({
 });
 
 describe("diffPaths", () => {
-  it("ignores the ids of array and block rows at any depth", () => {
+  it("pairs array and block rows by id, so an inserted row is the only change", () => {
     const hero = { id: "r1", blockType: "hero", title: "A" };
     const cta = { id: "r2", blockType: "cta", label: "Go" };
     const inserted = { id: "r3", blockType: "hero", title: "A" };
     expect(diffPaths({ blocks: [hero, cta] }, { blocks: [inserted, hero, cta] })).toEqual([
-      "blocks.1.blockType",
-      "blocks.1.label",
-      "blocks.1.title",
-      "blocks.2",
+      "blocks.0",
     ]);
+  });
+
+  it("reports a changed row field under the row's index in the saved document", () => {
+    const before = {
+      items: [
+        { id: "a", title: "A" },
+        { id: "b", title: "B" },
+      ],
+    };
+    const after = {
+      items: [
+        { id: "n", title: "N" },
+        { id: "a", title: "A" },
+        { id: "b", title: "B2" },
+      ],
+    };
+    expect(diffPaths(before, after)).toEqual(["items.0", "items.2.title"]);
+  });
+
+  it("reports the array once when a row is removed", () => {
+    const before = {
+      items: [
+        { id: "a", v: 1 },
+        { id: "b", v: 2 },
+        { id: "c", v: 3 },
+      ],
+    };
+    const after = {
+      items: [
+        { id: "a", v: 1 },
+        { id: "c", v: 3 },
+      ],
+    };
+    expect(diffPaths(before, after)).toEqual(["items"]);
+    expect(diffPaths(before, { items: [] })).toEqual(["items"]);
+  });
+
+  it("reports the array once when rows are only reordered", () => {
+    const before = {
+      items: [
+        { id: "a", v: 1 },
+        { id: "b", v: 2 },
+        { id: "c", v: 3 },
+      ],
+    };
+    const after = {
+      items: [
+        { id: "c", v: 3 },
+        { id: "a", v: 1 },
+        { id: "b", v: 2 },
+      ],
+    };
+    expect(diffPaths(before, after)).toEqual(["items"]);
+  });
+
+  it("reports a reorder together with the fields changed in the moved rows", () => {
+    const before = {
+      items: [
+        { id: "a", v: 1 },
+        { id: "b", v: 2 },
+      ],
+    };
+    const after = {
+      items: [
+        { id: "b", v: 3 },
+        { id: "a", v: 1 },
+      ],
+    };
+    expect(diffPaths(before, after)).toEqual(["items", "items.0.v"]);
+  });
+
+  it("pairs nested rows by id and treats a row whose id changed as replaced", () => {
     expect(
       diffPaths(
-        { tabs: { rows: [{ id: "a", items: [{ id: "x", v: 1 }] }] } },
-        { tabs: { rows: [{ id: "b", items: [{ id: "y", v: 1 }] }] } }
+        {
+          tabs: {
+            rows: [
+              {
+                id: "a",
+                items: [
+                  { id: "x", v: 1 },
+                  { id: "y", v: 2 },
+                ],
+              },
+            ],
+          },
+        },
+        { tabs: { rows: [{ id: "a", items: [{ id: "y", v: 5 }] }] } }
       )
-    ).toEqual([]);
+    ).toEqual(["tabs.rows.0.items", "tabs.rows.0.items.0.v"]);
+    expect(diffPaths({ list: [{ id: "a", v: 1 }] }, { list: [{ id: "b", v: 1 }] })).toEqual([
+      "list",
+      "list.0",
+    ]);
+  });
+
+  it("still compares arrays of values without row ids by index", () => {
+    expect(diffPaths({ tags: ["a", "b"] }, { tags: ["b", "a"] })).toEqual(["tags.0", "tags.1"]);
+    expect(diffPaths({ list: [{ v: 1 }] }, { list: [{ v: 2 }] })).toEqual(["list.0.v"]);
+  });
+
+  it("cuts rows paired by id at max", () => {
+    const before = { items: [{ id: "a", v: 1 }] };
+    const after = {
+      items: [
+        { id: "x", v: 1 },
+        { id: "y", v: 1 },
+        { id: "a", v: 2 },
+      ],
+    };
+    expect(diffPaths(before, after, { max: 2 })).toEqual(["items.0", "items.1", TRUNCATED_MARKER]);
   });
 
   it("still reports changed row content and a changed id outside rows", () => {
     expect(
       diffPaths(
         { list: [{ id: "a", v: 1 }], meta: { id: 1 } },
-        { list: [{ id: "b", v: 2 }], meta: { id: 2 } }
+        { list: [{ id: "a", v: 2 }], meta: { id: 2 } }
       )
     ).toEqual(["list.0.v", "meta.id"]);
   });
@@ -71,7 +173,7 @@ describe("diffPaths", () => {
     expect(diffPaths(before, after)).toEqual(["title", "seo.title"]);
   });
 
-  it("handles arrays and blocks by index", () => {
+  it("reports an edited row and an appended row", () => {
     const before = { sections: [{ id: "a", heading: "H" }] };
     const after = {
       sections: [
