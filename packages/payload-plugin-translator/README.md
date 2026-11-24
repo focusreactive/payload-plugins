@@ -254,6 +254,8 @@ translatorPlugin({
 | `debounceMs` | `number` | `0` | Delay before the queued job runs, coalescing rapid edits. |
 | `sourceLocale` | `string` | `localization.defaultLocale` | Source locale override for this collection. |
 
+A target your project does not declare is dropped with a warning. **If that leaves the collection with no target at all, the plugin refuses to start:** a collection set to translate into nothing is almost always a typo, and the warning that covers one mistyped locale cannot tell you the feature has gone inert. An empty `targets` list you wrote yourself is left alone — that is a valid way to keep auto-translate off.
+
 > [!IMPORTANT]
 > Auto-translate only schedules the work. Nothing is translated unless your runner actually runs it — see [Task runners](#task-runners).
 
@@ -265,6 +267,8 @@ translatorPlugin({
 Applies to every trigger — the admin controls, `POST {basePath}/enqueue`, and auto-translate.
 
 Everything below describes a collection with `versions.drafts` enabled. **Without drafts there is nothing to stage:** a translation is written straight to the live document, and asking to publish on translation does nothing, silently.
+
+**`versions.drafts.localizeStatus` is not supported.** A collection that enables it — together with Payload's own `experimental.localizeStatus` flag, without which Payload turns the setting off anyway — makes the plugin refuse to start. The setting turns `_status` into a value per locale, while two of the plugin's decisions read one status for the whole document: whether a save is a publish, and which version the last publish was. Turn the setting off for that collection, or stop passing the collection to the translator.
 
 **Without publish-on-translation** the translation is written as a draft version. The document's published state is untouched: a live page stays live, an unpublished one stays unpublished, and the new locale does not reach the public site until someone publishes it.
 

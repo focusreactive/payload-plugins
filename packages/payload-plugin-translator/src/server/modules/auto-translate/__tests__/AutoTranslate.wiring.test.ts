@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import type { Config } from "payload";
 
 import { configureAutoTranslate } from "../AutoTranslate.wiring.js";
+import { TranslatorConfigError } from "../../../../core/errors/index.js";
 import { AUTO_TRANSLATE_CUSTOM_KEY } from "../../../../core/domain/auto-translate/index.js";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
 import type { TaskRunnerFactory } from "../../task-runner/index.js";
@@ -48,8 +49,23 @@ describe("auto-translate rejects locales the project does not have, while the co
     expect(buildConfig(["en", "de"], ["de", "xx"])).toEqual(["de"]);
   });
 
-  it("drops every target when none matches", () => {
-    expect(buildConfig(["en", "de"], ["xx", "yy"])).toEqual([]);
+  // Dropping the last target leaves auto-translate configured and inert. The warning that covers a
+  // single mistyped locale cannot carry that, because nothing distinguishes it from the case where
+  // the other targets still work.
+  it("refuses when no target survives, naming the collection and both lists", () => {
+    const refusal = () => buildConfig(["en", "de"], ["xx", "yy"]);
+
+    expect(refusal).toThrow(TranslatorConfigError);
+    expect(refusal).toThrow(/posts/u);
+    expect(refusal).toThrow(/xx, yy/u);
+    expect(refusal).toThrow(/en, de/u);
+  });
+
+  // A list the host wrote empty is a way to keep auto-translate off, not a mistyped locale. Hosts
+  // that fill it from the environment would otherwise be unable to start.
+  it("leaves an empty target list alone", () => {
+    expect(() => buildConfig(["en", "de"], [])).not.toThrow();
+    expect(buildConfig(["en", "de"], [])).toEqual([]);
   });
 
   it("warns instead of enqueueing when the project has no localization at all", () => {

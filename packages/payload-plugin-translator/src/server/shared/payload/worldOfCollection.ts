@@ -1,5 +1,5 @@
 import type { CollectionConfig, CollectionSlug, Payload, Where } from "payload";
-import { hasAutosaveEnabled, hasDraftsEnabled } from "payload/shared";
+import { hasAutosaveEnabled, hasDraftsEnabled, hasLocalizeStatusEnabled } from "payload/shared";
 
 import type { World } from "../../../core/domain/world/index.js";
 import { resolveWorld } from "../../../core/domain/world/index.js";
@@ -17,6 +17,38 @@ export type VersionRead = {
 
 export type CollectionVersions = {
   readonly versions?: CollectionConfig["versions"];
+};
+
+/** Why this plugin cannot serve a collection, in the sentence the refusal shows. */
+export type UnsupportedWorld = string;
+
+/** The experiments a host opts into, of which only this one changes what a version means. */
+export type HostExperiments = {
+  readonly localizeStatus?: boolean;
+};
+
+export type NamedCollection = CollectionVersions & { readonly slug: string };
+
+/**
+ * `null` when this plugin can serve the collection.
+ *
+ * Both halves of the condition are read because Payload clears a collection's own
+ * `localizeStatus` while sanitizing the config whenever the host has not opted into the
+ * experiment — and a plugin runs before that, so a caller holding the raw collection would
+ * otherwise refuse a setting Payload is about to turn off.
+ */
+export const unsupportedWorldOf = (
+  collection: NamedCollection,
+  experiments: HostExperiments | undefined
+): UnsupportedWorld | null => {
+  if (!experiments?.localizeStatus || !hasLocalizeStatusEnabled(collection)) return null;
+
+  return (
+    `collection "${collection.slug}" enables \`versions.drafts.localizeStatus\`, which the ` +
+    "translator cannot serve: it makes `_status` a value per locale, while the publish gate and " +
+    "the comparison against the last publish both read one status for the document. Turn that " +
+    "setting off for this collection, or stop passing the collection to the translator."
+  );
 };
 
 const mintedRead = (draft: boolean): VersionRead =>

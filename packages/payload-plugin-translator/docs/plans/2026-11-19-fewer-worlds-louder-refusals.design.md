@@ -756,8 +756,15 @@ refused, so the refusal machinery has a world-shaped customer again.
 
 ### Accepted deviations
 
-None. Every invariant is met; the options that would have needed a deviation were disqualified rather
-than excused.
+**The analyzer zone confining Payload's version vocabulary — dropped by the owner, 2026-11-23.** Build
+steps 1 and 5 each called for a rule pinning `hasDraftsEnabled`, `hasAutosaveEnabled` and the version
+read arguments to `worldOfCollection.ts`. It is not built and will not be. The guard it would add is
+a guard against a mistake nobody has made since the entry exists, and the entry itself already makes
+the illegal question a type error — which is the stronger half of the same protection. Not to be
+raised again.
+
+Otherwise none: every invariant is met, and the options that would have needed a deviation were
+disqualified rather than excused.
 
 ### Rejected / grafted (for the record)
 

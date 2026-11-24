@@ -5,6 +5,7 @@ import type { TaskEvent } from "../server/modules/task-runner/types.js";
 import type { TranslationLifecycleCallbacks } from "../server/modules/lifecycle/types.js";
 
 import { translatorPlugin } from "../plugin.js";
+import { TranslatorConfigError } from "../core/errors/index.js";
 import { AnyAccessGuard } from "../server/shared/access/AnyAccessGuard.js";
 import type { TranslatorPluginConfig } from "../plugin.js";
 import { withAutoTranslate } from "../auto-translate-config.js";
@@ -84,6 +85,17 @@ describe("translatorPlugin — the listed surfaces", () => {
     await expect(build({ modules: undefined, components: undefined })).rejects.toThrow(
       /`modules` and `components` are both required/u
     );
+  });
+
+  // One class for every refusal the host can cause, so a host can tell its own mistake from ours
+  // without reading the sentence.
+  it("refuses a host mistake as a configuration error, not a bare one", async () => {
+    await expect(build({ modules: undefined, components: undefined })).rejects.toThrow(
+      TranslatorConfigError
+    );
+    await expect(
+      build({ modules: [documentTranslation(), documentTranslation()] })
+    ).rejects.toThrow(TranslatorConfigError);
   });
 
   it("refuses two modules that share a name", async () => {
