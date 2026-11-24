@@ -1,3 +1,10 @@
+## create-ideal-cms [1.4.1](https://github.com/focusreactive/payload-plugins/compare/create-ideal-cms@1.4.0...create-ideal-cms@1.4.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* **create-ideal-cms:** prune audit-log, stacked-editing and json-form-builder sources ([057428a](https://github.com/focusreactive/payload-plugins/commit/057428adab0597d7ab6eb997b90b2ba7d46a2a3f))
+
 # create-ideal-cms [1.4.0](https://github.com/focusreactive/payload-plugins/compare/create-ideal-cms@1.3.0...create-ideal-cms@1.4.0) (2026-10-30)
 
 
