@@ -16,7 +16,12 @@ import type { OperationEventArgs } from "../core/writeEvent";
 import { recordAuditEvent } from "../core/writeEvent";
 import type { ResolvedOptions } from "../options";
 import { failOpen } from "../utils/failOpen";
-import { localizedFieldPaths, readRestrictedFieldPaths, storedValuesOf } from "../utils/fields";
+import {
+  jsonFieldPaths,
+  localizedFieldPaths,
+  readRestrictedFieldPaths,
+  storedValuesOf,
+} from "../utils/fields";
 import type { SanitizedFieldsShape } from "../utils/fields";
 import { configuredLocalesOf, localeOfSave, readsWithFallbackLocale } from "../utils/locales";
 import type { LocaleOfRequest } from "../utils/locales";
@@ -53,6 +58,7 @@ export function withCollectionAudit(
       ...fieldsHiddenByPayload(collection.auth).map((name) => [name]),
     ],
     localizedFields,
+    jsonFields: jsonFieldPaths(collection.fields, sharedBlocks),
     maxChangedPaths: opts.maxChangedPaths,
   });
 
@@ -149,7 +155,7 @@ export function withCollectionAudit(
       operation === "create"
         ? diff.createdFields(doc)
         : changesOfUpdate(savedIn, diff, {
-            previousDoc,
+            previousDoc: flags.restore ? inLocaleOfSave(savedIn, previousDoc) : previousDoc,
             liveDocBeforeSave: comparesWithLiveDoc ? liveDoc : undefined,
             written,
             doc: docAsStored,

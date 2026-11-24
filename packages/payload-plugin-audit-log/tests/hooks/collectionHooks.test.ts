@@ -354,6 +354,16 @@ describe("collection hooks", () => {
     expect(firstEvent(create)?.overrideAccess).toBe(false);
   });
 
+  it("reports a changed json field by its own path", async () => {
+    const { req, create } = fakeRequest();
+    const withSettings = audited({ slug: "posts", fields: [{ name: "settings", type: "json" }] });
+    await runUpdate(withSettings.hooks, req, {
+      previousDoc: { id: 7, settings: { theme: { color: "red" } } },
+      doc: { id: 7, settings: { theme: { color: "blue" } } },
+    });
+    expect(firstEvent(create)?.changes).toEqual(["settings"]);
+  });
+
   it("writes doc.update with changed paths and label", async () => {
     const { req, create } = fakeRequest();
     await runUpdate(posts.hooks, req, {
@@ -1373,6 +1383,42 @@ describe("collection hooks", () => {
       });
     });
 
+    const restoredInEnglish = async (previousDoc: Doc, doc: Doc) => {
+      const { req, create } = await startedInEnglishThenReadInGerman("restoreVersion", {
+        id: "v1",
+      });
+      req.context.isRestoringVersion = true;
+      await runHooks(localizedMembers.hooks?.beforeChange, {
+        operation: "update",
+        originalDoc: previousDoc,
+        data: doc,
+        req,
+        collection: membersCollection,
+      });
+      await runUpdate(localizedMembers.hooks, req, {
+        previousDoc,
+        doc,
+        collection: membersCollection,
+      });
+      return firstEvent(create);
+    };
+
+    it("compares a restore with the document in the locale it was made in", async () => {
+      const event = await restoredInEnglish(
+        { id: 4, nickname: { en: "B", de: "Bee" } },
+        { id: 4, nickname: "A" }
+      );
+      expect(event).toMatchObject({ action: "doc.restore", changes: ["nickname"] });
+    });
+
+    it("does not report localized fields a restore left unchanged in its locale", async () => {
+      const event = await restoredInEnglish(
+        { id: 4, nickname: { en: "A", de: "Bee" } },
+        { id: 4, nickname: "A" }
+      );
+      expect(event).toMatchObject({ action: "doc.restore", changes: [] });
+    });
+
     it("records a duplicate in the locale it was made in", async () => {
       const data = { nickname: "Copy" };
       const { req, create } = await startedInEnglishThenReadInGerman("create", {
@@ -2104,7 +2150,7 @@ describe("collection hooks", () => {
           doc: { id: 1, seo: { description: "e" }, items: [{ id: "a", label: "z" }] },
         }
       );
-      expect(firstEvent(create)?.changes).toEqual(["seo.description", "items.0.label", "items.1"]);
+      expect(firstEvent(create)?.changes).toEqual(["seo.description", "items", "items.0.label"]);
     });
 
     it("still compares a selected rich text value as a whole", async () => {

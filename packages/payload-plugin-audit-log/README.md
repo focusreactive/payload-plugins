@@ -2,6 +2,53 @@
 
 Audit log for [Payload CMS](https://payloadcms.com/) v3: a read-only collection of who changed which document or global and when, plus sign-ins, API keys and AI agents, with CSV / NDJSON export. Only the paths of changed fields are stored, never their values.
 
+![Audit log list with action and actor pills and export buttons](https://raw.githubusercontent.com/focusreactive/payload-plugins/main/packages/payload-plugin-audit-log/docs/list.png)
+
+| Filter by actor, action or target | Changed field paths, IP and User-Agent |
+| --- | --- |
+| ![Audit log filtered by actor](https://raw.githubusercontent.com/focusreactive/payload-plugins/main/packages/payload-plugin-audit-log/docs/filter.png) | ![Changes, IP and User-Agent of one event](https://raw.githubusercontent.com/focusreactive/payload-plugins/main/packages/payload-plugin-audit-log/docs/event.png) |
+
+## AI Integration Prompt
+
+> Copy and paste this prompt into your AI assistant (Cursor, Claude, etc.) to integrate the plugin into an existing Payload project.
+
+```
+Add an audit log to my Payload CMS v3 project with @focus-reactive/payload-plugin-audit-log.
+
+What it does: adds a read-only collection "audit-events" (admin group "Settings") that records document and
+global changes (create, update, delete, publish, unpublish, version restore), sign-ins, sign-outs, failed
+sign-ins and password resets. Each event stores the actor (user, API key, MCP agent, system, anonymous), the
+target, the paths of changed fields (never values), IP and User-Agent. Nobody can edit or delete events.
+
+1. Install: bun add @focus-reactive/payload-plugin-audit-log
+   (payload and @payloadcms/ui 3.90+, react 19; Postgres, SQLite or MongoDB)
+
+2. In payload.config.ts, add it after plugins that create collections or globals:
+
+   import { auditLogPlugin } from '@focus-reactive/payload-plugin-audit-log'
+
+   auditLogPlugin({
+     access: { read: ({ req }) => Boolean(req.user) }, // who can read and export; restrict to admins
+     retention: { days: 365 },                          // optional, default: keep forever
+   })
+
+   With @payloadcms/plugin-mcp (order: 10), set a higher order so MCP keys and agents are audited:
+   Object.assign(auditLogPlugin({ ... }), { order: 11 })
+
+3. Run: payload generate:importmap
+   On Postgres / SQLite also: payload migrate:create add_audit_log && payload migrate
+
+4. Scripts and agents: wrap Local API calls to name the actor, otherwise they are logged as "system":
+
+   import { withAuditActor } from '@focus-reactive/payload-plugin-audit-log'
+   await withAuditActor({ type: 'system', label: 'nightly import' }, () => payload.update({ ... }))
+
+5. With retention, make sure jobs run (jobs.autoRun, or a cron calling payload.jobs.run()).
+
+Check: edit and publish a document, sign in with a wrong password, then open Settings → Audit log and
+export CSV. Custom events (for example SSO logins): see logAuditEvent in the plugin README.
+```
+
 ## Install
 
 ```bash
@@ -40,6 +87,7 @@ export default buildConfig({
 - Only Payload operations and hooks are recorded. Raw `payload.db` calls and SQL get no events; seeds and migrations get none of their own. Local API calls without a user are recorded with the `system` actor.
 - Role changes and API key changes are plain `doc.update` / `doc.create` / `doc.delete` events of the user or key collection.
 - Autosave draft saves are not logged.
+- `changes` lists changed field paths. Array and block rows are matched by id: an edited row gives `items.2.title`, an added row `items.2`, a removed or reordered row `items`. JSON and rich text fields are reported by their own path.
 - Event fields: `occurredAt`, `action`, `status`, `actor`, `onBehalfOf`, `agent`, `via`, `target` (`kind`, `slug`, `docId`, `label`, `locale`), `changes`, `overrideAccess`, `requestId`, `ip`, `userAgent`, `metadata`.
 
 ## Actors

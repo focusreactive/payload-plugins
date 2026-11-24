@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  jsonFieldPaths,
   localizedFieldPaths,
   readRestrictedFieldPaths,
   storedFieldNames,
@@ -103,6 +104,29 @@ describe("localized field paths", () => {
       ["seo", "description"],
       ["links", { rows: true }, "label"],
       ["gallery"],
+    ]);
+  });
+});
+
+describe("json field paths", () => {
+  it("lists json fields at any depth", () => {
+    expect(
+      jsonFieldPaths([
+        { name: "settings", type: "json" },
+        { name: "title", type: "text" },
+        { name: "seo", type: "group", fields: [{ name: "schema", type: "json" }] },
+        { name: "rows", type: "array", fields: [{ name: "data", type: "json" }] },
+        {
+          name: "layout",
+          type: "blocks",
+          blocks: [{ slug: "embed", fields: [{ name: "config", type: "json" }] }],
+        },
+      ])
+    ).toEqual([
+      ["settings"],
+      ["seo", "schema"],
+      ["rows", { rows: true }, "data"],
+      ["layout", { rows: true, blockType: "embed" }, "config"],
     ]);
   });
 });

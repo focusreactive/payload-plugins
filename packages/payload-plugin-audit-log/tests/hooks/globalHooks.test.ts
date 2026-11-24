@@ -60,6 +60,21 @@ describe("global hooks", () => {
     });
   });
 
+  it("reports a changed json field by its own path", async () => {
+    const { req, create } = makeReq();
+    const withSettings = withGlobalAudit(
+      { slug: "settings", fields: [{ name: "config", type: "json" }] },
+      normalizeOptions()
+    );
+    await runHooks(withSettings.hooks?.afterChange, {
+      doc: { config: { theme: { color: "blue" } } },
+      previousDoc: { config: { theme: { color: "red" } } },
+      req,
+      global: { slug: "settings" },
+    });
+    expect(recordedEvents(create)[0]?.changes).toEqual(["config"]);
+  });
+
   it("records overrideAccess false when the operation did not override access", async () => {
     const { req, create } = makeReq();
     await runHooks(settings.hooks?.afterChange, {

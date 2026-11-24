@@ -228,3 +228,26 @@ describe("createdFields", () => {
     expect(diffOfVirtualCreate(withSecret).createdFields(shown)).toEqual(["title", "details"]);
   });
 });
+
+describe("changedFields of json fields", () => {
+  const diff = createChangeDiff({
+    readRestrictedFields: [],
+    jsonFields: [["settings"], ["items", ROWS, "data"]],
+    maxChangedPaths: 200,
+  })();
+
+  it("reports a changed json field once, by its own path", () => {
+    expect(
+      diff.changedFields(
+        { settings: { theme: { color: "red", size: 1 } }, items: [{ id: "r", data: [{ a: 1 }] }] },
+        { settings: { theme: { color: "blue", size: 2 } }, items: [{ id: "r", data: [{ a: 2 }] }] }
+      )
+    ).toEqual(["settings", "items.0.data"]);
+  });
+
+  it("does not report a json field whose keys were only reordered", () => {
+    expect(
+      diff.changedFields({ settings: { a: 1, b: { c: 2 } } }, { settings: { b: { c: 2 }, a: 1 } })
+    ).toEqual([]);
+  });
+});
