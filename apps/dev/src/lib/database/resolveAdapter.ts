@@ -57,8 +57,15 @@ export function resolveDbAdapter() {
  *
  * An unrecognised `DB_ADAPTER` throws rather than falling back: a typo that silently ran SQLite would
  * report a green run for a database it never touched.
+ *
+ * `transactions` left out keeps each adapter's default (on for Postgres and Mongo, off for SQLite);
+ * `true` turns them on for SQLite too, `false` turns them off everywhere.
  */
-export function createTestDatabase(sqliteFile: string) {
+export function createTestDatabase(sqliteFile: string, options: { transactions?: boolean } = {}) {
+  const transactionOptions =
+    options.transactions === undefined
+      ? {}
+      : { transactionOptions: options.transactions ? ({} as const) : (false as const) };
   switch (process.env.DB_ADAPTER) {
     case "postgres": {
       // The leading "t" makes it a valid unquoted Postgres identifier — those cannot start with a digit.
@@ -67,6 +74,7 @@ export function createTestDatabase(sqliteFile: string) {
         db: postgresAdapter({
           pool: { connectionString: process.env.POSTGRES_TEST_URL ?? DEFAULT_POSTGRES_TEST_URL },
           schemaName: schema,
+          ...transactionOptions,
         }),
         drop: async (payload: Payload) => {
           // Not Payload's own `dropDatabase()`: that one drops the schema and immediately recreates
@@ -83,7 +91,10 @@ export function createTestDatabase(sqliteFile: string) {
       // Not `MONGO_URL`: that one already names a database, so a run id appended to it is a collection.
       const server = process.env.MONGO_TEST_SERVER ?? "mongodb://localhost:27017";
       return {
-        db: mongooseAdapter({ url: `${server}/t${randomUUID().replaceAll("-", "")}` }),
+        db: mongooseAdapter({
+          url: `${server}/t${randomUUID().replaceAll("-", "")}`,
+          ...transactionOptions,
+        }),
         drop: async (payload: Payload) => {
           const { connection } = payload.db as {
             connection: { dropDatabase: () => Promise<unknown> };
@@ -95,7 +106,7 @@ export function createTestDatabase(sqliteFile: string) {
     case undefined:
     case "sqlite":
       return {
-        db: sqliteAdapter({ client: { url: `file:${sqliteFile}` } }),
+        db: sqliteAdapter({ client: { url: `file:${sqliteFile}` }, ...transactionOptions }),
         drop: () => Promise.resolve(),
       };
     default:

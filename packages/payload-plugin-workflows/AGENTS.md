@@ -43,4 +43,12 @@ cd apps/dev && bun run check-types && npx vitest run -c vitest.integration.confi
 cd apps/dev && bun run generate:importmap   # after changing component paths
 ```
 
+The integration suite runs on SQLite by default. On Postgres (each spec file gets a fresh schema, dropped on teardown; `POSTGRES_TEST_URL` defaults to the `apps/dev` Docker Compose database):
+
+```bash
+cd apps/dev && DB_ADAPTER=postgres POSTGRES_TEST_URL=postgres://postgres:postgres@127.0.0.1:5432/wf_test npx vitest run -c vitest.integration.config.ts src/integration/workflows
+```
+
+`concurrency.int.test.ts` runs only there (SQLite cannot interleave writers): parallel fires, starts and a fire racing a save, 20 rounds each. Run it after touching `store.ts`, `operations.ts` or `hooks.ts`.
+
 Build the plugin before running `apps/dev`. Do not bump `version` (semantic-release owns it).

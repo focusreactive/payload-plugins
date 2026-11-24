@@ -12,9 +12,10 @@ import type {
   WorkflowDefinition,
   WorkflowsPluginOptions,
 } from "@focus-reactive/payload-plugin-workflows";
-import { sqliteAdapter } from "@payloadcms/db-sqlite";
 import { buildConfig, getPayload } from "payload";
 import type { Config, Payload } from "payload";
+
+import { createTestDatabase } from "../../lib/database/resolveAdapter";
 
 /** The editorial review in the short form (plain stage `actions`), with a role pool for the inbox. */
 export const review = defineWorkflow({
@@ -221,10 +222,14 @@ export type WorkflowsTestPayload = {
   cleanup: () => Promise<void>;
 };
 
+/** True when the suite runs on Postgres (`DB_ADAPTER=postgres`), the only adapter here with concurrent writers. */
+export const ON_POSTGRES = process.env.DB_ADAPTER === "postgres";
+
 /**
- * A headless Payload on a throwaway SQLite file, with transactions ON so the outbox (state change +
- * effect job in one transaction) runs for real. One boot per spec file (see the translator's
- * `bootTestPayload` for why).
+ * A headless Payload with transactions ON so the outbox (state change + effect job in one
+ * transaction) runs for real. One boot per spec file (see the translator's `bootTestPayload` for
+ * why). The database follows `DB_ADAPTER` (`createTestDatabase`): a throwaway SQLite file by default,
+ * a fresh schema in `POSTGRES_TEST_URL` with `DB_ADAPTER=postgres`, dropped by `cleanup`.
  */
 export async function bootWorkflowsPayload(
   options: {
@@ -236,6 +241,9 @@ export async function bootWorkflowsPayload(
   } = {}
 ): Promise<WorkflowsTestPayload> {
   const dir = mkdtempSync(join(tmpdir(), "workflows-int-"));
+  const { db, drop } = createTestDatabase(join(dir, "test.db"), {
+    transactions: options.transactions !== false,
+  });
   const notified: string[] = [];
   const bypassSeen: boolean[] = [];
   const notifyAuthor: EffectHandler = ({ instance }) => {
@@ -244,10 +252,7 @@ export async function bootWorkflowsPayload(
 
   const config = await buildConfig({
     secret: "integration-test-secret",
-    db: sqliteAdapter({
-      client: { url: `file:${join(dir, "test.db")}` },
-      ...(options.transactions === false ? {} : { transactionOptions: {} }),
-    }),
+    db,
     telemetry: false,
     ...(options.jobs ? { jobs: options.jobs } : {}),
     typescript: { autoGenerate: false },
@@ -300,6 +305,12 @@ export async function bootWorkflowsPayload(
   const payload = await getPayload({ config });
 
   const cleanup = async () => {
+    try {
+      await drop(payload);
+    } catch (error) {
+      // A leaked schema is invisible until the server is full of them: say so.
+      console.error("bootWorkflowsPayload: could not drop the test database", error);
+    }
     try {
       await payload.db.destroy?.();
     } catch {

@@ -117,6 +117,19 @@ cause — all five then pass. Tracked in
 [#124](https://github.com/focusreactive/payload-plugins/issues/124); the suite reports it rather than
 working around it.
 
+## Run the workflows integration suite on Postgres
+
+```bash
+DB_ADAPTER=postgres npx vitest run -c vitest.integration.config.ts src/integration/workflows
+```
+
+`bootWorkflowsPayload` takes its database from the same `createTestDatabase()` (a schema per boot in
+`POSTGRES_TEST_URL`, dropped by `cleanup()`), asking for transactions on, which SQLite needs spelled out.
+Point `POSTGRES_TEST_URL` elsewhere to use a server other than the Compose one.
+`concurrency.int.test.ts` runs only on Postgres and is skipped on SQLite, which serialises every
+writer: it races fires, starts and a fire against a save, 20 rounds each, and prints what it saw
+(`[concurrency] …` lines: outcomes, and the writes the database itself refused).
+
 ## Running the full app on a non-default DB
 
 ```bash
