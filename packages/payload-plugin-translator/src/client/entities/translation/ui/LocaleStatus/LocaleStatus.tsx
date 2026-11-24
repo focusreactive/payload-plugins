@@ -1,6 +1,6 @@
 "use client";
 
-import type { LocaleCode } from "../../../../../types/wire/primitives.js";
+import type { IsoDateTime, LocaleCode } from "../../../../../types/wire/primitives.js";
 import { clockTime } from "../../../../shared/lib/time/clockTime.js";
 import { timeAgo } from "../../../../shared/lib/time/timeAgo.js";
 import ColorIndicator from "../../../../shared/ui/ColorIndicator/index.js";
@@ -18,6 +18,16 @@ type LocaleStatusProps = {
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
 const NO_NEWS_AFTER_MS = 5 * 60 * 1000;
+
+const hasGoneQuiet = (queuedAt: IsoDateTime, now: Date): boolean =>
+  now.getTime() - new Date(queuedAt).getTime() >= NO_NEWS_AFTER_MS;
+
+const NoNews = ({ since }: { since: IsoDateTime }) => (
+  <span className={`${styles.status} ${styles.warning}`}>
+    <ColorIndicator $color="amber" />
+    No news since {clockTime(since)}
+  </span>
+);
 
 export const WRITTEN_BY_HAND_WARNING = "Text with no record of a run. Translating replaces it.";
 
@@ -66,29 +76,23 @@ export function LocaleStatus({ row, labelOf, now }: LocaleStatusProps) {
        * can tell a slow translation from a dead one. Past the window the panel stops claiming
        * work and leaves the editor the cancel beside it.
        */
-      const openFor = now.getTime() - new Date(row.startedAt).getTime();
-      if (openFor >= NO_NEWS_AFTER_MS) {
-        return (
-          <span className={`${styles.status} ${styles.warning}`}>
-            <ColorIndicator $color="amber" />
-            No news since {clockTime(row.startedAt)}
-          </span>
-        );
-      }
+      if (hasGoneQuiet(row.queuedAt, now)) return <NoNews since={row.queuedAt} />;
       return (
         <span className={styles.status}>
           <ColorIndicator $color="blue" $animated />
-          Translating <span className={styles.when}>started {timeAgo(row.startedAt, now)}</span>
+          Translating <span className={styles.when}>queued {timeAgo(row.queuedAt, now)}</span>
         </span>
       );
     }
-    case "queued":
+    case "queued": {
+      if (hasGoneQuiet(row.queuedAt, now)) return <NoNews since={row.queuedAt} />;
       return (
         <span className={styles.status}>
           <ColorIndicator $color="gray" />
           Queued
         </span>
       );
+    }
     case "failed":
       return (
         <span className={`${styles.status} ${styles.error}`}>

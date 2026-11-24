@@ -10,10 +10,10 @@ const A_MINUTE = 60_000;
 const minutesAfterStart = (minutes: number) =>
   new Date(new Date(STARTED).getTime() + minutes * A_MINUTE);
 
-const sentenceAt = (now: Date): string => {
+const sentenceAt = (now: Date, kind: "translating" | "queued" = "translating"): string => {
   const { container } = render(
     <LocaleStatus
-      row={{ kind: "translating", startedAt: STARTED, locales: ["de"] }}
+      row={{ kind, queuedAt: STARTED, locales: ["de"] }}
       labelOf={(locale) => locale}
       now={now}
     />
@@ -37,5 +37,23 @@ describe("a locale whose run is still open", () => {
 
     expect(sentence).toMatch(/No news since \d{1,2}:\d{2}/u);
     expect(sentence).not.toContain("Translating");
+  });
+});
+
+/*
+ * A run whose work disappeared before anything picked it up never reaches `translating`, so the
+ * window added for a run in flight never covered it. It is also the likelier of the two: the work
+ * is unclaimed for longest while it is still waiting.
+ */
+describe("a locale whose run never started", () => {
+  it("reads as queued while the run is young", () => {
+    expect(sentenceAt(minutesAfterStart(2), "queued")).toContain("Queued");
+  });
+
+  it("says there has been no news once it outlives the window", () => {
+    const sentence = sentenceAt(minutesAfterStart(6), "queued");
+
+    expect(sentence).toMatch(/No news since \d{1,2}:\d{2}/u);
+    expect(sentence).not.toContain("Queued");
   });
 });
