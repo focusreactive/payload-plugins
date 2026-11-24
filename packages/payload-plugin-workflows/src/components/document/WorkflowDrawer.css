@@ -89,6 +89,7 @@
 .workflows-drawer__main > .workflows-tasks,
 .workflows-drawer__main > .workflows-choices,
 .workflows-drawer__main > .workflows-again,
+.workflows-drawer__main > .workflows-form,
 .workflows-drawer__main > .workflows-loading {
   width: 100%;
 }
@@ -104,6 +105,22 @@
 
 .workflows-drawer .banner {
   margin-bottom: 0;
+}
+
+.workflows-banner__lead {
+  font-weight: 600;
+}
+
+/* Why the run is back here: who sent it, then each param on its own line. */
+.workflows-because {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--base) / 4);
+}
+
+.workflows-because__detail {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }
 
 .workflows-banner__row {
@@ -242,6 +259,16 @@
   margin: 0;
 }
 
+/* Focus lands here after an action (see `useFocusAfter`): a ring for the keyboard only. */
+.workflows-turn__title:focus {
+  outline: none;
+}
+
+.workflows-turn__title:focus-visible {
+  outline: var(--accessibility-outline);
+  outline-offset: var(--accessibility-outline-offset);
+}
+
 .workflows-turn__body {
   color: var(--theme-elevation-800);
 }
@@ -265,6 +292,13 @@
 .workflows-drawer .btn:focus-visible {
   outline: var(--accessibility-outline);
   outline-offset: var(--accessibility-outline-offset);
+}
+
+/* Payload paints a focused button in its hover colour, so a clicked primary button looks greyed
+   out. A pointer focus keeps the resting colour; keyboard focus keeps the ring above. */
+.workflows-drawer .btn:focus:not(:focus-visible):not(:hover):not(.btn--disabled) {
+  background-color: var(--bg-color);
+  color: var(--color);
 }
 
 /* Parallel tasks of one stage: rows split by Payload's divider, not boxes. */
@@ -489,6 +523,13 @@
   color: var(--theme-elevation-800);
 }
 
+.workflows-history__marker[data-kind="agent"] {
+  background: var(--theme-elevation-100);
+  border-color: transparent;
+  color: var(--theme-elevation-800);
+  font-weight: 600;
+}
+
 .workflows-history__marker {
   padding: 0 4px;
   border: 1px solid var(--theme-elevation-150);
@@ -581,7 +622,45 @@
   color: var(--theme-elevation-500);
 }
 
-/* ---- Param form (in a nested drawer) ------------------------------------------------------------ */
+/* ---- An action's params: a compact form in place of the buttons ------------------------------ */
+
+.workflows-form {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--base) / 2);
+  padding-top: var(--base);
+  border-top: 1px solid var(--theme-elevation-100);
+}
+
+.workflows-form__title {
+  margin: 0;
+}
+
+/* ---- Stop confirmation: Payload's modal, with a destructive confirm and an optional reason ---- */
+
+.workflows-stop .workflows-stop__reason {
+  margin-top: var(--base);
+  text-align: start;
+}
+
+.workflows-stop .workflows-stop__reason .field-type {
+  margin-bottom: 0;
+}
+
+.workflows-stop #confirm-action {
+  --bg-color: var(--theme-error-500);
+  --color: var(--theme-elevation-0);
+  --hover-bg: var(--theme-error-600);
+  --hover-color: var(--theme-elevation-0);
+}
+
+/* ---- Status pills ------------------------------------------------------------------------------ */
+
+.workflows-pill--muted.pill {
+  color: var(--theme-elevation-500);
+}
+
+/* ---- Param form ------------------------------------------------------------------------------- */
 
 .workflows-params {
   display: flex;

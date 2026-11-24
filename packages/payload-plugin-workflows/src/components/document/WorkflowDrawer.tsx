@@ -6,14 +6,12 @@ import {
   Banner,
   Button,
   ConfirmationModal,
-  Drawer,
   Gutter,
   Popup,
   PopupList,
   ShimmerEffect,
+  TextareaInput,
   XIcon,
-  formatDrawerSlug,
-  useEditDepth,
   useModal,
 } from "@payloadcms/ui";
 import { useId, useState } from "react";
@@ -25,9 +23,9 @@ import type { People } from "../shared/format.js";
 import { runsOf } from "../shared/indicator.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
 import { HistoryList } from "./HistoryList.js";
-import { ParamForm } from "./ParamForm.js";
 import { RunFacts } from "./RunFacts.js";
 import { RunMain, StartAgain } from "./RunMain.js";
+import type { PendingAction } from "./RunMain.js";
 import { StageStepper } from "./StageStepper.js";
 import type { useWorkflowState } from "./useWorkflowState.js";
 
@@ -50,7 +48,7 @@ interface MenuItem {
 
 /**
  * The drawer's header, as Payload's document drawer draws it: one title, a divider under it, the
- * close button, and the rare actions (stop, start another) in a "…" menu beside it.
+ * close button, and the rare actions (stop, start another) in a "⋮" menu beside it.
  */
 const Header = ({
   title,
@@ -229,13 +227,10 @@ export const WorkflowDrawerBody = ({
 }: Props) => {
   const { t } = useWorkflowsT();
   const { openModal, closeModal } = useModal();
-  const depth = useEditDepth();
   const idPrefix = useId();
   const [selected, setSelected] = useState<string | undefined>(undefined);
-  const [pending, setPending] = useState<{ activity: ViewActivity; action: ViewAction } | null>(
-    null
-  );
-  const paramsSlug = formatDrawerSlug({ slug: "workflow-params", depth });
+  const [pending, setPending] = useState<PendingAction | null>(null);
+  const [reason, setReason] = useState("");
   const abortSlug = "workflow-abort";
   const close = () => closeModal(drawerSlug);
 
@@ -288,7 +283,14 @@ export const WorkflowDrawerBody = ({
       }
     }
     if (view.canAbort) {
-      menu.push({ key: "abort", label: t("abort"), onClick: () => openModal(abortSlug) });
+      menu.push({
+        key: "abort",
+        label: t("abort"),
+        onClick: () => {
+          setReason("");
+          openModal(abortSlug);
+        },
+      });
     }
   }
 
@@ -307,7 +309,6 @@ export const WorkflowDrawerBody = ({
     }
     if (action.params.length > 0) {
       setPending({ activity, action });
-      openModal(paramsSlug);
       return;
     }
     void fire(view, activity, action);
@@ -337,7 +338,21 @@ export const WorkflowDrawerBody = ({
           {error}
         </Banner>
       ) : null}
-      <RunMain busy={busy} idPrefix={idPrefix} onAction={act} people={people} view={view} />
+      <RunMain
+        busy={busy}
+        idPrefix={idPrefix}
+        onAction={act}
+        onCancelParams={() => setPending(null)}
+        onSubmitParams={async (chosen, params) => {
+          // A refused action keeps its form, so what was typed is not lost.
+          if (await fire(view, chosen.activity, chosen.action, params)) {
+            setPending(null);
+          }
+        }}
+        pending={pending}
+        people={people}
+        view={view}
+      />
       {again ? (
         <StartAgain busy={busy} onStart={() => void start(again)} title={again.title} />
       ) : null}
@@ -360,33 +375,32 @@ export const WorkflowDrawerBody = ({
       />
       {view?.canAbort ? (
         <ConfirmationModal
-          body={t("abortBody", { stage: view.stage.title })}
+          body={
+            <>
+              <p>{t("abortBody", { stage: view.stage.title })}</p>
+              <div className="workflows-stop__reason">
+                <TextareaInput
+                  description={t("abortReasonHint")}
+                  label={t("abortReason")}
+                  onChange={(event) => setReason(event.target.value)}
+                  path="workflow-abort-reason"
+                  rows={3}
+                  value={reason}
+                />
+              </div>
+            </>
+          }
           cancelLabel={t("cancel")}
+          className="workflows-stop"
           confirmingLabel={t("aborting")}
           confirmLabel={t("abortConfirm")}
           heading={t("abortHeading", { title: view.title })}
           modalSlug={abortSlug}
-          onConfirm={() => abort(view)}
+          onConfirm={async () => {
+            await abort(view, reason.trim() || undefined);
+          }}
         />
       ) : null}
-      <Drawer slug={paramsSlug} title={pending?.action.title ?? ""}>
-        {pending && view ? (
-          <ParamForm
-            defs={pending.action.params}
-            key={`${pending.activity.name}/${pending.action.name}`}
-            onCancel={() => {
-              closeModal(paramsSlug);
-              setPending(null);
-            }}
-            onSubmit={(params) => {
-              closeModal(paramsSlug);
-              setPending(null);
-              void fire(view, pending.activity, pending.action, params);
-            }}
-            submitLabel={pending.action.title}
-          />
-        ) : null}
-      </Drawer>
     </div>
   );
 };

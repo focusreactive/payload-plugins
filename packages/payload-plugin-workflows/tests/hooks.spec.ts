@@ -66,7 +66,7 @@ describe("publish guard", () => {
     // restoring a version), the document's own status decides.
     expect(await save(pages, { title: "x" }, { id: 7, _status: "published" })).toMatchObject({
       status: 403,
-      message: "Publishing is held until review is approved",
+      message: "Publishing is on hold. Publishing is held until review is approved",
     });
     expect(await save(pages, { title: "x" }, { id: 7, _status: "draft" })).toBeNull();
     expect(

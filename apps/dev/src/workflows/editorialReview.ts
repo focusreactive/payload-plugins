@@ -1,10 +1,14 @@
 import { defineWorkflow } from "@focus-reactive/payload-plugin-workflows";
-import type { EffectHandler } from "@focus-reactive/payload-plugin-workflows";
+import type { CallerCondition, EffectHandler } from "@focus-reactive/payload-plugin-workflows";
 
 /**
- * The README's editorial review on `pages`. Dev users have no roles, so review uses the claim
- * pattern: anyone may take the review, after which only the reviewer may decide.
+ * The README's editorial review on `pages`. Whoever starts it is the author and owns the drafting;
+ * dev users have no roles, so review uses the claim pattern: anyone but the author may take the
+ * review, after which only the reviewer may decide.
  */
+/** An author never reviews their own work. */
+const notAuthor: CallerCondition = ({ actor, fields }) => actor.id !== fields.author;
+
 export const editorialReview = defineWorkflow({
   name: "editorial-review",
   title: "Editorial review",
@@ -12,6 +16,7 @@ export const editorialReview = defineWorkflow({
   collections: ["pages"],
   initialStage: "drafting",
   fields: [
+    { name: "author", type: "user", title: "Author", initialValue: ({ actor }) => actor.id },
     { name: "reviewer", type: "user", title: "Reviewer" },
     { name: "decision", type: "string" },
     { name: "reason", type: "text" },
@@ -20,6 +25,7 @@ export const editorialReview = defineWorkflow({
     {
       name: "drafting",
       title: "Drafting",
+      assignee: "author",
       actions: [{ name: "submit", title: "Submit for review", status: "done" }],
       transitions: [{ name: "to-review", to: "review" }],
     },
@@ -29,7 +35,7 @@ export const editorialReview = defineWorkflow({
       guards: [
         {
           name: "hold-publish",
-          title: "Publishing is held until review is approved",
+          title: "A reviewer must approve this page first.",
           operations: ["publish"],
         },
       ],
@@ -39,13 +45,14 @@ export const editorialReview = defineWorkflow({
         {
           name: "claim",
           title: "Take this review",
-          filter: ({ fields }) => !fields.reviewer,
+          filter: ({ actor, fields }) => !fields.reviewer && actor.id !== fields.author,
           set: ({ actor }) => ({ reviewer: actor.id }),
         },
         {
           name: "approve",
           title: "Approve",
           status: "done",
+          filter: notAuthor,
           set: { decision: "approved" },
           effects: ["notify-author"],
         },
@@ -53,6 +60,7 @@ export const editorialReview = defineWorkflow({
           name: "reject",
           title: "Request changes",
           status: "done",
+          filter: notAuthor,
           params: [{ name: "reason", type: "text", title: "Reason", required: true }],
           set: ({ params }) => ({ decision: "rejected", reason: params.reason }),
         },

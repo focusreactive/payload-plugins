@@ -5,6 +5,8 @@ import {
   CASCADE_LIMIT,
   abort,
   fire,
+  holdMessage,
+  mayAbort,
   patchFields,
   settle,
   start,
@@ -946,6 +948,41 @@ describe("start", () => {
     ).toBe("7");
   });
 
+  it("an initialValue function seeds from who starts it and the document, type-checked", () => {
+    const owned: WorkflowDefinition = {
+      ...editorialReview,
+      fields: [
+        { name: "author", type: "user", initialValue: ({ actor }) => actor.id },
+        { name: "headline", type: "string", initialValue: ({ doc }) => doc?.title },
+      ],
+    };
+    const ann = { id: "u-ann", collection: "users", via: "admin" } as const;
+    expect(start(owned, { actor: ann }, env({ doc: { title: "Hi" } })).state.fields).toEqual({
+      author: "u-ann",
+      headline: "Hi",
+    });
+    // Started by the system (auto-start): no user, so the field stays unset.
+    expect(start(owned, { actor: { system: true } }, env()).state.fields).toEqual({});
+    const wrong: WorkflowDefinition = {
+      ...editorialReview,
+      fields: [{ name: "author", type: "user", initialValue: () => ({ not: "a user" }) }],
+    };
+    expect(codeOf(() => start(wrong, { actor: ann }, env()))).toBe("invalid-patch");
+    const throws: WorkflowDefinition = {
+      ...editorialReview,
+      fields: [
+        {
+          name: "author",
+          type: "user",
+          initialValue: () => {
+            throw new Error("boom");
+          },
+        },
+      ],
+    };
+    expect(codeOf(() => start(throws, { actor: ann }, env()))).toBe("condition-error");
+  });
+
   it("records who started it", () => {
     const { state } = start(
       editorialReview,
@@ -1242,5 +1279,42 @@ describe("why an action is not allowed (reasonCode)", () => {
       approve: "assignment",
       reject: "assignment",
     });
+  });
+});
+
+describe("mayAbort: stopping is not a way around a hold", () => {
+  const inReview = () => {
+    const sim = createWorkflowSimulator(editorialReview);
+    sim.fire("submit", { user: author.user });
+    sim.fire("claim", editor);
+    return sim.state;
+  };
+
+  it("while a guard holds, only someone who may act in the stage", () => {
+    const state = inReview();
+    expect(mayAbort(editorialReview, state, caller(editor.user, editor.roles), env())).toBe(true);
+    expect(mayAbort(editorialReview, state, caller(author.user), env())).toBe(false);
+    // Another editor: the review is taken, so they may not act either.
+    expect(mayAbort(editorialReview, state, caller("u-other", ["editor"]), env())).toBe(false);
+  });
+
+  it("anyone when no guard holds or the run is stuck; nobody once it is over", () => {
+    const drafting = createWorkflowSimulator(editorialReview).state;
+    expect(mayAbort(editorialReview, drafting, caller("u-anyone"), env())).toBe(true);
+    const stuck = { ...inReview(), stage: "gone" };
+    expect(mayAbort(editorialReview, stuck, caller("u-anyone"), env())).toBe(true);
+    const over = abort(inReview(), { actor: { system: true } }, env()).state;
+    expect(mayAbort(editorialReview, over, caller(editor.user, editor.roles), env())).toBe(false);
+  });
+});
+
+describe("holdMessage", () => {
+  it("leads with what is on hold, then the guard's title", () => {
+    expect(holdMessage(["publish"], "A reviewer must approve this page first.")).toBe(
+      "Publishing is on hold. A reviewer must approve this page first."
+    );
+    expect(holdMessage(["publish", "update", "delete"])).toBe(
+      "Publishing, saving and deleting are on hold until this stage is done."
+    );
   });
 });

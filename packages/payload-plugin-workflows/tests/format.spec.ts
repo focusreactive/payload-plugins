@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   actionToast,
   formatRelative,
+  holdLead,
   humanize,
   operationsText,
   readParams,
@@ -105,5 +106,12 @@ describe("action toast", () => {
       "Take this review — done"
     );
     expect(actionToast("Approve", view("review"), undefined, t)).toBe("Approve — done");
+  });
+});
+
+describe("holdLead", () => {
+  it("says what is on hold, in plain words", () => {
+    expect(holdLead(["publish"], t)).toBe("Publishing is on hold.");
+    expect(holdLead(["publish", "update"], t)).toBe("Publishing and saving are on hold.");
   });
 });

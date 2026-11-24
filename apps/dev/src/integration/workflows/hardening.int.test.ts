@@ -318,7 +318,7 @@ describe("guards", () => {
     const plain = await failure(update(page.id, { title: "Live (sneaked)" }));
     expect(plain).toMatchObject({
       status: 403,
-      message: "Publishing is held until review is approved",
+      message: "Publishing is on hold. Publishing is held until review is approved",
     });
     const published = await payload.findByID({
       collection: "pages",
@@ -351,7 +351,7 @@ describe("guards", () => {
     const held = await createPage("Auto");
     expect(await failure(update(held.id, { deletedAt: new Date().toISOString() }))).toMatchObject({
       status: 403,
-      message: "Cannot delete while open",
+      message: "Deleting is on hold. Cannot delete while open",
     });
     expect((await runsOf(held.id, "auto-start"))[0]?.status).toBe("active");
 
@@ -398,7 +398,7 @@ describe("guards", () => {
     });
     await expect(
       payload.delete({ collection: "pages", id: kept.id, overrideAccess: true })
-    ).rejects.toMatchObject({ status: 403, message: "Locked" });
+    ).rejects.toMatchObject({ status: 403, message: "Deleting is on hold. Locked" });
   });
 
   it("the bypass set by one effect does not leak into the next job", async () => {

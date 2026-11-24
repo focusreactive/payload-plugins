@@ -15,7 +15,7 @@ import type {
 import { APIError } from "payload";
 
 import { WORKFLOW_BYPASS } from "./constants.js";
-import { holdingGuards } from "./engine/engine.js";
+import { holdMessage, holdingGuards } from "./engine/engine.js";
 import {
   abortRun,
   canRunInline,
@@ -59,7 +59,8 @@ const holdingOn = async (
   return holding;
 };
 
-const refusal = (guard: GuardDef) => new APIError(guard.title ?? guard.name, 403, null, true);
+const refusal = (guard: GuardDef, operation: GuardOperation) =>
+  new APIError(holdMessage([operation], guard.title), 403, null, true);
 
 const bypassed = (req: PayloadRequest) => req.context?.[WORKFLOW_BYPASS] === true;
 
@@ -99,11 +100,16 @@ const guardChange: CollectionBeforeChangeHook = async ({
   const publishing = !trashing && isPublishing(collection, incoming, original);
   const merged = { ...originalDoc, ...data } as Record<string, unknown>;
   for (const guard of await holdingOn(req, collection.slug, originalDoc.id, merged)) {
-    const refused = trashing
-      ? holds(guard, "delete")
-      : holds(guard, "update") || (publishing && holds(guard, "publish"));
+    let refused: GuardOperation | undefined;
+    if (trashing) {
+      refused = holds(guard, "delete") ? "delete" : undefined;
+    } else if (publishing && holds(guard, "publish")) {
+      refused = "publish";
+    } else if (holds(guard, "update")) {
+      refused = "update";
+    }
     if (refused) {
-      throw refusal(guard);
+      throw refusal(guard, refused);
     }
   }
   return data;
@@ -127,7 +133,7 @@ const guardDelete: CollectionBeforeDeleteHook = async ({ collection, id, req }) 
     .catch(() => null)) as Record<string, unknown> | null;
   for (const guard of await holdingOn(req, collection.slug, id, doc)) {
     if (holds(guard, "delete")) {
-      throw refusal(guard);
+      throw refusal(guard, "delete");
     }
   }
 };

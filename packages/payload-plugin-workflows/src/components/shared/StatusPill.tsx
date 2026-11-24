@@ -9,7 +9,8 @@ import { useWorkflowsT } from "./useWorkflowsT.js";
 type Status = ActivityStatus | InstanceStatus | "stuck";
 
 const STYLE: Record<Status, NonNullable<ComponentProps<typeof Pill>["pillStyle"]>> = {
-  active: "warning",
+  // A task under way is neutral, like a run in progress; attention is for "your turn" only.
+  active: "light",
   done: "success",
   skipped: "light-gray",
   failed: "error",

@@ -61,6 +61,22 @@ export const operationsText = (operations: string[], t: T): string => {
   return operations.map((operation) => words[operation] ?? operation).join(", ");
 };
 
+/**
+ * What a hold says first, in plain words: "Publishing is on hold." The guard's own title follows
+ * it, as in the server's refusal of the write.
+ */
+export const holdLead = (operations: string[], t: T): string => {
+  const words = operationsText(operations, t).split(", ");
+  const listed =
+    words.length > 1
+      ? t("listAnd", { first: words.slice(0, -1).join(", "), last: words.at(-1) })
+      : (words[0] ?? "");
+  return t("holdLead", {
+    count: words.length,
+    operations: listed.charAt(0).toUpperCase() + listed.slice(1),
+  });
+};
+
 // ---- Param form ------------------------------------------------------------------------------
 
 /** What the form holds per param before it is sent: text for inputs, a flag for a checkbox. */

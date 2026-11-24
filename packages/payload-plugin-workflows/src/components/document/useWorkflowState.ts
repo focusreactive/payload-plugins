@@ -17,7 +17,8 @@ const find = (next: WorkflowState | null, view: InstanceView) =>
 /**
  * The document's workflow state as the server reports it. Refetches when `refreshKey` changes
  * (the document was saved) and after every operation, whether it worked or not: no optimistic UI.
- * Every operation ends in a toast: what happened (from the refetched state), or the server's error.
+ * Every operation ends in a toast: what happened (from the refetched state), or the server's error,
+ * and resolves to whether it worked.
  */
 export const useWorkflowState = (collection: string, id: string, refreshKey: unknown) => {
   const api = useWorkflowsApi();
@@ -60,7 +61,7 @@ export const useWorkflowState = (collection: string, id: string, refreshKey: unk
       path: string,
       body: Record<string, unknown>,
       done: (next: WorkflowState | null) => string
-    ) => {
+    ): Promise<boolean> => {
       setBusy(true);
       let failed = false;
       try {
@@ -74,6 +75,7 @@ export const useWorkflowState = (collection: string, id: string, refreshKey: unk
         toast.success(done(next));
       }
       setBusy(false);
+      return !failed;
     },
     [api, load, t]
   );
@@ -106,7 +108,9 @@ export const useWorkflowState = (collection: string, id: string, refreshKey: unk
         },
         (next) => actionToast(action.title, view, find(next, view), t)
       ),
-    abort: (view: InstanceView) =>
-      run(ENDPOINTS.abort, { instanceId: view.id }, () => t("toastAborted", { title: view.title })),
+    abort: (view: InstanceView, reason?: string) =>
+      run(ENDPOINTS.abort, { instanceId: view.id, ...(reason ? { reason } : {}) }, () =>
+        t("toastAborted", { title: view.title })
+      ),
   };
 };

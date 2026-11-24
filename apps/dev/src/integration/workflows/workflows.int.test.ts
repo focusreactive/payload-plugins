@@ -118,7 +118,9 @@ describe("workflows against a real Payload", () => {
         (error: { status?: number; message?: string }) => error
       );
     expect(blocked?.status).toBe(403);
-    expect(blocked?.message).toBe("Publishing is held until review is approved");
+    expect(blocked?.message).toBe(
+      "Publishing is on hold. Publishing is held until review is approved"
+    );
     // A draft save is not a publish and goes through.
     await payload.update({
       collection: "pages",
@@ -382,7 +384,7 @@ describe("workflows against a real Payload", () => {
       payload.delete({ collection: "pages", id: page.id, overrideAccess: true })
     ).rejects.toMatchObject({
       status: 403,
-      message: "Cannot delete while open",
+      message: "Deleting is on hold. Cannot delete while open",
     });
     const tick = await tickWorkflows(payload);
     expect(tick.checked).toBeGreaterThan(0);

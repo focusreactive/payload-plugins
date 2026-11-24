@@ -1,17 +1,19 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  PILL_STYLE,
   indicatorOf,
   primaryActionOf,
   runsOf,
   shownActions,
+  summaryToneOf,
   toneOf,
   turnOf,
   waitsOn,
 } from "../src/components/shared/indicator.js";
 import { createWorkflowSimulator } from "../src/engine/simulator.js";
 import type { WorkflowState } from "../src/server/queries.js";
-import type { InstanceView } from "../src/types.js";
+import type { InstanceView, WorkflowDefinition } from "../src/types.js";
 import { author, editor, editorialReview } from "./fixtures.js";
 
 const available = [{ name: "editorial-review", title: "Editorial review", stages: [] }];
@@ -30,10 +32,13 @@ const withId = (view: InstanceView, id: string): InstanceView => ({ ...view, id 
 describe("indicatorOf", () => {
   it("says nothing without a run or anything to start, and a neutral button with something to start", () => {
     expect(indicatorOf({ instances: [], available: [] }, "u1")).toEqual({ kind: "none" });
-    expect(indicatorOf({ instances: [], available }, "u1")).toEqual({ kind: "idle" });
+    expect(indicatorOf({ instances: [], available }, "u1")).toEqual({
+      kind: "idle",
+      tone: "neutral",
+    });
   });
 
-  it("keeps a finished run reachable, even with nothing to start", () => {
+  it("keeps a finished run reachable: completed reads as success, stopped as neutral", () => {
     const sim = inReview(editor.user);
     sim.fire("approve", editor);
     const finished = sim.view(editor);
@@ -41,6 +46,15 @@ describe("indicatorOf", () => {
     expect(indicatorOf({ instances: [finished], available: [] }, editor.user)).toEqual({
       kind: "idle",
       finished,
+      tone: "success",
+    });
+    const stopped = inReview();
+    stopped.abort();
+    const aborted = stopped.view(editor);
+    expect(indicatorOf({ instances: [aborted], available }, editor.user)).toEqual({
+      kind: "idle",
+      finished: aborted,
+      tone: "neutral",
     });
   });
 
@@ -49,37 +63,52 @@ describe("indicatorOf", () => {
     const state: WorkflowState = { instances: [sim.view({ user: "u1" })], available: [] };
     expect(indicatorOf(state, "u1")).toMatchObject({
       kind: "run",
-      tone: "anyone",
+      tone: "neutral",
       waitsOnMe: false,
       more: 0,
     });
   });
 
-  it("review waits on the reviewer; someone else sees the guard holding publish", () => {
+  it("review waits on the reviewer (attention); for anyone else it is in progress (neutral)", () => {
     const sim = inReview(editor.user);
-    expect(toneOf(sim.view(editor), editor.user)).toBe("you");
+    expect(toneOf(sim.view(editor), editor.user)).toBe("attention");
     const other = sim.view({ user: "u-author" });
     expect(waitsOn(other, "u-author")).toBe(false);
-    expect(toneOf(other, "u-author")).toBe("held");
+    expect(toneOf(other, "u-author")).toBe("neutral");
   });
 
   it("a role pool waits on a member who may act, not on someone outside it", () => {
     const sim = inReview();
-    expect(toneOf(sim.view(editor), editor.user)).toBe("you");
-    expect(toneOf(sim.view({ user: "u-author", roles: [] }), "u-author")).toBe("held");
+    expect(toneOf(sim.view(editor), editor.user)).toBe("attention");
+    expect(toneOf(sim.view({ user: "u-author", roles: [] }), "u-author")).toBe("neutral");
   });
 
-  it("waiting on someone else with no guard is neutral", () => {
-    const view = {
-      ...createWorkflowSimulator(editorialReview).view(),
-      waitingOn: { users: ["u2"], roles: [] },
-    };
-    expect(toneOf(view, "u1")).toBe("others");
-  });
-
-  it("a stuck run is a problem", () => {
+  it("completed is success, stopped is muted, stuck is an error", () => {
+    const done = inReview(editor.user);
+    done.fire("approve", editor);
+    expect(toneOf(done.view(editor), editor.user)).toBe("success");
+    const stopped = inReview();
+    stopped.abort();
+    expect(toneOf(stopped.view(editor), editor.user)).toBe("muted");
     const view: InstanceView = { ...inReview().view(editor), stuck: "unknown-stage" };
-    expect(toneOf(view, editor.user)).toBe("stuck");
+    expect(toneOf(view, editor.user)).toBe("error");
+  });
+
+  it("a list row has the same tone, from what the list reports", () => {
+    expect(summaryToneOf({ status: "active", waitsOnYou: true })).toBe("attention");
+    expect(summaryToneOf({ status: "active", waitsOnYou: false })).toBe("neutral");
+    expect(summaryToneOf({ status: "completed", waitsOnYou: false })).toBe("success");
+    expect(summaryToneOf({ status: "aborted", waitsOnYou: false })).toBe("muted");
+    expect(summaryToneOf({ status: "active", stuck: "unknown-stage", waitsOnYou: true })).toBe(
+      "error"
+    );
+    expect(PILL_STYLE).toEqual({
+      attention: "warning",
+      neutral: "light",
+      success: "success",
+      muted: "light-gray",
+      error: "error",
+    });
   });
 
   it("names the run waiting on the reader first, and counts the others", () => {
@@ -129,6 +158,35 @@ describe("turnOf, shownActions and primaryActionOf", () => {
       roles: [],
     });
     expect(names(theirs)).toEqual([]);
+  });
+
+  it("open to anyone but the reader: waiting on someone else; with no caller action, nobody", () => {
+    const def: WorkflowDefinition = {
+      name: "own-work",
+      collections: ["pages"],
+      initialStage: "review",
+      stages: [
+        {
+          name: "review",
+          actions: [
+            { name: "approve", status: "done", filter: ({ actor }) => actor.id !== "u-author" },
+          ],
+          transitions: [{ name: "done", to: "done" }],
+        },
+        { name: "done" },
+      ],
+    };
+    const sim = createWorkflowSimulator(def);
+    expect(turnOf(sim.view(author), author.user)).toEqual({ kind: "othersOpen" });
+    expect(turnOf(sim.view(editor), editor.user)).toEqual({ kind: "anyone" });
+    const waiting = createWorkflowSimulator({
+      ...def,
+      stages: [
+        { name: "review", transitions: [{ name: "later", to: "done", when: () => false }] },
+        { name: "done" },
+      ],
+    });
+    expect(turnOf(waiting.view(author), author.user)).toEqual({ kind: "nobody" });
   });
 
   it("finished and stuck workflows have no turn", () => {

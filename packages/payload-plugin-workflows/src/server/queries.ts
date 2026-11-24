@@ -114,6 +114,8 @@ export interface InstanceSummary {
   stage: { name: string; title: string };
   subject: { collection: string; id: string; title?: string };
   waitingOn: { users: string[]; roles: string[] };
+  /** It waits on the caller by name or by one of their roles (not merely open to anyone). */
+  waitsOnYou: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -196,7 +198,8 @@ const readableSubjects = async (
 };
 
 /**
- * The inbox: runs waiting on the caller (`mine`) or every run (`all`), newest change first. The
+ * The inbox: runs the caller can pick up (`mine`: waiting on them or one of their roles, then
+ * active runs open to anyone) or every run (`all`), newest change first. The
  * matching runs are read as summaries, those whose document the caller cannot read are dropped,
  * and then the page is cut, so `totalDocs` and `totalPages` count only what the caller can see.
  */
@@ -213,12 +216,21 @@ export const listWorkflowInstances = async (
   if (args.status) {
     and.push({ status: { equals: args.status } });
   }
+  const me = String(user.id);
+  const roles = settingsOf(payload).roles(user);
   if (args.scope === "mine") {
-    const roles = settingsOf(payload).roles(user);
     and.push({
       or: [
-        { assignedUsers: { in: [String(user.id)] } },
+        { assignedUsers: { in: [me] } },
         ...(roles.length > 0 ? [{ assignedRoles: { in: roles } }] : []),
+        // Open to anyone: an active run that waits on no user and no role.
+        {
+          and: [
+            { status: { equals: "active" } },
+            { assignedUsers: { exists: false } },
+            { assignedRoles: { exists: false } },
+          ],
+        },
       ],
     });
   }
@@ -230,7 +242,21 @@ export const listWorkflowInstances = async (
     select: SUMMARY_SELECT,
   });
   const readable = await readableSubjects(req, user, matching);
-  const visible = matching.filter((doc) => readable.has(keyOf(doc)));
+  const waitsOnYou = (doc: InstanceDoc) =>
+    (doc.assignedUsers ?? []).includes(me) ||
+    (doc.assignedRoles ?? []).some((role) => roles.includes(role));
+  const visible = matching.filter(
+    (doc) =>
+      readable.has(keyOf(doc)) &&
+      // A stuck run waits on nobody, but nobody can pick it up either.
+      (args.scope === "all" ||
+        waitsOnYou(doc) ||
+        findStage(definitionOrStandIn(payload, doc), doc.stage))
+  );
+  if (args.scope === "mine") {
+    // What waits on the caller specifically first, then what is open to anyone (stable sort).
+    visible.sort((a, b) => Number(waitsOnYou(b)) - Number(waitsOnYou(a)));
+  }
   const docs = visible.slice((page - 1) * limit, page * limit).map((doc): InstanceSummary => {
     const def = definitionOrStandIn(payload, doc);
     const stage = findStage(def, doc.stage);
@@ -248,6 +274,7 @@ export const listWorkflowInstances = async (
         ...(title === undefined ? {} : { title }),
       },
       waitingOn: { users: doc.assignedUsers ?? [], roles: doc.assignedRoles ?? [] },
+      waitsOnYou: waitsOnYou(doc),
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
     };

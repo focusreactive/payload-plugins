@@ -5,17 +5,28 @@ import type { WorkflowState } from "../../server/queries.js";
 import type { InstanceView, ViewAction, ViewActivity } from "../../types.js";
 
 /**
- * The run's state from the reader's side: it waits on them, a guard holds the document, it waits
- * on someone else, anyone may act, or it is stuck.
+ * One status language for runs, wherever they show (indicator, drawer, list, board): it waits on
+ * the reader (`attention`), it is under way or waits on others (`neutral`), it completed
+ * (`success`), it was stopped (`muted`), it is stuck (`error`).
  */
-export type IndicatorTone = "you" | "held" | "others" | "anyone" | "stuck";
+export type RunTone = "attention" | "neutral" | "success" | "muted" | "error";
+
+/** Each tone as Payload's `Pill` style. */
+export const PILL_STYLE: Record<RunTone, "warning" | "light" | "success" | "light-gray" | "error"> =
+  {
+    attention: "warning",
+    neutral: "light",
+    success: "success",
+    muted: "light-gray",
+    error: "error",
+  };
 
 export type Indicator =
   /** No run on the document and nothing the reader may start: no indicator at all. */
   | { kind: "none" }
   /** Nothing running; something to start, or a finished run to look back at. */
-  | { kind: "idle"; finished?: InstanceView }
-  | { kind: "run"; view: InstanceView; tone: IndicatorTone; waitsOnMe: boolean; more: number };
+  | { kind: "idle"; finished?: InstanceView; tone: RunTone }
+  | { kind: "run"; view: InstanceView; tone: RunTone; waitsOnMe: boolean; more: number };
 
 /**
  * Whether the run waits on `me`: they are assigned, or it waits on a role pool and they may take
@@ -39,17 +50,36 @@ export const waitsOn = (view: InstanceView, me: string | undefined): boolean => 
   );
 };
 
-export const toneOf = (view: InstanceView, me: string | undefined): IndicatorTone => {
+/** A run's tone for the reader. */
+export const toneOf = (view: InstanceView, me: string | undefined): RunTone => {
   if (view.stuck) {
-    return "stuck";
+    return "error";
   }
-  if (waitsOn(view, me)) {
-    return "you";
+  if (view.status === "completed") {
+    return "success";
   }
-  if (view.guards.length > 0) {
-    return "held";
+  if (view.status === "aborted") {
+    return "muted";
   }
-  return view.waitingOn.users.length > 0 || view.waitingOn.roles.length > 0 ? "others" : "anyone";
+  return waitsOn(view, me) ? "attention" : "neutral";
+};
+
+/** The same tone for a row of the workflows view, from what the list reports. */
+export const summaryToneOf = (run: {
+  status: InstanceView["status"];
+  stuck?: string;
+  waitsOnYou: boolean;
+}): RunTone => {
+  if (run.stuck) {
+    return "error";
+  }
+  if (run.status === "completed") {
+    return "success";
+  }
+  if (run.status === "aborted") {
+    return "muted";
+  }
+  return run.waitsOnYou ? "attention" : "neutral";
 };
 
 /**
@@ -86,7 +116,10 @@ export const indicatorOf = (state: WorkflowState, me: string | undefined): Indic
   if (!finished && state.available.length === 0) {
     return { kind: "none" };
   }
-  return finished ? { kind: "idle", finished } : { kind: "idle" };
+  // A completed run shows as completed; a stopped one, or none, as a plain "Workflow".
+  return finished?.status === "completed"
+    ? { kind: "idle", finished, tone: "success" }
+    : { kind: "idle", ...(finished ? { finished } : {}), tone: "neutral" };
 };
 
 /**
@@ -100,6 +133,8 @@ export type Turn =
   | { kind: "you"; roles: string[] }
   | { kind: "anyone" }
   | { kind: "others"; users: string[]; roles: string[] }
+  /** Open to anyone, but not to the reader (an action's `filter`, e.g. not their own work). */
+  | { kind: "othersOpen" }
   | { kind: "nobody" };
 
 export const turnOf = (view: InstanceView, me: string | undefined): Turn => {
@@ -117,10 +152,12 @@ export const turnOf = (view: InstanceView, me: string | undefined): Turn => {
   if (users.length > 0 || roles.length > 0) {
     return { kind: "others", users: [...users], roles: [...roles] };
   }
-  const canAct = view.activities.some(
-    (activity) => activity.status === "active" && activity.actions.some((action) => action.allowed)
-  );
-  return { kind: canAct ? "anyone" : "nobody" };
+  const open = view.activities.filter((activity) => activity.status === "active");
+  if (open.some((activity) => activity.actions.some((action) => action.allowed))) {
+    return { kind: "anyone" };
+  }
+  // People can act here, just not the reader; with no caller actions the engine moves on its own.
+  return { kind: open.some((activity) => activity.actions.length > 0) ? "othersOpen" : "nobody" };
 };
 
 /**

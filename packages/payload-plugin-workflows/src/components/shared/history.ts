@@ -1,6 +1,6 @@
 // How a run's history reads in the drawer: one row per step a person or an agent took, the
-// automatic steps it caused folded under it, purely automatic stretches as one row, rows grouped
-// by day. Pure (no React, no Payload), so it is unit-tested directly. The stored history is untouched.
+// automatic steps it caused folded under it, automatic stretches nobody caused as rows of their
+// own, rows grouped by day. Pure (no React, no Payload), so it is unit-tested directly. The stored history is untouched.
 
 import type { Actor, HistoryEntry, InstanceView } from "../../types.js";
 import { humanize, personName, titleIn } from "./format.js";
@@ -22,9 +22,6 @@ export const actorKind = (actor: Actor): ActorKind => {
 /** A step nobody chose: the engine's own (transitions, effects, completion) or an automatic action. */
 export const isAutomatic = (entry: HistoryEntry): boolean =>
   entry.actor.id === undefined || (entry.type === "action" && entry.auto);
-
-/** Automatic steps within this long of the step before them belong to the same row. */
-const FOLD_WINDOW_MS = 60_000;
 
 /** Rows shown before "Show older". */
 export const TIMELINE_VISIBLE = 8;
@@ -63,16 +60,17 @@ const summarize = (row: Draft): TimelineRow => {
 
 /**
  * Folds the history (oldest first, as stored) into rows, newest first. A step a person or agent
- * took starts a row; the automatic steps right after it (each within `FOLD_WINDOW_MS` of the one
- * before) join it. Automatic steps with no such step before them form their own row.
+ * took starts a row; the automatic steps it caused join it: those recorded by the same operation
+ * (same time) and its effects, with what their results moved. Automatic steps nobody caused (a
+ * document save, the clock) form an "Automated" row of their own.
  */
 export const timelineRows = (history: HistoryEntry[]): TimelineRow[] => {
   const rows: Draft[] = [];
-  let lastAt = Number.NEGATIVE_INFINITY;
+  let lastAt: string | undefined;
   history.forEach((entry, index) => {
-    const time = Date.parse(entry.at);
     const current = rows.at(-1);
-    if (isAutomatic(entry) && current && time - lastAt <= FOLD_WINDOW_MS) {
+    const caused = entry.at === lastAt || entry.type === "effect";
+    if (isAutomatic(entry) && current && caused) {
       current.steps.push(entry);
     } else if (isAutomatic(entry)) {
       rows.push({
@@ -93,7 +91,7 @@ export const timelineRows = (history: HistoryEntry[]): TimelineRow[] => {
         steps: [],
       });
     }
-    lastAt = time;
+    lastAt = entry.at;
   });
   return rows.map(summarize).reverse();
 };
@@ -173,14 +171,14 @@ export const stepSentence = (entry: HistoryEntry, titles: Titles, t: T): string 
   }
 };
 
-/** Who did the row's step, as its line names them: "You", "Ann via agent", "Automated". */
+/** Who did the row's step, as its line names them: "You", "Ann · AI agent", "Automated". */
 export const rowWho = (row: TimelineRow, people: People, t: T): string => {
   if (row.kind === "system" || row.actor.id === undefined) {
     return t("timelineAutomated");
   }
   // "You" starts the line; other names stay as written (an email is not capitalised).
   const name = row.actor.id === people.me ? t("actorYou") : personName(row.actor.id, people, t);
-  return row.kind === "agent" ? t("timelineViaAgent", { name }) : name;
+  return row.kind === "agent" ? t("timelineByAgent", { name }) : name;
 };
 
 /** What happened, after the dot: "Approve → moved to Approved → completed". */
@@ -209,10 +207,10 @@ export const rowWhat = (row: TimelineRow, titles: Titles, t: T): string => {
 };
 
 /** The row's inputs, kept visible under its line: an action's params, an abort's reason. */
-export const rowDetails = (row: TimelineRow, titles: Titles): string[] => {
+export const rowDetails = (row: TimelineRow, titles: Titles, t: T): string[] => {
   const entry = row.lead ?? row.steps[0];
   if (entry?.type === "aborted") {
-    return entry.reason ? [entry.reason] : [];
+    return entry.reason ? [`${t("historyReason")}: ${entry.reason}`] : [];
   }
   if (entry?.type !== "action") {
     return [];
@@ -248,4 +246,29 @@ export const lastStepOf = (view: InstanceView): { actor?: Actor; action?: string
     ...(action ? { action } : {}),
     ...(view.history.at(-1)?.at ? { at: view.history.at(-1)?.at } : {}),
   };
+};
+
+/**
+ * Why the run is where it is, when a person's step with params sent it there ("Request changes"
+ * with a reason): who, which action, and its params. From the history, for any workflow.
+ */
+export const enteredBecause = (
+  view: InstanceView,
+  t: T
+): { actor: Actor; action: string; details: string[] } | undefined => {
+  if (view.status !== "active") {
+    return undefined;
+  }
+  // The latest row that moved the run is the one that brought it into this stage.
+  const row = timelineRows(view.history).find((entry) => entry.movedTo !== undefined);
+  const lead = row?.lead;
+  if (!row || row.movedTo !== view.stage.name || lead?.type !== "action") {
+    return undefined;
+  }
+  const details = rowDetails(row, view.titles, t);
+  if (details.length === 0) {
+    return undefined;
+  }
+  const action = titleIn(view.titles, `${lead.stage}/${lead.activity}/${lead.action}`, lead.action);
+  return { actor: lead.actor, action, details };
 };

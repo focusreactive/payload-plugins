@@ -7,7 +7,17 @@ import type { CollectionSlug, Payload, PayloadRequest, TypedUser } from "payload
 import { createLocalReq } from "payload";
 
 import { JOBS_QUEUE, QUEUED_JOBS, RUNS_SLUG } from "../constants.js";
-import { SYSTEM, abort, fire, settle, start } from "../engine/engine.js";
+import {
+  SYSTEM,
+  abort,
+  findStage,
+  fire,
+  holdMessage,
+  holdingGuards,
+  mayAbort,
+  settle,
+  start,
+} from "../engine/engine.js";
 import { WorkflowError } from "../engine/errors.js";
 import { view } from "../engine/view.js";
 import type { WorkflowAccess, WorkflowAccessArgs, WorkflowsSettings } from "../plugin.js";
@@ -77,6 +87,35 @@ export const allowedBy = async (
   check
     ? (await check(args)) === true
     : args.user.collection === args.req.payload.config.admin?.user;
+
+/**
+ * May `user` stop this run? `access.abort` decides when the host set it. Otherwise a user of the
+ * admin user collection, and while a guard holds the document only one who may act in its stage
+ * (`mayAbort`): stopping is never a way around a hold.
+ */
+const mayStop = async (
+  req: PayloadRequest,
+  doc: InstanceDoc,
+  subject: Record<string, unknown> | null,
+  user: TypedUser
+): Promise<boolean> => {
+  const { payload } = req;
+  const def = definitionOrStandIn(payload, doc);
+  const check = settingsOf(payload).access.abort;
+  const args = { req, user, workflow: def, ...subjectOf(doc), doc: subject };
+  if (check) {
+    return allowedBy(check, args);
+  }
+  // A finished run is left to the engine, which refuses it as not active.
+  return (
+    (await allowedBy(undefined, args)) &&
+    (doc.status !== "active" ||
+      mayAbort(def, toState(doc), callerOf(payload, user, "api"), {
+        doc: subject,
+        now: new Date(),
+      }))
+  );
+};
 
 /** The request an operation runs in: the caller's, else a fresh local one. */
 export const requestFor = async (
@@ -211,16 +250,7 @@ export const presentRun = async (
   const caller = user ? callerOf(payload, user, "api") : SYSTEM_CALLER;
   const projected = view(def, toState(doc), caller, { doc: subject, now: new Date() });
   const title = titleOf(payload, doc.subjectCollection, subject);
-  const canAbort =
-    doc.status === "active" && user
-      ? await allowedBy(settingsOf(payload).access.abort, {
-          req,
-          user,
-          workflow: def,
-          ...subjectOf(doc),
-          doc: subject,
-        })
-      : false;
+  const canAbort = doc.status === "active" && user ? await mayStop(req, doc, subject, user) : false;
   return {
     ...projected,
     id: String(doc.id),
@@ -367,18 +397,19 @@ export const abortRun = async (
   const via = args.via ?? "api";
   const existing = await loadRun(req, args.instanceId);
   const subject = await loadSubject(req, subjectOf(existing), args.user);
-  if (args.user) {
-    const allowed = await allowedBy(settingsOf(payload).access.abort, {
-      req,
-      user: args.user,
-      // A run whose workflow was removed is checked against a stand-in, so it can still be aborted.
-      workflow: definitionOrStandIn(payload, existing),
-      ...subjectOf(existing),
-      doc: subject,
-    });
-    if (!allowed) {
-      throw new WorkflowError("not-allowed", "You are not allowed to abort this workflow.");
-    }
+  // A run whose workflow was removed is checked against a stand-in, so it can still be aborted.
+  if (args.user && !(await mayStop(req, existing, subject, args.user))) {
+    const def = definitionOrStandIn(payload, existing);
+    const [guard] = settingsOf(payload).access.abort
+      ? []
+      : holdingGuards(def, toState(existing), { doc: subject, now: new Date() });
+    const stage = findStage(def, existing.stage);
+    throw new WorkflowError(
+      "not-allowed",
+      guard && stage
+        ? `${holdMessage(guard.operations, guard.title)} Only someone who can act in “${stage.title ?? stage.name}” may stop the workflow now.`
+        : "You are not allowed to stop this workflow."
+    );
   }
   const actor = args.user ? callerOf(payload, args.user, via).actor : SYSTEM;
   const def = settingsOf(payload).workflows.find((entry) => entry.name === existing.workflow);

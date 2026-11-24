@@ -30,8 +30,10 @@ const record = (
   set?: Patch
 ) =>
   mutateRun(req, def, input.instanceId, (state) => {
+    // One time for the outcome and what it moves, so the history reads them as one step.
+    const now = new Date();
     const entry: HistoryEntry = {
-      at: new Date().toISOString(),
+      at: now.toISOString(),
       actor: { system: true },
       type: "effect",
       effect: input.effect,
@@ -48,7 +50,7 @@ const record = (
       );
       return { state: recorded, effects: [] };
     }
-    return patchFields(def, recorded, set, { doc: subject, now: new Date() });
+    return patchFields(def, recorded, set, { doc: subject, now });
   });
 
 /**

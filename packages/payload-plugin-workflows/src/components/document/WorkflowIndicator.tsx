@@ -4,6 +4,7 @@ import "./WorkflowIndicator.css";
 
 import {
   Button,
+  CheckIcon,
   Drawer,
   useConfig,
   useDocumentInfo,
@@ -11,10 +12,10 @@ import {
   useModal,
 } from "@payloadcms/ui";
 
-import { operationsText, userIdsIn, waitingOnText } from "../shared/format.js";
+import { holdLead, userIdsIn, waitingOnText } from "../shared/format.js";
 import type { People, T } from "../shared/format.js";
 import { indicatorOf } from "../shared/indicator.js";
-import type { Indicator } from "../shared/indicator.js";
+import type { Indicator, RunTone } from "../shared/indicator.js";
 import { usePeople } from "../shared/useWorkflowsApi.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
 import { useWorkflowState } from "./useWorkflowState.js";
@@ -22,29 +23,35 @@ import { WorkflowDrawerBody } from "./WorkflowDrawer.js";
 
 /** What the button shows, and its full accessible name. */
 const describe = (
-  indicator: Indicator,
+  indicator: Exclude<Indicator, { kind: "none" }>,
   people: People,
   t: T
-): { text: string; label: string; tone: string } => {
+): { text: string; label: string; tone: RunTone; completed: boolean } => {
   const open = t("indicatorOpen");
-  if (indicator.kind !== "run") {
-    const finished = indicator.kind === "idle" ? indicator.finished : undefined;
-    let summary = t("indicatorNone");
-    if (finished) {
-      summary =
-        finished.status === "aborted"
-          ? t("indicatorAborted", { title: finished.title })
-          : t("indicatorCompleted", { title: finished.title });
+  if (indicator.kind === "idle") {
+    const { finished } = indicator;
+    // A completed run names where it ended ("✓ Approved"); a stopped one, or none, is neutral.
+    if (finished?.status === "completed") {
+      return {
+        text: finished.stage.title,
+        label: `${t("indicatorLabel")}: ${t("indicatorCompletedIn", { title: finished.title, stage: finished.stage.title })}. ${open}`,
+        tone: "success",
+        completed: true,
+      };
     }
+    const summary = finished
+      ? t("indicatorAborted", { title: finished.title })
+      : t("indicatorNone");
     return {
       text: t("indicatorLabel"),
       label: `${t("indicatorLabel")}: ${summary}. ${open}`,
-      tone: "idle",
+      tone: "neutral",
+      completed: false,
     };
   }
   const { view, tone, waitsOnMe, more } = indicator;
   let waiting: string;
-  if (tone === "stuck") {
+  if (view.stuck) {
     waiting = t("indicatorStuck");
   } else if (waitsOnMe) {
     waiting = t("indicatorWaitingYou");
@@ -53,15 +60,13 @@ const describe = (
     waiting = who ? t("indicatorWaitingOn", { who }) : t("indicatorWaitingAnyone");
   }
   const heldOps = [...new Set(view.guards.flatMap((guard) => guard.operations))];
-  const held =
-    tone !== "stuck" && heldOps.length > 0
-      ? ` ${t("indicatorHeld", { operations: operationsText(heldOps, t) })}`
-      : "";
+  const held = !view.stuck && heldOps.length > 0 ? ` ${holdLead(heldOps, t)}` : "";
   const extra = more > 0 ? ` ${t("indicatorMore", { count: more })}` : "";
   return {
     text: view.stage.title,
     label: `${view.title}: ${view.stage.title}, ${waiting}.${held} ${open}${extra}`,
     tone,
+    completed: false,
   };
 };
 
@@ -87,13 +92,14 @@ const IndicatorBody = ({
   if (state) {
     indicator = indicatorOf(state, people.me);
   } else if (error) {
-    indicator = { kind: "idle" };
+    indicator = { kind: "idle", tone: "error" };
   }
   // Nothing to say (or still loading): no button. An open drawer stays until it is closed.
   if ((!indicator || indicator.kind === "none") && !isOpen) {
     return null;
   }
-  const shown = indicator && indicator.kind !== "none" ? indicator : { kind: "idle" as const };
+  const shown: Exclude<Indicator, { kind: "none" }> =
+    indicator && indicator.kind !== "none" ? indicator : { kind: "idle", tone: "neutral" };
   const look = describe(shown, people, t);
   const failed = !state && Boolean(error);
   const more = shown.kind === "run" ? shown.more : 0;
@@ -109,7 +115,8 @@ const IndicatorBody = ({
         buttonStyle="secondary"
         className="workflows-indicator"
         extraButtonProps={{
-          "data-tone": failed ? "stuck" : look.tone,
+          "data-tone": failed ? "error" : look.tone,
+          "data-kind": shown.kind,
           "aria-haspopup": "dialog",
           title: failed ? undefined : look.label,
         }}
@@ -121,9 +128,14 @@ const IndicatorBody = ({
         size="medium"
       >
         <span className="workflows-indicator__content">
-          {shown.kind === "run" || failed ? (
+          {look.completed ? (
+            <span aria-hidden="true" className="workflows-indicator__check">
+              <CheckIcon />
+            </span>
+          ) : (
+            // Idle, the dot shows only where the label collapses (narrow screens).
             <span aria-hidden="true" className="workflows-indicator__dot" />
-          ) : null}
+          )}
           <span className="workflows-indicator__text">{look.text}</span>
           {more > 0 ? (
             <span aria-hidden="true" className="workflows-indicator__more">

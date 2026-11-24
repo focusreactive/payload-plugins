@@ -14,18 +14,18 @@ Plain stage `actions` are normalised once by `defineWorkflow` into one activity 
 
 - `src/types.ts`: vocabulary, run state, `InstanceView`.
 - `src/define.ts`: `defineWorkflow`, validation (`definitionIssues`), normalisation.
-- `src/engine/engine.ts`: pure engine (no Payload): `start`, `fire`, `patchFields`, `abort`, `settle`, `verdictFor`, `holdingGuards`. Read bottom-up.
+- `src/engine/engine.ts`: pure engine (no Payload): `start`, `fire`, `patchFields`, `abort`, `settle`, `verdictFor`, `holdingGuards`, `holdMessage` (the words of a hold, shared by the guard refusal and the UI), `mayAbort`. Read bottom-up.
 - `src/engine/view.ts`: `view()`, `waitingOnOf`. `src/engine/simulator.ts`: in-memory runs for tests.
 - `src/server/operations.ts`: start / fire / abort / settle / tick against Payload; access; `presentRun`.
 - `src/server/queries.ts`: `getWorkflowState`, `listWorkflowInstances`, `listWorkflowDefinitions`.
 - `src/server/store.ts`: runs collection config, `createRun`, `mutateRun` (compare-and-swap), effect jobs. `src/server/transaction.ts`: whether a failed write ended the request's transaction.
 - `src/server/effects.ts`: effect and tick jobs. `src/hooks.ts`: guards, auto-start, settle on save, abort on delete.
 - `src/endpoints.ts`, `src/agent.ts`: the ways in. `src/plugin.ts`: options, config checks, wiring.
-- `src/components/`: admin UI (indicator + drawer, workflows view). Pure helpers in `components/shared/*.ts` are unit-tested.
+- `src/components/`: admin UI (indicator + drawer, workflows view). Pure helpers in `components/shared/*.ts` are unit-tested; `RunTone` / `PILL_STYLE` in `shared/indicator.ts` is the one status-colour mapping every surface uses.
 
 ## Invariants: do not break
 
-- Access: every public operation needs a real `user` (`unauthorized` otherwise); the subject document is read with that user's access (unreadable = `unknown-subject`); default `access` allows only users of the admin user collection; runs on unreadable documents never appear in lists or totals.
+- Access: every public operation needs a real `user` (`unauthorized` otherwise); the subject document is read with that user's access (unreadable = `unknown-subject`); default `access` allows only users of the admin user collection, and by default (no `access.abort`) a run whose current stage has a holding guard may be stopped only by someone with an allowed action there (`mayAbort` in the engine, used by `presentRun`'s `canAbort` and `abortRun`); runs on unreadable documents never appear in lists or totals.
 - Concurrency: every run write goes through `mutateRun` and requires the `revision` it read; `activeKey` stays unique (one active run per workflow and document).
 - Effects are queued with the same `req`, inside the same transaction as the state change, and run inline only when the operation owns its commit (`canRunInline`).
 - Guards are enforced in collection hooks (including trash = delete and publish detection without `_status`); `WORKFLOW_BYPASS` only via `req.context`.
@@ -34,6 +34,7 @@ Plain stage `actions` are normalised once by `defineWorkflow` into one activity 
 - Field writes are type-checked; only `input: true` fields may be passed at start; names that are `Object.prototype` members are rejected; params are read as own properties only.
 - `fire` and `view` share one verdict (`verdictFor`): an enabled button never fails for a knowable reason.
 - The runs collection is not writable over the API.
+- "For me" (`scope: "mine"`) is one query over the denormalised `assignedUsers` / `assignedRoles`: runs waiting on the caller or their roles, then active runs with neither (open to anyone). No definition is evaluated per row.
 
 ## Verify
 

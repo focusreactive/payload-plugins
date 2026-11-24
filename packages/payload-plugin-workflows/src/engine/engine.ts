@@ -24,6 +24,7 @@ import type {
   Env,
   FieldDef,
   GuardDef,
+  GuardOperation,
   HistoryEntry,
   InstanceState,
   ParamDef,
@@ -154,6 +155,24 @@ export const holdingGuards = (
       return true;
     }
   });
+};
+
+const HELD: Record<GuardOperation, string> = {
+  publish: "publishing",
+  update: "saving",
+  delete: "deleting",
+};
+
+/**
+ * What a hold says, in plain words: what is on hold, then the guard's own title ("Publishing is on
+ * hold. A reviewer must approve this page first."). The refusal of a guarded write reads the same.
+ */
+export const holdMessage = (operations: string[], title?: string): string => {
+  const words = operations.map((operation) => HELD[operation as GuardOperation] ?? operation);
+  const listed =
+    words.length > 1 ? `${words.slice(0, -1).join(", ")} and ${words.at(-1)}` : (words[0] ?? "");
+  const lead = `${listed.charAt(0).toUpperCase()}${listed.slice(1)} ${words.length > 1 ? "are" : "is"} on hold`;
+  return title ? `${lead}. ${title}` : `${lead} until this stage is done.`;
 };
 
 // ---- Params and field values --------------------------------------------------------------------
@@ -369,6 +388,38 @@ export const verdictFor = (
     };
   }
   return { allowed: true };
+};
+
+/**
+ * May this caller stop the run? While a guard of the current stage holds the document, only
+ * someone who may take one of its actions right now (the same verdict as `fire`), so stopping is
+ * never a way around a hold. Otherwise, or when the run is stuck, yes. `access.abort` replaces this.
+ */
+export const mayAbort = (
+  def: WorkflowDefinition,
+  state: InstanceState,
+  caller: Caller,
+  env: Env
+): boolean => {
+  if (state.status !== "active") {
+    return false;
+  }
+  const stage = findStage(def, state.stage);
+  if (!stage || holdingGuards(def, state, env).length === 0) {
+    return true;
+  }
+  return activitiesOf(stage).some((activity) =>
+    activity.actions.some((action) => {
+      if (isAuto(action)) {
+        return false;
+      }
+      try {
+        return verdictFor(state, stage, activity, action as CallerActionDef, caller, env).allowed;
+      } catch {
+        return false;
+      }
+    })
+  );
 };
 
 // ---- Steps --------------------------------------------------------------------------------------
@@ -617,11 +668,17 @@ export const start = (
 ): Result => {
   const initial: Record<string, unknown> = {};
   for (const field of def.fields ?? []) {
-    if (field.initialValue !== undefined && field.initialValue !== null) {
-      initial[field.name] = field.initialValue;
-    }
+    const { initialValue } = field;
+    initial[field.name] =
+      typeof initialValue === "function"
+        ? evaluate(`field "${field.name}" initialValue`, initialValue, {
+            actor: input.actor,
+            doc: env.doc,
+          })
+        : initialValue;
   }
-  let fields = initial;
+  // Type-checked like any write; `null` / `undefined` leave the field unset.
+  let fields = applyPatch(def, {}, initial, "initial values");
   if (input.fields) {
     const notInput = Object.keys(input.fields).filter(
       (key) => !(def.fields ?? []).some((field) => field.name === key && field.input === true)

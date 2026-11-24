@@ -12,7 +12,7 @@ Editorial workflows for [Payload CMS](https://payloadcms.com/), defined in TypeS
 4. A stage's **guard** refuses publishing (or saving, or deleting) the document while a run sits in that stage.
 5. A person and an agent do the same thing: **fire an action**, with the same permissions.
 
-Editors see the run in a small indicator next to Save and Publish. It opens a drawer laid out like Payload's document view: in the main column the stages, whose turn it is, what is on hold and the actions they may take; in the sidebar the key facts and the history. Stopping a workflow lives in the drawer's "…" menu. Agents use the same operations through a set of tools.
+Editors see the run in a small indicator next to Save and Publish (a check and the final stage once it completed; just the dot or check on narrow screens). It opens a drawer laid out like Payload's document view: in the main column the stages, whose turn it is, what is on hold and the actions they may take (an action with params opens a short form in their place; when a person's step with params sent the run back, a banner says who and why); in the sidebar the key facts and the history. Stopping a workflow lives in the drawer's "⋮" menu, asks for confirmation and an optional reason. Status colours are the same everywhere: your turn (warning), in progress (neutral), completed (success), stopped (muted), stuck (error). Agents use the same operations through a set of tools.
 
 ## Example
 
@@ -26,6 +26,8 @@ export const editorialReview = defineWorkflow({
   collections: ["pages"],
   initialStage: "drafting",
   fields: [
+    // Whoever starts the run: the author owns the drafting and never reviews their own work.
+    { name: "author", type: "user", initialValue: ({ actor }) => actor.id },
     { name: "reviewer", type: "user" },
     { name: "decision", type: "string" },
     { name: "reason", type: "text" },
@@ -34,6 +36,7 @@ export const editorialReview = defineWorkflow({
     {
       name: "drafting",
       title: "Drafting",
+      assignee: "author",
       actions: [{ name: "submit", title: "Submit for review", status: "done" }],
       // No `when`: leaves once the stage's actions are done.
       transitions: [{ name: "to-review", to: "review" }],
@@ -41,17 +44,19 @@ export const editorialReview = defineWorkflow({
     {
       name: "review",
       title: "Review",
-      guards: [{ name: "hold", title: "Publishing is held until review", operations: ["publish"] }],
+      guards: [{ name: "hold", title: "A reviewer must approve this page first.", operations: ["publish"] }],
       assignee: "reviewer", // once set, only that user may act
       roles: ["editor"], // until then, anyone with this role
       actions: [
         // Automatic (`when`): on entering the stage, clear the previous round's decision.
         { name: "reset", when: () => true, set: { decision: null, reason: null } },
-        { name: "claim", title: "Take this review", filter: ({ fields }) => !fields.reviewer,
+        { name: "claim", title: "Take this review",
+          filter: ({ actor, fields }) => !fields.reviewer && actor.id !== fields.author,
           set: ({ actor }) => ({ reviewer: actor.id }) },
         { name: "approve", title: "Approve", status: "done", set: { decision: "approved" },
-          effects: ["notify-author"] },
+          filter: ({ actor, fields }) => actor.id !== fields.author, effects: ["notify-author"] },
         { name: "reject", title: "Request changes", status: "done",
+          filter: ({ actor, fields }) => actor.id !== fields.author,
           params: [{ name: "reason", type: "text", required: true }],
           set: ({ params }) => ({ decision: "rejected", reason: params.reason }) },
       ],
@@ -92,17 +97,17 @@ export default buildConfig({
 
 Then run `pnpm payload generate:importmap`, and on SQL databases without `push` create a migration (the plugin adds the `workflow-instances` collection).
 
-The plugin adds, to each collection a workflow names, the indicator (`admin.components.edit.beforeDocumentControls`) and the hooks; it adds no fields to them. It also adds the runs collection, the endpoints, two jobs tasks, the **Workflows** view at `/admin/workflows` (a Payload-style list of what waits on you or of all open workflows, or a board of one workflow's stages) and the admin strings.
+The plugin adds, to each collection a workflow names, the indicator (`admin.components.edit.beforeDocumentControls`) and the hooks; it adds no fields to them. It also adds the runs collection, the endpoints, two jobs tasks, the **Workflows** view at `/admin/workflows` (a Payload-style list of what you can pick up, waiting on you or your roles first and then what is open to anyone, or of all open workflows; or a board of one workflow's stages) and the admin strings.
 
-To try it: save a page, press **Workflow** next to Save, start **Editorial review**, **Submit for review**, **Take this review**, and press Publish: it is refused with the guard's title. **Approve** completes the run and publishing goes through.
+To try it: save a page, press **Workflow** next to Save, start **Editorial review** and **Submit for review**; as another user, **Take this review** and press Publish: it is refused ("Publishing is on hold. A reviewer must approve this page first."). **Approve** completes the run and publishing goes through.
 
 ## Concepts
 
 - **Stage.** Where a run is. Its task is a list of `actions`, with optional `assignee` and `roles`. A stage without `transitions` is terminal: entering it completes the run.
 - **Action.** The only thing that changes a run. It may write fields (`set`, an object or a function of the context), mark the stage's task finished (`status: "done" | "skipped" | "failed"`), ask the caller for input (`params`: `string`, `text`, `number`, `boolean`, `date`, `select`), narrow who may fire it (`roles`, `filter`) and queue effects. An action with `when` is **automatic**: the engine fires it as soon as the condition holds, at most once per stage visit, and nobody can call it.
 - **Transition.** After every change the current stage's transitions are checked in order, and the first whose `when` holds moves the run. Without `when` a transition opens once the stage's task is done or skipped. This repeats until nothing moves (at most 50 steps, against definitions that loop).
-- **Run and fields.** The run's own state, never written to the document. Field types: `string`, `text`, `number`, `boolean`, `date`, `user`, `json`; every write is type-checked (`invalid-patch` otherwise) and `null` unsets. `initialValue` seeds a field; only fields with `input: true` may be passed when starting (`startWorkflow({ fields })`).
-- **Guard.** While a run is in the stage, the listed operations on the document (`publish`, `update`, `delete`) are refused with the guard's title, unless its `unless` condition holds. It is enforced in collection hooks, so it holds for the admin, REST, GraphQL and the Local API. `publish` needs drafts on the collection (the plugin refuses the config otherwise) and covers publishing a draft and any non-draft save of a published document; moving to the trash counts as `delete`. To let one write through, for example an effect that publishes, pass `context: { [WORKFLOW_BYPASS]: true }` on that Local API call (never on a shared `req`).
+- **Run and fields.** The run's own state, never written to the document. Field types: `string`, `text`, `number`, `boolean`, `date`, `user`, `json`; every write is type-checked (`invalid-patch` otherwise) and `null` unsets. `initialValue` seeds a field: a value, or a function of the start (`({ actor, doc }) => value`, e.g. `actor.id` to hold who started it; unset when the system starts it); only fields with `input: true` may be passed when starting (`startWorkflow({ fields })`).
+- **Guard.** While a run is in the stage, the listed operations on the document (`publish`, `update`, `delete`) are refused with what is on hold and the guard's title ("Publishing is on hold. A reviewer must approve this page first."), unless its `unless` condition holds. It is enforced in collection hooks, so it holds for the admin, REST, GraphQL and the Local API. `publish` needs drafts on the collection (the plugin refuses the config otherwise) and covers publishing a draft and any non-draft save of a published document; moving to the trash counts as `delete`. To let one write through, for example an effect that publishes, pass `context: { [WORKFLOW_BYPASS]: true }` on that Local API call (never on a shared `req`).
 - **Effect.** A handler registered under `effects`, run as a Payload job queued in the same transaction as the change. It gets `{ payload, req, instance, doc, effect }` and may return `{ set }` to write fields and move the run. Jobs are retried, so a handler runs at least once and may run again: make it idempotent.
 - **Assignment.** If the `assignee` field holds a user, only that user may act. Otherwise anyone with one of the `roles` may, or anyone at all without roles. Roles come from `user.roles` or `user.role` unless you pass `roles`.
 - **Conditions** (`when`, `unless`, `filter`) are synchronous functions of `{ fields, activities, allActivitiesDone, anyActivityFailed, doc, now, stage }`; `doc` is the latest draft. A `filter` also sees the caller (`actor`, `roles`, `assigned`). A condition that throws fails the operation and nothing is written.
@@ -117,7 +122,7 @@ To try it: save a page, press **Workflow** next to Save, start **Editorial revie
 | `workflows` | — | The workflows. Names must be unique; their collections must exist |
 | `effects` | `{}` | Effect handlers by name; every effect an action names must be registered |
 | `roles` | `user.roles` / `user.role` | `(user) => string[]`: a user's roles, for assignment |
-| `access` | a user of the admin user collection | `{ start?, fire?, abort? }`, each `({ req, user, workflow, collection, id, doc }) => boolean`. `user` is the user the operation acts for; only `true` allows |
+| `access` | a user of the admin user collection | `{ start?, fire?, abort? }`, each `({ req, user, workflow, collection, id, doc }) => boolean`. `user` is the user the operation acts for; only `true` allows. Without `abort`: while a guard holds, only someone who may act in the stage may stop the run, so stopping is never a way around a hold |
 | `enabled` | `true` | `false` leaves the config untouched |
 
 ## API
@@ -133,10 +138,10 @@ await fireWorkflowAction(payload, { instanceId: run.id!, action: "submit", user 
 await fireWorkflowAction(payload, { instanceId: run.id!, action: "reject", params: { reason: "Too long" }, user });
 await abortWorkflow(payload, { instanceId: run.id!, reason: "Duplicate", user });
 const { instances, available } = await getWorkflowState(payload, { collection: "pages", id, user });
-const inbox = await listWorkflowInstances(payload, { scope: "mine", status: "active", user });
+const inbox = await listWorkflowInstances(payload, { scope: "mine", status: "active", user }); // waiting on you first, then open to anyone
 ```
 
-`fireWorkflowAction` takes `activity` only when the stage has several. The operations return an `InstanceView`: the stage, the stepper, the current actions with `allowed` and `reason` (from the same check `fire` runs, so an enabled button never fails for a reason the UI could have known), the guards holding, who it waits on (user ids and roles), the fields and the history. `listWorkflowInstances` leaves out runs on documents the caller cannot read, before paginating.
+`fireWorkflowAction` takes `activity` only when the stage has several. The operations return an `InstanceView`: the stage, the stepper, the current actions with `allowed` and `reason` (from the same check `fire` runs, so an enabled button never fails for a reason the UI could have known), the guards holding, who it waits on (user ids and roles), whether the caller may stop it (`canAbort`), the fields and the history. `listWorkflowInstances` leaves out runs on documents the caller cannot read, before paginating.
 
 A refusal throws `WorkflowError` with a `code` (`isWorkflowError` narrows it): `unauthorized`, `not-allowed`, `invalid-params`, `invalid-patch`, `already-running`, `conflict`, `instance-not-active`, `activity-not-active`, `not-callable`, or `unknown-workflow` / `-instance` / `-subject` / `-stage` / `-activity` / `-action`. Concurrent changes to one run use optimistic locking: the loser re-runs on fresh state, and after three attempts it is `conflict`.
 

@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 
 import type { InstanceSummary } from "../../server/queries.js";
 import type { People } from "../shared/format.js";
+import { PILL_STYLE, summaryToneOf } from "../shared/indicator.js";
 import { StatusPill } from "../shared/StatusPill.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
 import { LastChanged, SubjectLink, WaitingOn } from "./RunParts.js";
@@ -31,7 +32,7 @@ export const RunsTable = ({ runs, people }: { runs: InstanceSummary[]; people: P
       run.stuck ? (
         <StatusPill status="stuck" />
       ) : (
-        <Pill className="workflows-pill" pillStyle="light" size="small">
+        <Pill className="workflows-pill" pillStyle={PILL_STYLE[summaryToneOf(run)]} size="small">
           {run.stage.title}
         </Pill>
       )

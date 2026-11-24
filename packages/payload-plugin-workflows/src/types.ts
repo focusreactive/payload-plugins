@@ -12,11 +12,29 @@ export type ResolvedStatus = Exclude<ActivityStatus, "active">;
 
 export type FieldType = "string" | "text" | "number" | "boolean" | "date" | "user" | "json";
 
+/** What a field's `initialValue` function sees when a run starts. */
+export interface StartContext {
+  /** Who starts the run: a person or agent, or the system (auto-start). */
+  actor: Actor;
+  /** The subject document (latest draft), or `null`. */
+  doc: Record<string, unknown> | null;
+}
+
 export interface FieldDef {
   name: string;
   type: FieldType;
   title?: string;
-  initialValue?: unknown;
+  /**
+   * The value a run starts with, type-checked like any write. A function gets the start context,
+   * e.g. `({ actor }) => actor.id` to hold whoever started the run.
+   */
+  initialValue?:
+    | string
+    | number
+    | boolean
+    | Record<string, unknown>
+    | unknown[]
+    | ((ctx: StartContext) => unknown);
   /** `true` lets a caller supply this field when starting a run (`startWorkflow({ fields })`). */
   input?: boolean;
 }

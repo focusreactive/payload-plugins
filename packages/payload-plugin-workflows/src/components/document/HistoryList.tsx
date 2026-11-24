@@ -36,7 +36,7 @@ const Row = ({ row, view, people }: { row: TimelineRow; view: InstanceView; peop
   const { t, language } = useWorkflowsT();
   const [open, setOpen] = useState(false);
   const stepsId = useId();
-  const details = rowDetails(row, view.titles);
+  const details = rowDetails(row, view.titles, t);
   // A single automatic step is the row's own text: nothing to fold.
   const folded = row.lead ? row.steps : row.steps.length > 1 ? row.steps : [];
   return (
@@ -63,6 +63,11 @@ const Row = ({ row, view, people }: { row: TimelineRow; view: InstanceView; peop
           <span className="workflows-history__who">{rowWho(row, people, t)}</span>
           {row.kind === "api" ? (
             <span className="workflows-history__marker">{t("timelineApi")}</span>
+          ) : null}
+          {row.kind === "agent" ? (
+            <span className="workflows-history__marker" data-kind="agent">
+              {t("timelineAgentMarker")}
+            </span>
           ) : null}
           <span aria-hidden="true">·</span>
           <time dateTime={row.at} title={formatDateTime(row.at, language)}>

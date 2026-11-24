@@ -1,30 +1,22 @@
 "use client";
 
 import { Pill } from "@payloadcms/ui";
-import type { ComponentProps, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import type { InstanceView } from "../../types.js";
 import { formatDateTime, personName } from "../shared/format.js";
 import type { People, T } from "../shared/format.js";
 import { startOf } from "../shared/history.js";
+import { PILL_STYLE, toneOf } from "../shared/indicator.js";
+import type { RunTone } from "../shared/indicator.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
 
-type PillStyle = NonNullable<ComponentProps<typeof Pill>["pillStyle"]>;
-
-const statusOf = (view: InstanceView | undefined, t: T): { label: string; style: PillStyle } => {
-  if (!view) {
-    return { label: t("statusNotStarted"), style: "light-gray" };
-  }
-  if (view.stuck) {
-    return { label: t("statusStuck"), style: "error" };
-  }
-  if (view.status === "completed") {
-    return { label: t("statusCompleted"), style: "success" };
-  }
-  if (view.status === "aborted") {
-    return { label: t("statusAborted"), style: "light-gray" };
-  }
-  return { label: t("statusRunning"), style: "warning" };
+const LABEL: Record<RunTone, Parameters<T>[0]> = {
+  attention: "statusYourTurn",
+  neutral: "statusRunning",
+  success: "statusCompleted",
+  muted: "statusAborted",
+  error: "statusStuck",
 };
 
 /**
@@ -33,7 +25,7 @@ const statusOf = (view: InstanceView | undefined, t: T): { label: string; style:
  */
 export const RunFacts = ({ view, people }: { view?: InstanceView; people: People }) => {
   const { t, language } = useWorkflowsT();
-  const status = statusOf(view, t);
+  const tone = view ? toneOf(view, people.me) : undefined;
   const started = view ? startOf(view.history) : undefined;
   const changed = view?.history.at(-1)?.at;
   const assignees = [
@@ -48,8 +40,12 @@ export const RunFacts = ({ view, people }: { view?: InstanceView; people: People
       key: "status",
       label: t("factStatus"),
       value: (
-        <Pill className="workflows-pill" pillStyle={status.style} size="small">
-          {status.label}
+        <Pill
+          className={`workflows-pill workflows-pill--${tone ?? "muted"}`}
+          pillStyle={PILL_STYLE[tone ?? "muted"]}
+          size="small"
+        >
+          {tone ? t(LABEL[tone]) : t("statusNotStarted")}
         </Pill>
       ),
     },

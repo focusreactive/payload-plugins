@@ -9,7 +9,7 @@ import {
   TextareaInput,
   TextInput,
 } from "@payloadcms/ui";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
 import type { ParamDef } from "../../types.js";
@@ -20,15 +20,23 @@ import { useWorkflowsT } from "../shared/useWorkflowsT.js";
 interface Props {
   defs: ParamDef[];
   submitLabel: string;
+  busy?: boolean;
   onSubmit: (params: Record<string, unknown>) => void;
   onCancel: () => void;
 }
 
 const pathOf = (def: ParamDef) => `workflow-param-${def.name}`;
 
-/** The small form an action's `params` describe, validated before it is sent. */
-export const ParamForm = ({ defs, submitLabel, onSubmit, onCancel }: Props) => {
+/**
+ * The small form an action's `params` describe, validated before it is sent. Shown in place of the
+ * action buttons; the first field takes focus when it opens.
+ */
+export const ParamForm = ({ defs, submitLabel, busy = false, onSubmit, onCancel }: Props) => {
   const { t } = useWorkflowsT();
+  const formRef = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    formRef.current?.querySelector<HTMLElement>("textarea, input, [tabindex='0']")?.focus();
+  }, []);
   const [inputs, setInputs] = useState<Record<string, ParamInput>>(() => initialInputs(defs));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const set = (name: string, value: ParamInput) => {
@@ -127,7 +135,7 @@ export const ParamForm = ({ defs, submitLabel, onSubmit, onCancel }: Props) => {
   };
 
   return (
-    <form className="workflows-params" noValidate onSubmit={submit}>
+    <form className="workflows-params" noValidate onSubmit={submit} ref={formRef}>
       {defs.map((def) => (
         <div
           className="workflows-params__field"
@@ -143,10 +151,16 @@ export const ParamForm = ({ defs, submitLabel, onSubmit, onCancel }: Props) => {
         </div>
       ))}
       <div className="workflows-params__actions">
-        <Button buttonStyle="primary" size="medium" type="submit">
+        <Button buttonStyle="primary" disabled={busy} margin={false} size="medium" type="submit">
           {submitLabel}
         </Button>
-        <Button buttonStyle="secondary" onClick={onCancel} size="medium">
+        <Button
+          buttonStyle="secondary"
+          disabled={busy}
+          margin={false}
+          onClick={onCancel}
+          size="medium"
+        >
           {t("cancel")}
         </Button>
       </div>

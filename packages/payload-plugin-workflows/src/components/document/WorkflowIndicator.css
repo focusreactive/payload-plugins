@@ -35,20 +35,40 @@
   background: var(--theme-elevation-400);
 }
 
-.workflows-indicator[data-tone="you"] .workflows-indicator__dot {
+/* One status language (see `RunTone`): attention, neutral, success, error. */
+.workflows-indicator[data-tone="attention"] .workflows-indicator__dot {
   background: var(--theme-warning-500);
   box-shadow: 0 0 0 3px var(--theme-warning-100);
 }
 
-/* A guard holds the document, but the run waits on someone else: the same hue, hollow. */
-.workflows-indicator[data-tone="held"] .workflows-indicator__dot {
-  background: transparent;
-  box-shadow: inset 0 0 0 2px var(--theme-warning-500);
-}
-
-.workflows-indicator[data-tone="stuck"] .workflows-indicator__dot {
+.workflows-indicator[data-tone="error"] .workflows-indicator__dot {
   background: var(--theme-error-500);
   box-shadow: 0 0 0 3px var(--theme-error-100);
+}
+
+/* Nothing running: no dot beside the word; it stands in for the word on narrow screens. */
+.workflows-indicator[data-kind="idle"] .workflows-indicator__dot {
+  display: none;
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--theme-elevation-400);
+}
+
+.workflows-indicator__check {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-inline-start: -4px;
+}
+
+.workflows-indicator__check svg {
+  width: 100%;
+  height: 100%;
+}
+
+.workflows-indicator__check .stroke {
+  stroke: var(--theme-success-500);
+  stroke-width: 2px;
 }
 
 .workflows-indicator__more {
@@ -62,4 +82,22 @@
 .workflows-indicator:focus-visible {
   outline: var(--accessibility-outline);
   outline-offset: var(--accessibility-outline-offset);
+}
+
+/* Below Payload's small breakpoint the controls row is tight: the dot or check alone, so Save and
+   Publish stay on screen. The accessible name is unchanged. */
+@media (max-width: 768px) {
+  .btn.workflows-indicator {
+    max-width: none;
+    padding-inline: calc(var(--base) * 0.5);
+  }
+
+  .workflows-indicator__text,
+  .workflows-indicator__more {
+    display: none;
+  }
+
+  .workflows-indicator[data-kind="idle"] .workflows-indicator__dot {
+    display: block;
+  }
 }

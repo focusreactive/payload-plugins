@@ -4,6 +4,7 @@ import type { T } from "../src/components/shared/format.js";
 import {
   actorKind,
   dayKey,
+  enteredBecause,
   groupByDay,
   lastStepOf,
   isAutomatic,
@@ -111,10 +112,11 @@ describe("timelineRows", () => {
     expect(claim?.movedTo).toBeUndefined();
   });
 
-  it("keeps an automatic step that came much later as its own row, and joins automatic stretches", () => {
+  it("folds what a step caused, even much later (its effects); what nobody caused is its own row", () => {
     const history: HistoryEntry[] = [
       { at: local(1, 9), actor: ann, type: "started", stage: "drafting" },
-      { at: local(1, 9, 0, 1), actor: SYSTEM, type: "effect", effect: "notify", status: "queued" },
+      { at: local(1, 9), actor: SYSTEM, type: "effect", effect: "notify", status: "queued" },
+      // The effect it queued fails two hours later: still that step's.
       {
         at: local(1, 11),
         actor: SYSTEM,
@@ -123,24 +125,40 @@ describe("timelineRows", () => {
         status: "failed",
         error: "SMTP",
       },
+      // A document save, a minute after that, moves the run: nobody's step caused it.
       {
-        at: local(1, 11, 0, 30),
+        at: local(1, 11, 1),
         actor: SYSTEM,
         type: "transition",
         from: "drafting",
         to: "review",
         transition: "t",
       },
-      { at: local(1, 11, 1, 0), actor: SYSTEM, type: "completed" },
+      { at: local(1, 11, 1), actor: SYSTEM, type: "completed" },
     ];
     const rows = timelineRows(history);
     expect(rows).toHaveLength(2);
-    expect(rows[0]).toMatchObject({ kind: "system", movedTo: "review", completed: true, key: "2" });
+    expect(rows[0]).toMatchObject({ kind: "system", movedTo: "review", completed: true, key: "3" });
     expect(rows[0]?.lead).toBeUndefined();
-    expect(rows[0]?.steps).toHaveLength(3);
-    expect(rows[0]?.failed).toHaveLength(1);
-    expect(rows[1]).toMatchObject({ kind: "person", key: "0", completed: false, failed: [] });
-    expect(rows[1]?.steps).toHaveLength(1);
+    expect(rows[0]?.steps).toHaveLength(2);
+    expect(rows[1]).toMatchObject({ kind: "person", key: "0", completed: false });
+    expect(rows[1]?.steps).toHaveLength(2);
+    expect(rows[1]?.failed).toHaveLength(1);
+  });
+
+  it("an automatic step right after a person's, but from another operation, is not theirs", () => {
+    const rows = timelineRows([
+      { at: local(1, 9), actor: ann, type: "started", stage: "drafting" },
+      {
+        at: local(1, 9, 0, 5),
+        actor: SYSTEM,
+        type: "transition",
+        from: "drafting",
+        to: "review",
+        transition: "t",
+      },
+    ]);
+    expect(rows.map((row) => row.kind)).toEqual(["system", "person"]);
   });
 
   it("keeps an agent's step as its own row", () => {
@@ -192,7 +210,7 @@ describe("how rows read", () => {
     const lines = timelineRows(sim.state.history).map((row) => [
       rowWho(row, people, t),
       rowWhat(row, titles, t),
-      rowDetails(row, titles),
+      rowDetails(row, titles, t),
     ]);
     expect(lines).toEqual([
       ["Bea", "Request changes → moved to Drafting", ["Reason: Too long"]],
@@ -201,7 +219,7 @@ describe("how rows read", () => {
       ["Automated", "Started in Drafting", []],
     ]);
     const reset = sim.state.history.find((entry) => entry.type === "action" && entry.auto);
-    expect(reset && stepSentence(reset, titles, t)).toBe("“Reset” on Review.");
+    expect(reset && stepSentence(reset, titles, t)).toBe("Reset in Review.");
   });
 
   it("an agent acts for a person; a system abort keeps its reason", () => {
@@ -209,7 +227,7 @@ describe("how rows read", () => {
     const [agentRow] = timelineRows([
       { at, actor: { ...ann, via: "agent" }, type: "aborted", reason: "Duplicate" },
     ]);
-    expect(agentRow && rowWho(agentRow, { labels: { u1: "Ann" } }, t)).toBe("Ann via agent");
+    expect(agentRow && rowWho(agentRow, { labels: { u1: "Ann" } }, t)).toBe("Ann · AI agent");
     const [systemRow] = timelineRows([
       { at, actor: SYSTEM, type: "aborted", reason: "Subject deleted" },
     ]);
@@ -217,7 +235,7 @@ describe("how rows read", () => {
       "Automated",
       "Stopped the workflow",
     ]);
-    expect(systemRow && rowDetails(systemRow, {})).toEqual(["Subject deleted"]);
+    expect(systemRow && rowDetails(systemRow, {}, t)).toEqual(["Reason: Subject deleted"]);
   });
 
   it("says each automatic step as a sentence", () => {
@@ -240,6 +258,24 @@ describe("how rows read", () => {
       say({ at, actor: SYSTEM, type: "effect", effect: "notify-author", status: "done" })
     ).toBe("Notify author finished.");
     expect(say({ at, actor: SYSTEM, type: "completed" })).toBe("The workflow completed.");
+  });
+});
+
+describe("enteredBecause", () => {
+  it("names the person's step with params that sent the run back, until it moves on", () => {
+    const sim = createWorkflowSimulator(editorialReview);
+    sim.fire("submit", { user: "u1" });
+    expect(enteredBecause(sim.view({ user: "u1" }), t)).toBeUndefined();
+    sim.fire("claim", { user: "u2", roles: ["editor"] });
+    sim.fire("reject", { user: "u2", roles: ["editor"], params: { reason: "Too long" } });
+    expect(enteredBecause(sim.view({ user: "u1" }), t)).toEqual({
+      actor: { id: "u2", collection: "users", via: "api" },
+      action: "Request changes",
+      details: ["Reason: Too long"],
+    });
+    // Submitted again: the step that brought it to review has no params, so nothing to explain.
+    sim.fire("submit", { user: "u1" });
+    expect(enteredBecause(sim.view({ user: "u1" }), t)).toBeUndefined();
   });
 });
 
