@@ -4,7 +4,7 @@ export type EyebrowTone = "default" | "primary" | "muted" | "accent" | "outline"
 
 interface Props {
   children: React.ReactNode;
-  /** "dot" = circle prefix (adapts to chip text color); "dash" = em-dash prefix; "none" = no prefix */
+  /** "dot" = circle prefix; "dash" = em-dash prefix; "none" = no prefix */
   prefix?: "dot" | "dash" | "none";
   tone?: EyebrowTone;
   size?: "sm" | "md";
@@ -12,16 +12,16 @@ interface Props {
 }
 
 const toneMap: Record<EyebrowTone, string> = {
-  default: "bg-foreground text-background",
-  primary: "bg-primary text-primary-foreground",
-  muted: "text-muted-foreground",
-  accent: "bg-accent text-accent-foreground",
-  outline: "border border-foreground text-foreground",
+  default: "border border-border-strong text-foreground",
+  primary: "border border-border-strong bg-surface text-foreground",
+  muted: "!px-0 !py-0 text-subtle-foreground",
+  accent: "border border-border-strong text-foreground",
+  outline: "border border-border-strong text-foreground",
 };
 
 const sizeMap = {
-  sm: "px-2.5 py-1 text-[10px]",
-  md: "px-3.5 py-[7px] text-[0.72rem] font-semibold",
+  sm: "px-3 py-1 text-small",
+  md: "px-4 py-1.5 text-body md:px-5 md:py-2 md:text-[1.25rem] md:leading-6",
 };
 
 export function Eyebrow({
@@ -34,15 +34,12 @@ export function Eyebrow({
   return (
     <span
       className={cn(
-        "inline-flex w-fit items-center gap-1.5 rounded-pill font-mono uppercase tracking-[0.16em] leading-none whitespace-nowrap",
+        "inline-flex w-fit items-center gap-2 rounded-pill whitespace-nowrap",
         toneMap[tone],
         sizeMap[size],
         className
       )}
     >
-      {prefix === "dot" && (
-        <span aria-hidden className="inline-block size-1.5 rounded-pill bg-current" />
-      )}
       {prefix === "dash" && <span aria-hidden>—</span>}
       <span>{children}</span>
     </span>

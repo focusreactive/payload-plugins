@@ -27,14 +27,12 @@ export interface CtaBandSectionAction {
 interface CtaBandSectionProps {
   heading?: SectionHeadingContent | null;
   actions?: CtaBandSectionAction[] | null;
-  theme?: string | null;
 }
 
-export function CtaBandSection({ heading, actions, theme }: CtaBandSectionProps) {
+export function CtaBandSection({ heading, actions }: CtaBandSectionProps) {
   return (
     <CtaBand
       heading={heading}
-      theme={theme}
       actions={(actions ?? []).map((action) => (
         <TrackLeadAction key={action.id ?? action.label} on="click" type="cta_click">
           <CMSLink

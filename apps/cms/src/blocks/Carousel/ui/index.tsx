@@ -5,44 +5,10 @@ import React, { useEffect, useRef, useState } from "react";
 import { cn } from "@/components/utils";
 import { Media } from "@/components/media";
 import { RichText } from "@/components/richText";
+import { SliderNav } from "@/components/SliderNav";
 import type { ICarouselProps } from "./types";
 
 const AUTOPLAY_DELAY = 6500;
-
-interface NavButtonProps {
-  direction: "prev" | "next";
-  onClick: () => void;
-}
-
-function NavButton({ direction, onClick }: NavButtonProps) {
-  return (
-    <button
-      type="button"
-      aria-label={direction === "prev" ? "Previous slide" : "Next slide"}
-      onClick={onClick}
-      className={cn(
-        "inline-grid size-[46px] flex-none place-items-center rounded-pill",
-        "border border-border-strong bg-surface text-foreground",
-        "transition-colors duration-150 ease-out",
-        "hover:border-foreground",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-        "active:scale-[0.93]"
-      )}
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2}
-        aria-hidden
-        className={cn("size-[18px]", direction === "next" && "rotate-180")}
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" d="m15 18-6-6 6-6" />
-      </svg>
-    </button>
-  );
-}
 
 interface DotProps {
   index: number;
@@ -59,45 +25,12 @@ function Dot({ index, isActive, total, onSelect }: DotProps) {
       aria-current={isActive ? ("true" as const) : undefined}
       onClick={() => onSelect(index)}
       className={cn(
-        "h-[9px] cursor-pointer rounded-pill border-none p-0",
+        "h-2 cursor-pointer rounded-pill border-none p-0",
         "transition-[width,background-color] duration-200 ease-out",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-        isActive ? "w-[26px] bg-primary" : "w-[9px] bg-border-strong"
+        isActive ? "w-6 bg-primary" : "w-2 bg-border-strong hover:bg-white-40"
       )}
     />
-  );
-}
-
-interface SlideContentProps {
-  slide: ICarouselProps["slides"][number];
-  index: number;
-}
-
-function SlideContent({ slide, index }: SlideContentProps) {
-  const { image, text } = slide;
-
-  return (
-    <div className="grid min-h-[420px] grid-cols-1 md:grid-cols-[1.1fr_0.9fr]">
-      <div className="relative overflow-hidden rounded-t-lg md:rounded-l-lg md:rounded-tr-none">
-        {image?.data?.src ? (
-          <Media
-            {...image.data}
-            visualEditing={image.visualEditing}
-            imageProps={{
-              ...image.imageProps,
-              fill: true,
-              priority: index === 0,
-            }}
-          />
-        ) : (
-          <div className="h-full min-h-[260px] w-full bg-surface-muted md:min-h-0" />
-        )}
-      </div>
-
-      <div className="flex flex-col justify-center gap-4 rounded-b-lg bg-surface px-8 py-10 md:rounded-r-lg md:rounded-bl-none md:px-[clamp(2rem,4vw,3.5rem)] md:py-[clamp(2rem,5vw,3.5rem)]">
-        {text && <RichText {...text} variant="card" />}
-      </div>
-    </div>
   );
 }
 
@@ -160,53 +93,94 @@ export function Carousel({ slides, effect }: ICarouselProps) {
       aria-roledescription="carousel"
       aria-label="Product tour"
     >
-      <div
-        className="relative grid overflow-hidden rounded-lg border border-border"
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        {slides.map((slide, i) => {
-          const isActive = i === current;
-          const offsetPct = `${(i - current) * 100}%`;
+      <div className="grid grid-cols-1 overflow-clip rounded-2xl bg-surface p-2 md:min-h-[clamp(440px,41.7vw,600px)] md:grid-cols-2">
+        <div className="relative grid aspect-[4/3] overflow-clip rounded-xl md:aspect-auto">
+          {slides.map((slide, i) => {
+            const isActive = i === current;
+            const { image } = slide;
 
-          return (
-            <div
-              key={i}
-              aria-roledescription="slide"
-              aria-label={`Slide ${i + 1} of ${count}`}
-              aria-hidden={!isActive ? true : undefined}
-              style={{
-                gridArea: "1 / 1",
-                transform: isFade ? undefined : `translateX(${offsetPct})`,
-              }}
-              className={cn(
-                isFade
-                  ? cn(
-                      "transition-opacity duration-[600ms] ease-out",
-                      isActive ? "opacity-100" : "pointer-events-none opacity-0"
-                    )
-                  : cn(
-                      "transition-[transform] duration-[600ms] ease-out",
-                      !isActive && "pointer-events-none"
-                    )
-              )}
-            >
-              <SlideContent slide={slide} index={i} />
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="mt-[26px] flex items-center justify-between gap-5">
-        <div className="flex items-center gap-[9px]" role="tablist" aria-label="Slide indicators">
-          {slides.map((_, i) => (
-            <Dot key={i} index={i} isActive={i === current} total={count} onSelect={goTo} />
-          ))}
+            return (
+              <div
+                key={i}
+                aria-hidden={!isActive ? true : undefined}
+                style={{
+                  gridArea: "1 / 1",
+                  transform: isFade ? undefined : `translateX(${(i - current) * 100}%)`,
+                }}
+                className={cn(
+                  "relative size-full",
+                  isFade
+                    ? cn(
+                        "transition-opacity duration-[600ms] ease-out",
+                        isActive ? "opacity-100" : "pointer-events-none opacity-0"
+                      )
+                    : "transition-[transform] duration-[600ms] ease-out"
+                )}
+              >
+                {image?.data?.src ? (
+                  <Media
+                    {...image.data}
+                    className="absolute inset-0"
+                    visualEditing={image.visualEditing}
+                    imageProps={{
+                      ...image.imageProps,
+                      className: "object-cover",
+                      fill: true,
+                      priority: i === 0,
+                      sizes: "(max-width: 768px) 100vw, 640px",
+                    }}
+                  />
+                ) : (
+                  <div className="size-full bg-surface-muted" />
+                )}
+              </div>
+            );
+          })}
         </div>
 
-        <div className="flex items-center gap-[10px]">
-          <NavButton direction="prev" onClick={goPrev} />
-          <NavButton direction="next" onClick={goNext} />
+        <div className="flex flex-col gap-8 px-6 pt-10 pb-6 md:px-10 md:pt-14 md:pb-10 xl:px-24 xl:pt-24 xl:pb-12">
+          <div className="grid flex-1" aria-live="polite" aria-atomic="true">
+            {slides.map((slide, i) => {
+              const isActive = i === current;
+
+              return (
+                <div
+                  key={i}
+                  aria-roledescription="slide"
+                  aria-label={`Slide ${i + 1} of ${count}`}
+                  aria-hidden={!isActive ? true : undefined}
+                  inert={isActive ? undefined : true}
+                  style={{ gridArea: "1 / 1" }}
+                  className={cn(
+                    "transition-opacity duration-[600ms] ease-out motion-reduce:transition-none",
+                    isActive ? "opacity-100" : "pointer-events-none opacity-0"
+                  )}
+                >
+                  {slide.text && <RichText {...slide.text} variant="card" />}
+                </div>
+              );
+            })}
+          </div>
+
+          {count > 1 && (
+            <div className="flex items-center justify-between gap-5">
+              <SliderNav
+                onPrev={goPrev}
+                onNext={goNext}
+                prevLabel="Previous slide"
+                nextLabel="Next slide"
+              />
+              <div
+                className="flex items-center gap-[9px]"
+                role="tablist"
+                aria-label="Slide indicators"
+              >
+                {slides.map((_, i) => (
+                  <Dot key={i} index={i} isActive={i === current} total={count} onSelect={goTo} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

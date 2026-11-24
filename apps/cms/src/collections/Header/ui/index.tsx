@@ -24,16 +24,18 @@ export function Header({ brand, navItems, actions, className }: IHeaderProps) {
   return (
     <header
       className={cn(
-        "sticky left-0 top-0 z-[100] bg-background/[0.82] backdrop-blur-[14px] backdrop-saturate-[1.4] transition-[background-color,border-color] duration-200 ease-out motion-reduce:transition-none",
-        scrolled ? "border-b border-border" : "border-b border-transparent",
+        "sticky left-0 top-0 z-[100] backdrop-blur-[20px] transition-[background-color,border-color] duration-200 ease-out motion-reduce:transition-none",
+        scrolled ? "border-b border-border bg-black/60" : "border-b border-transparent",
         className
       )}
       data-ve-cover
     >
-      <div className="mx-auto flex max-w-containerMaxW items-center justify-between gap-6 px-containerBase py-[15px]">
-        <Brand brand={brand} />
+      <div className="mx-auto grid min-h-header max-w-containerMaxW grid-cols-[auto_1fr] items-center gap-gridGap px-containerBase py-6 min-[860px]:grid-cols-3">
+        <div className="flex items-center">
+          <Brand brand={brand} />
+        </div>
         <DesktopNav navItems={navItems} />
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-end gap-2.5">
           <div className="hidden items-center gap-2.5 min-[860px]:flex">
             <HeaderActions actions={actions} />
           </div>

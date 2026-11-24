@@ -42,7 +42,7 @@ export async function FeaturedPost({ post, readMoreLabel, locale, className }: F
         className
       )}
     >
-      <div className="relative aspect-[16/11] w-full overflow-hidden rounded-lg bg-surface-muted">
+      <div className="relative aspect-[16/11] w-full overflow-hidden rounded-xl border border-border bg-surface-muted">
         <NextImage
           src={heroImage?.url ?? "/empty-placeholder.jpg"}
           alt={heroImage?.alt ?? ""}
@@ -55,10 +55,10 @@ export async function FeaturedPost({ post, readMoreLabel, locale, className }: F
       </div>
 
       <div className="flex flex-col gap-[18px]">
-        <div className="flex flex-wrap items-center gap-3 font-mono text-[0.72rem] uppercase tracking-[0.08em] text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-3 text-small text-subtle-foreground">
           {category && (
             <>
-              <span className="whitespace-nowrap text-primary">{category.title}</span>
+              <span className="whitespace-nowrap text-foreground">{category.title}</span>
               <span aria-hidden className="inline-block size-1 rounded-pill bg-border-strong" />
             </>
           )}
@@ -67,7 +67,7 @@ export async function FeaturedPost({ post, readMoreLabel, locale, className }: F
           </span>
         </div>
 
-        <h2 className="text-balance text-h-section text-foreground transition-colors group-hover:text-primary motion-reduce:transition-none">
+        <h2 className="text-balance text-h-section text-foreground transition-opacity group-hover:opacity-70 motion-reduce:transition-none">
           {post.title}
         </h2>
 
@@ -91,7 +91,7 @@ export async function FeaturedPost({ post, readMoreLabel, locale, className }: F
         )}
 
         {readMoreLabel && (
-          <span className="mt-2 inline-flex items-center gap-1.5 font-semibold transition-colors hover:text-primary motion-reduce:transition-none">
+          <span className="mt-2 inline-flex items-center gap-1.5 font-medium capitalize transition-opacity hover:opacity-70 motion-reduce:transition-none">
             {readMoreLabel} <span aria-hidden>→</span>
           </span>
         )}

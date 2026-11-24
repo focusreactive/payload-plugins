@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 
-import { cn, resolveBackdropTone } from "@/components/utils";
-import { AbstractBackdrop } from "@/components/AbstractBackdrop";
-import { GridLines } from "@/components/GridLines";
+import { cn } from "@/components/utils";
+import { buttonVariants } from "@/components/button";
+import { ButtonSize, ButtonVariant } from "@/components/button/types";
 import type { SectionHeadingContent } from "@/components/SectionHeading";
 import { SectionHeading } from "@/components/SectionHeading";
 
@@ -13,7 +13,6 @@ interface NewsletterSectionProps {
   inputPlaceholder: string;
   buttonLabel: string;
   disclaimer?: string | null;
-  theme?: string | null;
 }
 
 export function NewsletterSection({
@@ -21,10 +20,8 @@ export function NewsletterSection({
   inputPlaceholder,
   buttonLabel,
   disclaimer,
-  theme,
 }: NewsletterSectionProps) {
   const [submitted, setSubmitted] = useState(false);
-  const backdropTone = resolveBackdropTone(theme);
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -32,51 +29,41 @@ export function NewsletterSection({
   }
 
   return (
-    <div>
-      <AbstractBackdrop variant="orbs" tone={backdropTone} intensity="subtle" />
-      <GridLines tone={backdropTone} />
-      <div className="relative z-10 flex flex-col items-center gap-[26px] py-[clamp(56px,8vw,104px)] text-center">
-        <SectionHeading {...heading} align="center" className="max-w-[760px]" />
+    <div className="flex flex-col items-center gap-12 text-center">
+      <SectionHeading {...heading} align="center" />
 
-        <div aria-live="polite" className="flex flex-col items-center gap-4">
-          {submitted ? (
-            <p className="text-lead font-medium">You&rsquo;re in. Talk soon.</p>
-          ) : (
-            <form
-              onSubmit={handleSubmit}
-              className="flex flex-wrap items-center justify-center gap-3"
+      <div aria-live="polite" className="flex w-full flex-col items-center gap-6">
+        {submitted ? (
+          <p className="text-lead font-medium">You&rsquo;re in. Talk soon.</p>
+        ) : (
+          <form
+            onSubmit={handleSubmit}
+            className="flex w-full max-w-[640px] flex-col items-stretch gap-2 rounded-[2.5rem] border border-border bg-surface p-2 backdrop-blur-[20px] sm:flex-row sm:items-center sm:rounded-pill"
+          >
+            <label htmlFor="newsletter-email" className="sr-only">
+              Email address
+            </label>
+            <input
+              id="newsletter-email"
+              type="email"
+              name="email"
+              required
+              placeholder={inputPlaceholder}
+              className={cn(
+                "min-w-0 flex-1 rounded-pill border border-transparent bg-transparent px-6 py-4",
+                "text-body-lg text-foreground placeholder:text-subtle-foreground",
+                "outline-none focus-visible:border-border-strong"
+              )}
+            />
+            <button
+              type="submit"
+              className={buttonVariants({ size: ButtonSize.Large, variant: ButtonVariant.Accent })}
             >
-              <label htmlFor="newsletter-email" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="newsletter-email"
-                type="email"
-                name="email"
-                required
-                placeholder={inputPlaceholder}
-                className={cn(
-                  "min-w-[280px] rounded-pill border border-transparent bg-white px-5 py-3.5",
-                  "text-ink-950 placeholder:text-slate-500",
-                  "outline-none ring-offset-0 focus-visible:ring-2 focus-visible:ring-accent",
-                  "text-base"
-                )}
-              />
-              <button
-                type="submit"
-                className={cn(
-                  "rounded-pill bg-accent px-6 py-3.5",
-                  "text-accent-foreground text-base font-semibold",
-                  "transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-                )}
-              >
-                {buttonLabel}
-              </button>
-            </form>
-          )}
-        </div>
-
-        {disclaimer && <p className="text-small text-muted-foreground">{disclaimer}</p>}
+              {buttonLabel}
+            </button>
+          </form>
+        )}
+        {disclaimer && <p className="text-small text-subtle-foreground">{disclaimer}</p>}
       </div>
     </div>
   );

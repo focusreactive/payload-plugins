@@ -11,8 +11,8 @@ export type LinkAppearances = "default" | "outline" | "accent" | "ghost" | "link
 export const appearanceOptions: Record<LinkAppearances, Option> = {
   default: {
     label: {
-      en: "Primary (solid)",
-      es: "Primario (sólido)",
+      en: "Primary (glass + glow)",
+      es: "Primario (cristal + resplandor)",
     },
     value: "default",
   },
@@ -25,8 +25,8 @@ export const appearanceOptions: Record<LinkAppearances, Option> = {
   },
   accent: {
     label: {
-      en: "Accent (lime)",
-      es: "Acento (lima)",
+      en: "Accent (gradient)",
+      es: "Acento (degradado)",
     },
     value: "accent",
   },

@@ -49,12 +49,9 @@ export function DisplayHeading({
   return (
     <Tag
       className={cn(
-        "font-display text-balance text-primary",
+        "font-display font-semibold text-balance text-foreground",
         sizeMap[size],
-        !TOKEN_SIZES.has(size) && [
-          "tracking-tight",
-          size === "xl" ? "leading-[0.95]" : "leading-[1.05]",
-        ],
+        !TOKEN_SIZES.has(size) && [size === "xl" ? "leading-none" : "leading-[1.05]"],
         className
       )}
     >

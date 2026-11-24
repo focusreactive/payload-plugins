@@ -1,4 +1,5 @@
 import type { PreparedMedia } from "@/components/media";
+import type { SocialPlatform } from "@/components/SocialIcon";
 
 export interface FooterLink {
   label: string;
@@ -9,6 +10,11 @@ export interface FooterLink {
 export interface FooterLinkGroup {
   label: string;
   links: FooterLink[];
+}
+
+export interface FooterSocialLink {
+  platform: SocialPlatform;
+  href: string;
 }
 
 export interface FooterBrand {
@@ -22,5 +28,6 @@ export interface IFooterProps {
   description?: string;
   linkGroups: FooterLinkGroup[];
   legalLinks: FooterLink[];
+  socialLinks: FooterSocialLink[];
   copywriteText?: string;
 }

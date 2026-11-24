@@ -23,7 +23,7 @@ export const CarouselBlockComponent: React.FC<CarouselBlock> = ({
 
   return (
     <SectionContainer sectionData={{ ...section, id }}>
-      <SectionHeading {...heading} align="center" className="mb-12" />
+      <SectionHeading {...heading} align="center" className="mb-sectionGap" />
       <Carousel slides={cards} effect={(effect as ICarouselCardProps["effect"]) ?? "slide"} />
     </SectionContainer>
   );

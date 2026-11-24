@@ -1,11 +1,9 @@
-import { SectionHeading, hasSectionHeading } from "@/components/SectionHeading";
-import { cn } from "@/components/utils";
 import React from "react";
 
-import { AnimatedCarousel } from "@/components/Testimonials";
+import { SectionHeading } from "@/components/SectionHeading";
+import { SectionContainer } from "@/components/shared";
+import { TestimonialCard, TestimonialsSlider } from "@/components/Testimonials";
 import type { Testimonial, TestimonialsListBlock } from "@/payload-types";
-import { Container } from "@/components/shared/Container";
-import { sectionVariants } from "@/components/shared/SectionContainer";
 
 type Props = TestimonialsListBlock;
 
@@ -22,30 +20,19 @@ export const TestimonialsListBlockComponent: React.FC<Props> = ({
     .map((item) => item.testimonial)
     .filter((t): t is Testimonial => typeof t !== "number" && t !== null && t !== undefined);
 
-  const theme = section?.theme;
-
   return (
-    <section
-      id={id ?? undefined}
-      className={cn(
-        sectionVariants({ paddingY: section?.paddingY }),
-        theme && "bg-background text-foreground",
-        "relative overflow-hidden"
-      )}
-      {...(theme ? { "data-theme": theme } : {})}
-    >
-      {hasSectionHeading(heading) && (
-        <Container containerData={{ maxWidth: section?.maxWidth, paddingX: section?.paddingX }}>
-          <SectionHeading {...heading} align="center" className="mb-12 sm:mb-16" />
-        </Container>
-      )}
-
-      <AnimatedCarousel
-        testimonials={testimonials}
-        showRating={showRating ?? true}
-        showAvatar={showAvatar ?? true}
-        duration={duration ?? 60}
-      />
-    </section>
+    <SectionContainer sectionData={{ ...section, id }} className="overflow-x-clip">
+      <SectionHeading {...heading} align="split" className="mb-sectionGap" />
+      <TestimonialsSlider duration={duration ?? 0}>
+        {testimonials.map((testimonial) => (
+          <TestimonialCard
+            key={testimonial.id}
+            testimonial={testimonial}
+            showRating={showRating ?? true}
+            showAvatar={showAvatar ?? true}
+          />
+        ))}
+      </TestimonialsSlider>
+    </SectionContainer>
   );
 };

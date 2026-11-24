@@ -1,42 +1,90 @@
-import { cva } from "@/components/utils";
+import { cn } from "@/components/utils";
 import type { SectionHeadingContent } from "@/components/SectionHeading";
 import { SectionHeading } from "@/components/SectionHeading";
 
-const gridVariants = cva(
-  "flex flex-col items-start gap-10 lg:grid lg:grid-cols-2 lg:items-center lg:gap-[clamp(36px,6vw,90px)]",
-  {
-    defaultVariants: { layout: "image-text" },
-    variants: {
-      layout: {
-        "image-text": "",
-        "text-image": "lg:[direction:rtl] [&>*]:[direction:ltr]",
-      },
-    },
-  }
-);
+export type ContentLayout = "stacked" | "image-text" | "text-image";
 
 interface ContentSectionProps {
-  layout?: "image-text" | "text-image" | null;
+  layout?: ContentLayout | null;
   heading?: SectionHeadingContent | null;
   image?: React.ReactNode;
   body?: React.ReactNode;
   actions?: React.ReactNode;
 }
 
-export function ContentSection({ layout, heading, image, body, actions }: ContentSectionProps) {
+const frameClassName = "relative w-full overflow-clip rounded-xl border border-border";
+
+function Actions({ actions }: { actions?: React.ReactNode }) {
+  if (!actions) return null;
+  return <div className="flex flex-wrap items-center gap-x-8 gap-y-4">{actions}</div>;
+}
+
+/** Wide image on top, title on the left and copy / highlights / actions on the right. */
+function StackedLayout({ heading, image, body, actions }: ContentSectionProps) {
+  const { description, ...titleHeading } = heading ?? {};
+
   return (
-    <div className={gridVariants({ layout: layout ?? "image-text" })}>
+    <div className="flex flex-col gap-sectionGap">
       {image && (
-        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg">{image}</div>
+        <div className={cn(frameClassName, "aspect-[4/3] md:aspect-[32/15]")}>
+          {image}
+          <div aria-hidden className="absolute inset-0 bg-plum-20 mix-blend-soft-light" />
+        </div>
       )}
 
-      <div className="flex max-w-[520px] flex-col gap-[18px]">
-        <SectionHeading {...heading} className="gap-[18px]" />
+      <div className="grid grid-cols-1 gap-x-gridGap gap-y-10 lg:grid-cols-12">
+        <div className="lg:col-span-6">
+          <SectionHeading {...titleHeading} size="h-section" />
+        </div>
 
-        {body}
-
-        {actions && <div className="mt-2 flex flex-wrap items-center gap-4">{actions}</div>}
+        <div className="flex flex-col gap-10 lg:col-span-5 lg:col-start-8 lg:py-4">
+          {description && (
+            <p className="whitespace-pre-line text-body-lg text-foreground lg:px-8">
+              {description}
+            </p>
+          )}
+          {body}
+          <Actions actions={actions} />
+        </div>
       </div>
     </div>
   );
+}
+
+function SplitLayout({ layout, heading, image, body, actions }: ContentSectionProps) {
+  return (
+    <div className="grid grid-cols-1 items-center gap-x-gridGap gap-y-10 lg:grid-cols-12">
+      {image && (
+        <div
+          className={cn(
+            frameClassName,
+            "aspect-[4/3] lg:col-span-6",
+            layout === "text-image" && "lg:order-last lg:col-start-7"
+          )}
+        >
+          {image}
+          <div aria-hidden className="absolute inset-0 bg-plum-20 mix-blend-soft-light" />
+        </div>
+      )}
+
+      <div
+        className={cn(
+          "flex flex-col gap-10 lg:col-span-5",
+          layout === "text-image" ? "lg:col-start-1" : "lg:col-start-8"
+        )}
+      >
+        <SectionHeading {...heading} size="h-section" />
+        {body}
+        <Actions actions={actions} />
+      </div>
+    </div>
+  );
+}
+
+export function ContentSection(props: ContentSectionProps) {
+  if (props.layout === "image-text" || props.layout === "text-image") {
+    return <SplitLayout {...props} />;
+  }
+
+  return <StackedLayout {...props} />;
 }
