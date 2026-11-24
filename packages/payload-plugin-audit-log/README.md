@@ -2,89 +2,51 @@
 
 Audit log for [Payload CMS](https://payloadcms.com/) v3: a read-only collection of who changed which document or global and when, plus sign-ins, API keys and AI agents, with CSV / NDJSON export. Only the paths of changed fields are stored, never their values.
 
+![Audit log list with action and actor pills and export buttons](https://raw.githubusercontent.com/focusreactive/payload-plugins/main/packages/payload-plugin-audit-log/docs/list.png)
+
+| Filter by actor, action or target | Changed field paths, IP and User-Agent |
+| --- | --- |
+| ![Audit log filtered by actor](https://raw.githubusercontent.com/focusreactive/payload-plugins/main/packages/payload-plugin-audit-log/docs/filter.png) | ![Changes, IP and User-Agent of one event](https://raw.githubusercontent.com/focusreactive/payload-plugins/main/packages/payload-plugin-audit-log/docs/event.png) |
+
 ## AI Integration Prompt
 
 > Copy and paste this prompt into your AI assistant (Cursor, Claude, etc.) to integrate the plugin into an existing Payload project.
 
 ```
-I want to add an audit log to my Payload CMS v3 project using @focus-reactive/payload-plugin-audit-log.
+Add an audit log to my Payload CMS v3 project with @focus-reactive/payload-plugin-audit-log.
 
-## How it works
+What it does: adds a read-only collection "audit-events" (admin group "Settings") that records document and
+global changes (create, update, delete, publish, unpublish, version restore), sign-ins, sign-outs, failed
+sign-ins and password resets. Each event stores the actor (user, API key, MCP agent, system, anonymous), the
+target, the paths of changed fields (never values), IP and User-Agent. Nobody can edit or delete events.
 
-The plugin adds a read-only collection (default slug "audit-events", admin group "Settings") and records:
-- document and global changes: create, update, delete, publish, unpublish, restore of a version;
-- sign-in, sign-out, failed sign-in, password reset requests and resets;
-- exports and retention purges of the log itself.
-Each event stores who (user, API key, MCP agent, system, anonymous), what (collection or global, document id,
-locale), the paths of the changed fields (never their values), IP and User-Agent.
-Events are written in the same transaction as the change; if writing an event fails, the change still succeeds.
-Nobody can create, update or delete events through REST, GraphQL, the admin or the Local API.
+1. Install: bun add @focus-reactive/payload-plugin-audit-log
+   (payload and @payloadcms/ui 3.90+, react 19; Postgres, SQLite or MongoDB)
 
-## Step 1 — Install
+2. In payload.config.ts, add it after plugins that create collections or globals:
 
-bun add @focus-reactive/payload-plugin-audit-log
+   import { auditLogPlugin } from '@focus-reactive/payload-plugin-audit-log'
 
-Requires payload and @payloadcms/ui 3.90+ and react 19. Works with Postgres, SQLite and MongoDB.
+   auditLogPlugin({
+     access: { read: ({ req }) => Boolean(req.user) }, // who can read and export; restrict to admins
+     retention: { days: 365 },                          // optional, default: keep forever
+   })
 
-## Step 2 — Register the plugin in payload.config.ts
+   With @payloadcms/plugin-mcp (order: 10), set a higher order so MCP keys and agents are audited:
+   Object.assign(auditLogPlugin({ ... }), { order: 11 })
 
-import { auditLogPlugin } from '@focus-reactive/payload-plugin-audit-log'
+3. Run: payload generate:importmap
+   On Postgres / SQLite also: payload migrate:create add_audit_log && payload migrate
 
-// Inside buildConfig({ plugins: [...] }), after plugins that add collections or globals
-auditLogPlugin({
-  access: { read: ({ req }) => req.user?.role === 'admin' }, // who can read and export the log
-  retention: { days: 365 },                                   // optional; without it events are kept forever
-  excludeCollections: [],                                     // optional; slugs not to log
-  excludeGlobals: [],                                         // optional
-})
+4. Scripts and agents: wrap Local API calls to name the actor, otherwise they are logged as "system":
 
-If the project uses @payloadcms/plugin-mcp (order: 10), give the audit plugin a higher order so MCP API keys
-and agent requests are audited:
+   import { withAuditActor } from '@focus-reactive/payload-plugin-audit-log'
+   await withAuditActor({ type: 'system', label: 'nightly import' }, () => payload.update({ ... }))
 
-const audit = auditLogPlugin({ /* options */ })
-plugins: [mcpPlugin({ /* ... */ }), Object.assign(audit, { order: 11 })]
+5. With retention, make sure jobs run (jobs.autoRun, or a cron calling payload.jobs.run()).
 
-## Step 3 — Generate the import map and the migration
-
-payload generate:importmap        # the Export CSV / Export NDJSON buttons in the list view
-payload migrate:create add_audit_log && payload migrate   # Postgres / SQLite only
-
-## Step 4 — Label scripts and background work (optional)
-
-Local API calls without a user are recorded with the "system" actor. To name the actor:
-
-import { withAuditActor } from '@focus-reactive/payload-plugin-audit-log'
-
-await withAuditActor({ type: 'system', label: 'nightly import' }, async () => {
-  await payload.update({ collection: 'products', id, data })
-})
-
-For an AI agent outside MCP use { type: 'agent', label: '<agent name>' }.
-To record a custom event (for example an SSO login handled outside Payload auth):
-
-import { logAuditEvent } from '@focus-reactive/payload-plugin-audit-log'
-
-await logAuditEvent(payload, {
-  action: 'auth.login',
-  target: { kind: 'auth', slug: 'users', docId: String(user.id) },
-  actorOverride: {
-    actor: { type: 'user', source: 'auth', collection: 'users', docId: String(user.id), label: user.email },
-  },
-  headers,               // request headers, for IP and User-Agent
-  metadata: { method: 'oidc' },
-})
-
-## Step 5 — Retention (only if retention is set)
-
-The purge job runs daily at 03:00 on the "default" queue. Make sure jobs run: set jobs.autoRun in the config,
-or call payload.jobs.handleSchedules() and payload.jobs.run() from a cron.
-
-## Verify
-
-1. Sign in as a user allowed by access.read and open Settings → Audit log.
-2. Edit and publish a document: doc.update and doc.publish events appear with the changed field paths.
-3. Sign in with a wrong password: an auth.login_failed event appears.
-4. Export CSV from the list view: the file follows the current filter.
+Check: edit and publish a document, sign in with a wrong password, then open Settings → Audit log and
+export CSV. Custom events (for example SSO logins): see logAuditEvent in the plugin README.
 ```
 
 ## Install
