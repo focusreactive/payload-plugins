@@ -33,7 +33,7 @@ Plain stage `actions` are normalised once by `defineWorkflow` into one activity 
 - `startWorkflow` given a caller's `req`: losing the `activeKey` race rolls back the caller's transaction (Payload's failed `create`); the `already-running` error then says so. The `isRunning` pre-check keeps that rare.
 - Field writes are type-checked; only `input: true` fields may be passed at start; names that are `Object.prototype` members are rejected; params are read as own properties only.
 - `fire` and `view` share one verdict (`verdictFor`): an enabled button never fails for a knowable reason.
-- The runs collection is not writable over the API. Its admin list shows every run to admin users (Payload's list cannot drop runs on unreadable documents; the cells show such a document as untitled); the plugin's own reads (`listWorkflowInstances`, the widget) drop them.
+- The runs collection is not writable over the API. Its `read` access (`readRuns` in `server/store.ts`) is admin-collection users only, constrained to runs on documents the subject collections' own `read` access allows (a per-document rule is resolved to at most `READABLE_IDS_CAP` ids, above which that collection's runs are hidden and logged once; nothing readable is a never-matching constraint, not `false`, so the plugin's reads return empty instead of `not-allowed`). So the admin list, REST, GraphQL and counts drop runs on unreadable documents; the plugin's own reads (`listWorkflowInstances`, the widget) still drop them themselves (latest draft, like `readRuns`).
 - "For me" (`scope: "mine"`) is one query over the denormalised `assignedUsers` / `assignedRoles`: runs waiting on the caller or their roles, then active runs with neither (open to anyone). No definition is evaluated per row.
 
 ## Verify

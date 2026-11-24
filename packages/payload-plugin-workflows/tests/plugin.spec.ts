@@ -35,18 +35,19 @@ const bySlug = (result: Config, slug: string) =>
   result.collections?.find((collection) => collection.slug === slug) as CollectionConfig;
 
 describe("workflowsPlugin", () => {
-  it("adds the instances collection, locked against API writes", () => {
+  it("adds the instances collection, locked against API writes", async () => {
     const instances = bySlug(run(), "workflow-instances");
     const access = instances.access!;
     expect((access.create as () => boolean)()).toBe(false);
     expect((access.update as () => boolean)()).toBe(false);
     expect((access.delete as () => boolean)()).toBe(false);
-    const read = access.read as (a: unknown) => boolean;
-    const payload = { config: { admin: { user: "users" } } };
-    expect(read({ req: { payload, user: { id: 1, collection: "users" } } })).toBe(true);
+    const read = access.read as (a: unknown) => Promise<unknown>;
+    // No subject collection to narrow by here (the integration tests cover per-document rules).
+    const payload = { config: { admin: { user: "users" } }, collections: {} };
+    expect(await read({ req: { payload, user: { id: 1, collection: "users" } } })).toBe(true);
     // A user of another auth collection (e.g. API clients) is not an admin user.
-    expect(read({ req: { payload, user: { id: 1, collection: "clients" } } })).toBe(false);
-    expect(read({ req: { payload, user: null } })).toBe(false);
+    expect(await read({ req: { payload, user: { id: 1, collection: "clients" } } })).toBe(false);
+    expect(await read({ req: { payload, user: null } })).toBe(false);
     const names = instances.fields.map((field) => ("name" in field ? field.name : null));
     expect(names).toEqual([
       "workflow",

@@ -270,11 +270,16 @@ export async function bootWorkflowsPayload(
         versions: { drafts: true },
         trash: true,
         access: {
-          // A user with the role "blind" cannot read pages titled "Secret".
-          read: ({ req }) =>
-            ((req.user as { roles?: string[] } | null)?.roles ?? []).includes("blind")
+          // A user with the role "blind" cannot read pages titled "Secret"; "no-pages", none.
+          read: ({ req }) => {
+            const userRoles = (req.user as { roles?: string[] } | null)?.roles ?? [];
+            if (userRoles.includes("no-pages")) {
+              return false;
+            }
+            return userRoles.includes("blind")
               ? { title: { not_equals: "Secret" } }
-              : Boolean(req.user),
+              : Boolean(req.user);
+          },
         },
         fields: [{ name: "title", type: "text" }],
       },

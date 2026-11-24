@@ -3,7 +3,14 @@
 
 import { randomUUID } from "node:crypto";
 
-import type { CollectionConfig, CollectionSlug, PayloadRequest, SelectType, Where } from "payload";
+import type {
+  Access,
+  CollectionConfig,
+  CollectionSlug,
+  PayloadRequest,
+  SelectType,
+  Where,
+} from "payload";
 import { ValidationError, commitTransaction, initTransaction, killTransaction } from "payload";
 
 import { formatAdminURL } from "payload/shared";
@@ -13,6 +20,7 @@ import { EFFECT_TASK, JOBS_QUEUE, QUEUED_JOBS, RUNS_SLUG, componentPath } from "
 import { WorkflowError } from "../engine/errors.js";
 import { NAMESPACE } from "../translations.js";
 import { waitingOnOf } from "../engine/view.js";
+import type { WorkflowsSettings } from "../plugin.js";
 import type { InstanceState, Result, WorkflowDefinition } from "../types.js";
 import { transactionLost, transactionOf, writing } from "./transaction.js";
 
@@ -26,10 +34,84 @@ const label =
 const internal = { hidden: true } as const;
 
 /**
- * Runs are read by users of the admin user collection and written by nobody over the API: state
- * changes only through the plugin's operations, so the history cannot be edited. In the admin it is
- * the read-only list of every workflow ("Workflows"): a row links to its document, where the
- * drawer shows and moves the run.
+ * Readable ids resolved for a subject collection whose `read` access is a per-document rule. Above
+ * this the collection is left out of the runs the user may read (and logged once): one query, and an
+ * `IN` list well under SQLite's and Postgres' bound-parameter limits.
+ */
+export const READABLE_IDS_CAP = 5000;
+
+const warnedOverCap = new Set<string>();
+
+/**
+ * Who may read runs: a user of the admin user collection, and only runs on documents they may read.
+ * Each subject collection's own `read` access decides for `req`: `false` leaves its runs out,
+ * `true` lets them all in, a query constraint (a per-document rule) lets in the runs on the ids it
+ * allows, resolved with one query as the user (latest drafts, as the plugin's own reads). A user who
+ * may read every subject collection whole gets no constraint at all; one who may read none, a
+ * constraint nothing matches.
+ */
+const readRuns: Access = async ({ req }): Promise<boolean | Where> => {
+  const { user, payload } = req;
+  if (!user || user.collection !== payload.config.admin?.user) {
+    return false;
+  }
+  const settings = payload.config.custom?.workflows as WorkflowsSettings | undefined;
+  const slugs = [...new Set(settings?.workflows.flatMap((def) => def.collections))];
+  const or: Where[] = [];
+  let whole = true;
+  for (const slug of slugs) {
+    const collection = payload.collections[slug as CollectionSlug];
+    const access = collection?.config.access?.read;
+    // No function: Payload's default, any logged-in user.
+    const result = collection ? (access ? await access({ req }) : true) : false;
+    if (result === true) {
+      or.push({ subjectCollection: { equals: slug } });
+      continue;
+    }
+    whole = false;
+    if (!result || typeof result !== "object") {
+      continue;
+    }
+    const found = await payload.find({
+      collection: slug as CollectionSlug,
+      select: { id: true },
+      draft: true,
+      limit: READABLE_IDS_CAP + 1,
+      pagination: false,
+      overrideAccess: false,
+      user,
+      req,
+    });
+    if (found.docs.length > READABLE_IDS_CAP) {
+      if (!warnedOverCap.has(slug)) {
+        warnedOverCap.add(slug);
+        payload.logger.warn(
+          `workflows: a user may read more than ${READABLE_IDS_CAP} "${slug}" documents under its per-document read access, so workflow runs on "${slug}" are hidden from them (runs collection, workflow lists and the dashboard widget).`
+        );
+      }
+      continue;
+    }
+    if (found.docs.length > 0) {
+      or.push({
+        and: [
+          { subjectCollection: { equals: slug } },
+          { subjectId: { in: found.docs.map((doc) => String(doc.id)) } },
+        ],
+      });
+    }
+  }
+  if (whole) {
+    return true;
+  }
+  // Not `false`: that is a 403, and the plugin's reads would turn an empty list into `not-allowed`.
+  return or.length > 0 ? { or } : { id: { exists: false } };
+};
+
+/**
+ * Runs are read by users of the admin user collection, each only on documents they may read
+ * (`readRuns`), and written by nobody over the API: state changes only through the plugin's
+ * operations, so the history cannot be edited. In the admin it is the read-only list of
+ * workflows ("Workflows"): a row links to its document, where the drawer shows and moves the run.
  */
 export const runsCollection: CollectionConfig = {
   slug: RUNS_SLUG,
@@ -49,8 +131,7 @@ export const runsCollection: CollectionConfig = {
     disableCopyToLocale: true,
   },
   access: {
-    // The plugin's functions further drop runs whose document the caller cannot read.
-    read: ({ req }) => Boolean(req.user && req.user.collection === req.payload.config.admin?.user),
+    read: readRuns,
     create: () => false,
     update: () => false,
     delete: () => false,

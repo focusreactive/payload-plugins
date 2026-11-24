@@ -101,7 +101,7 @@ The plugin adds, to each collection a workflow names, the indicator (`admin.comp
 
 **On the dashboard**, a **Workflows** widget (Payload's modular dashboard, `admin.dashboard.widgets`): first *Waiting on you* (up to five documents waiting on you or one of your roles, then those open to anyone, each with its stage and how long it has waited), then a board per workflow with open documents (one column per stage, its count and the first three documents). It reads with the viewer's access, like the API below. Without a `defaultLayout` of yours it comes first, above Payload's collection cards; with one (an array, or a function) it is appended to it. Payload keeps a layout per user once they save one in the dashboard's edit mode; those users add **Workflows** from *Add* there (or *Reset layout*).
 
-**The full list** is Payload's own list view of the runs collection, **Workflows** in the nav (for users of the admin user collection): document, workflow, stage, status, who it waits on, last change, with Payload's filters and sorting. It is read-only (nobody can create, edit or delete a run) and a row opens its document, where the drawer shows and moves the workflow. The widget's *View all* opens it filtered to open workflows (`?where[status][equals]=active`).
+**The full list** is Payload's own list view of the runs collection, **Workflows** in the nav (for users of the admin user collection, each seeing only workflows on documents they may read): document, workflow, stage, status, who it waits on, last change, with Payload's filters and sorting. It is read-only (nobody can create, edit or delete a run) and a row opens its document, where the drawer shows and moves the workflow. The widget's *View all* opens it filtered to open workflows (`?where[status][equals]=active`).
 
 To try it: save a page, press **Workflow** next to Save, start **Editorial review** and **Submit for review**; as another user, **Take this review** and press Publish: it is refused ("Publishing is on hold. A reviewer must approve this page first."). **Approve** completes the run and publishing goes through.
 
@@ -159,7 +159,7 @@ The same operations under your API route, for signed-in users (errors as `{ erro
 | `POST /workflows/fire` | `{ instanceId, action, activity?, params? }` |
 | `POST /workflows/abort` | `{ instanceId, reason? }` |
 
-Runs themselves are readable over Payload's own REST and GraphQL API for the `workflow-instances` collection (admin users only; it does not drop runs on documents the caller cannot read, `listWorkflowInstances` does).
+Runs themselves are readable over Payload's own REST and GraphQL API for the `workflow-instances` collection (admin users only). Its `read` access, like the list view, shows a caller only runs on documents they may read: each subject collection's own `read` access decides (`false`: none of its runs; `true`: all; a query constraint: the runs on the ids it allows, resolved with one query of at most 5,000 ids; above that the collection's runs are hidden from that user and a warning is logged once).
 
 **Agents.** `workflowAgentTools({ payload, user })` from `@focus-reactive/payload-plugin-workflows/agent` returns AI-SDK-shaped tools (`{ description, inputSchema, execute }`): `workflows_list_definitions`, `workflows_list_instances`, `workflows_get_state`, `workflows_start`, `workflows_fire_action`. They act as `user`, the history records `via: "agent"`, and they return `{ error, code }` instead of throwing. With `payload-content-agent`: `customTools: (ctx) => workflowAgentTools(ctx)`.
 
