@@ -8,6 +8,7 @@ import type { NormalizedAutoTranslatePolicy } from "../AutoTranslate.policy.js";
 import { makeAutoTranslateHook } from "../AutoTranslateEnqueue.hook.js";
 import { fingerprintsOf } from "../../provenance/__tests__/fixtures/fingerprinter.js";
 import { storeDouble } from "../../runs/__tests__/fixtures/runRecordStore.js";
+import { publishedHistory } from "./publishedHistory.js";
 
 const schemaMap: CollectionSchemaMap = new Map([
   ["posts" as CollectionSlug, [{ name: "title", type: "text", localized: true }] as Field[]],
@@ -33,10 +34,13 @@ function setup() {
   return { hook, enqueue };
 }
 
+const DOC = { id: "1", title: "NEW", _status: "published" };
+const PREVIOUS_PUBLISH = { id: "1", title: "OLD", _status: "published" };
+
 function hookArgs(req: Record<string, unknown>) {
   return {
-    doc: { id: "1", title: "NEW", _status: "published" },
-    previousDoc: { id: "1", title: "OLD", _status: "published" },
+    doc: DOC,
+    previousDoc: PREVIOUS_PUBLISH,
     collection: { slug: "posts", versions: { drafts: true } },
     operation: "update",
     req: {
@@ -44,6 +48,7 @@ function hookArgs(req: Record<string, unknown>) {
       context: {},
       payload: {
         logger,
+        findVersions: publishedHistory(DOC, PREVIOUS_PUBLISH),
         config: { localization: { defaultLocale: "en", locales: ["en", "de"] } },
       },
       ...req,

@@ -3,10 +3,6 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { bootTestPayload } from "./bootTestPayload";
 import type { TestPayload } from "./bootTestPayload";
 
-// Both `.fails`: the publish gate turns the draft save away, and the drift gate then turns the
-// publish away because the text arrived one save earlier — no edit reaching a locale through a
-// draft is auto-translated.
-
 let ctx: TestPayload;
 
 const german = (id: string) =>
@@ -29,7 +25,7 @@ describe("auto-translate when the text arrives as a draft and is published after
     await ctx?.cleanup();
   });
 
-  it.fails("translates a document first saved as a draft, then published", async () => {
+  it("translates a document first saved as a draft, then published", async () => {
     const before = ctx.translateCount();
 
     const made = await ctx.payload.create({
@@ -46,7 +42,7 @@ describe("auto-translate when the text arrives as a draft and is published after
     expect((await german(id)).title).toBe("de:Written as a draft");
   });
 
-  it.fails("translates an edit saved as a draft on an already published document", async () => {
+  it("translates an edit saved as a draft on an already published document", async () => {
     const made = await ctx.payload.create({
       collection: "docs",
       locale: "en",
@@ -69,6 +65,77 @@ describe("auto-translate when the text arrives as a draft and is published after
 
     expect(ctx.translateCount() - before).toBe(1);
     expect((await german(id)).title).toBe("de:Second text");
+  });
+
+  it("spends nothing republishing a document whose translatable text did not move", async () => {
+    const made = await ctx.payload.create({
+      collection: "docs",
+      locale: "en",
+      data: { _status: "published", title: "Settled text" },
+    });
+    const id = String(made.id);
+
+    const before = ctx.translateCount();
+    await publish(id);
+
+    expect(ctx.translateCount() - before).toBe(0);
+  });
+
+  // The publish carries the text, so the newest draft still reads "A second thought" when the hook
+  // runs. Comparing against the previous publish answers "unchanged"; comparing against the newest
+  // version of any status answers "changed" and spends.
+  it("spends nothing when a draft is edited and the publish puts the text back as it was", async () => {
+    const made = await ctx.payload.create({
+      collection: "docs",
+      locale: "en",
+      data: { _status: "published", title: "Original wording" },
+    });
+    const id = String(made.id);
+
+    await ctx.payload.update({
+      collection: "docs",
+      id,
+      locale: "en",
+      draft: true,
+      data: { title: "A second thought" },
+    });
+
+    const before = ctx.translateCount();
+    await ctx.payload.update({
+      collection: "docs",
+      id,
+      locale: "en",
+      data: { _status: "published", title: "Original wording" },
+    });
+
+    expect(ctx.translateCount() - before).toBe(0);
+  });
+
+  it("is unaffected by the published row the plugin's own target-locale write leaves behind", async () => {
+    const made = await ctx.payload.create({
+      collection: "docs",
+      locale: "en",
+      data: { _status: "published", title: "First wording" },
+    });
+    const id = String(made.id);
+    expect((await german(id)).title).toBe("de:First wording");
+
+    const before = ctx.translateCount();
+    await ctx.payload.update({
+      collection: "docs",
+      id,
+      locale: "en",
+      data: { _status: "published", title: "Second wording" },
+    });
+
+    expect(ctx.translateCount() - before).toBe(1);
+    expect((await german(id)).title).toBe("de:Second wording");
+
+    // The spend direction: the plugin's German publish is the newest published row of this document,
+    // and reading it as the baseline would make the English text look changed every time.
+    const beforeRepublish = ctx.translateCount();
+    await publish(id);
+    expect(ctx.translateCount() - beforeRepublish).toBe(0);
   });
 
   it("translates text typed straight into a publishing save — the path the suite already knew", async () => {

@@ -71,7 +71,7 @@ is the exact measured defect D1 exists to remove, reproduced by D1's own mechani
 which needs a revert-then-publish case, and it catches B9 only if an autosave collection is in the
 fixture.
 
-**Decision needed.** `/sp-architect` on D1: the ADR must carry the query, not a sketch of it. Payload's
+**Decision needed.** A design pass on D1: the ADR must carry the query, not a sketch of it. Payload's
 own form is in `getLatestCollectionVersion.js:6-18` —
 `{ and: [{ parent: { equals: id } }, { 'version._status': { equals: 'published' } }] }`, `sort: '-updatedAt'`.
 D1's guard line should name the revert-then-publish case and an autosave fixture.
@@ -89,7 +89,7 @@ world the auto path takes the second member and therefore claims `publish: true`
 that the design does not mention, in a decision whose stated point (DM6) is that illegal pairs are
 unrepresentable.
 
-**Decision needed.** `/sp-architect` on D4: either a third member for the no-drafts world, or a stated
+**Decision needed.** A design pass on D4: either a third member for the no-drafts world, or a stated
 rule that `publish` means "publish if there is a layer to publish into", with `publishIfAsked` named as
 the place that holds it.
 
@@ -113,7 +113,7 @@ publish:false}`. But rows queued by the auto path *were* auto work, and the row 
 text. The German draft holds a translation of text that was never published. The badge reads "translated
 12:00:35" and the locale is marked stale immediately after a run that settled as *succeeded*.
 
-**Decision needed.** `/sp-architect` on D4: the shim derives the intent from `publishOnTranslation`
+**Decision needed.** A design pass on D4: the shim derives the intent from `publishOnTranslation`
 rather than defaulting to manual.
 
 ### 4. race — redelivery overwrites a hand-edited target locale and pays the provider twice
@@ -130,7 +130,7 @@ shows that anything was overwritten.
 
 **Predates this design**, but D4 makes the run read at execution, which widens the window.
 
-**Decision needed.** The user, or `/sp-architect` on D7: name the idempotency rule (a key on the run, or
+**Decision needed.** The owner, or a design pass on D7: name the idempotency rule (a key on the run, or
 a check that the target has not moved since the run read), or state the loss and stop promising the
 admin shows what happened.
 
@@ -150,7 +150,7 @@ On a serverless deploy the first case arrives not at deploy time but on the firs
 **Observable state.** The same host mistake is either a total outage or complete silence, and the design
 names no rule for which.
 
-**Decision needed.** `/sp-architect` on D3: whether a world refusal at boot may fail the whole process,
+**Decision needed.** A design pass on D3: whether a world refusal at boot may fail the whole process,
 or must degrade to a refusal scoped to the managed collection (the plugin's routes and hook refuse; the
 host's other collections keep working), and what the hook layer does when it is the last layer standing.
 
@@ -168,7 +168,7 @@ translation lives only in a draft.
 D10 split one word into three to remove ambiguity; this is the ambiguity surviving the split, because
 two of the three answers are about different layers and sit side by side.
 
-**Decision needed.** `/sp-architect` on D10: whether the badge answers per layer, or the two rows are
+**Decision needed.** A design pass on D10: whether the badge answers per layer, or the two rows are
 presented as one sentence that names the layer each half speaks about.
 
 ### 7. race — the three state reads have no common snapshot
@@ -194,7 +194,7 @@ fingerprints came from the other, which the badge then calls current.
 
 **Predates this design.** D7's correctness leans on `admitWork`, so it is now load-bearing.
 
-**Decision needed.** `/sp-architect` on D7: a unique constraint on the live run row, or a stated
+**Decision needed.** A design pass on D7: a unique constraint on the live run row, or a stated
 acceptance that two runs may be admitted for one document.
 
 ### 9. growth — one locale to k locales turns D7's residual into the normal path
@@ -209,7 +209,7 @@ publish, and every editor save inside that window is dropped with one log line. 
 edited. 3rd: 0 parts edited, and the busy window grows linearly. The same axis multiplies live rows
 against the silent 500-row ceiling (20 documents × 30 locales = 600).
 
-**Decision needed.** `/sp-architect` on D7: with k locales the dropped save is ordinary, not residual.
+**Decision needed.** A design pass on D7: with k locales the dropped save is ordinary, not residual.
 
 ### 10. growth — admitting `localizeStatus` later costs 5 seams, not "none"
 
@@ -234,7 +234,7 @@ is true only for worlds that differ in how they are *detected*, not in what "pub
 S10's assumption is about **pairs**: three answers are 3 pairs, four are 6. The growth table counts
 edits per answer and calls it flat. Finding 6 is the unpaid pair.
 
-**Decision needed.** `/sp-architect` on D10: the rule that a new state question must state its layer and
+**Decision needed.** A design pass on D10: the rule that a new state question must state its layer and
 be checked against each existing one, or the fourth question repeats finding 6.
 
 ### 12. growth — an axis the model does not list: translating part of a document
@@ -303,7 +303,7 @@ editor has — compares equal forever.
 This holds whether or not finding 1 is fixed: the filtered query would take D, a **published** row, so
 the filter does not rescue it. Repair is only outside the model — a fresh English edit, or a manual run.
 
-**Decision needed.** `/sp-architect` on D7: this is the dropped save becoming unrecoverable rather than
+**Decision needed.** A design pass on D7: this is the dropped save becoming unrecoverable rather than
 merely invisible, which is more than D7's recorded consequence claims.
 
 ---

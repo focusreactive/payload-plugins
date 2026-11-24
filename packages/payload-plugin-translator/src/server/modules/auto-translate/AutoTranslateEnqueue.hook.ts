@@ -70,7 +70,18 @@ export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAf
         const world = worldOfCollection(collection);
         if (!passesPublishGate(doc, world)) return;
 
-        if (!hasSourceContentChanged(previousDoc, doc, collection.slug, fingerprintOf)) return;
+        const baseline =
+          world.kind === "layered"
+            ? await world.previousPublished({
+                payload: req.payload,
+                collection: collection.slug,
+                id: String(doc.id),
+                locale: sourceLocale,
+                scope,
+              })
+            : previousDoc;
+
+        if (!hasSourceContentChanged(baseline, doc, collection.slug, fingerprintOf)) return;
 
         const tasks = buildAutoTranslateTasks({
           policy,

@@ -405,33 +405,33 @@ field · `ProvenanceStore` gains one optional method · `latestPerTargetLocale` 
 
 1. `mustInclude` and `dismissed` leave the contract — both fields out of the wire type, the locked set
    and its seeding out of the field picker, the `dismissed` branch out of the locale row, both values
-   out of the stub fixtures. The dismissal feature is untouched. · covers: — · via /sp-task · incremental
+   out of the stub fixtures. The dismissal feature is untouched. · covers: — · incremental
 2. Field selection follows the drafts layer — where a collection has no drafts the admin offers only
    the whole document, and the enqueue route refuses a filtered run there rather than trusting the
-   screen. · covers: — · via /sp-task · incremental
+   screen. · covers: — · incremental
 3. The per-leaf verdict — `leafVerdicts.ts`, the union in core with the wire alias, the three
    derivations rewritten with their existing tests unchanged, and the shared-computation assertion.
-   · covers: R5 · via /sp-task · incremental
+   · covers: R5 · incremental
 4. The document's shape — the per-request label index, the tree walk with the path cursor,
    `whole-list` for a self-localized list, `excluded` from the schema, and the address-parity guard.
-   No route yet. · covers: R3, R4 · via /sp-task · incremental
+   No route yet. · covers: R3, R4 · incremental
 5. A locale's content — the four-way rule over the concurrent per-locale `exists` queries;
    `resolveSourceLocale` extracted and the auto-translate hook refactored onto it; the staleness
-   service gains the verdict-map method. · covers: R6 · via /sp-task · incremental
+   service gains the verdict-map method. · covers: R6 · incremental
 6. The run's locales — move `latestPerTargetLocale`, add `runStateOf.ts` with the full status map,
    the stable `failedLocale` rule, and the message through the client-safe projection.
-   · covers: R8 · via /sp-task · incremental
+   · covers: R8 · incremental
 7. Receipts in one read, and the store reaches the routes — the optional batched method with its
    fallback, the provenance wiring exposing its factories, and the optional field on the context.
-   · covers: — · via /sp-task · incremental
+   · covers: — · incremental
 8. The document route — refusals moved, the shared preamble, handler and assembly, registration, both
    guard tables updated, and the test that the action union gained nothing.
-   · covers: R1, R9, R10, R16 · via /sp-task · incremental
+   · covers: R1, R9, R10, R16 · incremental
 9. The list route — `?ids=` parsing with the 100 cap as a 400, `visibleIds` as the decision, the
    per-locale finds, the batched receipts read, the live run read **and** the recently-failed read,
-   order preserved. · covers: R2 · via /sp-task · incremental
+   order preserved. · covers: R2 · incremental
 10. The harness drives both routes — `callEndpoint` gains a query string and a minimal `i18n`, and the
-    integration tests land. · covers: R11 · via /sp-task · incremental
+    integration tests land. · covers: R11 · incremental
 
 Nothing migrates stored data and every step leaves the suite green on its own. Step 1 changes a wire
 type, but every consumer is in this repository and changes in the same commit.
@@ -485,7 +485,7 @@ None. No invariant is knowingly left unmet and no owner decision is reopened.
 
 ### Next
 
-`/sp-seam-trace` on this file — the design has more than three seams between parts (the two routes,
+A scenario walk across this file's seams — the design has more than three of them between
+parts (the two routes,
 the provenance store, the run store, the host's documents and the config), and the list route's run
-read has a known hole that a scenario walk is the right instrument for. Then `/sp-task` on build
-step 1.
+read has a known hole that such a walk is the right instrument for. Then build step 1.

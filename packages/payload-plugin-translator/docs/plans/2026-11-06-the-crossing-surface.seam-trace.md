@@ -50,7 +50,7 @@ translation `"Jetzt kaufen"` / `"Abonnieren"` is gone. The run reports `selected
 `body` — a message about missing text, for a field whose text was overwritten. No error, no failed
 locale.
 Decision needed: should `open` receive the means to write at all, or should it return the working
-copy it wants seated and leave the seating to the host, after consent? — `/sp-architect`, reopens D2
+copy it wants seated and leave the seating to the host, after consent? — reopens D2
 and D3.
 
 #### 2. mismatch — the embed name is documented as the format's word and carries the host's slug; a second format that believes the documentation loses every embed
@@ -67,7 +67,7 @@ Consequence: every embedded block in that format is skipped silently, and becaus
 already seated a clone of the source, their previously translated content is replaced by English.
 The run reports success with a smaller unit count that nobody has a baseline for.
 Decision needed: does `name` carry the format's word with a host-side mapping step, or the host's own
-key with the format obliged to find it? — `/sp-architect`, reopens D3.
+key with the format obliged to find it? — reopens D3.
 
 #### 3. unstated — the replacement convention drops the aliasing promise the current one makes
 
@@ -82,7 +82,7 @@ Consequence: stored, the German `body` keeps `heading: "Subscribe"`. The run rep
 translated and a successful locale; the provider is billed for both. The disagreement is visible
 only by opening the document.
 Decision needed: the new type must carry the promise, and say whether it is the only way a format may
-pass embedded data — `/sp-architect`, reopens D3. Low cost, high consequence if missed.
+pass embedded data — reopens D3. Low cost, high consequence if missed.
 
 #### 4. unstated — "seats a copy" does not say *deep*, and a shallow copy writes the source document
 
@@ -96,7 +96,7 @@ Consequence: a second target locale in the same run translates the German, not t
 nobody chose. Both locales report success. Depends on an unverified cell: whether per-locale walks of
 one run share one in-memory source document.
 Decision needed: state the depth in the convention, and state that a format may not alias the source
-— `/sp-architect`, reopens D3. Then verify the shared-source cell by reading the run.
+— reopens D3. Then verify the shared-source cell by reading the run.
 
 #### 5. guard-gap — an empty `formats` list boots clean and silently disables the field
 
@@ -110,7 +110,7 @@ the only signal. The author's assumption — "a config that boots is a config wh
 all live" — is false while the guard works exactly as specified.
 Decision needed: is an empty `formats` list a legal way to say "no format may take this field", or a
 boot error? If legal, it needs a different spelling from the one that means "I narrowed to nothing by
-accident" — `/sp-architect`, reopens D6.
+accident" — reopens D6.
 
 #### 6. mismatch — two spellings of one meaning, against the invariant the type was shaped to hold
 
@@ -125,8 +125,7 @@ Consequence: an author who writes `{ blocks: [] }` and an author who writes `"no
 behaviour by different routes, and a project whose default list is empty cannot tell inheritance from
 refusal in either direction. No report distinguishes them.
 Decision needed: forbid an empty list in the union, or drop `"none"` and let an empty list be the
-spelling — one of the two, not both — and say what an empty default means — `/sp-architect`,
-reopens D6.
+spelling — one of the two, not both — and say what an empty default means — reopens D6.
 
 #### 7. half-done — declaring "do not translate embeds here" replaces those embeds with English
 
@@ -153,7 +152,7 @@ count, the provider is billed, and the document disagrees. The only thing that r
 opening the translated document.
 Decision needed: should the walk be able to report that a unit it translated did not reach the
 document — and if so, at which seam — or is that the partial-translation work already deferred?
-— the user, then `/sp-architect` if yes.
+— the owner, then a design pass if yes.
 
 #### 9. growth — appending a crossing entry is not one line, because order is semantic and nothing declares what an entry recognises
 
@@ -167,7 +166,7 @@ touched: 1 → 2. Class: **entangled**, not plug-in.
 Consequence: every new format addition costs a review of every previous one, and a mistake is finding
 1's data loss rather than a type error.
 Decision needed: should an entry declare what it recognises separately from opening it, so the host
-can choose without running anything? — `/sp-architect`, reopens D2 and D3. This is the same question
+can choose without running anything? — reopens D2 and D3. This is the same question
 finding 1 asks, from the growth side.
 
 #### 10. growth — a third embed list edits three parts the traced table omits, and the declaration union grows as 2^n − 1
@@ -181,7 +180,7 @@ all-absent case. Parts edited 2nd → 3rd: 5 → 8. Seam contracts changed: 2 (S
 Consequence: the device that buys finding 6's invariant is the device that makes a third list
 expensive, and finding 6 shows the invariant is not actually held.
 Decision needed: is the all-absent case worth a union that grows exponentially, or is it better
-expressed another way? — `/sp-architect`, reopens D6.
+expressed another way? — reopens D6.
 
 #### 11. growth — the embed convention is not host-neutral, which is the axis it exists to serve
 
@@ -194,7 +193,7 @@ formats × hosts.
 Consequence: the second host that the convention was unified for cannot adopt it without every
 existing format gaining a mapping step.
 Decision needed: the same one as finding 2 — whose vocabulary `name` is in — answered once, closes
-both. `/sp-architect`, reopens D3.
+both. Reopens D3.
 
 ### Growth
 

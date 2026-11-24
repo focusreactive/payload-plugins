@@ -4,7 +4,7 @@ Source: 2026-11-18-the-server-reads-the-state.source.local.md
 
 **Status:** definition · **Risk:** high · **Branch:** `feat/translator-admin-ui-on-stubs`
 
-Next: sp-architect
+Next: design
 
 ## Problem Statement
 
@@ -287,7 +287,7 @@ This definition covers all four; each gets its own task file.
 - Unresolved `[blocking]` questions: **0**.
 - IN requirements with no Acceptance Criterion: **0**.
 
-Ready for `/sp-architect` — the four slices of the Size check need their boundaries decided
+Ready for design — the four slices of the Size check need their boundaries decided
 before any of them is built. Likely vectors: `contract` (two new payloads over the host's own
 config and documents), `security` (both reads answer per document under the host's read rules) and
 `runtime` (one request per list page, a source read and a hashing per document).

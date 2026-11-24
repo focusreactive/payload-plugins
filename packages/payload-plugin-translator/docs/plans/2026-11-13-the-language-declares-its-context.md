@@ -9,7 +9,7 @@ this file describes the problem, not the result.
 
 Supersedes the task contract `2026-11-13-the-language-declares-its-context.task.md`, which was
 written from a partial reading — the engine's side of the handover only — and was never approved.
-`/sp-task` rewrites it from this file once the blocking question below is answered.
+The implementation rewrites it from this file once the blocking question below is answered.
 
 ## Problem Statement
 
@@ -281,4 +281,4 @@ Question 7 is a placement choice inside the decided option and is left to the de
   changing the engine's contract; the compulsory recogniser is deferred to #203, because its payoff
   arrives only when languages written outside this package exist.
 
-Next: sp-task
+Next: build

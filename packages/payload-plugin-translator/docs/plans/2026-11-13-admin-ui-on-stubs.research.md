@@ -166,8 +166,8 @@ Too large for one task. Proposed split:
 - Unresolved `[blocking]` questions: 0.
 - IN requirements without an acceptance criterion: 0.
 
-Next: sp-architect
+Next: design
 
-`/sp-architect` for slice 1 (client architecture) — likely vectors `contract`
+Design for slice 1 (client architecture) — likely vectors `contract`
 (shared wire types between stub and real server), `evolution` (replacing the stub without touching
 the screens; renaming client paths hosts reference) and `ui-state` (providers, query keys, refresh).
