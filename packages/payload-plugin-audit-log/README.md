@@ -2,6 +2,91 @@
 
 Audit log for [Payload CMS](https://payloadcms.com/) v3: a read-only collection of who changed which document or global and when, plus sign-ins, API keys and AI agents, with CSV / NDJSON export. Only the paths of changed fields are stored, never their values.
 
+## AI Integration Prompt
+
+> Copy and paste this prompt into your AI assistant (Cursor, Claude, etc.) to integrate the plugin into an existing Payload project.
+
+```
+I want to add an audit log to my Payload CMS v3 project using @focus-reactive/payload-plugin-audit-log.
+
+## How it works
+
+The plugin adds a read-only collection (default slug "audit-events", admin group "Settings") and records:
+- document and global changes: create, update, delete, publish, unpublish, restore of a version;
+- sign-in, sign-out, failed sign-in, password reset requests and resets;
+- exports and retention purges of the log itself.
+Each event stores who (user, API key, MCP agent, system, anonymous), what (collection or global, document id,
+locale), the paths of the changed fields (never their values), IP and User-Agent.
+Events are written in the same transaction as the change; if writing an event fails, the change still succeeds.
+Nobody can create, update or delete events through REST, GraphQL, the admin or the Local API.
+
+## Step 1 — Install
+
+bun add @focus-reactive/payload-plugin-audit-log
+
+Requires payload and @payloadcms/ui 3.90+ and react 19. Works with Postgres, SQLite and MongoDB.
+
+## Step 2 — Register the plugin in payload.config.ts
+
+import { auditLogPlugin } from '@focus-reactive/payload-plugin-audit-log'
+
+// Inside buildConfig({ plugins: [...] }), after plugins that add collections or globals
+auditLogPlugin({
+  access: { read: ({ req }) => req.user?.role === 'admin' }, // who can read and export the log
+  retention: { days: 365 },                                   // optional; without it events are kept forever
+  excludeCollections: [],                                     // optional; slugs not to log
+  excludeGlobals: [],                                         // optional
+})
+
+If the project uses @payloadcms/plugin-mcp (order: 10), give the audit plugin a higher order so MCP API keys
+and agent requests are audited:
+
+const audit = auditLogPlugin({ /* options */ })
+plugins: [mcpPlugin({ /* ... */ }), Object.assign(audit, { order: 11 })]
+
+## Step 3 — Generate the import map and the migration
+
+payload generate:importmap        # the Export CSV / Export NDJSON buttons in the list view
+payload migrate:create add_audit_log && payload migrate   # Postgres / SQLite only
+
+## Step 4 — Label scripts and background work (optional)
+
+Local API calls without a user are recorded with the "system" actor. To name the actor:
+
+import { withAuditActor } from '@focus-reactive/payload-plugin-audit-log'
+
+await withAuditActor({ type: 'system', label: 'nightly import' }, async () => {
+  await payload.update({ collection: 'products', id, data })
+})
+
+For an AI agent outside MCP use { type: 'agent', label: '<agent name>' }.
+To record a custom event (for example an SSO login handled outside Payload auth):
+
+import { logAuditEvent } from '@focus-reactive/payload-plugin-audit-log'
+
+await logAuditEvent(payload, {
+  action: 'auth.login',
+  target: { kind: 'auth', slug: 'users', docId: String(user.id) },
+  actorOverride: {
+    actor: { type: 'user', source: 'auth', collection: 'users', docId: String(user.id), label: user.email },
+  },
+  headers,               // request headers, for IP and User-Agent
+  metadata: { method: 'oidc' },
+})
+
+## Step 5 — Retention (only if retention is set)
+
+The purge job runs daily at 03:00 on the "default" queue. Make sure jobs run: set jobs.autoRun in the config,
+or call payload.jobs.handleSchedules() and payload.jobs.run() from a cron.
+
+## Verify
+
+1. Sign in as a user allowed by access.read and open Settings → Audit log.
+2. Edit and publish a document: doc.update and doc.publish events appear with the changed field paths.
+3. Sign in with a wrong password: an auth.login_failed event appears.
+4. Export CSV from the list view: the file follows the current filter.
+```
+
 ## Install
 
 ```bash
@@ -40,6 +125,7 @@ export default buildConfig({
 - Only Payload operations and hooks are recorded. Raw `payload.db` calls and SQL get no events; seeds and migrations get none of their own. Local API calls without a user are recorded with the `system` actor.
 - Role changes and API key changes are plain `doc.update` / `doc.create` / `doc.delete` events of the user or key collection.
 - Autosave draft saves are not logged.
+- `changes` lists changed field paths. Array and block rows are matched by id: an edited row gives `items.2.title`, an added row `items.2`, a removed or reordered row `items`. JSON and rich text fields are reported by their own path.
 - Event fields: `occurredAt`, `action`, `status`, `actor`, `onBehalfOf`, `agent`, `via`, `target` (`kind`, `slug`, `docId`, `label`, `locale`), `changes`, `overrideAccess`, `requestId`, `ip`, `userAgent`, `metadata`.
 
 ## Actors

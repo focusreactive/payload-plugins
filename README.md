@@ -33,6 +33,7 @@ To add an individual plugin to an existing Payload project, see the install comm
 | [`@focus-reactive/payload-plugin-netlify-deploy`](./packages/payload-plugin-netlify-deploy) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-netlify-deploy)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-netlify-deploy) | Netlify deploy plugin — build, preview and publish Netlify sites from the admin, with the live build log |
 | [`@focus-reactive/payload-plugin-visual-editing`](./packages/payload-plugin-visual-editing) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-visual-editing)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-visual-editing) | Visual editing plugin — click-to-edit overlays on your Next.js frontend that deep-link into the admin field |
 | [`@focus-reactive/payload-plugin-stacked-editing`](./packages/payload-plugin-stacked-editing) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-stacked-editing)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-stacked-editing) | Stacked editing plugin - nested blocks and arrays open in layered panels with breadcrumbs, built on Payload drawers |
+| [`@focus-reactive/payload-plugin-audit-log`](./packages/payload-plugin-audit-log) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-audit-log)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-audit-log) | Audit log plugin — read-only log of who changed what and when, sign-ins, API keys and AI agents, CSV / NDJSON export |
 
 
 ## A/B Testing Plugin for Payload CMS
@@ -198,6 +199,20 @@ bun add @focus-reactive/payload-plugin-stacked-editing
 
 - Package: [`@focus-reactive/payload-plugin-stacked-editing`](./packages/payload-plugin-stacked-editing)
 - [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-stacked-editing)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-stacked-editing)
+
+## Audit Log Plugin for Payload CMS
+
+Who changed what and when. Every create, update, delete, publish and version restore of documents and globals, plus sign-ins, failed sign-ins and password resets, lands in a read-only collection with the actor (user, API key, MCP agent, script), the paths of the changed fields — never their values — IP and User-Agent. Events are written in the same transaction as the change, the site's reads are not affected, and the admin list exports the current filter to CSV or NDJSON.
+
+```bash
+npm install @focus-reactive/payload-plugin-audit-log
+yarn add @focus-reactive/payload-plugin-audit-log
+pnpm add @focus-reactive/payload-plugin-audit-log
+bun add @focus-reactive/payload-plugin-audit-log
+```
+
+- Package: [`@focus-reactive/payload-plugin-audit-log`](./packages/payload-plugin-audit-log)
+- [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-audit-log)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-audit-log)
 
 ## Run Demo Locally
 
