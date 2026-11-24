@@ -1,6 +1,8 @@
 // The hooks on every collection a workflow runs on. `beforeChange` / `beforeDelete` enforce the
 // guards for every writer (admin, REST, GraphQL, Local API); `afterChange` / `afterDelete` start,
-// settle and abort runs, and never throw: a workflow bug must not break saving content.
+// settle and abort runs. A workflow error never fails a save by itself: it is logged and the save
+// goes on. Unless it cost the save its transaction (see `server/transaction.ts`): then the save is
+// already rolled back, and the hook fails it loudly instead of letting it report a success.
 
 import type {
   CollectionAfterChangeHook,
@@ -24,6 +26,8 @@ import {
 } from "./server/operations.js";
 import { WITHOUT_HISTORY, findRuns, subjectWhere, toState } from "./server/store.js";
 import type { JobId } from "./server/store.js";
+import { transactionLost, transactionOf } from "./server/transaction.js";
+import type { TransactionId } from "./server/transaction.js";
 import type { GuardDef, GuardOperation, StartMode } from "./types.js";
 
 /** One query for a document's active runs, without their history (not needed to guard or settle). */
@@ -140,18 +144,52 @@ const startsOnCreate = (start: StartMode | undefined, doc: Record<string, unknow
 const logged = (req: PayloadRequest, msg: string, error: unknown) =>
   req.payload.logger.error({ err: error, msg: `workflows: ${msg}` });
 
-/** Ends a document's active runs, as the system. Never throws. */
+/** The save failed because a workflow error ended its transaction. */
+class SaveRolledBack extends APIError {
+  constructor() {
+    super(
+      "The document was not saved: its workflow could not be updated, and the failure rolled back the save. Try again; if it keeps failing, see the server log.",
+      500,
+      null,
+      true
+    );
+  }
+}
+
+/**
+ * Handles a workflow error in a hook: logs it in full and lets the save go on, unless the save's
+ * transaction (`began`, read when the hook started) did not survive it. Then the save's own
+ * changes are already rolled back, so the save must fail rather than report success.
+ */
+const handled = async (
+  req: PayloadRequest,
+  began: TransactionId | null,
+  msg: string,
+  error: unknown
+): Promise<void> => {
+  if (error instanceof SaveRolledBack) {
+    throw error;
+  }
+  logged(req, msg, error);
+  if (await transactionLost(req, began)) {
+    logged(req, "the error ended the save's transaction: failing the save", error);
+    throw new SaveRolledBack();
+  }
+};
+
+/** Ends a document's active runs, as the system. Throws only if the save cannot commit anymore. */
 const abortRuns = async (req: PayloadRequest, collection: string, id: string | number) => {
+  const began = await transactionOf(req);
   try {
     for (const run of await activeRuns(req, collection, id)) {
       try {
         await abortRun(req, { instanceId: run.id, reason: "Subject deleted", user: null });
       } catch (error) {
-        logged(req, `could not abort run ${run.id}`, error);
+        await handled(req, began, `could not abort run ${run.id}`, error);
       }
     }
   } catch (error) {
-    logged(req, `could not load runs of ${collection} ${id}`, error);
+    await handled(req, began, `could not load runs of ${collection} ${id}`, error);
   }
 };
 
@@ -164,6 +202,7 @@ const followChange: CollectionAfterChangeHook = async ({
 }) => {
   const subject = doc as Record<string, unknown>;
   if (operation === "create") {
+    const began = await transactionOf(req);
     for (const def of settingsOf(req.payload).workflows) {
       try {
         if (def.collections.includes(collection.slug) && startsOnCreate(def.start, subject)) {
@@ -176,7 +215,12 @@ const followChange: CollectionAfterChangeHook = async ({
           });
         }
       } catch (error) {
-        logged(req, `could not start "${def.name}" on ${collection.slug} ${doc.id}`, error);
+        await handled(
+          req,
+          began,
+          `could not start "${def.name}" on ${collection.slug} ${doc.id}`,
+          error
+        );
       }
     }
     return doc;
@@ -185,17 +229,18 @@ const followChange: CollectionAfterChangeHook = async ({
     await abortRuns(req, collection.slug, doc.id);
     return doc;
   }
+  const began = await transactionOf(req);
   const jobs: JobId[] = [];
   try {
     for (const run of await activeRuns(req, collection.slug, doc.id)) {
       try {
         jobs.push(...(await settleRun(req, run, subject)).jobs);
       } catch (error) {
-        logged(req, `could not settle run ${run.id}`, error);
+        await handled(req, began, `could not settle run ${run.id}`, error);
       }
     }
   } catch (error) {
-    logged(req, `could not load runs of ${collection.slug} ${doc.id}`, error);
+    await handled(req, began, `could not load runs of ${collection.slug} ${doc.id}`, error);
   }
   // Inside the save's transaction the jobs are not committed yet: they wait for the jobs runner.
   if (jobs.length > 0 && (await canRunInline(req))) {

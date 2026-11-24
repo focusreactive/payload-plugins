@@ -22,6 +22,7 @@ import {
   toState,
 } from "./store.js";
 import type { Committed, InstanceDoc, JobId, Subject } from "./store.js";
+import { transactionOf } from "./transaction.js";
 
 type Via = UserActor["via"];
 
@@ -138,11 +139,8 @@ export const loadSubject = async (
  * was none. A `req` still carrying a transaction belongs to a caller who has not committed yet, so
  * the jobs it queued are not visible outside it; they stay queued for the jobs runner.
  */
-export const canRunInline = async (req: PayloadRequest): Promise<boolean> => {
-  // Without database transactions Payload leaves a promise of `null` here.
-  const id = req.transactionID instanceof Promise ? await req.transactionID : req.transactionID;
-  return !id;
-};
+export const canRunInline = async (req: PayloadRequest): Promise<boolean> =>
+  (await transactionOf(req)) === null;
 
 /** Max effect jobs one operation runs inline (effects that queue effects). */
 const INLINE_JOB_LIMIT = 20;

@@ -18,7 +18,7 @@ Plain stage `actions` are normalised once by `defineWorkflow` into one activity 
 - `src/engine/view.ts`: `view()`, `waitingOnOf`. `src/engine/simulator.ts`: in-memory runs for tests.
 - `src/server/operations.ts`: start / fire / abort / settle / tick against Payload; access; `presentRun`.
 - `src/server/queries.ts`: `getWorkflowState`, `listWorkflowInstances`, `listWorkflowDefinitions`.
-- `src/server/store.ts`: runs collection config, `createRun`, `mutateRun` (compare-and-swap), effect jobs.
+- `src/server/store.ts`: runs collection config, `createRun`, `mutateRun` (compare-and-swap), effect jobs. `src/server/transaction.ts`: whether a failed write ended the request's transaction.
 - `src/server/effects.ts`: effect and tick jobs. `src/hooks.ts`: guards, auto-start, settle on save, abort on delete.
 - `src/endpoints.ts`, `src/agent.ts`: the ways in. `src/plugin.ts`: options, config checks, wiring.
 - `src/components/`: admin UI (indicator + drawer, workflows view). Pure helpers in `components/shared/*.ts` are unit-tested.
@@ -29,7 +29,8 @@ Plain stage `actions` are normalised once by `defineWorkflow` into one activity 
 - Concurrency: every run write goes through `mutateRun` and requires the `revision` it read; `activeKey` stays unique (one active run per workflow and document).
 - Effects are queued with the same `req`, inside the same transaction as the state change, and run inline only when the operation owns its commit (`canRunInline`).
 - Guards are enforced in collection hooks (including trash = delete and publish detection without `_status`); `WORKFLOW_BYPASS` only via `req.context`.
-- `afterChange` / `afterDelete` hooks never throw: a workflow bug must not break saving content.
+- `afterChange` / `afterDelete` hooks never fail a save because of workflow logic: the error is logged and the save goes on. The one exception: if the error ended the save's transaction (`transactionLost` in `server/transaction.ts`: `req.transactionID` gone or changed, the adapter's session gone, or one of the plugin's raw writes, wrapped in `writing`, failed inside it), the hook throws a 500 `APIError` ("The document was not saved…"), because the save is already rolled back. Wrap every new raw `payload.db.*` write in `writing`.
+- `startWorkflow` given a caller's `req`: losing the `activeKey` race rolls back the caller's transaction (Payload's failed `create`); the `already-running` error then says so. The `isRunning` pre-check keeps that rare.
 - Field writes are type-checked; only `input: true` fields may be passed at start; names that are `Object.prototype` members are rejected; params are read as own properties only.
 - `fire` and `view` share one verdict (`verdictFor`): an enabled button never fails for a knowable reason.
 - The runs collection is not writable over the API.

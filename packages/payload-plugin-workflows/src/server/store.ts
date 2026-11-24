@@ -10,6 +10,7 @@ import { EFFECT_TASK, JOBS_QUEUE, QUEUED_JOBS, RUNS_SLUG } from "../constants.js
 import { WorkflowError } from "../engine/errors.js";
 import { waitingOnOf } from "../engine/view.js";
 import type { InstanceState, Result, WorkflowDefinition } from "../types.js";
+import { transactionLost, transactionOf, writing } from "./transaction.js";
 
 /**
  * Runs are read by users of the admin user collection and written by nobody over the API: state
@@ -219,17 +220,19 @@ const queueEffects = async (
   }) => Promise<{ id: JobId }>;
   const ids: JobId[] = [];
   for (const effect of effects) {
-    const job = await queue({
-      task: EFFECT_TASK,
-      queue: JOBS_QUEUE,
-      input: {
-        instanceId: String(instanceId),
-        effect: effect.name,
-        activity: effect.activity,
-        action: effect.action,
-      },
-      req,
-    });
+    const job = await writing(req, () =>
+      queue({
+        task: EFFECT_TASK,
+        queue: JOBS_QUEUE,
+        input: {
+          instanceId: String(instanceId),
+          effect: effect.name,
+          activity: effect.activity,
+          action: effect.action,
+        },
+        req,
+      })
+    );
     ids.push(job.id);
   }
   const collector = req.context?.[QUEUED_JOBS];
@@ -239,13 +242,18 @@ const queueEffects = async (
   return ids;
 };
 
-/** Inserts a new run. A second active run of the same workflow on a document is `already-running`. */
+/**
+ * Inserts a new run. A second active run of the same workflow on a document is `already-running`.
+ * Losing that race inside a caller's transaction ends the transaction (Payload rolls it back when
+ * `create` fails): the error says so, so the caller does not commit believing its writes survived.
+ */
 export const createRun = async (
   req: PayloadRequest,
   def: WorkflowDefinition,
   result: Result,
   subject: Subject
 ): Promise<Committed> => {
+  const began = await transactionOf(req);
   try {
     return await inTransaction(req, async () => {
       const doc = (await req.payload.create({
@@ -262,9 +270,12 @@ export const createRun = async (
       error instanceof ValidationError &&
       (error.data?.errors ?? []).some((entry) => entry.path === "activeKey");
     if (clash) {
+      const lost = (await transactionLost(req, began))
+        ? " The failed insert rolled back the request's transaction: nothing written with it so far was saved."
+        : "";
       throw new WorkflowError(
         "already-running",
-        `Workflow "${def.name}" is already running on this document.`
+        `Workflow "${def.name}" is already running on this document.${lost}`
       );
     }
     throw error;
@@ -294,16 +305,18 @@ export const mutateRun = async (
       if (!result || result.state === state) {
         return { doc, jobs: [] };
       }
-      const updated = await req.payload.db.updateOne({
-        collection: RUNS_SLUG,
-        where: { and: [{ id: { equals: doc.id } }, { revision: { equals: doc.revision } }] },
-        data: {
-          ...toData(result.state, def, subjectOf(doc)),
-          revision: doc.revision + 1,
-          updatedAt: new Date().toISOString(),
-        },
-        req,
-      });
+      const updated = await writing(req, () =>
+        req.payload.db.updateOne({
+          collection: RUNS_SLUG,
+          where: { and: [{ id: { equals: doc.id } }, { revision: { equals: doc.revision } }] },
+          data: {
+            ...toData(result.state, def, subjectOf(doc)),
+            revision: doc.revision + 1,
+            updatedAt: new Date().toISOString(),
+          },
+          req,
+        })
+      );
       if (!updated) {
         return null;
       }
