@@ -64,16 +64,18 @@ export const migrations: { up: () => Promise<void>; down: () => Promise<void>; n
 
 // `.github` is pruned above because the source repo's workflows are its own release machinery.
 // This one job is written back: the Neon and Vercel integration creates a `preview/<branch>`
-// database branch per preview deployment and never removes it. The job skips when the new
+// database branch per preview deployment and removes it only when Vercel removes that
+// deployment, which can take months. The job skips when the new
 // repository has no Neon key, because the integration does not set one and the scaffold cannot.
 const NEON_CLEANUP_WORKFLOW = `name: Cleanup Neon preview branch
 
 # The Neon<->Vercel integration creates a \`preview/<git-branch>\` database branch for each
-# preview deployment but never removes it. Delete it when the pull request closes, merged or
-# not, so stale branches do not pile up storage costs.
+# preview deployment and removes it only when Vercel removes that deployment, which can take
+# months. Delete it when the pull request closes, merged or not, so stale branches do not pile
+# up storage costs.
 #
-# Needs the repository variable NEON_PROJECT_ID and the repository secret NEON_API_KEY.
-# Without them the job skips instead of failing.
+# Needs the repository variable NEON_PROJECT_ID and the repository secret NEON_API_KEY. The
+# integration sets neither one in GitHub. Without them the job skips instead of failing.
 on:
   pull_request:
     types: [closed]
