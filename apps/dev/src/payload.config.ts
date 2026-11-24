@@ -38,6 +38,9 @@ const baseDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default buildConfig({
   admin: {
+    components: {
+      providers: ["/lib/seo/SeoExtractorRegistrar"],
+    },
     importMap: {
       baseDir,
     },
@@ -164,8 +167,8 @@ export default buildConfig({
             seoTitle: "seoTitle",
             metaDescription: "metaDescription",
             slug: "slug",
-            content: "sections",
           },
+          extractContentPath: "@/lib/seo/extractPageContent#default",
         },
       ],
       site: {
