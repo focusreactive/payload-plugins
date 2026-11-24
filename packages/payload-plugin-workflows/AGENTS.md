@@ -21,7 +21,7 @@ Plain stage `actions` are normalised once by `defineWorkflow` into one activity 
 - `src/server/store.ts`: runs collection config, `createRun`, `mutateRun` (compare-and-swap), effect jobs. `src/server/transaction.ts`: whether a failed write ended the request's transaction.
 - `src/server/effects.ts`: effect and tick jobs. `src/hooks.ts`: guards, auto-start, settle on save, abort on delete.
 - `src/endpoints.ts`, `src/agent.ts`: the ways in. `src/plugin.ts`: options, config checks, wiring.
-- `src/components/`: admin UI (indicator + drawer, workflows view). Pure helpers in `components/shared/*.ts` are unit-tested; `RunTone` / `PILL_STYLE` in `shared/indicator.ts` is the one status-colour mapping every surface uses.
+- `src/components/`: admin UI. `document/`: indicator + drawer (client, REST endpoints). `widget/WorkflowsWidget.tsx`: the dashboard widget, a server component that calls `listWorkflowInstances` / `listWorkflowDefinitions` as the viewer; registered and placed in the default layout by `withWidget` in `plugin.ts`. `list/`: cells of the runs collection's list view (its admin config lives with the collection in `server/store.ts`; rows link to the document via `formatDocURL`). Client components are exported from `src/client.ts`, server ones from `src/rsc.ts`. Pure helpers in `components/shared/*.ts` are unit-tested; `RunTone` / `PILL_STYLE` in `shared/indicator.ts` is the one status-colour mapping every surface uses.
 
 ## Invariants: do not break
 
@@ -33,7 +33,7 @@ Plain stage `actions` are normalised once by `defineWorkflow` into one activity 
 - `startWorkflow` given a caller's `req`: losing the `activeKey` race rolls back the caller's transaction (Payload's failed `create`); the `already-running` error then says so. The `isRunning` pre-check keeps that rare.
 - Field writes are type-checked; only `input: true` fields may be passed at start; names that are `Object.prototype` members are rejected; params are read as own properties only.
 - `fire` and `view` share one verdict (`verdictFor`): an enabled button never fails for a knowable reason.
-- The runs collection is not writable over the API.
+- The runs collection is not writable over the API. Its admin list shows every run to admin users (Payload's list cannot drop runs on unreadable documents; the cells show such a document as untitled); the plugin's own reads (`listWorkflowInstances`, the widget) drop them.
 - "For me" (`scope: "mine"`) is one query over the denormalised `assignedUsers` / `assignedRoles`: runs waiting on the caller or their roles, then active runs with neither (open to anyone). No definition is evaluated per row.
 
 ## Verify

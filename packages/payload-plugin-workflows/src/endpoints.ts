@@ -4,12 +4,8 @@ import { ENDPOINTS } from "./constants.js";
 import { isWorkflowError } from "./engine/errors.js";
 import type { WorkflowErrorCode } from "./engine/errors.js";
 import { abortWorkflow, fireWorkflowAction, startWorkflow } from "./server/operations.js";
-import {
-  getWorkflowState,
-  listWorkflowDefinitions,
-  listWorkflowInstances,
-} from "./server/queries.js";
-import type { InstanceState, UserActor } from "./types.js";
+import { getWorkflowState } from "./server/queries.js";
+import type { UserActor } from "./types.js";
 
 const json = (body: unknown, status = 200) =>
   Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
@@ -91,8 +87,6 @@ const handle =
     }
   };
 
-const STATUSES: InstanceState["status"][] = ["active", "completed", "aborted"];
-
 export const workflowEndpoints = (): Endpoint[] => [
   {
     path: ENDPOINTS.state,
@@ -167,28 +161,5 @@ export const workflowEndpoints = (): Endpoint[] => [
         via: viaOf(user),
       });
     }),
-  },
-  {
-    path: ENDPOINTS.instances,
-    method: "get",
-    handler: handle(async (req, user) => {
-      const query = queryOf(req);
-      const status = query.get("status");
-      const page = Number(query.get("page") ?? 1);
-      const limit = Number(query.get("limit") ?? 20);
-      return listWorkflowInstances(req.payload, {
-        scope: query.get("scope") === "all" ? "all" : "mine",
-        workflow: query.get("workflow") || undefined,
-        status: STATUSES.find((entry) => entry === status),
-        page: Number.isFinite(page) ? page : 1,
-        limit: Number.isFinite(limit) ? limit : 20,
-        user,
-      });
-    }),
-  },
-  {
-    path: ENDPOINTS.definitions,
-    method: "get",
-    handler: handle(async (req) => listWorkflowDefinitions(req.payload)),
   },
 ];

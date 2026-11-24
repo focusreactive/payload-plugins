@@ -9,12 +9,14 @@ export const ENDPOINTS = {
   start: "/workflows/start",
   fire: "/workflows/fire",
   abort: "/workflows/abort",
-  instances: "/workflows/instances",
-  definitions: "/workflows/definitions",
 } as const;
 
-/** The workflows view, relative to the admin route. */
-export const VIEW_PATH = "/workflows";
+/** An admin component's import-map path: `client` for client components, `rsc` for server ones. */
+export const componentPath = (entry: "client" | "rsc", name: string): string =>
+  `@focus-reactive/payload-plugin-workflows/${entry}#${name}`;
+
+/** The dashboard widget's slug (`admin.dashboard.widgets`). */
+export const WIDGET_SLUG = "workflows";
 
 export const JOBS_QUEUE = "workflows";
 export const EFFECT_TASK = "workflowEffect";

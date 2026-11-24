@@ -1,0 +1,234 @@
+/*
+ * The "Workflows" dashboard widget. Frameless like Payload's own "collections" widget: an h2
+ * title, then sections of rows and a board drawn on Payload tokens (cards like `.card`).
+ */
+
+.workflows-widget {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base);
+  width: 100%;
+  padding-bottom: var(--base);
+  color: var(--theme-text);
+}
+
+.workflows-widget__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--base);
+}
+
+.workflows-widget__title {
+  margin: 0;
+}
+
+.workflows-widget__section {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--base) / 2);
+}
+
+.workflows-widget__heading {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--base) / 2);
+  margin: 0;
+  font-size: var(--base-body-size);
+  font-weight: 600;
+  line-height: var(--base);
+}
+
+.workflows-widget__link,
+.workflows-widget__all,
+.workflows-widget__more {
+  color: var(--theme-text);
+  text-decoration: none;
+}
+
+.workflows-widget__link:hover,
+.workflows-widget__all:hover,
+.workflows-widget__more:hover {
+  text-decoration: underline;
+}
+
+.workflows-widget a:focus-visible {
+  outline: var(--accessibility-outline);
+  outline-offset: var(--accessibility-outline-offset);
+}
+
+.workflows-widget__all,
+.workflows-widget__more {
+  color: var(--theme-elevation-500);
+}
+
+.workflows-widget__more {
+  align-self: flex-start;
+}
+
+.workflows-widget__empty {
+  margin: 0;
+  color: var(--theme-elevation-500);
+}
+
+.workflows-widget__meta,
+.workflows-widget__time {
+  font-size: 12px;
+  line-height: var(--base);
+  color: var(--theme-elevation-500);
+}
+
+.workflows-widget time {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.workflows-widget__count.pill {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Waiting on you: rows in one card -------------------------------------------------------- */
+
+.workflows-widget__rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: var(--style-radius-m);
+  background: var(--theme-elevation-0);
+}
+
+.workflows-widget__row {
+  display: grid;
+  grid-template-areas: "title meta stage time";
+  grid-template-columns: minmax(0, 1fr) auto auto calc(var(--base) * 5);
+  align-items: center;
+  gap: calc(var(--base) * 0.75);
+  min-height: 40px;
+  padding: calc(var(--base) / 4) calc(var(--base) * 0.6);
+}
+
+.workflows-widget__row + .workflows-widget__row {
+  border-top: 1px solid var(--theme-elevation-150);
+}
+
+.workflows-widget__row-title {
+  grid-area: title;
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workflows-widget__row .workflows-widget__meta {
+  grid-area: meta;
+}
+
+.workflows-widget__stage {
+  grid-area: stage;
+  justify-self: end;
+}
+
+.workflows-widget__row .workflows-widget__time {
+  grid-area: time;
+  text-align: right;
+}
+
+/* ---- Board ---------------------------------------------------------------------------------- */
+
+.workflows-widget__board {
+  display: grid;
+  grid-auto-columns: minmax(calc(var(--base) * 11), 1fr);
+  grid-auto-flow: column;
+  gap: calc(var(--base) / 2);
+  overflow-x: auto;
+}
+
+.workflows-widget__column {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--base) / 2);
+  min-width: 0;
+  padding: calc(var(--base) / 2);
+  border-radius: var(--style-radius-m);
+  background: var(--theme-elevation-50);
+}
+
+.workflows-widget__column-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--base) / 2);
+  margin: 0;
+  padding: 0 calc(var(--base) / 4);
+  font-size: var(--base-body-size);
+  font-weight: 600;
+  line-height: var(--base);
+}
+
+.workflows-widget__column-count {
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: var(--theme-elevation-500);
+}
+
+.workflows-widget__column-empty,
+.workflows-widget__column-more {
+  margin: 0;
+  padding: 0 calc(var(--base) / 4);
+  font-size: 12px;
+  color: var(--theme-elevation-400);
+}
+
+.workflows-widget__cards {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--base) / 4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.workflows-widget__card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: calc(var(--base) * 0.5) calc(var(--base) * 0.6);
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: var(--style-radius-m);
+  background: var(--theme-elevation-0);
+  transition: border-color 150ms ease;
+}
+
+.workflows-widget__card:hover {
+  border-color: var(--theme-elevation-250);
+}
+
+.workflows-widget__card .workflows-widget__link {
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .workflows-widget__row {
+    grid-template-areas:
+      "title stage"
+      "meta time";
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 0;
+    padding-block: calc(var(--base) / 2);
+  }
+
+  .workflows-widget__board {
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+  }
+}
+
+/* In the dashboard's edit mode Payload's size and remove controls sit where "View all" is. */
+.modular-dashboard.editing .workflows-widget__all {
+  visibility: hidden;
+}

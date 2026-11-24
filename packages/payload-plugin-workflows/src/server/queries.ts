@@ -287,10 +287,11 @@ export interface DefinitionSummary {
   title: string;
   description?: string;
   collections: string[];
-  stages: { name: string; title: string }[];
+  /** In order; `final` stages have no transitions: entering one completes the run. */
+  stages: { name: string; title: string; final: boolean }[];
 }
 
-/** The configured workflows, for pickers and agents. */
+/** The configured workflows, for the dashboard widget and agents. */
 export const listWorkflowDefinitions = (
   payload: Payload
 ): { definitions: DefinitionSummary[] } => ({
@@ -299,6 +300,10 @@ export const listWorkflowDefinitions = (
     title: def.title ?? def.name,
     ...(def.description ? { description: def.description } : {}),
     collections: [...def.collections],
-    stages: def.stages.map((stage) => ({ name: stage.name, title: stage.title ?? stage.name })),
+    stages: def.stages.map((stage) => ({
+      name: stage.name,
+      title: stage.title ?? stage.name,
+      final: (stage.transitions ?? []).length === 0,
+    })),
   })),
 });

@@ -122,6 +122,7 @@ export interface Config {
   };
   locale: 'en' | 'de' | 'fr' | 'es';
   widgets: {
+    workflows: WorkflowsWidget;
     collections: CollectionsWidget;
   };
   user: User;
@@ -1509,6 +1510,16 @@ export interface _AbManifestSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "workflows_widget".
+ */
+export interface WorkflowsWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'medium' | 'large' | 'x-large' | 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

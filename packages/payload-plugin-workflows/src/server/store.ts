@@ -6,24 +6,47 @@ import { randomUUID } from "node:crypto";
 import type { CollectionConfig, CollectionSlug, PayloadRequest, SelectType, Where } from "payload";
 import { ValidationError, commitTransaction, initTransaction, killTransaction } from "payload";
 
-import { EFFECT_TASK, JOBS_QUEUE, QUEUED_JOBS, RUNS_SLUG } from "../constants.js";
+import { formatAdminURL } from "payload/shared";
+
+import type { TKey } from "../components/shared/format.js";
+import { EFFECT_TASK, JOBS_QUEUE, QUEUED_JOBS, RUNS_SLUG, componentPath } from "../constants.js";
 import { WorkflowError } from "../engine/errors.js";
+import { NAMESPACE } from "../translations.js";
 import { waitingOnOf } from "../engine/view.js";
 import type { InstanceState, Result, WorkflowDefinition } from "../types.js";
 import { transactionLost, transactionOf, writing } from "./transaction.js";
 
+/** A label in the admin's language, from the plugin's strings. */
+const label =
+  (key: TKey) =>
+  ({ t }: { t: unknown }): string =>
+    (t as (key: string) => string)(`${NAMESPACE}:${key}`);
+
+/** In the database and the API; not in the admin, which shows the run in the document's drawer. */
+const internal = { hidden: true } as const;
+
 /**
  * Runs are read by users of the admin user collection and written by nobody over the API: state
- * changes only through the plugin's operations, so the history cannot be edited.
+ * changes only through the plugin's operations, so the history cannot be edited. In the admin it is
+ * the read-only list of every workflow ("Workflows"): a row links to its document, where the
+ * drawer shows and moves the run.
  */
 export const runsCollection: CollectionConfig = {
   slug: RUNS_SLUG,
-  labels: { singular: "Workflow run", plural: "Workflow runs" },
+  labels: { singular: label("listSingular"), plural: label("listPlural") },
   timestamps: true,
+  defaultSort: "-updatedAt",
   admin: {
-    hidden: true,
+    description: label("listDescription"),
     useAsTitle: "workflow",
-    defaultColumns: ["workflow", "subjectCollection", "subjectId", "stage", "status", "updatedAt"],
+    defaultColumns: ["subjectId", "workflow", "stage", "status", "assignedUsers", "updatedAt"],
+    // The row opens its document, not the run.
+    formatDocURL: ({ doc, req }) =>
+      formatAdminURL({
+        adminRoute: req.payload.config.routes.admin,
+        path: `/collections/${String(doc.subjectCollection)}/${encodeURIComponent(String(doc.subjectId))}`,
+      }),
+    disableCopyToLocale: true,
   },
   access: {
     // The plugin's functions further drop runs whose document the caller cannot read.
@@ -33,30 +56,76 @@ export const runsCollection: CollectionConfig = {
     delete: () => false,
   },
   fields: [
-    { name: "workflow", type: "text", required: true, index: true },
-    { name: "subjectCollection", type: "text", required: true, index: true },
+    {
+      name: "workflow",
+      type: "text",
+      required: true,
+      index: true,
+      label: label("columnWorkflow"),
+      admin: { components: { Cell: componentPath("rsc", "RunCell") } },
+    },
+    {
+      name: "subjectCollection",
+      type: "text",
+      required: true,
+      index: true,
+      label: label("columnCollection"),
+    },
     // Always a string, whatever the subject collection's id type.
-    { name: "subjectId", type: "text", required: true, index: true },
-    { name: "stage", type: "text", required: true, index: true },
+    {
+      name: "subjectId",
+      type: "text",
+      required: true,
+      index: true,
+      label: label("columnDocument"),
+      admin: { components: { Cell: componentPath("client", "SubjectCell") } },
+    },
+    {
+      name: "stage",
+      type: "text",
+      required: true,
+      index: true,
+      label: label("columnStage"),
+      admin: { components: { Cell: componentPath("rsc", "RunCell") } },
+    },
     {
       name: "status",
       type: "select",
       required: true,
       index: true,
-      options: ["active", "completed", "aborted"],
+      label: label("columnStatus"),
+      options: [
+        { value: "active", label: label("statusRunning") },
+        { value: "completed", label: label("statusCompleted") },
+        { value: "aborted", label: label("statusAborted") },
+      ],
+      admin: { components: { Cell: componentPath("rsc", "RunCell") } },
     },
-    { name: "fields", type: "json" },
-    { name: "activities", type: "json" },
-    { name: "fired", type: "json" },
-    { name: "history", type: "json" },
+    { name: "fields", type: "json", admin: internal },
+    { name: "activities", type: "json", admin: internal },
+    { name: "fired", type: "json", admin: internal },
+    { name: "history", type: "json", admin: internal },
     // Denormalised from the run's `waitingOn` on every write, so the inbox is one query.
-    { name: "assignedUsers", type: "text", hasMany: true, index: true },
-    { name: "assignedRoles", type: "text", hasMany: true, index: true },
+    {
+      name: "assignedUsers",
+      type: "text",
+      hasMany: true,
+      index: true,
+      label: label("columnWaitingOn"),
+      admin: { components: { Cell: componentPath("client", "WaitingOnCell") } },
+    },
+    {
+      name: "assignedRoles",
+      type: "text",
+      hasMany: true,
+      index: true,
+      label: label("columnWaitingOnRoles"),
+    },
     // Optimistic concurrency: every write requires the revision it read.
-    { name: "revision", type: "number", required: true, defaultValue: 1 },
+    { name: "revision", type: "number", required: true, defaultValue: 1, admin: internal },
     // `<workflow>:<collection>:<id>` while active, `done:<random>` after: one active run per document.
-    { name: "activeKey", type: "text", required: true, unique: true },
-    { name: "completedAt", type: "date" },
+    { name: "activeKey", type: "text", required: true, unique: true, admin: internal },
+    { name: "completedAt", type: "date", label: label("columnFinished") },
   ],
 };
 

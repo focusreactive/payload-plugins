@@ -1,5 +1,5 @@
 "use client";
 
 export { WorkflowIndicator } from "./components/document/WorkflowIndicator.js";
-export { WorkflowsNavLink } from "./components/WorkflowsNavLink.js";
-export { WorkflowsView } from "./components/view/WorkflowsView.js";
+export { SubjectCell } from "./components/list/SubjectCell.js";
+export { WaitingOnCell } from "./components/list/WaitingOnCell.js";

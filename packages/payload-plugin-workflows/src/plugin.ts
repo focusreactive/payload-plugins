@@ -1,6 +1,6 @@
-import type { Config, Payload, PayloadRequest, Plugin, TypedUser } from "payload";
+import type { Config, Payload, PayloadRequest, Plugin, TypedUser, WidgetInstance } from "payload";
 
-import { JOBS_QUEUE, VIEW_PATH } from "./constants.js";
+import { JOBS_QUEUE, WIDGET_SLUG, componentPath } from "./constants.js";
 import { activitiesWithPaths, defineWorkflow, definitionIssues, formatIssues } from "./define.js";
 import { workflowEndpoints } from "./endpoints.js";
 import { hasDrafts, withWorkflowHooks } from "./hooks.js";
@@ -56,10 +56,12 @@ export interface WorkflowsPluginOptions {
    * first, so someone who cannot read it is refused before these run.
    */
   access?: { start?: WorkflowAccess; fire?: WorkflowAccess; abort?: WorkflowAccess };
+  /** Default `true`: the "Workflows" dashboard widget, first on the default dashboard. */
+  dashboard?: boolean;
 }
 
 /** The options as the server reads them back (`config.custom.workflows`), defaults filled in. */
-export type WorkflowsSettings = Required<Omit<WorkflowsPluginOptions, "enabled">>;
+export type WorkflowsSettings = Required<Omit<WorkflowsPluginOptions, "enabled" | "dashboard">>;
 
 const defaultRoles = (user: TypedUser): string[] => {
   const record = user as unknown as Record<string, unknown>;
@@ -154,14 +156,49 @@ export const warnWithoutRunner = async (
 
 // ---- The plugin -----------------------------------------------------------------------------
 
-const component = (entry: "client" | "rsc", name: string) =>
-  `@focus-reactive/payload-plugin-workflows/${entry}#${name}`;
+type Dashboard = NonNullable<NonNullable<Config["admin"]>["dashboard"]>;
+type Layout = NonNullable<Dashboard["defaultLayout"]>;
+
+/**
+ * The host's dashboard plus the widget. The widget joins the default layout: first, at full
+ * width, before Payload's own "collections" widget when the host has no layout; after the host's
+ * widgets when it has one (an array, or a function, which is wrapped). Users who saved their own
+ * layout add it from the dashboard's edit mode.
+ */
+export const withWidget = (dashboard: Dashboard | undefined): Dashboard => {
+  const ours = { widgetSlug: WIDGET_SLUG, width: "full" as const };
+  const add = (layout: WidgetInstance[]): WidgetInstance[] =>
+    layout.some((entry) => entry.widgetSlug === WIDGET_SLUG) ? layout : [...layout, ours];
+  const layout = dashboard?.defaultLayout;
+  let defaultLayout: Layout;
+  if (layout === undefined) {
+    // What Payload uses when there is none (`collections`, full width), with ours first.
+    defaultLayout = [ours, { widgetSlug: "collections", width: "full" }];
+  } else if (typeof layout === "function") {
+    defaultLayout = async (args) => add(await layout(args));
+  } else {
+    defaultLayout = add(layout);
+  }
+  return {
+    ...dashboard,
+    widgets: [
+      ...(dashboard?.widgets ?? []),
+      {
+        slug: WIDGET_SLUG,
+        Component: componentPath("rsc", "WorkflowsWidget"),
+        label: ({ t }) => (t as (key: string) => string)(`${NAMESPACE}:widgetTitle`),
+        minWidth: "medium",
+      },
+    ],
+    defaultLayout,
+  };
+};
 
 /**
  * Adds to each collection a workflow runs on: the indicator beside Save / Publish (it opens the
  * drawer) and the hooks (guards, auto-start, settle on save, abort on delete). Adds the runs
- * collection, the endpoints, the effect and tick jobs, the workflows view and its nav link, and the
- * admin strings.
+ * collection (the "Workflows" list in the admin), the endpoints, the effect and tick jobs, the
+ * dashboard widget and the admin strings.
  */
 export const workflowsPlugin =
   (options: WorkflowsPluginOptions): Plugin =>
@@ -202,7 +239,7 @@ export const workflowsPlugin =
                   ...edit,
                   beforeDocumentControls: [
                     ...(edit?.beforeDocumentControls ?? []),
-                    component("client", "WorkflowIndicator"),
+                    componentPath("client", "WorkflowIndicator"),
                   ],
                 },
               },
@@ -224,24 +261,9 @@ export const workflowsPlugin =
         ) as NonNullable<Config["i18n"]>["translations"],
       },
       jobs: { ...config.jobs, tasks: [...(config.jobs?.tasks ?? []), effectTask, tickTask] },
-      admin: {
-        ...config.admin,
-        components: {
-          ...config.admin?.components,
-          afterNavLinks: [
-            ...(config.admin?.components?.afterNavLinks ?? []),
-            component("client", "WorkflowsNavLink"),
-          ],
-          views: {
-            ...config.admin?.components?.views,
-            workflows: {
-              Component: component("rsc", "WorkflowsViewServer"),
-              path: VIEW_PATH,
-              exact: true,
-            },
-          },
-        },
-      },
+      ...(options.dashboard === false
+        ? {}
+        : { admin: { ...config.admin, dashboard: withWidget(config.admin?.dashboard) } }),
       custom: { ...config.custom, workflows: settings },
       onInit: async (payload) => {
         await config.onInit?.(payload);

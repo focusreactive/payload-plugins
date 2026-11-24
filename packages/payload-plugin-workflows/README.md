@@ -97,7 +97,11 @@ export default buildConfig({
 
 Then run `pnpm payload generate:importmap`, and on SQL databases without `push` create a migration (the plugin adds the `workflow-instances` collection).
 
-The plugin adds, to each collection a workflow names, the indicator (`admin.components.edit.beforeDocumentControls`) and the hooks; it adds no fields to them. It also adds the runs collection, the endpoints, two jobs tasks, the **Workflows** view at `/admin/workflows` (a Payload-style list of what you can pick up, waiting on you or your roles first and then what is open to anyone, or of all open workflows; or a board of one workflow's stages) and the admin strings.
+The plugin adds, to each collection a workflow names, the indicator (`admin.components.edit.beforeDocumentControls`) and the hooks; it adds no fields to them. It also adds the runs collection, the endpoints, two jobs tasks, a dashboard widget and the admin strings. The components are referenced through the import map (`/client` for client components, `/rsc` for server ones), hence `generate:importmap`.
+
+**On the dashboard**, a **Workflows** widget (Payload's modular dashboard, `admin.dashboard.widgets`): first *Waiting on you* (up to five documents waiting on you or one of your roles, then those open to anyone, each with its stage and how long it has waited), then a board per workflow with open documents (one column per stage, its count and the first three documents). It reads with the viewer's access, like the API below. Without a `defaultLayout` of yours it comes first, above Payload's collection cards; with one (an array, or a function) it is appended to it. Payload keeps a layout per user once they save one in the dashboard's edit mode; those users add **Workflows** from *Add* there (or *Reset layout*).
+
+**The full list** is Payload's own list view of the runs collection, **Workflows** in the nav (for users of the admin user collection): document, workflow, stage, status, who it waits on, last change, with Payload's filters and sorting. It is read-only (nobody can create, edit or delete a run) and a row opens its document, where the drawer shows and moves the workflow. The widget's *View all* opens it filtered to open workflows (`?where[status][equals]=active`).
 
 To try it: save a page, press **Workflow** next to Save, start **Editorial review** and **Submit for review**; as another user, **Take this review** and press Publish: it is refused ("Publishing is on hold. A reviewer must approve this page first."). **Approve** completes the run and publishing goes through.
 
@@ -123,6 +127,7 @@ To try it: save a page, press **Workflow** next to Save, start **Editorial revie
 | `effects` | `{}` | Effect handlers by name; every effect an action names must be registered |
 | `roles` | `user.roles` / `user.role` | `(user) => string[]`: a user's roles, for assignment |
 | `access` | a user of the admin user collection | `{ start?, fire?, abort? }`, each `({ req, user, workflow, collection, id, doc }) => boolean`. `user` is the user the operation acts for; only `true` allows. Without `abort`: while a guard holds, only someone who may act in the stage may stop the run, so stopping is never a way around a hold |
+| `dashboard` | `true` | `false` leaves the dashboard alone (no widget) |
 | `enabled` | `true` | `false` leaves the config untouched |
 
 ## API
@@ -153,8 +158,8 @@ The same operations under your API route, for signed-in users (errors as `{ erro
 | `POST /workflows/start` | `{ workflow, collection, id, fields? }` |
 | `POST /workflows/fire` | `{ instanceId, action, activity?, params? }` |
 | `POST /workflows/abort` | `{ instanceId, reason? }` |
-| `GET /workflows/instances?scope=mine\|all&workflow=&status=&page=&limit=` | `listWorkflowInstances` |
-| `GET /workflows/definitions` | the workflows with their stages |
+
+Runs themselves are readable over Payload's own REST and GraphQL API for the `workflow-instances` collection (admin users only; it does not drop runs on documents the caller cannot read, `listWorkflowInstances` does).
 
 **Agents.** `workflowAgentTools({ payload, user })` from `@focus-reactive/payload-plugin-workflows/agent` returns AI-SDK-shaped tools (`{ description, inputSchema, execute }`): `workflows_list_definitions`, `workflows_list_instances`, `workflows_get_state`, `workflows_start`, `workflows_fire_action`. They act as `user`, the history records `via: "agent"`, and they return `{ error, code }` instead of throwing. With `payload-content-agent`: `customTools: (ctx) => workflowAgentTools(ctx)`.
 
@@ -173,6 +178,7 @@ Read in this order:
 5. `src/server/operations.ts`: start, fire, abort and settle against Payload: access, the document, the answer.
 6. `src/server/store.ts`: the runs collection and its two writes (create, compare-and-swap update), with effects queued in the same transaction.
 7. `src/server/effects.ts`: the effect job. `src/hooks.ts`: guards and settle-on-save. `src/endpoints.ts`, `src/agent.ts`: the two ways in.
+8. `src/components/`: the indicator and drawer (`document/`), the dashboard widget (`widget/`, a server component) and the list's cells (`list/`).
 
 One action, from the button to the database: the drawer posts to `/workflows/fire` → `endpoints.ts` → `fireWorkflowAction` in `server/operations.ts` reads the run and the document as the user and checks `access.fire` → `mutateRun` in `server/store.ts` loads the run and calls `fire` in `engine/engine.ts`, which checks the verdict and params, applies the action and settles → the new state is written only if `revision` is unchanged, with its effect jobs → the operation runs the effects if it owns the commit and answers with the view.
 

@@ -21,8 +21,6 @@ vi.mock("../src/server/operations.js", () => ({
 }));
 vi.mock("../src/server/queries.js", () => ({
   getWorkflowState: fake("state"),
-  listWorkflowInstances: fake("instances"),
-  listWorkflowDefinitions: () => ({ definitions: [] }),
 }));
 
 const { statusOf, workflowEndpoints } = await import("../src/endpoints.js");
@@ -120,22 +118,6 @@ describe("workflow endpoints", () => {
     ).toBe(400);
   });
 
-  it("parses the instances query", async () => {
-    await call(
-      "get",
-      "instances",
-      req({ url: "http://x/?scope=all&workflow=w&status=active&page=2&limit=5" })
-    );
-    expect(calls.args[0]).toMatchObject({
-      args: { scope: "all", workflow: "w", status: "active", page: 2, limit: 5 },
-    });
-    calls.args = [];
-    await call("get", "instances", req({ url: "http://x/?status=bogus&page=x" }));
-    expect(calls.args[0]).toMatchObject({
-      args: { scope: "mine", status: undefined, page: 1, limit: 20 },
-    });
-  });
-
   it.each<[WorkflowErrorCode, number]>([
     ["not-allowed", 403],
     ["conflict", 409],
@@ -175,9 +157,5 @@ describe("workflow endpoints", () => {
       errors: [{ message: "Something went wrong running the workflow." }],
     });
     expect(logger.error).toHaveBeenCalledTimes(1);
-  });
-
-  it("lists definitions", async () => {
-    expect((await call("get", "definitions", req())).body).toEqual({ definitions: [] });
   });
 });

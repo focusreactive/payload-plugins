@@ -587,13 +587,11 @@
       "name": "@focus-reactive/payload-plugin-workflows",
       "version": "1.0.0",
       "devDependencies": {
-        "@payloadcms/next": "3.90.1",
         "@payloadcms/ui": "3.90.1",
         "@swc/cli": "0.4.0",
         "@swc/core": "1.7.0",
         "@types/react": "19.2.9",
         "copyfiles": "2.4.1",
-        "next": "16.3.6",
         "payload": "3.90.1",
         "react": "19.2.1",
         "typescript": "5.9.2",
@@ -601,9 +599,7 @@
         "zod": "^4.4.3",
       },
       "peerDependencies": {
-        "@payloadcms/next": "^3.84.0",
         "@payloadcms/ui": "^3.84.0",
-        "next": "^15.0.0 || ^16.0.0",
         "payload": "^3.84.0",
         "react": "^19.0.0",
         "zod": "^3.25.0 || ^4.0.0",

@@ -148,38 +148,33 @@ export const en = {
   historyAborted: "Stopped the workflow.",
   historyReason: "Reason",
 
-  // View
-  viewTitle: "Workflows",
-  viewDescription: "Documents moving through a workflow, and what each one is waiting on.",
-  tabMine: "For me",
-  tabAll: "All open",
-  viewList: "List",
-  pageInfo: "{{from}}–{{to}} of {{total}}",
-  viewBoard: "Board",
-  filterLabel: "Workflow",
-  filterAll: "All workflows",
-  columnDocument: "Document",
-  columnWorkflow: "Workflow",
-  columnStage: "Stage",
-  columnWaitingOn: "Waiting on",
-  columnUpdated: "Last changed",
+  // Dashboard widget
+  widgetTitle: "Workflows",
+  widgetViewAll: "View all",
+  widgetWaiting: "Waiting on you",
+  widgetWaitingEmpty: "Nothing is waiting on you.",
+  widgetOpen: "Open to anyone",
+  widgetMore: "and {{count}} more",
+  widgetNoneOpen:
+    "No document is in a workflow. Start one from the Workflow button next to Save on a document.",
+  widgetColumnEmpty: "None",
+  widgetStuck: "Stuck",
   untitled: "Untitled ({{id}})",
   anyone: "Anyone",
-  emptyMineTitle: "Nothing for you to pick up",
-  emptyMineBody:
-    "Workflows waiting on you or one of your roles show up here, followed by those anyone can take.",
-  emptyMineAction: "See all open workflows",
-  emptyAllTitle: "No workflow is running",
-  emptyAllBody:
-    "Open a document and start one from the Workflow button next to Save. It shows up here while it is open.",
-  boardEmptyColumn: "Nothing in this stage",
-  boardChoose: "Choose a workflow to see its board",
-  boardChooseBody: "The board lays out one workflow's stages side by side.",
-  boardDone: "Done",
-  boardDoneHint: "Completed in the last 14 days",
-  boardStuck: "Stuck",
-  documents_one: "{{count}} document",
-  documents_other: "{{count}} documents",
+
+  // Workflows list (the runs collection)
+  listSingular: "Workflow",
+  listPlural: "Workflows",
+  listDescription:
+    "Every document in a workflow: its stage and who it waits on. Open a document to act on it.",
+  columnDocument: "Document",
+  columnCollection: "Collection",
+  columnWorkflow: "Workflow",
+  columnStage: "Stage",
+  columnStatus: "Status",
+  columnWaitingOn: "Waiting on",
+  columnWaitingOnRoles: "Waiting on roles",
+  columnFinished: "Finished",
 };
 
 export type WorkflowsTranslations = typeof en;

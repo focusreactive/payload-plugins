@@ -2,6 +2,7 @@ import type { CollectionConfig, Config, Payload } from "payload";
 import { describe, expect, it, vi } from "vitest";
 
 import { warnWithoutRunner, workflowsPlugin } from "../src/plugin.js";
+import { listWorkflowDefinitions } from "../src/server/queries.js";
 import type { WorkflowsSettings } from "../src/plugin.js";
 import { editorialReview, minimal } from "./fixtures.js";
 
@@ -34,9 +35,8 @@ const bySlug = (result: Config, slug: string) =>
   result.collections?.find((collection) => collection.slug === slug) as CollectionConfig;
 
 describe("workflowsPlugin", () => {
-  it("adds the instances collection, locked against API writes and hidden", () => {
+  it("adds the instances collection, locked against API writes", () => {
     const instances = bySlug(run(), "workflow-instances");
-    expect(instances.admin?.hidden).toBe(true);
     const access = instances.access!;
     expect((access.create as () => boolean)()).toBe(false);
     expect((access.update as () => boolean)()).toBe(false);
@@ -97,24 +97,14 @@ describe("workflowsPlugin", () => {
     expect(bySlug(result, "posts")).toEqual({ slug: "posts", fields: [] });
   });
 
-  it("registers the view, the nav link, endpoints, jobs and its config", () => {
+  it("registers endpoints, jobs and its config, and leaves the nav alone", () => {
     const result = run();
-    expect(result.admin?.components?.afterNavLinks).toEqual([
-      "x",
-      "@focus-reactive/payload-plugin-workflows/client#WorkflowsNavLink",
-    ]);
-    expect(result.admin?.components?.views?.workflows).toEqual({
-      Component: "@focus-reactive/payload-plugin-workflows/rsc#WorkflowsViewServer",
-      path: "/workflows",
-      exact: true,
-    });
+    expect(result.admin?.components).toEqual({ afterNavLinks: ["x"] });
     expect(result.endpoints?.map((e) => `${e.method} ${e.path}`)).toEqual([
       "get /workflows/state",
       "post /workflows/start",
       "post /workflows/fire",
       "post /workflows/abort",
-      "get /workflows/instances",
-      "get /workflows/definitions",
     ]);
     const tasks = result.jobs?.tasks ?? [];
     expect(tasks.map((t) => t.slug)).toEqual(["mine", "workflowEffect", "workflowTick"]);
@@ -137,8 +127,8 @@ describe("workflowsPlugin", () => {
       ...config(),
       i18n: {
         translations: {
-          en: { custom: { hello: "Hi" }, workflows: { tabMine: "Mine" } },
-          de: { workflows: { viewTitle: "Arbeitsabläufe" } },
+          en: { custom: { hello: "Hi" }, workflows: { widgetViewAll: "All" } },
+          de: { workflows: { widgetTitle: "Arbeitsabläufe" } },
         },
       },
     } as unknown as Config) as Config;
@@ -147,10 +137,10 @@ describe("workflowsPlugin", () => {
       Record<string, Record<string, string>>
     >;
     expect(translations.en?.custom).toEqual({ hello: "Hi" });
-    expect(translations.en?.workflows?.viewTitle).toBe("Workflows");
-    expect(translations.en?.workflows?.tabMine).toBe("Mine");
-    expect(translations.de?.workflows?.viewTitle).toBe("Arbeitsabläufe");
-    expect(translations.de?.workflows?.tabAll).toBe("All open");
+    expect(translations.en?.workflows?.widgetTitle).toBe("Workflows");
+    expect(translations.en?.workflows?.widgetViewAll).toBe("All");
+    expect(translations.de?.workflows?.widgetTitle).toBe("Arbeitsabläufe");
+    expect(translations.de?.workflows?.widgetWaiting).toBe("Waiting on you");
   });
 
   it("does nothing when disabled", () => {
@@ -174,6 +164,123 @@ describe("workflowsPlugin", () => {
         '  - workflows[2].collections[0]: collection "nope" is not in the config',
       ].join("\n")
     );
+  });
+});
+
+describe("the workflows list (runs collection in the admin)", () => {
+  const instances = () => bySlug(run(), "workflow-instances");
+  const field = (name: string) =>
+    instances().fields.find((entry) => "name" in entry && entry.name === name) as {
+      admin?: { hidden?: boolean; components?: { Cell?: unknown } };
+    };
+
+  it("is a visible list, read-only, whose rows open their document", () => {
+    const { admin, defaultSort } = instances();
+    expect(admin?.hidden).toBeUndefined();
+    expect(defaultSort).toBe("-updatedAt");
+    expect(admin?.defaultColumns).toEqual([
+      "subjectId",
+      "workflow",
+      "stage",
+      "status",
+      "assignedUsers",
+      "updatedAt",
+    ]);
+    const url = admin?.formatDocURL?.({
+      collectionSlug: "workflow-instances",
+      defaultURL: "/admin/collections/workflow-instances/1",
+      doc: { subjectCollection: "pages", subjectId: "12" },
+      req: { payload: { config: { routes: { admin: "/admin" } } } } as never,
+    });
+    expect(url).toBe("/admin/collections/pages/12");
+  });
+
+  it("hides the run's internals and renders names through the plugin's cells", () => {
+    for (const name of ["fields", "activities", "fired", "history", "revision", "activeKey"]) {
+      expect(field(name).admin?.hidden, name).toBe(true);
+    }
+    expect(field("subjectId").admin?.components?.Cell).toBe(
+      "@focus-reactive/payload-plugin-workflows/client#SubjectCell"
+    );
+    expect(field("assignedUsers").admin?.components?.Cell).toBe(
+      "@focus-reactive/payload-plugin-workflows/client#WaitingOnCell"
+    );
+    for (const name of ["workflow", "stage", "status"]) {
+      expect(field(name).admin?.components?.Cell, name).toBe(
+        "@focus-reactive/payload-plugin-workflows/rsc#RunCell"
+      );
+    }
+  });
+});
+
+describe("dashboard widget", () => {
+  it("knows each workflow's final stages, which its board leaves out", () => {
+    const payload = { config: { custom: run().custom } } as unknown as Payload;
+    const [def] = listWorkflowDefinitions(payload).definitions;
+    expect(def?.stages.map((stage) => [stage.name, stage.final])).toEqual(
+      editorialReview.stages.map((stage) => [stage.name, (stage.transitions ?? []).length === 0])
+    );
+    expect(def?.stages.at(-1)?.final).toBe(true);
+    expect(def?.stages[0]?.final).toBe(false);
+  });
+
+  const ours = { widgetSlug: "workflows", width: "full" };
+  const withAdmin = (admin: Record<string, unknown>) =>
+    workflowsPlugin({ workflows: [editorialReview], effects: { "notify-author": notify } })({
+      ...config(),
+      admin: { ...config().admin, ...admin },
+    } as Config) as Config;
+
+  it("registers the widget after the host's widgets", () => {
+    const dashboard = withAdmin({
+      dashboard: { widgets: [{ slug: "mine", Component: "x" }] },
+    }).admin?.dashboard;
+    expect(dashboard?.widgets.map((widget) => widget.slug)).toEqual(["mine", "workflows"]);
+    expect(dashboard?.widgets[1]).toMatchObject({
+      Component: "@focus-reactive/payload-plugin-workflows/rsc#WorkflowsWidget",
+      minWidth: "medium",
+    });
+  });
+
+  it("without a host layout, puts it first and keeps Payload's default collections widget", () => {
+    expect(run().admin?.dashboard?.defaultLayout).toEqual([
+      ours,
+      { widgetSlug: "collections", width: "full" },
+    ]);
+    // The rest of the host's admin config is untouched.
+    expect(run().admin?.components).toEqual({ afterNavLinks: ["x"] });
+  });
+
+  it("appends it to a host's array layout, once", () => {
+    const host = [{ widgetSlug: "mine", width: "medium" }];
+    expect(
+      withAdmin({ dashboard: { widgets: [], defaultLayout: host } }).admin?.dashboard
+    ).toMatchObject({ defaultLayout: [...host, ours] });
+    const placed = [ours, ...host];
+    expect(
+      withAdmin({ dashboard: { widgets: [], defaultLayout: placed } }).admin?.dashboard
+        ?.defaultLayout
+    ).toEqual(placed);
+  });
+
+  it("wraps a host's layout function", async () => {
+    const host = vi.fn(async () => [{ widgetSlug: "mine", width: "small" as const }]);
+    const layout = withAdmin({ dashboard: { widgets: [], defaultLayout: host } }).admin?.dashboard
+      ?.defaultLayout;
+    expect(typeof layout).toBe("function");
+    const req = { user: { id: 1 } };
+    const result = await (layout as (args: { req: unknown }) => Promise<unknown>)({ req });
+    expect(host).toHaveBeenCalledWith({ req });
+    expect(result).toEqual([{ widgetSlug: "mine", width: "small" }, ours]);
+  });
+
+  it("is left out with `dashboard: false`", () => {
+    const result = workflowsPlugin({
+      workflows: [editorialReview],
+      effects: { "notify-author": notify },
+      dashboard: false,
+    })(config()) as Config;
+    expect(result.admin).toEqual(config().admin);
   });
 });
 

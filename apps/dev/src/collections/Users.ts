@@ -2,7 +2,7 @@ import type { CollectionConfig } from "payload";
 
 export const Users: CollectionConfig = {
   admin: {
-    useAsTitle: "email",
+    useAsTitle: "title",
   },
   auth: true,
   fields: [
