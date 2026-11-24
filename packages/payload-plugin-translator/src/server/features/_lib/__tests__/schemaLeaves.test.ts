@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { FieldLike } from "../../../../core/kernel/field-traversal/index.js";
-import { schemaLeaves, translatableFieldPaths } from "../schemaLeaves.js";
+import { collectionsThatCanHoldText, schemaLeaves } from "../schemaLeaves.js";
 
 const text = (name: string, over: Partial<FieldLike> = {}): FieldLike => ({
   name,
@@ -63,39 +63,33 @@ describe("every leaf a schema declares", () => {
   });
 });
 
-describe("the paths a query names to ask what a locale holds", () => {
-  it("leaves the shapes out, since a stored field path has none", () => {
-    const schema: FieldLike[] = [
-      text("title"),
-      { name: "features", type: "array", fields: [text("caption")] },
-    ];
+describe("whether a collection has anywhere for translatable text", () => {
+  const canHoldText = (schema: FieldLike[]) =>
+    collectionsThatCanHoldText(new Map([["docs", schema]]))("docs");
 
-    expect(translatableFieldPaths(schema)).toStrictEqual(["title", "features.caption"]);
+  it("answers yes for one translatable leaf", () => {
+    expect(canHoldText([text("title")])).toBe(true);
   });
 
-  it("names a path once where two blocks declare the same field", () => {
-    const schema: FieldLike[] = [
-      {
-        name: "sections",
-        type: "blocks",
-        blocks: [
-          { slug: "hero", fields: [text("heading")] },
-          { slug: "banner", fields: [text("heading")] },
-        ],
-      },
-    ];
-
-    expect(translatableFieldPaths(schema)).toStrictEqual(["sections.heading"]);
+  it("answers yes when the only translatable leaf is inside a block", () => {
+    expect(
+      canHoldText([
+        { name: "sections", type: "blocks", blocks: [{ slug: "hero", fields: [text("heading")] }] },
+      ])
+    ).toBe(true);
   });
 
-  it("leaves out a leaf no run would translate", () => {
-    const schema: FieldLike[] = [
-      text("title"),
-      { name: "views", type: "number", localized: true },
-      text("sku", { localized: false }),
-      text("slug", { custom: { translateKit: { exclude: true } } }),
-    ];
+  it("answers no where no leaf is one a run would translate", () => {
+    expect(
+      canHoldText([
+        { name: "views", type: "number", localized: true },
+        text("sku", { localized: false }),
+        text("slug", { custom: { translateKit: { exclude: true } } }),
+      ])
+    ).toBe(false);
+  });
 
-    expect(translatableFieldPaths(schema)).toStrictEqual(["title"]);
+  it("answers no for a collection the schema map does not name", () => {
+    expect(collectionsThatCanHoldText(new Map())("docs")).toBe(false);
   });
 });

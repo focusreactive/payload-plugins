@@ -3,7 +3,8 @@ import type { CollectionSlug } from "payload";
 
 import type { EnqueueAssignment } from "../../modules/task-runner/types.js";
 import { TranslationFilterSchema } from "../../../core/domain/selection/index.js";
-import type { TranslatablePaths } from "../_lib/index.js";
+import type { TranslatableTextPresence } from "../../../core/domain/content-projection/holdsTranslatableText.js";
+import type { CollectionCanHoldText } from "../_lib/index.js";
 
 /**
  * Zod strips a key the schema does not declare, so a member that used to narrow a run has to be
@@ -38,7 +39,8 @@ export const EnqueueInputSchema = z.object({
 
 export type EnqueueConfig = {
   availableCollections: Set<CollectionSlug>;
-  translatablePaths: TranslatablePaths;
+  holdsText: TranslatableTextPresence;
+  canHoldText: CollectionCanHoldText;
 };
 
 export type EnqueueAssignmentOutput = {

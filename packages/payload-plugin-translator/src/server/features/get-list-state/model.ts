@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { CollectionSlug } from "payload";
 
 import type { ProvenanceAccess } from "../../modules/plugin-config/index.js";
-import type { TranslatablePaths } from "../_lib/index.js";
+import type { TranslatableTextPresence } from "../../../core/domain/content-projection/holdsTranslatableText.js";
 
 export const MOST_IDS_A_PAGE_MAY_ASK_ABOUT = 100;
 
@@ -30,7 +30,7 @@ export const AskedIdsSchema = z
 
 export type GetListStateConfig = {
   availableCollections: Set<CollectionSlug>;
-  translatablePaths: TranslatablePaths;
+  holdsText: TranslatableTextPresence;
   failedWindowMs: number;
   provenance?: ProvenanceAccess;
 };

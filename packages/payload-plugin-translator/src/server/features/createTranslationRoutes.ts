@@ -2,7 +2,8 @@ import type { CollectionSlug, Endpoint } from "payload";
 
 import type { ConfigTimeContext, ProvenanceAccess } from "../modules/plugin-config/index.js";
 import type { SourceFingerprinter } from "../../core/domain/content-projection/sourceFingerprinter.js";
-import type { TranslatablePaths } from "./_lib/index.js";
+import type { TranslatableTextPresence } from "../../core/domain/content-projection/holdsTranslatableText.js";
+import type { CollectionCanHoldText } from "./_lib/index.js";
 
 import { createEnqueueRoute } from "./enqueue-translation/index.js";
 import { createRunRoute } from "./run-translation/index.js";
@@ -18,7 +19,8 @@ export type TranslationRoutesDeps = Pick<
 > & {
   /** What a state read needs to say how a locale stands against its source. */
   state: { fingerprintOf: SourceFingerprinter; provenance?: ProvenanceAccess };
-  translatablePaths: TranslatablePaths;
+  holdsText: TranslatableTextPresence;
+  canHoldText: CollectionCanHoldText;
   collectionConfig: {
     availableCollections: Set<CollectionSlug>;
   };
@@ -30,7 +32,8 @@ export function createTranslationRoutes({
   collectionConfig,
   schemaMap,
   state,
-  translatablePaths,
+  holdsText,
+  canHoldText,
   access,
   settings,
 }: TranslationRoutesDeps): Endpoint[] {
@@ -41,7 +44,7 @@ export function createTranslationRoutes({
     createEnqueueRoute(
       taskRunnerFactory,
       runRecordStoreFactory,
-      { ...collectionConfig, translatablePaths },
+      { ...collectionConfig, holdsText, canHoldText },
       access,
       basePath
     ),
@@ -69,7 +72,7 @@ export function createTranslationRoutes({
       : []),
     createGetDocumentStatusRoute(collectionConfig, runRecordStoreFactory, access, basePath),
     createGetDocumentStateRoute(
-      { ...collectionConfig, schemaMap, translatablePaths, ...state },
+      { ...collectionConfig, schemaMap, holdsText, ...state },
       runRecordStoreFactory,
       access,
       basePath
@@ -81,7 +84,7 @@ export function createTranslationRoutes({
       basePath
     ),
     createGetListStateRoute(
-      { ...collectionConfig, failedWindowMs, translatablePaths, ...state },
+      { ...collectionConfig, failedWindowMs, holdsText, ...state },
       runRecordStoreFactory,
       access,
       basePath

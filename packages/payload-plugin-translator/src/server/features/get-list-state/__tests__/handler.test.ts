@@ -57,7 +57,7 @@ const handlerFor = (world: World, keepsRecords = true) =>
   new GetListStateHandler(
     {
       availableCollections: new Set(["posts"] as CollectionSlug[]),
-      translatablePaths: () => ["title"],
+      holdsText: () => true,
       failedWindowMs: 60_000,
       ...(keepsRecords
         ? {
@@ -124,7 +124,7 @@ describe("which rows a list answers about", () => {
 
   it("refuses a collection it does not manage, and a host with no localization", async () => {
     const unmanaged = new GetListStateHandler(
-      { availableCollections: new Set(), translatablePaths: () => ["title"], failedWindowMs: 0 },
+      { availableCollections: new Set(), holdsText: () => true, failedWindowMs: 0 },
       () => storeDouble()
     );
 

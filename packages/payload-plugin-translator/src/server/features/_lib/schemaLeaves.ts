@@ -2,10 +2,9 @@ import type { CollectionSlug } from "payload";
 
 import { isTranslatableLeaf } from "../../../core/domain/content-projection/translatableLeaf.js";
 import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
-import { dataPath, inlineBlocks, walkSchema } from "../../../core/kernel/field-traversal/index.js";
+import { inlineBlocks, walkSchema } from "../../../core/kernel/field-traversal/index.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 
-/** A leaf of the schema, with the name path the presentation index is keyed by. */
 export type SchemaLeaf = { field: FieldLike; path: readonly string[] };
 
 export function schemaLeaves(schema: readonly FieldLike[]): SchemaLeaf[] {
@@ -19,28 +18,17 @@ export function schemaLeaves(schema: readonly FieldLike[]): SchemaLeaf[] {
   return found;
 }
 
-export function translatableFieldPaths(schema: readonly FieldLike[]): string[] {
-  const paths = schemaLeaves(schema)
-    .filter((leaf) => isTranslatableLeaf(leaf.field))
-    .map((leaf) => dataPath(leaf.path).join("."));
-  return [...new Set(paths)];
-}
+export type CollectionCanHoldText = (collection: CollectionSlug) => boolean;
 
-/**
- * Where a collection's translatable text may sit: the data paths a query names, by slug.
- */
-export type TranslatablePaths = (collection: CollectionSlug) => readonly string[];
-
-/**
- * A Payload config cannot change while the process runs, so each collection is walked once.
- */
-export function translatablePathsIn(schemaMap: CollectionSchemaMap): TranslatablePaths {
-  const walked = new Map<CollectionSlug, readonly string[]>();
+export function collectionsThatCanHoldText(schemaMap: CollectionSchemaMap): CollectionCanHoldText {
+  const walked = new Map<CollectionSlug, boolean>();
   return (collection) => {
     const known = walked.get(collection);
-    if (known) return known;
-    const paths = translatableFieldPaths(schemaMap.get(collection) ?? []);
-    walked.set(collection, paths);
-    return paths;
+    if (known !== undefined) return known;
+    const can = schemaLeaves(schemaMap.get(collection) ?? []).some((leaf) =>
+      isTranslatableLeaf(leaf.field)
+    );
+    walked.set(collection, can);
+    return can;
   };
 }

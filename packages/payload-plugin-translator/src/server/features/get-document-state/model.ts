@@ -5,7 +5,7 @@ import { DocumentIdSchema } from "../../shared/index.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { SourceFingerprinter } from "../../../core/domain/content-projection/sourceFingerprinter.js";
 import type { ProvenanceAccess } from "../../modules/plugin-config/index.js";
-import type { TranslatablePaths } from "../_lib/index.js";
+import type { TranslatableTextPresence } from "../../../core/domain/content-projection/holdsTranslatableText.js";
 
 export const GetDocumentStateInputSchema = z.object({
   collection_id: DocumentIdSchema,
@@ -16,6 +16,6 @@ export type GetDocumentStateConfig = {
   availableCollections: Set<CollectionSlug>;
   schemaMap: CollectionSchemaMap;
   fingerprintOf: SourceFingerprinter;
-  translatablePaths: TranslatablePaths;
+  holdsText: TranslatableTextPresence;
   provenance?: ProvenanceAccess;
 };

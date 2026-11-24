@@ -56,19 +56,18 @@ export class EnqueueTranslationHandler {
     const namesAddresses = asked.some((filter) => filter.kind === "leaves");
     if (!namesAddresses) return [];
 
+    if (!this.config.canHoldText(collectionSlug)) return [];
+
     const world = worldOfRegistered(req.payload, collectionSlug);
     const writeLandsInAnUnvalidatedDraft = world.kind === "layered";
     if (writeLandsInAnUnvalidatedDraft) return [];
-
-    const paths = this.config.translatablePaths(collectionSlug);
-    if (paths.length === 0) return [];
 
     const holding = await localesHoldingContent({
       payload: req.payload,
       collection: collectionSlug,
       grantedIds: ids,
       locales: targets,
-      paths,
+      holdsText: this.config.holdsText,
       read: world.read.latest,
     });
     return targets.filter((locale) => ids.some((id) => holding.get(locale)?.has(id) !== true));

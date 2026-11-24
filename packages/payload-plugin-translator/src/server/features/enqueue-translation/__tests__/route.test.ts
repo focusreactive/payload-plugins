@@ -12,7 +12,8 @@ import { storeDouble } from "../../../modules/runs/__tests__/fixtures/runRecordS
 const OPEN_ON_PURPOSE = new AnyAccessGuard();
 const config: EnqueueConfig = {
   availableCollections: new Set(),
-  translatablePaths: () => ["title"],
+  canHoldText: () => true,
+  holdsText: () => true,
 };
 const denyAccess: AccessGuard = { check: vi.fn().mockReturnValue(false) };
 

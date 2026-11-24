@@ -62,7 +62,8 @@ describe("EnqueueTranslationHandler", () => {
 
     config = {
       availableCollections: new Set(["posts", "pages"] as CollectionSlug[]),
-      translatablePaths: () => ["title"],
+      canHoldText: () => true,
+      holdsText: () => true,
     };
 
     handler = new EnqueueTranslationHandler(config, mockTaskRunnerFactory, () => storeDouble());
@@ -396,7 +397,8 @@ describe("EnqueueTranslationHandler", () => {
       new EnqueueTranslationHandler(
         {
           availableCollections: config.availableCollections,
-          translatablePaths: () => ["title"],
+          canHoldText: () => true,
+          holdsText: () => true,
         },
         mockTaskRunnerFactory,
         () => storeDouble()
@@ -428,7 +430,8 @@ describe("EnqueueTranslationHandler", () => {
       const response = await new EnqueueTranslationHandler(
         {
           availableCollections: config.availableCollections,
-          translatablePaths: () => [],
+          canHoldText: () => false,
+          holdsText: () => false,
         },
         mockTaskRunnerFactory,
         () => storeDouble()

@@ -98,7 +98,7 @@ export class GetDocumentStateHandler {
         collection,
         grantedIds: [id],
         locales: locales.targets,
-        paths: this.config.translatablePaths(collection),
+        holdsText: this.config.holdsText,
         read: latestOf(req.payload, collection),
       }),
       this.receiptsOf(req, collection, id),

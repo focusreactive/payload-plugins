@@ -17,7 +17,8 @@ const deps = (basePath?: string): TranslationRoutesDeps => ({
   collectionConfig: { availableCollections: new Set() },
   schemaMap: new Map(),
   state: { fingerprintOf: () => null },
-  translatablePaths: () => [],
+  canHoldText: () => false,
+  holdsText: () => false,
   access: OPEN_ON_PURPOSE,
   settings: resolveSettings({ basePath }),
 });

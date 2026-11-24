@@ -68,7 +68,8 @@ describe("enqueue asks about every document it was named", () => {
     handler = new EnqueueTranslationHandler(
       {
         availableCollections: new Set(["posts"] as CollectionSlug[]),
-        translatablePaths: () => ["title"],
+        canHoldText: () => true,
+        holdsText: () => true,
       },
       factory,
       () => storeDouble()
@@ -161,7 +162,8 @@ describe("a document the caller may not read, where the write is live", () => {
     const handler = new EnqueueTranslationHandler(
       {
         availableCollections: new Set(["posts"] as CollectionSlug[]),
-        translatablePaths: () => ["title"],
+        canHoldText: () => true,
+        holdsText: () => true,
       },
       {
         create: vi.fn().mockReturnValue(runner),

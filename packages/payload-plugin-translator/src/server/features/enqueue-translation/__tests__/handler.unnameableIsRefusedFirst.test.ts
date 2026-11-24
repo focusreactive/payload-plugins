@@ -54,7 +54,8 @@ describe("POST /enqueue refuses an unnameable actor before asking about anything
     handler = new EnqueueTranslationHandler(
       {
         availableCollections: new Set(["posts"] as CollectionSlug[]),
-        translatablePaths: () => ["title"],
+        canHoldText: () => true,
+        holdsText: () => true,
       },
       {
         create: vi.fn().mockReturnValue({ enqueue: vi.fn().mockResolvedValue([]) }),

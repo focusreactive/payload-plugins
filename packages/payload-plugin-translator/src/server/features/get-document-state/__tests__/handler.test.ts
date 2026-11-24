@@ -79,7 +79,7 @@ const handlerFor = (world: World, keepsRecords = true) =>
       availableCollections: new Set(["posts"] as CollectionSlug[]),
       schemaMap,
       fingerprintOf,
-      translatablePaths: () => ["title", "summary"],
+      holdsText: () => true,
       ...(keepsRecords
         ? {
             provenance: {
@@ -108,7 +108,7 @@ describe("refusing to answer", () => {
         availableCollections: new Set(),
         schemaMap,
         fingerprintOf,
-        translatablePaths: () => ["title", "summary"],
+        holdsText: () => true,
       },
       () => storeDouble()
     );

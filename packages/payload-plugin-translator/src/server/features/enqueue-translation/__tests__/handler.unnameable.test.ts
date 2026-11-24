@@ -58,7 +58,8 @@ describe("POST /enqueue and an actor the project cannot name", () => {
     handler = new EnqueueTranslationHandler(
       {
         availableCollections: new Set(["posts"] as CollectionSlug[]),
-        translatablePaths: () => ["title"],
+        canHoldText: () => true,
+        holdsText: () => true,
       },
       factory,
       () => storeDouble()

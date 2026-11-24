@@ -52,7 +52,7 @@ const routeForEveryAction: Record<TranslatorAction, RouteUnderTest | null> = {
       createEnqueueRoute(
         taskRunnerFactory,
         runRecordStoreFactory,
-        { availableCollections, translatablePaths: () => [] },
+        { availableCollections, canHoldText: () => false, holdsText: () => false },
         access
       ),
   },
@@ -145,7 +145,7 @@ describe("a read that answers better does not add an action", () => {
 
     await callIt(
       createGetDocumentStateRoute(
-        { availableCollections, schemaMap, fingerprintOf: () => null, translatablePaths: () => [] },
+        { availableCollections, schemaMap, fingerprintOf: () => null, holdsText: () => false },
         runRecordStoreFactory,
         access
       )
@@ -161,7 +161,7 @@ describe("a read that answers better does not add an action", () => {
 
     await callIt(
       createGetListStateRoute(
-        { availableCollections, failedWindowMs: 0, translatablePaths: () => [] },
+        { availableCollections, failedWindowMs: 0, holdsText: () => false },
         runRecordStoreFactory,
         access
       )
