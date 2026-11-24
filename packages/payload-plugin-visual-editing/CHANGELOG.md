@@ -1,3 +1,5 @@
+## @focus-reactive/payload-plugin-visual-editing [1.7.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-visual-editing@1.7.0...@focus-reactive/payload-plugin-visual-editing@1.7.1) (2026-11-24)
+
 # @focus-reactive/payload-plugin-visual-editing [1.7.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-visual-editing@1.6.0...@focus-reactive/payload-plugin-visual-editing@1.7.0) (2026-11-24)
 
 
