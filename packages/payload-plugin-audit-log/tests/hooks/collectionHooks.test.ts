@@ -354,6 +354,16 @@ describe("collection hooks", () => {
     expect(firstEvent(create)?.overrideAccess).toBe(false);
   });
 
+  it("reports a changed json field by its own path", async () => {
+    const { req, create } = fakeRequest();
+    const withSettings = audited({ slug: "posts", fields: [{ name: "settings", type: "json" }] });
+    await runUpdate(withSettings.hooks, req, {
+      previousDoc: { id: 7, settings: { theme: { color: "red" } } },
+      doc: { id: 7, settings: { theme: { color: "blue" } } },
+    });
+    expect(firstEvent(create)?.changes).toEqual(["settings"]);
+  });
+
   it("writes doc.update with changed paths and label", async () => {
     const { req, create } = fakeRequest();
     await runUpdate(posts.hooks, req, {

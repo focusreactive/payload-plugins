@@ -189,3 +189,10 @@ export const localizedFieldPaths = (
   fields: readonly Field[] | undefined,
   sharedBlocks: readonly Block[] = []
 ): FieldPathPattern[] => collectFieldPaths(fieldsOf(fields), sharedBlocks, isLocalized, [], []);
+
+const isJson = (f: FieldShape): boolean => f.type === "json";
+
+export const jsonFieldPaths = (
+  fields: readonly Field[] | undefined,
+  sharedBlocks: readonly Block[] = []
+): FieldPathPattern[] => collectFieldPaths(fieldsOf(fields), sharedBlocks, isJson, [], []);

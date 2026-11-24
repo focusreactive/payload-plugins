@@ -3,7 +3,7 @@ import type { FieldPathPattern, StoredValuesOf } from "../utils/fields";
 import { isRecord } from "../utils/isRecord";
 import { localeOfSave } from "../utils/locales";
 import type { LocaleOfRequest } from "../utils/locales";
-import { createdPaths, diffPaths, isLexicalRichText } from "./diffPaths";
+import { ComparedAsWhole, createdPaths, diffPaths, isLexicalRichText } from "./diffPaths";
 import { mapAtPaths, matchingRowOf, valueAt } from "./fieldPaths";
 import { withStoredLocalizedValues } from "./storedLocalizedValues";
 
@@ -105,16 +105,32 @@ function withSelectedOverSubmitted(submitted: unknown, selected: unknown): unkno
   );
 }
 
+const withJsonComparedAsWhole = (
+  doc: Doc | undefined,
+  jsonFields: readonly FieldPathPattern[]
+): Doc | undefined =>
+  mapAtPaths(doc, [], jsonFields, (parent, key) =>
+    key in parent ? { ...parent, [key]: new ComparedAsWhole(parent[key]) } : parent
+  );
+
 export function createChangeDiff({
   readRestrictedFields,
   localizedFields = [],
+  jsonFields = [],
   maxChangedPaths,
 }: {
   readRestrictedFields: readonly FieldPathPattern[];
   localizedFields?: readonly FieldPathPattern[];
+  jsonFields?: readonly FieldPathPattern[];
   maxChangedPaths: number;
 }): (scope?: SavedDocScope) => ChangeDiff {
   const localized = localizedFields.length > 0;
+  const changedPaths = (before: Doc | undefined, after: Doc): string[] =>
+    diffPaths(
+      withJsonComparedAsWhole(before, jsonFields),
+      withJsonComparedAsWhole(after, jsonFields),
+      { max: maxChangedPaths }
+    );
   return ({
     storedValuesOf,
     selected = false,
@@ -181,7 +197,7 @@ export function createChangeDiff({
 
     const changedShownFields = (before: Doc | undefined, doc: Doc): string[] => {
       const pair = comparable(before, doc);
-      return diffPaths(pair.before, pair.after, { max: maxChangedPaths });
+      return changedPaths(pair.before, pair.after);
     };
 
     const changedStoredFields = (
@@ -201,7 +217,7 @@ export function createChangeDiff({
           doc,
           submittedIn(locale)
         );
-        return diffPaths(pair.before, pair.after, { max: maxChangedPaths });
+        return changedPaths(pair.before, pair.after);
       });
     };
 

@@ -6,6 +6,17 @@ type DocObject = Record<string, unknown>;
 const MAX_DIFF_DEPTH = 8;
 const ROW_ID_KEY = "id";
 
+export class ComparedAsWhole {
+  readonly value: unknown;
+
+  constructor(value: unknown) {
+    this.value = value;
+  }
+}
+
+const unwrapped = (value: unknown): unknown =>
+  value instanceof ComparedAsWhole ? value.value : value;
+
 const isContainer = (value: unknown): value is DocObject | unknown[] =>
   typeof value === "object" && value !== null && !(value instanceof Date);
 
@@ -61,13 +72,17 @@ export function diffPaths(
     const bothSameContainerKind =
       isContainer(a) && isContainer(b) && Array.isArray(a) === Array.isArray(b);
     const comparedAsWhole =
+      a instanceof ComparedAsWhole ||
+      b instanceof ComparedAsWhole ||
       !bothSameContainerKind ||
       depth >= MAX_DIFF_DEPTH ||
       isLexicalRichText(a) ||
       isLexicalRichText(b);
     if (comparedAsWhole) {
-      if (!(hasLeafValue(a) || hasLeafValue(b))) return;
-      if (path && !isEquivalent(a, b)) addPath(path);
+      const aValue = unwrapped(a);
+      const bValue = unwrapped(b);
+      if (!(hasLeafValue(aValue) || hasLeafValue(bValue))) return;
+      if (path && !isEquivalent(aValue, bValue)) addPath(path);
       return;
     }
     const aObject = a as DocObject;

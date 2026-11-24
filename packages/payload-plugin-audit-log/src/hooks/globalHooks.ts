@@ -7,7 +7,12 @@ import { recordAuditEvent } from "../core/writeEvent";
 import type { CapturedMainGlobal } from "../db/mainGlobalCapture";
 import type { ResolvedOptions } from "../options";
 import { failOpen } from "../utils/failOpen";
-import { localizedFieldPaths, readRestrictedFieldPaths, storedValuesOf } from "../utils/fields";
+import {
+  jsonFieldPaths,
+  localizedFieldPaths,
+  readRestrictedFieldPaths,
+  storedValuesOf,
+} from "../utils/fields";
 import type { SanitizedFieldsShape } from "../utils/fields";
 import { configuredLocalesOf, localeOfSave, readsWithFallbackLocale } from "../utils/locales";
 import type { LocaleOfRequest } from "../utils/locales";
@@ -32,6 +37,7 @@ export function withGlobalAudit(
   const diffForSave = createChangeDiff({
     readRestrictedFields,
     localizedFields,
+    jsonFields: jsonFieldPaths(global.fields, sharedBlocks),
     maxChangedPaths: opts.maxChangedPaths,
   });
 
