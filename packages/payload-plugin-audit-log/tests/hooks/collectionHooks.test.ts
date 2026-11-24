@@ -1373,6 +1373,42 @@ describe("collection hooks", () => {
       });
     });
 
+    const restoredInEnglish = async (previousDoc: Doc, doc: Doc) => {
+      const { req, create } = await startedInEnglishThenReadInGerman("restoreVersion", {
+        id: "v1",
+      });
+      req.context.isRestoringVersion = true;
+      await runHooks(localizedMembers.hooks?.beforeChange, {
+        operation: "update",
+        originalDoc: previousDoc,
+        data: doc,
+        req,
+        collection: membersCollection,
+      });
+      await runUpdate(localizedMembers.hooks, req, {
+        previousDoc,
+        doc,
+        collection: membersCollection,
+      });
+      return firstEvent(create);
+    };
+
+    it("compares a restore with the document in the locale it was made in", async () => {
+      const event = await restoredInEnglish(
+        { id: 4, nickname: { en: "B", de: "Bee" } },
+        { id: 4, nickname: "A" }
+      );
+      expect(event).toMatchObject({ action: "doc.restore", changes: ["nickname"] });
+    });
+
+    it("does not report localized fields a restore left unchanged in its locale", async () => {
+      const event = await restoredInEnglish(
+        { id: 4, nickname: { en: "A", de: "Bee" } },
+        { id: 4, nickname: "A" }
+      );
+      expect(event).toMatchObject({ action: "doc.restore", changes: [] });
+    });
+
     it("records a duplicate in the locale it was made in", async () => {
       const data = { nickname: "Copy" };
       const { req, create } = await startedInEnglishThenReadInGerman("create", {

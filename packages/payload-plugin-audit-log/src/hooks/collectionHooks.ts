@@ -149,7 +149,7 @@ export function withCollectionAudit(
       operation === "create"
         ? diff.createdFields(doc)
         : changesOfUpdate(savedIn, diff, {
-            previousDoc,
+            previousDoc: flags.restore ? inLocaleOfSave(savedIn, previousDoc) : previousDoc,
             liveDocBeforeSave: comparesWithLiveDoc ? liveDoc : undefined,
             written,
             doc: docAsStored,
