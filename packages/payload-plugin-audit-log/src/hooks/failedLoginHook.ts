@@ -1,4 +1,4 @@
-import { formatNames, toWords } from "payload";
+import { AuthenticationError, LockedAuth, formatNames, toWords } from "payload";
 import type { AfterErrorHook, Payload, PayloadRequest } from "payload";
 import { MAX_LOGIN_IDENTIFIER_LENGTH } from "../constants";
 import { recordAuditEventOutsideTransaction } from "../core/writeEvent";
@@ -13,13 +13,14 @@ type AuthCollectionConfig = {
   graphQL?: false | { singularName?: string };
 };
 
-type GraphQLErrorLike = { path?: readonly unknown[]; originalError?: { name?: string } | null };
+type GraphQLErrorLike = { path?: readonly unknown[]; originalError?: unknown };
 
 type LoginData = { email?: unknown; username?: unknown; variables?: LoginData };
 
-const FAILURE_REASON_BY_ERROR: Record<string, string> = {
-  AuthenticationError: "invalid_credentials",
-  LockedAuth: "locked",
+const failureReasonOf = (error: unknown): string | undefined => {
+  if (error instanceof LockedAuth) return "locked";
+  if (error instanceof AuthenticationError) return "invalid_credentials";
+  return undefined;
 };
 
 const isLoginPath = (url: string | undefined): boolean => {
@@ -61,7 +62,7 @@ function collectionSlugByLoginMutation(payload: Payload): Map<string, string> {
 
 function failedGraphQLLogin(error: unknown, payload: Payload): FailedLogin | undefined {
   const { originalError, path } = error as GraphQLErrorLike;
-  const reason = FAILURE_REASON_BY_ERROR[originalError?.name ?? ""];
+  const reason = failureReasonOf(originalError);
   const mutation = path?.[0];
   if (!reason || typeof mutation !== "string" || !mutation.startsWith("login")) return undefined;
   const slug = collectionSlugByLoginMutation(payload).get(mutation);
@@ -73,7 +74,7 @@ function failedRestLogin(
   url: string | undefined,
   slug: string
 ): FailedLogin | undefined {
-  const reason = FAILURE_REASON_BY_ERROR[error.name];
+  const reason = failureReasonOf(error);
   return reason && isLoginPath(url) ? { slug, reason } : undefined;
 }
 
