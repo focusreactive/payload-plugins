@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import type { ContentState, LocaleState } from "../../../../types/wire/DocumentTranslationState.js";
-import { StubWorld } from "../model/StubWorld.js";
-import type { DocumentSeed, WorldRules } from "../model/StubWorld.js";
-import { FIXTURE_DOCUMENT } from "../scenarios/fixtureDocument.js";
+import type {
+  ContentState,
+  LocaleState,
+} from "../../../../../types/wire/DocumentTranslationState.js";
+import { StubWorld } from "./model/StubWorld.js";
+import type { DocumentSeed, WorldRules } from "./model/StubWorld.js";
+import { FIXTURE_DOCUMENT } from "./scenarios/fixtureDocument.js";
 
 const NOW = "2026-11-13T12:00:00.000Z";
 const LOCALES = { source: "en", targets: ["de", "fr"] };

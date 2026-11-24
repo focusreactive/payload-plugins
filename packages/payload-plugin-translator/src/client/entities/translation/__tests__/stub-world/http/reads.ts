@@ -1,17 +1,17 @@
 import type { PayloadRequest } from "payload";
 
-import { ServerResponse } from "../../../shared/index.js";
-import { fetchDocumentLocale } from "../../../shared/payload/documentLocale.js";
-import { latestOf } from "../../../shared/payload/worldOfCollection.js";
-import type { RouteHandler } from "../../../shared/http/withErrorHandler.js";
-import { GetDocumentStatusInputSchema } from "../../../features/get-document-status/model.js";
-import { GetCollectionStatusInputSchema } from "../../../features/get-collection-status/model.js";
-import type { DocumentTranslationState } from "../../../../types/wire/DocumentTranslationState.js";
-import type { ListTranslationState } from "../../../../types/wire/ListTranslationState.js";
-import type { DocumentId } from "../../../../types/wire/primitives.js";
+import { ServerResponse } from "../../../../../../server/shared/index.js";
+import { fetchDocumentLocale } from "../../../../../../server/shared/payload/documentLocale.js";
+import { latestOf } from "../../../../../../server/shared/payload/worldOfCollection.js";
+import type { RouteHandler } from "../../../../../../server/shared/http/withErrorHandler.js";
+import { GetDocumentStatusInputSchema } from "../../../../../../server/features/get-document-status/model.js";
+import { GetCollectionStatusInputSchema } from "../../../../../../server/features/get-collection-status/model.js";
+import type { DocumentTranslationState } from "../../../../../../types/wire/DocumentTranslationState.js";
+import type { ListTranslationState } from "../../../../../../types/wire/ListTranslationState.js";
+import type { DocumentId } from "../../../../../../types/wire/primitives.js";
 
 import { localesOf } from "./localesOf.js";
-import { NOT_MANAGED, NO_LOCALIZATION } from "../../../shared/http/readRefusals.js";
+import { NOT_MANAGED, NO_LOCALIZATION } from "../../../../../../server/shared/http/readRefusals.js";
 import type { StubDeps } from "./StubDeps.js";
 
 const idsAsked = (req: PayloadRequest): DocumentId[] =>

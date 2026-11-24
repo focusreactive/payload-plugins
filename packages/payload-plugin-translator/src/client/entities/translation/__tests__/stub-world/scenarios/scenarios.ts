@@ -1,5 +1,5 @@
-import type { ContentState } from "../../../../types/wire/DocumentTranslationState.js";
-import type { IsoDateTime, LocaleCode } from "../../../../types/wire/primitives.js";
+import type { ContentState } from "../../../../../../types/wire/DocumentTranslationState.js";
+import type { IsoDateTime, LocaleCode } from "../../../../../../types/wire/primitives.js";
 import type { DocumentRef, DocumentSeed, SeededRun, WorldRules } from "../model/index.js";
 
 import { FIXTURE_DOCUMENT, currentVerdicts, driftedVerdicts } from "./fixtureDocument.js";

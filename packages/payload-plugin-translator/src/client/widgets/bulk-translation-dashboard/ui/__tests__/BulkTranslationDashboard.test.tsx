@@ -6,8 +6,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type {
   DocumentSeed,
   WorldRules,
-} from "../../../../../server/modules/translation-stub/model/index.js";
-import { SCENARIOS } from "../../../../../server/modules/translation-stub/scenarios/index.js";
+} from "../../../../entities/translation/__tests__/stub-world/model/index.js";
+import { SCENARIOS } from "../../../../entities/translation/__tests__/stub-world/scenarios/index.js";
 import type { Abilities } from "../../../../../types/wire/TranslateKitConfig.js";
 import { InMemoryTranslationRepository } from "../../../../entities/translation/__tests__/InMemoryTranslationRepository.fixture.js";
 import { TranslationRepositoryProvider } from "../../../../entities/translation/index.js";

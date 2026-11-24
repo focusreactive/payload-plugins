@@ -1,5 +1,5 @@
-import type { LeafVerdict } from "../../../../types/wire/DocumentTranslationState.js";
-import type { LeafAddress } from "../../../../types/wire/primitives.js";
+import type { LeafVerdict } from "../../../../../../types/wire/DocumentTranslationState.js";
+import type { LeafAddress } from "../../../../../../types/wire/primitives.js";
 import { leavesOf } from "../model/index.js";
 import type { StubFixture } from "../model/index.js";
 

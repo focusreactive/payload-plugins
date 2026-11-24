@@ -1,11 +1,11 @@
-import { ServerResponse, getByPath } from "../../../shared/index.js";
-import type { RouteHandler } from "../../../shared/http/withErrorHandler.js";
-import { fetchDocumentLocale } from "../../../shared/payload/documentLocale.js";
-import { latestOf } from "../../../shared/payload/worldOfCollection.js";
-import { FieldTranslationInputSchema } from "../../../features/translate-field/model.js";
-import type { FieldTranslationResult } from "../../../../types/wire/field-translation.js";
+import { ServerResponse, getByPath } from "../../../../../../server/shared/index.js";
+import type { RouteHandler } from "../../../../../../server/shared/http/withErrorHandler.js";
+import { fetchDocumentLocale } from "../../../../../../server/shared/payload/documentLocale.js";
+import { latestOf } from "../../../../../../server/shared/payload/worldOfCollection.js";
+import { FieldTranslationInputSchema } from "../../../../../../server/features/translate-field/model.js";
+import type { FieldTranslationResult } from "../../../../../../types/wire/field-translation.js";
 
-import { NOT_MANAGED } from "../../../shared/http/readRefusals.js";
+import { NOT_MANAGED } from "../../../../../../server/shared/http/readRefusals.js";
 import type { StubDeps } from "./StubDeps.js";
 
 /** Reads the saved source value as the real route does, and marks it instead of translating it. */

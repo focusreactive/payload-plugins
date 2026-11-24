@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { StubWorld } from "../model/StubWorld.js";
-import { SCENARIOS } from "../scenarios/scenarios.js";
-import type { ScenarioName } from "../scenarios/scenarios.js";
+import { StubWorld } from "./model/StubWorld.js";
+import { SCENARIOS } from "./scenarios/scenarios.js";
+import type { ScenarioName } from "./scenarios/scenarios.js";
 
 const LOCALES = { source: "en", targets: ["de", "fr", "es"] };
 const A_PAGE = Array.from({ length: 30 }, (_, index) => String(index + 1));

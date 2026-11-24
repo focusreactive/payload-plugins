@@ -1,11 +1,11 @@
 import type { Endpoint } from "payload";
 
-import { withAccessCheck, withErrorHandler } from "../../../shared/index.js";
-import type { AccessGuard } from "../../../shared/index.js";
-import type { RouteHandler } from "../../../shared/http/withErrorHandler.js";
-import { ENDPOINTS } from "../../../../types/wire/endpoints.js";
-import type { EndpointName } from "../../../../types/wire/endpoints.js";
-import type { TranslatorAction } from "../../../../types/TranslatorAction.js";
+import { withAccessCheck, withErrorHandler } from "../../../../../../server/shared/index.js";
+import type { AccessGuard } from "../../../../../../server/shared/index.js";
+import type { RouteHandler } from "../../../../../../server/shared/http/withErrorHandler.js";
+import { ENDPOINTS } from "../../../../../../types/wire/endpoints.js";
+import type { EndpointName } from "../../../../../../types/wire/endpoints.js";
+import type { TranslatorAction } from "../../../../../../types/TranslatorAction.js";
 
 import { cancel, dismissStaleness, enqueue, runNow } from "./actions.js";
 import { readDocumentState, readListState } from "./reads.js";

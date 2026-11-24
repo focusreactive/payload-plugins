@@ -1,14 +1,14 @@
-import { ServerResponse } from "../../../shared/index.js";
-import type { RouteHandler } from "../../../shared/http/withErrorHandler.js";
-import { EnqueueInputSchema } from "../../../features/enqueue-translation/model.js";
-import { CancelInputSchema } from "../../../features/cancel/model.js";
-import { RunInputSchema } from "../../../features/run-translation/model.js";
-import { DismissStalenessInputSchema } from "../../../features/staleness/model.js";
-import type { EnqueueResponse } from "../../../../types/wire/ActionBodies.js";
-import type { LocaleCode } from "../../../../types/wire/primitives.js";
+import { ServerResponse } from "../../../../../../server/shared/index.js";
+import type { RouteHandler } from "../../../../../../server/shared/http/withErrorHandler.js";
+import { EnqueueInputSchema } from "../../../../../../server/features/enqueue-translation/model.js";
+import { CancelInputSchema } from "../../../../../../server/features/cancel/model.js";
+import { RunInputSchema } from "../../../../../../server/features/run-translation/model.js";
+import { DismissStalenessInputSchema } from "../../../../../../server/features/staleness/model.js";
+import type { EnqueueResponse } from "../../../../../../types/wire/ActionBodies.js";
+import type { LocaleCode } from "../../../../../../types/wire/primitives.js";
 
 import { localesOf } from "./localesOf.js";
-import { NOT_MANAGED, NO_LOCALIZATION } from "../../../shared/http/readRefusals.js";
+import { NOT_MANAGED, NO_LOCALIZATION } from "../../../../../../server/shared/http/readRefusals.js";
 import type { StubDeps } from "./StubDeps.js";
 
 const asked = (target: LocaleCode | LocaleCode[]): LocaleCode[] =>

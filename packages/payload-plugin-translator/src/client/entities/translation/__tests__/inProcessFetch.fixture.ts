@@ -1,11 +1,10 @@
-import { vi } from "vitest";
 import type { Endpoint, PayloadRequest } from "payload";
 
-import { translationStub } from "../../../../composition/modules/translationStub.js";
-import { translationLanguages } from "../../../../server/features/_lib/index.js";
-import { storeDouble } from "../../../../server/modules/runs/__tests__/fixtures/runRecordStore.js";
 import { resolveSettings } from "../../../../settings.js";
 import type { AccessGuard } from "../../../../types/AccessGuard.js";
+import { createStubRoutes } from "./stub-world/http/index.js";
+import { StubWorld } from "./stub-world/model/index.js";
+import { SCENARIOS } from "./stub-world/scenarios/index.js";
 import type { ApiBase } from "../../../shared/api/createRequest.js";
 import type { DocumentAddress } from "../model/TranslationRepository.js";
 import type { ContractLocales } from "./TranslationRepository.contract.js";
@@ -13,7 +12,6 @@ import type { ContractLocales } from "./TranslationRepository.contract.js";
 const API_ROUTE = "/api";
 
 export type InProcessServer = {
-  /** The stub's documents; every other id reads as absent. */
   documents: readonly DocumentAddress[];
   locales: ContractLocales;
   access: AccessGuard;
@@ -23,25 +21,19 @@ export type InProcessFetch = { fetch: typeof globalThis.fetch; baseURL: ApiBase 
 
 const keyOf = ({ collection, id }: DocumentAddress): string => `${collection}:${id}`;
 
-/** The stub's contributions, collected as the plugin's builder receives them. */
+const SCENARIO = SCENARIOS.empty;
+
 function stubRoutes(collections: readonly string[], access: AccessGuard): Endpoint[] {
-  const endpoints: Endpoint[] = [];
-  translationStub({ scenario: "empty" }).setup?.({
-    collections: collections.map((slug) => ({ slug, fields: [] })),
-    settings: resolveSettings({}),
+  return createStubRoutes({
+    world: new StubWorld(SCENARIO),
+    managed: new Set(collections),
     access,
-    taskRunnerFactory: { create: vi.fn(), capabilities: { stop: true, run: true } },
-    runRecordStoreFactory: () => storeDouble(),
-    schemaMap: new Map(),
-    translationProvider: { translate: vi.fn() },
-    walk: translationLanguages(),
-    addEndpoints: (added) => endpoints.push(...added),
-    addConfigModifier: () => undefined,
+    basePath: resolveSettings({}).basePath,
+    latencyMs: SCENARIO.latencyMs,
+    servesCancelAndRunNow: SCENARIO.servesCancelAndRunNow,
   });
-  return endpoints;
 }
 
-/** Path params when `pattern` (with `:name` segments) matches `path`, else `null`. */
 function match(pattern: string, path: string): Record<string, string> | null {
   const expected = pattern.split("/");
   const actual = path.split("/");
@@ -57,10 +49,6 @@ function match(pattern: string, path: string): Record<string, string> | null {
 
 const textOf = (body: RequestInit["body"]): string => (typeof body === "string" ? body : "");
 
-/**
- * A `fetch` that dispatches to the stub's real handlers, guard and error handler included, as
- * Payload would: route params, search params, `json()`, a user, the host's locales.
- */
 export function inProcessFetch({ documents, locales, access }: InProcessServer): InProcessFetch {
   const held = new Set(documents.map(keyOf));
   const routes = stubRoutes([...new Set(documents.map(({ collection }) => collection))], access);

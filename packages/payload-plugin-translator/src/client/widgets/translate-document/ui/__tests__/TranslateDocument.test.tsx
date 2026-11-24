@@ -4,8 +4,8 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { WorldRules } from "../../../../../server/modules/translation-stub/model/index.js";
-import { SCENARIOS } from "../../../../../server/modules/translation-stub/scenarios/index.js";
+import type { WorldRules } from "../../../../entities/translation/__tests__/stub-world/model/index.js";
+import { SCENARIOS } from "../../../../entities/translation/__tests__/stub-world/scenarios/index.js";
 import type { ContentState } from "../../../../../types/wire/DocumentTranslationState.js";
 import type { Abilities } from "../../../../../types/wire/TranslateKitConfig.js";
 import { InMemoryTranslationRepository } from "../../../../entities/translation/__tests__/InMemoryTranslationRepository.fixture.js";

@@ -1,9 +1,6 @@
-import { StubWorld } from "../../../../server/modules/translation-stub/model/index.js";
-import type {
-  WorldLocales,
-  WorldRules,
-} from "../../../../server/modules/translation-stub/model/index.js";
-import { SCENARIOS } from "../../../../server/modules/translation-stub/scenarios/index.js";
+import { StubWorld } from "./stub-world/model/index.js";
+import type { WorldLocales, WorldRules } from "./stub-world/model/index.js";
+import { SCENARIOS } from "./stub-world/scenarios/index.js";
 import type {
   CancelResponse,
   DismissStalenessRequest,

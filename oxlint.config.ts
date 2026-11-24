@@ -1,4 +1,5 @@
 import { defineConfig } from "oxlint";
+import type { DummyRuleMap, OxlintOverride } from "oxlint";
 import core from "ultracite/oxlint/core";
 import next from "ultracite/oxlint/next";
 
@@ -167,7 +168,12 @@ type ClientZone = {
   payloadFree?: boolean;
   fetches?: boolean;
 };
-const clientImportRules = ({ layer, boundary, payloadFree, fetches }: ClientZone) => ({
+const clientImportRules = ({
+  layer,
+  boundary,
+  payloadFree,
+  fetches,
+}: ClientZone): DummyRuleMap => ({
   "no-restricted-imports": [
     "error",
     {
@@ -190,7 +196,7 @@ const ENTITY_INTERNALS = ["model", "api", "queries", "mutations"].map(
 
 // Broad → specific: options replace and the last matching override wins, so each zone restates
 // every restriction its files carry.
-const TRANSLATOR_CLIENT_ZONES = [
+const TRANSLATOR_CLIENT_ZONES: OxlintOverride[] = [
   ...CLIENT_LAYERS.map((layer) => ({
     files: sourcesIn(`${TRANSLATOR_CLIENT}/${layer}`),
     rules: clientImportRules({ layer }),
@@ -622,28 +628,6 @@ export default defineConfig({
           {
             patterns: [
               { group: ["**", "!./*"], message: "Wire contracts import only each other." },
-            ],
-          },
-        ],
-      },
-    },
-    // (T4) The stub's world and scenarios stay free of Payload, so a client test fake can run them:
-    //      they import only the wire contracts and each other.
-    {
-      files: [
-        `${TRANSLATOR}/src/server/modules/translation-stub/model/*.ts`,
-        `${TRANSLATOR}/src/server/modules/translation-stub/scenarios/*.ts`,
-      ],
-      rules: {
-        "no-restricted-imports": [
-          "error",
-          {
-            patterns: [
-              {
-                group: ["**", "!./*", "!../model/*", "!../scenarios/*", "!**/types/wire/*"],
-                message:
-                  "The stub's world and scenarios import only the wire contracts and each other.",
-              },
             ],
           },
         ],

@@ -1,6 +1,6 @@
 import type { PayloadRequest } from "payload";
 
-import { Locales } from "../../../../core/domain/locales/index.js";
+import { Locales } from "../../../../../../core/domain/locales/index.js";
 import type { WorldLocales } from "../model/index.js";
 
 /** The host's own locales: the default one is the source, every other one a target. `null` without localization. */

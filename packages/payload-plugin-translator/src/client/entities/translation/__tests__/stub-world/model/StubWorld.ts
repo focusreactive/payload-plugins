@@ -4,19 +4,19 @@ import type {
   LeafVerdict,
   LocaleState,
   TreeNode,
-} from "../../../../types/wire/DocumentTranslationState.js";
-import type { EnqueueAssignmentBody } from "../../../../types/wire/ActionBodies.js";
+} from "../../../../../../types/wire/DocumentTranslationState.js";
+import type { EnqueueAssignmentBody } from "../../../../../../types/wire/ActionBodies.js";
 import type {
   ListLocaleState,
   ListTranslationState,
-} from "../../../../types/wire/ListTranslationState.js";
+} from "../../../../../../types/wire/ListTranslationState.js";
 import type {
   DocumentId,
   IsoDateTime,
   LeafAddress,
   LocaleCode,
-} from "../../../../types/wire/primitives.js";
-import type { RunState } from "../../../../types/wire/RunState.js";
+} from "../../../../../../types/wire/primitives.js";
+import type { RunState } from "../../../../../../types/wire/RunState.js";
 
 import { leavesOf } from "./leavesOf.js";
 

@@ -12,7 +12,6 @@ import type {
   TranslationProvider,
   TranslatorPluginConfig,
 } from "@focus-reactive/payload-plugin-translator";
-import { translationStub } from "@focus-reactive/payload-plugin-translator/stub";
 
 import { fakeAsk, failingAsk } from "./fakeAsk";
 
@@ -74,18 +73,6 @@ export function resolveTranslationProvider(): TranslationProvider {
   return createTranslationProvider({ askModel: askOpenAIOnFirstUse });
 }
 
-/**
- * `TRANSLATOR_STUB=1` serves the admin from the plugin's in-memory stub instead of the real modules,
- * with the scenario `TRANSLATOR_STUB_SCENARIO` names (`mixed` when unset). Provenance is off then:
- * it serves the dismiss route the stub serves, and the plugin refuses two modules on one route.
- */
 export function resolveTranslatorModules(): Pick<TranslatorPluginConfig, "modules" | "provenance"> {
-  if (process.env.TRANSLATOR_STUB === "1") {
-    return {
-      modules: [translationStub({ scenario: process.env.TRANSLATOR_STUB_SCENARIO || undefined })],
-      provenance: false,
-    };
-  }
-
   return { modules: [documentTranslation(), fieldTranslation()], provenance: true };
 }
