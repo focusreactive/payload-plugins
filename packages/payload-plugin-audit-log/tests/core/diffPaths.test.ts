@@ -17,6 +17,26 @@ const rt = (text: string) => ({
   },
 });
 
+const richTextWith = (...children: unknown[]) => ({
+  root: { type: "root", children: [{ type: "paragraph", children }] },
+});
+const upload = (value: unknown) => ({
+  type: "upload",
+  relationTo: "media",
+  value,
+  fields: { caption: "c" },
+});
+const relationship = (value: unknown) => ({ type: "relationship", relationTo: "posts", value });
+const internalLink = (value: unknown) => ({
+  type: "link",
+  fields: { linkType: "internal", doc: { relationTo: "pages", value } },
+  children: [{ type: "text", text: "go" }],
+});
+const block = (author: unknown) => ({
+  type: "block",
+  fields: { id: "b1", blockType: "quote", author },
+});
+
 describe("diffPaths", () => {
   it("ignores the ids of array and block rows at any depth", () => {
     const hero = { id: "r1", blockType: "hero", title: "A" };
@@ -118,6 +138,37 @@ describe("diffPaths", () => {
     expect(diffPaths({ body: rt("a") }, { body: rt("b") })).toEqual(["body"]);
     expect(diffPaths({ body: rt("a") }, { body: rt("a") })).toEqual([]);
     expect(diffPaths({ body: null }, { body: rt("a") })).toEqual(["body"]);
+  });
+
+  describe("Lexical rich text saved at a depth that populates its relations", () => {
+    it("does not report rich text whose relations only gained their documents", () => {
+      const asStored = richTextWith(upload(1), relationship("p1"), internalLink(7), block(5));
+      const asRead = richTextWith(
+        upload({ id: 1, url: "/media/1.png", alt: "a" }),
+        relationship({ id: "p1", title: "Post" }),
+        internalLink({ id: 7, slug: "home" }),
+        block({ id: 5, name: "Ann" })
+      );
+      expect(diffPaths({ body: asStored }, { body: asRead })).toEqual([]);
+    });
+
+    it("still reports rich text whose relation points somewhere else", () => {
+      expect(
+        diffPaths({ body: richTextWith(upload(1)) }, { body: richTextWith(upload({ id: 2 })) })
+      ).toEqual(["body"]);
+      expect(
+        diffPaths(
+          { body: richTextWith(internalLink(7)) },
+          { body: richTextWith(internalLink({ id: 8 })) }
+        )
+      ).toEqual(["body"]);
+    });
+
+    it("still reports rich text whose text changed next to populated relations", () => {
+      const before = richTextWith(upload(1), { type: "text", text: "a" });
+      const after = richTextWith(upload({ id: 1, url: "/x" }), { type: "text", text: "b" });
+      expect(diffPaths({ body: before }, { body: after })).toEqual(["body"]);
+    });
   });
 
   it("does not report a field that was never set and still has no value", () => {

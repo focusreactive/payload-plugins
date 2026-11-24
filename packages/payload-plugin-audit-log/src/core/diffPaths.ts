@@ -18,6 +18,17 @@ const isPopulatedRelationOf = (id: unknown, populated: unknown): boolean =>
 const isSameRelation = (a: unknown, b: unknown): boolean =>
   isPopulatedRelationOf(a, b) || isPopulatedRelationOf(b, a);
 
+function isEquivalent(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b) || isSameRelation(a, b)) return true;
+  if (!(isContainer(a) && isContainer(b)) || Array.isArray(a) !== Array.isArray(b)) {
+    return JSON.stringify(a) === JSON.stringify(b);
+  }
+  const aObject = a as DocObject;
+  const bObject = b as DocObject;
+  const keys = new Set([...Object.keys(aObject), ...Object.keys(bObject)]);
+  return [...keys].every((key) => isEquivalent(aObject[key], bObject[key]));
+}
+
 export const isLexicalRichText = (value: unknown): boolean =>
   isObject(value) && isObject(value.root) && value.root.type === "root";
 
@@ -56,7 +67,7 @@ export function diffPaths(
       isLexicalRichText(b);
     if (comparedAsWhole) {
       if (!(hasLeafValue(a) || hasLeafValue(b))) return;
-      if (path && JSON.stringify(a) !== JSON.stringify(b)) addPath(path);
+      if (path && !isEquivalent(a, b)) addPath(path);
       return;
     }
     const aObject = a as DocObject;
