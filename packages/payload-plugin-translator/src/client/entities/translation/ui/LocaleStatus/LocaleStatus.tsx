@@ -1,6 +1,7 @@
 "use client";
 
 import type { LocaleCode } from "../../../../../types/wire/primitives.js";
+import { clockTime } from "../../../../shared/lib/time/clockTime.js";
 import { timeAgo } from "../../../../shared/lib/time/timeAgo.js";
 import ColorIndicator from "../../../../shared/ui/ColorIndicator/index.js";
 import InfoPopover from "../../../../shared/ui/InfoPopover/index.js";
@@ -15,6 +16,8 @@ type LocaleStatusProps = {
 };
 
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
+
+const NO_NEWS_AFTER_MS = 5 * 60 * 1000;
 
 export const WRITTEN_BY_HAND_WARNING = "Text with no record of a run. Translating replaces it.";
 
@@ -57,13 +60,28 @@ export function LocaleStatus({ row, labelOf, now }: LocaleStatusProps) {
       );
     case "translated":
       return <span className={styles.status}>Translated</span>;
-    case "translating":
+    case "translating": {
+      /*
+       * The process that would close this record is the one that may have died, so nothing here
+       * can tell a slow translation from a dead one. Past the window the panel stops claiming
+       * work and leaves the editor the cancel beside it.
+       */
+      const openFor = now.getTime() - new Date(row.startedAt).getTime();
+      if (openFor >= NO_NEWS_AFTER_MS) {
+        return (
+          <span className={`${styles.status} ${styles.warning}`}>
+            <ColorIndicator $color="amber" />
+            No news since {clockTime(row.startedAt)}
+          </span>
+        );
+      }
       return (
         <span className={styles.status}>
           <ColorIndicator $color="blue" $animated />
           Translating <span className={styles.when}>started {timeAgo(row.startedAt, now)}</span>
         </span>
       );
+    }
     case "queued":
       return (
         <span className={styles.status}>
