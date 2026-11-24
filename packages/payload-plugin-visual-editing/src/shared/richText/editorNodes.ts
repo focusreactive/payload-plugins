@@ -12,13 +12,20 @@ export const rootOf = (editorState: unknown): EditorNode | null => {
   return editorState.root;
 };
 
-export const mapEditorNodes = (node: unknown, map: (node: EditorNode) => EditorNode): unknown => {
+export type MapEditorNode = (node: EditorNode, parent: EditorNode | null) => EditorNode;
+
+export const mapEditorNodes = (
+  node: unknown,
+  map: MapEditorNode,
+  parent: EditorNode | null = null
+): unknown => {
   if (!isPlainObject(node)) return node;
-  const { children } = node;
+  const mapped = map(node, parent);
+  const { children } = mapped;
   return {
-    ...map(node),
+    ...mapped,
     ...(Array.isArray(children) && {
-      children: children.map((child) => mapEditorNodes(child, map)),
+      children: children.map((child) => mapEditorNodes(child, map, mapped)),
     }),
   };
 };

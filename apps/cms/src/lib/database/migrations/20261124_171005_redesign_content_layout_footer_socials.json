@@ -34105,6 +34105,314 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.audit_events": {
+      "name": "audit_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action": {
+          "name": "action",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_audit_events_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'success'"
+        },
+        "actor_type": {
+          "name": "actor_type",
+          "type": "enum_audit_events_actor_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_doc_id": {
+          "name": "actor_doc_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actor_collection": {
+          "name": "actor_collection",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actor_label": {
+          "name": "actor_label",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actor_source": {
+          "name": "actor_source",
+          "type": "enum_audit_events_actor_source",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "on_behalf_of_collection": {
+          "name": "on_behalf_of_collection",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "on_behalf_of_doc_id": {
+          "name": "on_behalf_of_doc_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "on_behalf_of_label": {
+          "name": "on_behalf_of_label",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agent_key_id": {
+          "name": "agent_key_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agent_name": {
+          "name": "agent_name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agent_model": {
+          "name": "agent_model",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agent_tool": {
+          "name": "agent_tool",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "via": {
+          "name": "via",
+          "type": "enum_audit_events_via",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target_kind": {
+          "name": "target_kind",
+          "type": "enum_audit_events_target_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target_slug": {
+          "name": "target_slug",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target_doc_id": {
+          "name": "target_doc_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target_label": {
+          "name": "target_label",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target_locale": {
+          "name": "target_locale",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "changes": {
+          "name": "changes",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "override_access": {
+          "name": "override_access",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "request_id": {
+          "name": "request_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ip": {
+          "name": "ip",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_agent": {
+          "name": "user_agent",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "audit_events_occurred_at_idx": {
+          "name": "audit_events_occurred_at_idx",
+          "columns": [
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "audit_events_action_idx": {
+          "name": "audit_events_action_idx",
+          "columns": [
+            {
+              "expression": "action",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "audit_events_actor_actor_type_idx": {
+          "name": "audit_events_actor_actor_type_idx",
+          "columns": [
+            {
+              "expression": "actor_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "audit_events_actor_actor_doc_id_idx": {
+          "name": "audit_events_actor_actor_doc_id_idx",
+          "columns": [
+            {
+              "expression": "actor_doc_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "audit_events_on_behalf_of_on_behalf_of_doc_id_idx": {
+          "name": "audit_events_on_behalf_of_on_behalf_of_doc_id_idx",
+          "columns": [
+            {
+              "expression": "on_behalf_of_doc_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "audit_events_target_target_slug_idx": {
+          "name": "audit_events_target_target_slug_idx",
+          "columns": [
+            {
+              "expression": "target_slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "audit_events_target_target_doc_id_idx": {
+          "name": "audit_events_target_target_doc_id_idx",
+          "columns": [
+            {
+              "expression": "target_doc_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "audit_events_request_id_idx": {
+          "name": "audit_events_request_id_idx",
+          "columns": [
+            {
+              "expression": "request_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.payload_kv": {
       "name": "payload_kv",
       "schema": "",
@@ -40776,6 +41084,59 @@
         "base"
       ]
     },
+    "public.enum_audit_events_status": {
+      "name": "enum_audit_events_status",
+      "schema": "public",
+      "values": [
+        "success",
+        "failure"
+      ]
+    },
+    "public.enum_audit_events_actor_type": {
+      "name": "enum_audit_events_actor_type",
+      "schema": "public",
+      "values": [
+        "user",
+        "api_key",
+        "agent",
+        "system",
+        "anonymous"
+      ]
+    },
+    "public.enum_audit_events_actor_source": {
+      "name": "enum_audit_events_actor_source",
+      "schema": "public",
+      "values": [
+        "context",
+        "als",
+        "auth",
+        "inferred",
+        "plugin"
+      ]
+    },
+    "public.enum_audit_events_via": {
+      "name": "enum_audit_events_via",
+      "schema": "public",
+      "values": [
+        "admin",
+        "rest",
+        "graphql",
+        "local",
+        "mcp",
+        "job"
+      ]
+    },
+    "public.enum_audit_events_target_kind": {
+      "name": "enum_audit_events_target_kind",
+      "schema": "public",
+      "values": [
+        "collection",
+        "global",
+        "auth",
+        "audit",
+        "system"
+      ]
+    },
     "public.enum_payload_jobs_log_task_slug": {
       "name": "enum_payload_jobs_log_task_slug",
       "schema": "public",
@@ -40893,6 +41254,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "4fa5e834-2a00-4998-93a2-d64b8ec962e6",
+  "id": "c0a91ce3-ad50-4a10-bbc7-2799037d7120",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

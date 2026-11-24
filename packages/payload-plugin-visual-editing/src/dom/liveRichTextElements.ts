@@ -13,8 +13,7 @@ import { liveRichTextOf } from "../client/instantPreview/liveRichTextOf.js";
 import { startLiveRichText } from "../client/overlayScope.js";
 import { withVisualEditingPath } from "../client/withVisualEditingPath.js";
 import { isPlainObject } from "../shared/plainObject.js";
-
-export const DATA_VE_LIVE_RICH_TEXT_ATTR = "data-ve-live-rich-text";
+import { DATA_VE_LIVE_RICH_TEXT_ATTR } from "../shared/protocol.js";
 
 export type RenderRichTextHtml = RenderUnsavedRichText<string>;
 

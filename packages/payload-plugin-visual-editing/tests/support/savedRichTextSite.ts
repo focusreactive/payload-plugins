@@ -42,6 +42,7 @@ export const startSite = async (name: string, plugin: VisualEditingPluginConfig)
 const callEndpoint = async (payload: Payload, path: string, body: unknown, headers?: Headers) => {
   const requestHeaders = new Headers(headers);
   requestHeaders.set("Origin", SITE_ORIGIN);
+  requestHeaders.set("Content-Type", "application/json");
   const { user } = await payload.auth({ headers: requestHeaders });
   const endpoint = payload.config.endpoints.find((candidate) => candidate.path === path);
   const req = await createLocalReq(

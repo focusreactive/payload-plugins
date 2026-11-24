@@ -1,6 +1,7 @@
 import type { VisualEditingMode } from "./visualEditingMode.js";
 
 import { DATA_VE_HOVERING_ATTR } from "./overlay/constants.js";
+import { zoomOf } from "./overlay/zoom.js";
 import { VISUAL_EDITING_MODES } from "./visualEditingMode.js";
 
 export interface Toggle {
@@ -204,8 +205,9 @@ const storePosition = (win: Window, position: TogglePosition): void => {
 
 /** Keeps the whole control inside the viewport. */
 const clampPosition = (win: Window, position: TogglePosition, el: HTMLElement): TogglePosition => {
-  const maxRight = Math.max(EDGE_GAP, win.innerWidth - el.offsetWidth - EDGE_GAP);
-  const maxTop = Math.max(EDGE_GAP, win.innerHeight - el.offsetHeight - EDGE_GAP);
+  const zoom = zoomOf(el);
+  const maxRight = Math.max(EDGE_GAP, win.innerWidth - el.offsetWidth * zoom - EDGE_GAP);
+  const maxTop = Math.max(EDGE_GAP, win.innerHeight - el.offsetHeight * zoom - EDGE_GAP);
   return {
     right: Math.min(maxRight, Math.max(EDGE_GAP, position.right)),
     top: Math.min(maxTop, Math.max(EDGE_GAP, position.top)),
@@ -256,8 +258,9 @@ export function createToggle(doc: Document, onSelect: (mode: VisualEditingMode) 
 
   const win = doc.defaultView ?? window;
   const place = (position: TogglePosition) => {
-    host.style.top = `${position.top}px`;
-    host.style.right = `${position.right}px`;
+    const zoom = zoomOf(host);
+    host.style.top = `${position.top / zoom}px`;
+    host.style.right = `${position.right / zoom}px`;
   };
 
   const card = shadow.querySelector<HTMLElement>(".card");

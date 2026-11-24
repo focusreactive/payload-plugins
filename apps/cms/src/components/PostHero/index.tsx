@@ -1,5 +1,6 @@
 import { DisplayHeading } from "@/components/DisplayHeading";
 import { Eyebrow } from "@/components/Eyebrow";
+import { withVisualEditingPath } from "@focus-reactive/payload-plugin-visual-editing/client";
 import { getTranslations } from "next-intl/server";
 import NextImage from "next/image";
 
@@ -85,7 +86,10 @@ export async function PostHero({ post, locale }: PostHeroProps) {
       {heroImage && (
         <section>
           <div className="mx-auto w-full max-w-containerMaxW px-containerBase">
-            <div className="relative aspect-[21/9] w-full overflow-hidden rounded-xl border border-border bg-surface-muted">
+            <div
+              className="relative aspect-[21/9] w-full overflow-hidden rounded-xl border border-border bg-surface-muted"
+              {...withVisualEditingPath(post.heroImage)}
+            >
               <NextImage
                 src={heroImage.url ?? "/empty-placeholder.jpg"}
                 alt={heroImage.alt ?? ""}

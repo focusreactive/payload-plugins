@@ -26,6 +26,9 @@ export interface LiveFields {
   apply(message: VeFieldSnapshotMessage | VeFieldPatchMessage): void;
   takeNewlyRendered(): VeRenderedFields[];
   takeAllRendered(): VeRenderedFields[];
+  holdsValueOf(document: VeDocument, key: string): boolean;
+  holdsFormOf(document: VeDocument): boolean;
+  holdsAnyForm(): boolean;
 }
 
 type KnownValues = { unsaved: string; saved: readonly string[] };
@@ -86,6 +89,7 @@ export function createLiveFields(
   const unannounced = new Set<string>();
   const shapesByRichText = new Map<string, ShapesOfField>();
   const richTextsWithEarlierShapes = new Set<string>();
+  const documentsWithValues = new Set<string>();
 
   const show = (node: Text, value: string) => {
     if (node.textContent !== value) writeText(node, value);
@@ -199,7 +203,9 @@ export function createLiveFields(
       if (message.type === VE_FIELD_SNAPSHOT_TYPE) {
         for (const { key, saved, value } of message.fields) {
           const onPage = fieldsOnPage.get(fieldAddressOf(message, key));
-          if (onPage) showUnsaved(onPage, withSavedValue(onPage.values, saved), value);
+          if (!onPage) continue;
+          showUnsaved(onPage, withSavedValue(onPage.values, saved), value);
+          documentsWithValues.add(documentAddressOf(message));
         }
         return;
       }
@@ -216,6 +222,15 @@ export function createLiveFields(
     takeAllRendered() {
       unannounced.clear();
       return renderedByDocument(fieldsOf(fieldsOnPage.keys()));
+    },
+    holdsValueOf(document, key) {
+      return Boolean(fieldsOnPage.get(fieldAddressOf(document, key))?.values);
+    },
+    holdsFormOf(document) {
+      return documentsWithValues.has(documentAddressOf(document));
+    },
+    holdsAnyForm() {
+      return documentsWithValues.size > 0;
     },
   };
 }

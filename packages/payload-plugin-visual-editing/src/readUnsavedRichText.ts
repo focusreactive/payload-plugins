@@ -19,10 +19,11 @@ import {
   signInAndReadBody,
 } from "./server/unsavedRichText/postedRequest.js";
 import { readAsUser, readKeyOf } from "./server/unsavedRichText/readAsUser.js";
+import { MAX_POSTED_EDITOR_STATE_LENGTH } from "./shared/richText/postedEditorState.js";
 
 export type { UnsavedRichTextDepth } from "./server/unsavedRichText/readAsUser.js";
 
-export const DEFAULT_MAX_UNSAVED_STATE_LENGTH = 1_000_000;
+export const DEFAULT_MAX_UNSAVED_STATE_LENGTH = MAX_POSTED_EDITOR_STATE_LENGTH;
 export const DEFAULT_UNSAVED_READ_TIME_LIMIT_MS = 3000;
 
 const UNSAVED_READ_FAILURE_MESSAGE = "Reading an unsaved rich text state failed";

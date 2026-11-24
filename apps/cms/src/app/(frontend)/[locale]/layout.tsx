@@ -11,6 +11,7 @@ import { AnalyticsProviderClient } from "@/lib/plugins/analytics/AnalyticsProvid
 import type { Locale } from "@/lib/types";
 import { LivePreviewListener } from "@/components/LivePreviewListener";
 import { VisualEditingEditRouter } from "@/components/VisualEditingEditRouter";
+import { VisualEditingSession } from "@/components/VisualEditingSession";
 
 // Inter with the optical-size axis: `font-variation-settings: "opsz" 32` in
 // styles.css pins it to the Display cut the design uses at every size.
@@ -52,12 +53,12 @@ export default async function RootLayout({ children, params }: Props) {
         <AnalyticsProviderClient measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID!}>
           <Providers locale={locale as Locale} messages={messages}>
             {draft ? (
-              <VisualEditing.Provider available instantPreview adminBasePath="/admin">
+              <VisualEditingSession>
                 <VisualEditing.Toggle />
                 <VisualEditing.Overlay locale={locale}>{children}</VisualEditing.Overlay>
                 <LivePreviewListener />
                 <VisualEditingEditRouter />
-              </VisualEditing.Provider>
+              </VisualEditingSession>
             ) : (
               children
             )}

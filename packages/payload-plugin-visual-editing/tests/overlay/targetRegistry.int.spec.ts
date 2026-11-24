@@ -14,7 +14,6 @@ const ctx: TargetRegistryCtx = {
   buildAdminEditUrl,
   adminOrigin: ADMIN_ORIGIN,
   adminBasePath: "/admin",
-  mode: "hover",
 };
 
 const markerA: Marker = {

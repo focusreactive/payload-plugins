@@ -15,8 +15,8 @@ export const restOf =
       request: new Request(`${API_URL}${path}`, init),
     });
 
-export const postOfJson = (body: unknown, headers: Headers = new Headers()): RequestInit => ({
-  body: JSON.stringify(body),
-  headers,
-  method: "POST",
-});
+export const postOfJson = (body: unknown, headers: Headers = new Headers()): RequestInit => {
+  const sent = new Headers(headers);
+  sent.set("Content-Type", "application/json");
+  return { body: JSON.stringify(body), headers: sent, method: "POST" };
+};

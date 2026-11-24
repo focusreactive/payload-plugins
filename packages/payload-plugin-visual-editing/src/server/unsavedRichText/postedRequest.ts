@@ -1,6 +1,6 @@
 import type { Payload } from "payload";
 
-import type { LiveRichTextField, VeEditorState } from "../../shared/protocol.js";
+import type { LiveRichTextField, VeDocument, VeEditorState } from "../../shared/protocol.js";
 
 import { schemaPathOfRichText } from "../../shared/editableSchema/editableSchema.js";
 import { isPlainObject } from "../../shared/plainObject.js";
@@ -9,7 +9,7 @@ import { isVeDocument, veDocumentOf } from "../../shared/veDocument.js";
 import { isLocaleOf } from "../localeCodesKeyingValues.js";
 import { schemaCacheOf } from "../schemaCache.js";
 import { readJsonBody } from "./jsonBody.js";
-import { readPostedEditorState } from "./postedEditorState.js";
+import { readPostedEditorState } from "../../shared/richText/postedEditorState.js";
 
 const MAX_BYTES_PER_CHARACTER = 3;
 const MAX_REQUEST_ENVELOPE_BYTES = 4096;
@@ -20,7 +20,7 @@ export type PostedRequest =
   | { headers: Headers; request: unknown }
   | { headers?: never; request: Request };
 
-type DocumentToRead =
+export type DocumentToRead =
   | { collection: string; id: number | string; kind: "collection" }
   | { kind: "global"; slug: string };
 
@@ -46,16 +46,16 @@ const readField = (field: unknown): LiveRichTextField | null => {
   return { ...veDocumentOf(field as LiveRichTextField), key: field.key };
 };
 
-const idOfCollection = (payload: Payload, collection: string, docId: string) => {
+export const idOfCollection = (payload: Payload, collection: string, docId: string) => {
   const idType = payload.collections[collection]?.customIDType ?? payload.db.defaultIDType;
   if (idType !== NUMBER_ID_TYPE) return docId === "" ? null : docId;
   const id = Number(docId);
   return Number.isSafeInteger(id) && String(id) === docId ? id : null;
 };
 
-const documentOf = (
+export const documentOf = (
   payload: Payload,
-  { collectionSlug, docId, kind }: LiveRichTextField
+  { collectionSlug, docId, kind }: VeDocument
 ): DocumentToRead | null => {
   if (kind === "global") {
     const isGlobal = payload.config.globals.some(({ slug }) => slug === collectionSlug);

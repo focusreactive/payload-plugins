@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   applyContainerChain,
   expandAndFocus,
+  expandAndShow,
   findFieldElement,
   scrollNearestAncestorIntoView,
 } from "../../src/admin/expandAndFocus";
@@ -284,5 +285,17 @@ describe("expandAndFocus — end-to-end", () => {
     await new Promise((resolve) => setTimeout(resolve, 500));
     expect(document.activeElement?.id).toBe("layout.0.blockName");
     expect(document.activeElement?.hasAttribute("data-ve-reveal")).toBe(true);
+  });
+});
+
+describe("expandAndShow", () => {
+  it("shows the field and leaves the focus where it is", async () => {
+    document.body.innerHTML = '<button id="elsewhere"></button><input id="field-title" />';
+    document.querySelector<HTMLElement>("#elsewhere")?.focus();
+
+    await expandAndShow([], "field-title");
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    expect(document.activeElement?.id).toBe("elsewhere");
   });
 });
