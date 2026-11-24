@@ -4,7 +4,10 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { WorldRules } from "../../../../entities/translation/__tests__/stub-world/model/index.js";
+import type {
+  SeededRun,
+  WorldRules,
+} from "../../../../entities/translation/__tests__/stub-world/model/index.js";
 import { SCENARIOS } from "../../../../entities/translation/__tests__/stub-world/scenarios/index.js";
 import type { ContentState } from "../../../../../types/wire/DocumentTranslationState.js";
 import type { Abilities } from "../../../../../types/wire/TranslateKitConfig.js";
@@ -63,7 +66,7 @@ const CONTENTS: Record<string, ContentState> = {
   nl: { kind: "untracked" },
 };
 
-const seeded = (run: { status: "queued"; locales: string[] } | null = null): WorldRules => ({
+const seeded = (run: SeededRun | null = null): WorldRules => ({
   ...SCENARIOS.empty,
   seed: () => ({ contents: CONTENTS, run }),
 });
@@ -226,6 +229,20 @@ describe("the document panel", () => {
       "disabled",
       true
     );
+  });
+
+  it("lets a run in flight be cancelled, and offers nothing that would start another", async () => {
+    show({ rules: seeded({ status: "running", locales: ["de"] }) });
+    const dialog = await openPanel();
+
+    const cancel = await within(dialog).findByRole("button", { name: "Cancel the run for de" });
+
+    expect(cancel).toHaveProperty("disabled", false);
+    expect(
+      within(dialog).queryByRole("button", { name: "Run now the run for de" }),
+      "a second run against a document that already has one is refused on admission"
+    ).toBeNull();
+    expect(within(dialog).queryByRole("button", { name: "Retry the run for de" })).toBeNull();
   });
 
   it("shows a busy answer beside the control that met it", async () => {

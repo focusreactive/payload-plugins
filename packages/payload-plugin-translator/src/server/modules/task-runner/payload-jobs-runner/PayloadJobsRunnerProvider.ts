@@ -187,15 +187,21 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
             await runLocale(target, { input: { handle: pointer.handle, target_lng: target } });
             if (!deliveredBefore.has(target)) await reportFor(target, { state: "delivered" });
           } catch (error) {
-            const owed = thrown.has(job)
-              ? owedIfGaveUp(job as PayloadJob, taskName, target, retryLimit, pointer.locales)
-              : [];
+            const owed = owedIfGaveUp(
+              job as PayloadJob,
+              taskName,
+              target,
+              retryLimit,
+              pointer.locales
+            );
+
+            const translationThrew = thrown.get(job);
+            const endedTheLocale: TaskEvent =
+              translationThrew === undefined
+                ? { state: "delivered" }
+                : { state: "failed", error: translationThrew };
             for (const dead of owed) {
-              const ending: TaskEvent =
-                dead === target
-                  ? { state: "failed", error: thrown.get(job) }
-                  : { state: "abandoned" };
-              await reportFor(dead, ending);
+              await reportFor(dead, dead === target ? endedTheLocale : { state: "abandoned" });
             }
             throw error;
           }

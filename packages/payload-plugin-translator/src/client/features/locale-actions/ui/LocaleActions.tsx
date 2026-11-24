@@ -22,6 +22,8 @@ import Button from "../../../shared/ui/Button/index.js";
 
 import styles from "./styles.module.scss";
 
+type RunStage = "waiting" | "running" | "ended";
+
 type LocaleActionsProps = {
   document: DocumentAddress;
   source: LocaleCode;
@@ -94,23 +96,25 @@ export function LocaleActions({
       </Button>
     );
 
-  const runControls = (locales: readonly LocaleCode[], retry: boolean) => {
+  const runControls = (locales: readonly LocaleCode[], stage: RunStage) => {
     const covers = locales.join(", ");
+    const startsWork = stage === "waiting" || stage === "ended";
+    const startLabel = stage === "ended" ? "Retry" : "Run now";
     return (
       <>
-        {abilities.runNow && (
+        {startsWork && abilities.runNow && (
           <Button
             type="button"
             $variant="outlined-light"
             title={`Acts on the whole run: ${covers}`}
-            aria-label={`${retry ? "Retry" : "Run now"} the run for ${covers}`}
-            disabled={pending || (retry && startBlocked)}
+            aria-label={`${startLabel} the run for ${covers}`}
+            disabled={pending || (stage === "ended" && startBlocked)}
             onClick={() => run(() => runNow.mutateAsync({ document }))}
           >
-            {retry ? "Retry" : "Run now"}
+            {startLabel}
           </Button>
         )}
-        {!retry && abilities.cancel && (
+        {stage !== "ended" && abilities.cancel && (
           <Button
             type="button"
             $variant="outlined-light"
@@ -148,10 +152,12 @@ export function LocaleActions({
       case "translated":
         return startButton("Translate again", { kind: "whole" });
       case "queued":
-        return runControls(row.locales, false);
+        return runControls(row.locales, "waiting");
+      case "translating":
+        return runControls(row.locales, "running");
       case "failed":
       case "not-started":
-        return runControls(row.locales, true);
+        return runControls(row.locales, "ended");
       default:
         return null;
     }

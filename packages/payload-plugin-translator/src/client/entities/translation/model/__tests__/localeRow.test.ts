@@ -35,10 +35,10 @@ describe("a locale's row state", () => {
     expect(
       localeRowOf({ content: empty, run: { ...base, status: "not-started", failedLocale: "de" } })
     ).toEqual({ kind: "not-started", locales: ["de", "fr"], failedLocale: "de" });
-    expect(localeRowOf({ content: empty, run: { ...base, status: "running" } })).toEqual({
-      kind: "translating",
-      startedAt: AT,
-    });
+    expect(
+      localeRowOf({ content: empty, run: { ...base, status: "running" } }),
+      "a run in flight carries its locales too, or its row can offer no way to stop it"
+    ).toEqual({ kind: "translating", startedAt: AT, locales: ["de", "fr"] });
   });
 
   it("reads an empty locale as not translated", () => {
@@ -94,7 +94,7 @@ describe("which rows open, and how", () => {
   });
 
   it.each([
-    { kind: "translating" as const, startedAt: AT },
+    { kind: "translating" as const, startedAt: AT, locales: ["de"] },
     { kind: "queued" as const, locales: ["de"] },
     { kind: "failed" as const, locales: ["de"], message: "no answer" },
     { kind: "not-started" as const, locales: ["de"], failedLocale: "de" },

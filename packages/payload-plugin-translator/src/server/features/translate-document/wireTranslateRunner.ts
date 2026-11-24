@@ -140,6 +140,8 @@ export function wireTranslateRunner({
         );
 
       const row = await runs.find(run);
+      if (row?.settledAt) return;
+
       const task = row === null ? null : taskFromRow(row);
 
       switch (event.state) {

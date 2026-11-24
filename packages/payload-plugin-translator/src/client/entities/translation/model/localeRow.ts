@@ -15,7 +15,7 @@ export type LocaleRow =
   | { kind: "not-translated" }
   | { kind: "written-by-hand" }
   | { kind: "translated" }
-  | { kind: "translating"; startedAt: IsoDateTime }
+  | ({ kind: "translating"; startedAt: IsoDateTime } & RunControls)
   | ({ kind: "queued" } & RunControls)
   | ({ kind: "failed"; message: string } & RunControls)
   | ({ kind: "not-started"; failedLocale: LocaleCode } & RunControls);
@@ -36,7 +36,7 @@ function runRowOf(run: RunState): LocaleRow {
     case "queued":
       return { kind: "queued", ...controls };
     case "running":
-      return { kind: "translating", startedAt: run.queuedAt };
+      return { kind: "translating", startedAt: run.queuedAt, ...controls };
     case "failed":
       return { kind: "failed", message: run.message, ...controls };
     case "not-started":
