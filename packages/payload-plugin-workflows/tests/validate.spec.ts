@@ -123,7 +123,7 @@ describe("validateDefinition", () => {
     ]);
   });
 
-  it("when actions have no params, filter or roles", () => {
+  it("when actions have no params, filter, roles or agents", () => {
     const issues = issuesOf((d) =>
       workA(d).actions.push({
         name: "auto",
@@ -131,13 +131,22 @@ describe("validateDefinition", () => {
         params: [{ name: "p", type: "string" }],
         filter: () => true,
         roles: ["x"],
+        agents: "deny",
       } as never)
     );
     expect(issues).toEqual([
       'stages[0].activities[0].actions[1].params: automatic action "auto" (with `when`) cannot declare `params`',
       'stages[0].activities[0].actions[1].filter: automatic action "auto" (with `when`) cannot declare `filter`',
       'stages[0].activities[0].actions[1].roles: automatic action "auto" (with `when`) cannot declare `roles`',
+      'stages[0].activities[0].actions[1].agents: automatic action "auto" (with `when`) cannot declare `agents`',
     ]);
+  });
+
+  it("agents is allow or deny", () => {
+    expect(issuesOf((d) => (workA(d).actions[0]!.agents = "maybe" as never))).toEqual([
+      'stages[0].activities[0].actions[0].agents: agents must be "allow" or "deny"',
+    ]);
+    expect(issuesOf((d) => (workA(d).actions[0]!.agents = "deny"))).toEqual([]);
   });
 
   it("select params need options; guards need operations; names are required", () => {

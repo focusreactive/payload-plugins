@@ -15,6 +15,8 @@ import {
 import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
 import { seoPlugin } from "@focus-reactive/payload-plugin-seo";
 import { workflowsPlugin } from "@focus-reactive/payload-plugin-workflows";
+import { workflowMcpTools } from "@focus-reactive/payload-plugin-workflows/agent";
+import { mcpPlugin } from "@payloadcms/plugin-mcp";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { buildConfig } from "payload";
 import sharp from "sharp";
@@ -179,6 +181,12 @@ export default buildConfig({
     workflowsPlugin({
       workflows: [editorialReview],
       effects: { "notify-author": notifyAuthor },
+    }),
+    // MCP at /api/mcp: an API key (MCP > API Keys) acts as its user; the workflow tools can be
+    // switched off per key.
+    mcpPlugin({
+      collections: { pages: { enabled: { find: true } } },
+      mcp: { tools: workflowMcpTools() },
     }),
   ],
   secret: process.env.PAYLOAD_SECRET || "",

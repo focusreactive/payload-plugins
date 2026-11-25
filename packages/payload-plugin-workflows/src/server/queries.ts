@@ -13,7 +13,7 @@ import type {
 import { RUNS_SLUG } from "../constants.js";
 import { findStage } from "../engine/engine.js";
 import { WorkflowError } from "../engine/errors.js";
-import type { InstanceState, InstanceView } from "../types.js";
+import type { InstanceState, InstanceView, UserActor } from "../types.js";
 import {
   allowedBy,
   assertSubjectCollection,
@@ -72,7 +72,13 @@ export interface WorkflowState {
 /** The runs on one document and what the caller may start there. */
 export const getWorkflowState = async (
   payload: Payload,
-  args: { collection: string; id: string | number; user: TypedUser | null | undefined }
+  args: {
+    collection: string;
+    id: string | number;
+    user: TypedUser | null | undefined;
+    /** How the caller comes in; an agent sees steps reserved for a person as not allowed. */
+    via?: UserActor["via"];
+  }
 ): Promise<WorkflowState> => {
   const user = requireUser(args.user);
   const req = await requestFor(payload, user);
@@ -83,7 +89,9 @@ export const getWorkflowState = async (
     where: subjectWhere(subject, false),
     sort: "-createdAt",
   });
-  const instances = await Promise.all(docs.map((entry) => presentRun(req, entry, doc, user)));
+  const instances = await Promise.all(
+    docs.map((entry) => presentRun(req, entry, doc, user, args.via))
+  );
   const running = new Set(
     docs.filter((entry) => entry.status === "active").map((entry) => entry.workflow)
   );

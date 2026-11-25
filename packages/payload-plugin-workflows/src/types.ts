@@ -102,6 +102,11 @@ export interface CallerActionDef extends ActionBase {
   params?: ParamDef[];
   filter?: CallerCondition;
   roles?: string[];
+  /**
+   * Whether an agent (a caller with `actor.via === "agent"`) may fire it. Default `"allow"`: an
+   * agent may do exactly what the user behind it may do. `"deny"` reserves the step for a person.
+   */
+  agents?: "allow" | "deny";
 }
 
 /** Fired by the engine as soon as `when` is true, at most once per stage visit. Never callable. */
@@ -111,6 +116,7 @@ export interface AutoActionDef extends ActionBase {
   params?: undefined;
   filter?: undefined;
   roles?: undefined;
+  agents?: undefined;
 }
 
 export type ActionDef = CallerActionDef | AutoActionDef;
@@ -256,13 +262,20 @@ export interface ViewAction {
   /**
    * Why it is not allowed, machine-readable: `filter` (the action's own `filter` is false right
    * now), `assignment` (assigned to someone else, or the activity's roles), `roles` (the action's
-   * roles), `not-active` (run or activity no longer active), `error` (a condition threw).
+   * roles), `agents` (reserved for a person: `agents: "deny"` and the caller is an agent),
+   * `not-active` (run or activity no longer active), `error` (a condition threw).
    */
   reasonCode?: ViewActionReason;
   params: ParamDef[];
 }
 
-export type ViewActionReason = "filter" | "assignment" | "roles" | "not-active" | "error";
+export type ViewActionReason =
+  | "filter"
+  | "assignment"
+  | "roles"
+  | "agents"
+  | "not-active"
+  | "error";
 
 export interface ViewActivity {
   name: string;

@@ -10,7 +10,7 @@ Editorial workflows for [Payload CMS](https://payloadcms.com/), defined in TypeS
 2. A document has a **run**: one record holding the current stage, the run's **fields** and its **history**.
 3. An action changes fields. After every change the engine checks the stage's transitions and moves the run.
 4. A stage's **guard** refuses publishing (or saving, or deleting) the document while a run sits in that stage.
-5. A person and an agent do the same thing: **fire an action**, with the same permissions.
+5. A person and an agent do the same thing: **fire an action**, with the same permissions (unless the action is reserved for a person).
 
 Editors see the run in a small indicator next to Save and Publish (a check and the final stage once it completed; just the dot or check on narrow screens). It opens a drawer laid out like Payload's document view: in the main column the stages, whose turn it is, what is on hold and the actions they may take (an action with params opens a short form in their place; when a person's step with params sent the run back, a banner says who and why); in the sidebar the key facts and the history. Stopping a workflow lives in the drawer's "⋮" menu, asks for confirmation and an optional reason. Status colours are the same everywhere: your turn (warning), in progress (neutral), completed (success), stopped (muted), stuck (error). Agents use the same operations through a set of tools.
 
@@ -108,7 +108,7 @@ To try it: save a page, press **Workflow** next to Save, start **Editorial revie
 ## Concepts
 
 - **Stage.** Where a run is. Its task is a list of `actions`, with optional `assignee` and `roles`. A stage without `transitions` is terminal: entering it completes the run.
-- **Action.** The only thing that changes a run. It may write fields (`set`, an object or a function of the context), mark the stage's task finished (`status: "done" | "skipped" | "failed"`), ask the caller for input (`params`: `string`, `text`, `number`, `boolean`, `date`, `select`), narrow who may fire it (`roles`, `filter`) and queue effects. An action with `when` is **automatic**: the engine fires it as soon as the condition holds, at most once per stage visit, and nobody can call it.
+- **Action.** The only thing that changes a run. It may write fields (`set`, an object or a function of the context), mark the stage's task finished (`status: "done" | "skipped" | "failed"`), ask the caller for input (`params`: `string`, `text`, `number`, `boolean`, `date`, `select`), narrow who may fire it (`roles`, `filter`, `agents: "deny"` for a step only a person may take) and queue effects. An action with `when` is **automatic**: the engine fires it as soon as the condition holds, at most once per stage visit, and nobody can call it.
 - **Transition.** After every change the current stage's transitions are checked in order, and the first whose `when` holds moves the run. Without `when` a transition opens once the stage's task is done or skipped. This repeats until nothing moves (at most 50 steps, against definitions that loop).
 - **Run and fields.** The run's own state, never written to the document. Field types: `string`, `text`, `number`, `boolean`, `date`, `user`, `json`; every write is type-checked (`invalid-patch` otherwise) and `null` unsets. `initialValue` seeds a field: a value, or a function of the start (`({ actor, doc }) => value`, e.g. `actor.id` to hold who started it; unset when the system starts it); only fields with `input: true` may be passed when starting (`startWorkflow({ fields })`).
 - **Guard.** While a run is in the stage, the listed operations on the document (`publish`, `update`, `delete`) are refused with what is on hold and the guard's title ("Publishing is on hold. A reviewer must approve this page first."), unless its `unless` condition holds. It is enforced in collection hooks, so it holds for the admin, REST, GraphQL and the Local API. `publish` needs drafts on the collection (the plugin refuses the config otherwise) and covers publishing a draft and any non-draft save of a published document; moving to the trash counts as `delete`. To let one write through, for example an effect that publishes, pass `context: { [WORKFLOW_BYPASS]: true }` on that Local API call (never on a shared `req`).
@@ -161,11 +161,38 @@ The same operations under your API route, for signed-in users (errors as `{ erro
 
 Runs themselves are readable over Payload's own REST and GraphQL API for the `workflow-instances` collection (admin users only). Its `read` access, like the list view, shows a caller only runs on documents they may read: each subject collection's own `read` access decides (`false`: none of its runs; `true`: all; a query constraint: the runs on the ids it allows, resolved with one query of at most 5,000 ids; above that the collection's runs are hidden from that user and a warning is logged once).
 
-**Agents.** `workflowAgentTools({ payload, user })` from `@focus-reactive/payload-plugin-workflows/agent` returns AI-SDK-shaped tools (`{ description, inputSchema, execute }`): `workflows_list_definitions`, `workflows_list_instances`, `workflows_get_state`, `workflows_start`, `workflows_fire_action`. They act as `user`, the history records `via: "agent"`, and they return `{ error, code }` instead of throwing. With `payload-content-agent`: `customTools: (ctx) => workflowAgentTools(ctx)`.
-
 **Testing.** `createWorkflowSimulator(definition, { doc })` runs a definition in memory on the same engine, without Payload: `sim.fire("submit", { user: "ann" })`, `sim.fire("reject", { user: "bea", roles: ["editor"], params: { reason: "Too long" } })`, then assert on `sim.state.stage`, `sim.view(caller)`, `sim.effects`. It also has `setDoc(doc)`, `advance(date)`, `patch(fields)` and `abort()`.
 
 **Conditions that read `now`.** The plugin re-checks a document's runs on every save, but nothing re-checks them as time passes. If a condition reads `now`, call `tickWorkflows(payload)` from your own schedule, or queue the `workflowTick` task on one; it settles every active run.
+
+## Agents
+
+An agent can do exactly what the user behind its token can do (same access rules, assignments, roles and filters as in the admin), and every step it takes is marked as an agent's in the history (`via: "agent"`). Five tools: `workflows_list_definitions`, `workflows_list_instances`, `workflows_get_state`, `workflows_start`, `workflows_fire_action`. They answer a refusal with `{ error, code }` instead of throwing. Two ways in, both from `@focus-reactive/payload-plugin-workflows/agent` (needs `zod`):
+
+**AI-SDK tools**, for [`payload-content-agent`](https://www.npmjs.com/package/payload-content-agent) or any AI SDK agent; they act as `user`:
+
+```ts
+import { workflowAgentTools } from "@focus-reactive/payload-plugin-workflows/agent";
+
+contentAgentPlugin({ customTools: (ctx) => workflowAgentTools(ctx) }); // ctx: { payload, user }
+```
+
+**MCP tools**, for any MCP client through [`@payloadcms/plugin-mcp`](https://payloadcms.com/docs/plugins/mcp); a call acts as the user the MCP API key belongs to:
+
+```ts
+import { workflowMcpTools } from "@focus-reactive/payload-plugin-workflows/agent";
+import { mcpPlugin } from "@payloadcms/plugin-mcp";
+
+plugins: [workflowsPlugin({ workflows }), mcpPlugin({ mcp: { tools: workflowMcpTools() } })];
+```
+
+Each tool appears under the API key's "Tools" settings (`workflowsListDefinitions`, …) on by default for a new key, and can be switched off per key. The result is the tool's answer as JSON text, with `isError: true` on a refusal.
+
+**Reserving a step for a person.** `agents: "deny"` on a caller action makes it unavailable to agents, whoever's token they hold; people see no difference. An agent gets the action back from `workflows_get_state` as not allowed, with `reasonCode: "agents"` and "This step is reserved for a person.", and firing it is `not-allowed`. For example, the final approval:
+
+```ts
+{ name: "approve", title: "Approve", status: "done", agents: "deny", set: { decision: "approved" } }
+```
 
 ## How it is built
 
@@ -177,7 +204,7 @@ Read in this order:
 4. `src/engine/view.ts`: what a caller sees and may do, from the same verdict as `fire`.
 5. `src/server/operations.ts`: start, fire, abort and settle against Payload: access, the document, the answer.
 6. `src/server/store.ts`: the runs collection and its two writes (create, compare-and-swap update), with effects queued in the same transaction.
-7. `src/server/effects.ts`: the effect job. `src/hooks.ts`: guards and settle-on-save. `src/endpoints.ts`, `src/agent.ts`: the two ways in.
+7. `src/server/effects.ts`: the effect job. `src/hooks.ts`: guards and settle-on-save. `src/endpoints.ts`: REST. `src/agent.ts`: the five agent operations, once, as AI-SDK and MCP tools.
 8. `src/components/`: the indicator and drawer (`document/`), the dashboard widget (`widget/`, a server component) and the list's cells (`list/`).
 
 One action, from the button to the database: the drawer posts to `/workflows/fire` → `endpoints.ts` → `fireWorkflowAction` in `server/operations.ts` reads the run and the document as the user and checks `access.fire` → `mutateRun` in `server/store.ts` loads the run and calls `fire` in `engine/engine.ts`, which checks the verdict and params, applies the action and settles → the new state is written only if `revision` is unchanged, with its effect jobs → the operation runs the effects if it owns the commit and answers with the view.

@@ -139,7 +139,7 @@ const checkActivity = (
       }
     }
     if (typeof action.when === "function") {
-      for (const key of ["params", "filter", "roles"] as const) {
+      for (const key of ["params", "filter", "roles", "agents"] as const) {
         if (action[key] !== undefined) {
           issues.push({
             path: `${actionPath}.${key}`,
@@ -147,6 +147,12 @@ const checkActivity = (
           });
         }
       }
+    }
+    if (action.agents !== undefined && action.agents !== "allow" && action.agents !== "deny") {
+      issues.push({
+        path: `${actionPath}.agents`,
+        message: `agents must be "allow" or "deny"`,
+      });
     }
     (action.params ?? []).forEach((param, p) => {
       checkNamed(issues, param, `${actionPath}.params[${p}]`, "param");

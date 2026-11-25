@@ -13,7 +13,7 @@ import type {
   WorkflowsPluginOptions,
 } from "@focus-reactive/payload-plugin-workflows";
 import { buildConfig, getPayload } from "payload";
-import type { Config, Payload } from "payload";
+import type { Config, Payload, Plugin } from "payload";
 
 import { createTestDatabase } from "../../lib/database/resolveAdapter";
 
@@ -238,6 +238,8 @@ export async function bootWorkflowsPayload(
     transactions?: boolean;
     workflows?: WorkflowDefinition[];
     access?: WorkflowsPluginOptions["access"];
+    /** More plugins, after the workflows plugin (e.g. the MCP plugin). */
+    plugins?: Plugin[];
   } = {}
 ): Promise<WorkflowsTestPayload> {
   const dir = mkdtempSync(join(tmpdir(), "workflows-int-"));
@@ -304,6 +306,7 @@ export async function bootWorkflowsPayload(
         },
         ...(options.access ? { access: options.access } : {}),
       }),
+      ...(options.plugins ?? []),
     ],
   });
 

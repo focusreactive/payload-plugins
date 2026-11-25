@@ -6,7 +6,7 @@
 2. A document has a run: one row in `workflow-instances` with the current stage, the run's fields and its history.
 3. An action changes fields; after every change the engine settles: auto actions, then the first open transition, repeated.
 4. A stage's guard refuses publish / update / delete of the document while a run sits in it.
-5. People (endpoints) and agents (`agent.ts`) call the same operation: fire an action.
+5. People (endpoints) and agents (`agent.ts`) call the same operation: fire an action. An agent acts as the user behind its token, with that user's permissions, and is recorded as `via: "agent"`; a caller action with `agents: "deny"` is the one thing it may not do (like `roles`, caller actions only).
 
 Plain stage `actions` are normalised once by `defineWorkflow` into one activity named after the stage. The engine only ever sees `activities`; do not add branches for the short form.
 
@@ -20,7 +20,7 @@ Plain stage `actions` are normalised once by `defineWorkflow` into one activity 
 - `src/server/queries.ts`: `getWorkflowState`, `listWorkflowInstances`, `listWorkflowDefinitions`.
 - `src/server/store.ts`: runs collection config, `createRun`, `mutateRun` (compare-and-swap), effect jobs. `src/server/transaction.ts`: whether a failed write ended the request's transaction.
 - `src/server/effects.ts`: effect and tick jobs. `src/hooks.ts`: guards, auto-start, settle on save, abort on delete.
-- `src/endpoints.ts`, `src/agent.ts`: the ways in. `src/plugin.ts`: options, config checks, wiring.
+- `src/endpoints.ts`: REST. `src/agent.ts`: the agent way in: `workflowTools` (the five operations, each a description, a zod schema and what it runs as `ctx.user`, always `via: "agent"`), `runWorkflowTool` (parses input, refusals as `{ error, code }`), and the two surfaces over them: `workflowAgentTools` (AI-SDK) and `workflowMcpTools` (`@payloadcms/plugin-mcp` custom tools; the user is `req.user`, which the MCP plugin sets to the API key's user). The MCP plugin is not a dependency; its tool shape is mirrored structurally. `src/plugin.ts`: options, config checks, wiring.
 - `src/components/`: admin UI. `document/`: indicator + drawer (client, REST endpoints). `widget/WorkflowsWidget.tsx`: the dashboard widget, a server component that calls `listWorkflowInstances` / `listWorkflowDefinitions` as the viewer; registered and placed in the default layout by `withWidget` in `plugin.ts`. `list/`: cells of the runs collection's list view (its admin config lives with the collection in `server/store.ts`; rows link to the document via `formatDocURL`). Client components are exported from `src/client.ts`, server ones from `src/rsc.ts`. Pure helpers in `components/shared/*.ts` are unit-tested; `RunTone` / `PILL_STYLE` in `shared/indicator.ts` is the one status-colour mapping every surface uses.
 
 ## Invariants: do not break
@@ -32,7 +32,7 @@ Plain stage `actions` are normalised once by `defineWorkflow` into one activity 
 - `afterChange` / `afterDelete` hooks never fail a save because of workflow logic: the error is logged and the save goes on. The one exception: if the error ended the save's transaction (`transactionLost` in `server/transaction.ts`: `req.transactionID` gone or changed, the adapter's session gone, or one of the plugin's raw writes, wrapped in `writing`, failed inside it), the hook throws a 500 `APIError` ("The document was not saved…"), because the save is already rolled back. Wrap every new raw `payload.db.*` write in `writing`.
 - `startWorkflow` given a caller's `req`: losing the `activeKey` race rolls back the caller's transaction (Payload's failed `create`); the `already-running` error then says so. The `isRunning` pre-check keeps that rare.
 - Field writes are type-checked; only `input: true` fields may be passed at start; names that are `Object.prototype` members are rejected; params are read as own properties only.
-- `fire` and `view` share one verdict (`verdictFor`): an enabled button never fails for a knowable reason.
+- `fire` and `view` share one verdict (`verdictFor`): an enabled button never fails for a knowable reason. Its last check is `agents: "deny"` against `actor.via === "agent"` (`reasonCode: "agents"`, code `not-allowed`), after the checks that refuse everyone; so every view an agent gets must be built with its `via` (`presentRun(…, via)`, `getWorkflowState({ via })`), never a hard-coded one.
 - The runs collection is not writable over the API. Its `read` access (`readRuns` in `server/store.ts`) is admin-collection users only, constrained to runs on documents the subject collections' own `read` access allows (a per-document rule is resolved to at most `READABLE_IDS_CAP` ids, above which that collection's runs are hidden and logged once; nothing readable is a never-matching constraint, not `false`, so the plugin's reads return empty instead of `not-allowed`). So the admin list, REST, GraphQL and counts drop runs on unreadable documents; the plugin's own reads (`listWorkflowInstances`, the widget) still drop them themselves (latest draft, like `readRuns`).
 - "For me" (`scope: "mine"`) is one query over the denormalised `assignedUsers` / `assignedRoles`: runs waiting on the caller or their roles, then active runs with neither (open to anyone). No definition is evaluated per row.
 

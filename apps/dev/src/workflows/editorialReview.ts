@@ -53,6 +53,7 @@ export const editorialReview = defineWorkflow({
           title: "Approve",
           status: "done",
           filter: notAuthor,
+          // agents: "deny", // reserve the final approval for a person (default "allow")
           set: { decision: "approved" },
           effects: ["notify-author"],
         },

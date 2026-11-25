@@ -97,7 +97,8 @@ const mayStop = async (
   req: PayloadRequest,
   doc: InstanceDoc,
   subject: Record<string, unknown> | null,
-  user: TypedUser
+  user: TypedUser,
+  via: Via
 ): Promise<boolean> => {
   const { payload } = req;
   const def = definitionOrStandIn(payload, doc);
@@ -110,7 +111,7 @@ const mayStop = async (
   return (
     (await allowedBy(undefined, args)) &&
     (doc.status !== "active" ||
-      mayAbort(def, toState(doc), callerOf(payload, user, "api"), {
+      mayAbort(def, toState(doc), callerOf(payload, user, via), {
         doc: subject,
         now: new Date(),
       }))
@@ -236,21 +237,23 @@ export const titleOf = (
 
 /**
  * The engine's view for `user`, plus what only the server knows: the run's id, its document and
- * whether `user` may abort it (`false` without a user).
+ * whether `user` may abort it (`false` without a user). `via` is how they came in: it changes
+ * nothing except for an agent, which may not take a step reserved for a person (`agents: "deny"`).
  */
 export const presentRun = async (
   req: PayloadRequest,
   doc: InstanceDoc,
   subject: Record<string, unknown> | null,
-  user: TypedUser | null
+  user: TypedUser | null,
+  via: Via = "api"
 ): Promise<InstanceView> => {
   const { payload } = req;
   const def = definitionOrStandIn(payload, doc);
-  // How the caller came in does not change what they may do.
-  const caller = user ? callerOf(payload, user, "api") : SYSTEM_CALLER;
+  const caller = user ? callerOf(payload, user, via) : SYSTEM_CALLER;
   const projected = view(def, toState(doc), caller, { doc: subject, now: new Date() });
   const title = titleOf(payload, doc.subjectCollection, subject);
-  const canAbort = doc.status === "active" && user ? await mayStop(req, doc, subject, user) : false;
+  const canAbort =
+    doc.status === "active" && user ? await mayStop(req, doc, subject, user, via) : false;
   return {
     ...projected,
     id: String(doc.id),
@@ -264,11 +267,12 @@ const answer = async (
   req: PayloadRequest,
   committed: Committed,
   subject: Record<string, unknown> | null,
-  user: TypedUser | null
+  user: TypedUser | null,
+  via: Via
 ): Promise<InstanceView> => {
   const ran = (await canRunInline(req)) && (await runJobsInline(req.payload, committed.jobs));
   const doc = ran ? await loadRun(req, committed.doc.id) : committed.doc;
-  return presentRun(req, doc, subject, user);
+  return presentRun(req, doc, subject, user, via);
 };
 
 // ---- Start --------------------------------------------------------------------------------------
@@ -326,7 +330,7 @@ export const startRun = async (
   const actor = args.user ? callerOf(payload, args.user, via).actor : SYSTEM;
   const result = start(def, { fields: args.fields, actor }, { doc, now: new Date() });
   const committed = await createRun(req, def, result, subject);
-  return answer(req, committed, doc, args.user);
+  return answer(req, committed, doc, args.user, via);
 };
 
 /** Starts a run of `workflow` on a document, as `user`. */
@@ -374,7 +378,7 @@ export const fireWorkflowAction = async (
   const committed = await mutateRun(req, def, existing.id, (state) =>
     fire(def, state, input, caller, { doc: subject, now: new Date() })
   );
-  return answer(req, committed, subject, user);
+  return answer(req, committed, subject, user, via);
 };
 
 // ---- Abort --------------------------------------------------------------------------------------
@@ -398,7 +402,7 @@ export const abortRun = async (
   const existing = await loadRun(req, args.instanceId);
   const subject = await loadSubject(req, subjectOf(existing), args.user);
   // A run whose workflow was removed is checked against a stand-in, so it can still be aborted.
-  if (args.user && !(await mayStop(req, existing, subject, args.user))) {
+  if (args.user && !(await mayStop(req, existing, subject, args.user, via))) {
     const def = definitionOrStandIn(payload, existing);
     const [guard] = settingsOf(payload).access.abort
       ? []
@@ -416,7 +420,7 @@ export const abortRun = async (
   const committed = await mutateRun(req, def, existing.id, (state) =>
     abort(state, { reason: args.reason, actor }, { doc: subject, now: new Date() })
   );
-  return answer(req, committed, subject, args.user);
+  return answer(req, committed, subject, args.user, via);
 };
 
 /** Ends an active run, as `user`. */

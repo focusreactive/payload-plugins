@@ -387,6 +387,15 @@ export const verdictFor = (
       reasonCode: "filter",
     };
   }
+  // Last: whatever refuses everyone is the reason a person who may not act is given.
+  if (action.agents === "deny" && caller.actor.via === "agent") {
+    return {
+      allowed: false,
+      code: "not-allowed",
+      reason: "This step is reserved for a person.",
+      reasonCode: "agents",
+    };
+  }
   return { allowed: true };
 };
 
