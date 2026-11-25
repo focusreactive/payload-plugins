@@ -45,6 +45,7 @@ import { revalidateRedirects } from "@/lib/hooks/revalidateRedirects";
 import type { Page } from "@/payload-types";
 
 import { mcpPluginConfig } from "./mcp";
+import { bufferMcpResponse } from "./mcp/bufferMcpResponse";
 import { restrictApiAccess } from "./restrictApiAccess";
 
 const withBlockNameCell = (field: Field): Field => {
@@ -447,6 +448,8 @@ export const plugins: Plugin[] = [
   }),
 
   mcpPluginConfig,
+
+  runAfter(mcpPluginConfig, bufferMcpResponse),
 
   runAfter(
     mcpPluginConfig,
