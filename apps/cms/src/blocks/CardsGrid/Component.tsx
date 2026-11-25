@@ -31,6 +31,14 @@ import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import type { CardsGridBlock } from "@/payload-types";
 
+import {
+  HourglassIcon,
+  LightbulbIcon,
+  LightningIcon,
+  MonitorIcon,
+  NotificationBoxIcon,
+  StarIcon,
+} from "./cadenceIcons";
 import type { CardIcon } from "./icons";
 
 const ICON_MAP: Record<CardIcon, React.ReactElement> = {
@@ -54,6 +62,12 @@ const ICON_MAP: Record<CardIcon, React.ReactElement> = {
   "wand-2": <Wand2 size={32} strokeWidth={1.5} />,
   workflow: <Workflow size={32} strokeWidth={1.5} />,
   zap: <Zap size={32} strokeWidth={1.5} />,
+  star: <StarIcon />,
+  hourglass: <HourglassIcon />,
+  lightning: <LightningIcon />,
+  lightbulb: <LightbulbIcon />,
+  monitor: <MonitorIcon />,
+  "notification-box": <NotificationBoxIcon />,
 };
 
 export async function CardsGridBlockComponent({
