@@ -52,7 +52,7 @@ describe("the document translation state", () => {
     );
     await waitFor(() => expect(result.current.state.data).toBeDefined());
 
-    await repository.enqueue({
+    await repository.enqueueDocument({
       source_lng: "en",
       target_lng: "de",
       collection_slug: "pages",

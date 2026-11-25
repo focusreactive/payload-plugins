@@ -34,7 +34,7 @@ const createDoc = async (ctx: TestPayload, title: string): Promise<string> => {
 };
 
 const enqueue = (ctx: TestPayload, ids: string[], targetLng: string | string[], sourceLng = "en") =>
-  callEndpoint(ctx.payload, "post", "/translate/enqueue", {
+  callEndpoint(ctx.payload, "post", "/translate/enqueue-list", {
     body: {
       source_lng: sourceLng,
       target_lng: targetLng,

@@ -1006,3 +1006,31 @@ went with the old screens.
   translating or failed. It is a `ui` field named `translatorStatus`, so it stores nothing; a
   collection that already has a field by that name is refused at boot.
 - **Additive.** Nothing changes unless a host lists it.
+
+### enqueue-splits-into-two-routes
+
+- **Status:** live (changed)
+- **What:** `POST {basePath}/enqueue` now takes exactly one document. A request naming several
+  documents goes to the new `POST {basePath}/enqueue-list`, guarded by the new action
+  `enqueue-list`.
+- **Why:** a run can be narrowed to named leaves, and a leaf's address carries the id of the
+  element it sits in — so an address names one document and no other. The single route accepted a
+  list of documents and a list of addresses side by side and copied one list to every document:
+  the first document matched, and every other translated nothing while the run reported success.
+  The two sizes of request are now two routes, and the combination cannot be expressed.
+- **Breaking, three ways.**
+  1. A caller sending several documents to `/enqueue` is refused. Send them to `/enqueue-list`.
+  2. `select_all` left `/enqueue` with the list of documents and is refused there, **at any
+     value** — `false` included, which the old route accepted. A request asking for a whole
+     collection goes to `/enqueue-list`. The refusal is explicit rather than silent: dropped
+     instead, the request would have answered success for a run over the one document its
+     `collection_id` happened to carry.
+  3. **An access guard that answers by an explicit list of action names refuses `/enqueue-list`
+     until it adds `enqueue-list` to that list.** The refusal is a `403` on the request, which in
+     the admin looks like bulk translation silently doing nothing. Guards that answer a predicate
+     rather than a list are unaffected.
+- **Unchanged:** the single-document route keeps its path and its `enqueue` action, so a host that
+  only ever translates one document at a time has nothing to do.
+- **The list route takes rules only.** `{ kind: "rule", name }` is a question the server answers
+  for each document, so it travels across a list; `{ kind: "leaves", addresses }` is an answer
+  already computed for one document, and the list route refuses it.

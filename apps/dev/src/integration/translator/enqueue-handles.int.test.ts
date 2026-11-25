@@ -24,7 +24,7 @@ const create = async (title: string): Promise<string> => {
 };
 
 const enqueue = async (ids: string[], locales: string[]): Promise<Assignment[]> => {
-  const res = await callEndpoint(ctx.payload, "post", "/translate/enqueue", {
+  const res = await callEndpoint(ctx.payload, "post", "/translate/enqueue-list", {
     body: {
       source_lng: "en",
       target_lng: locales,

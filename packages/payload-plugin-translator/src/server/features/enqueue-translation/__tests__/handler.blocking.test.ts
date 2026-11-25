@@ -45,7 +45,7 @@ describe("one run per document, decided before the runner is asked", () => {
       ...over,
     });
 
-  const answered = async (req: PayloadRequest) => (await handler.handle(req)).json();
+  const answered = async (req: PayloadRequest) => (await handler.handleList(req)).json();
   const queuedWork = () => (runner.enqueue as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0];
 
   beforeEach(() => {

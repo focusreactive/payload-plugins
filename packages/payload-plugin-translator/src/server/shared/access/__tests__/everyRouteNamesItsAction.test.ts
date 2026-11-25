@@ -2,7 +2,10 @@ import { describe, it, expect, vi } from "vitest";
 import type { CollectionSlug, Endpoint, PayloadRequest } from "payload";
 
 import { createCancelRoute } from "../../../features/cancel/route.js";
-import { createEnqueueRoute } from "../../../features/enqueue-translation/route.js";
+import {
+  createEnqueueListRoute,
+  createEnqueueRoute,
+} from "../../../features/enqueue-translation/route.js";
 import { createGetCollectionStatusRoute } from "../../../features/get-collection-status/route.js";
 import { createGetDocumentStateRoute } from "../../../features/get-document-state/route.js";
 import { createGetListStateRoute } from "../../../features/get-list-state/route.js";
@@ -42,10 +45,19 @@ type RouteUnderTest = {
   readonly build: (access: AccessGuard) => Endpoint;
 };
 
-/**
- * Total by type, so adding an action to the published union without deciding its route stops the
- * compiler. `null` is that decision, not an omission.
- */
+const enqueueListRoute = (access: AccessGuard): Endpoint =>
+  createEnqueueListRoute(
+    taskRunnerFactory,
+    runRecordStoreFactory,
+    { availableCollections, canHoldText: () => false, holdsText: () => false },
+    access
+  );
+
+const aRequest = (): PayloadRequest =>
+  ({ headers: new Headers(), user: null, payload: {} }) as unknown as PayloadRequest;
+
+const NO_ROUTE_ASKS_IT = null;
+
 const routeForEveryAction: Record<TranslatorAction, RouteUnderTest | null> = {
   enqueue: {
     factory: "createEnqueueRoute",
@@ -57,6 +69,7 @@ const routeForEveryAction: Record<TranslatorAction, RouteUnderTest | null> = {
         access
       ),
   },
+  "enqueue-list": { factory: "createEnqueueListRoute", build: enqueueListRoute },
   run: {
     factory: "createRunRoute",
     build: (access) =>
@@ -93,7 +106,7 @@ const routeForEveryAction: Record<TranslatorAction, RouteUnderTest | null> = {
   },
   /** Its route folded into `cancel`; the action stays published until the next major so that a host
    * guard already answering for it keeps working. */
-  "cancel-by-collection": null,
+  "cancel-by-collection": NO_ROUTE_ASKS_IT,
   "translate-field": {
     factory: "createFieldRoute",
     build: (access) =>
@@ -104,8 +117,7 @@ const routeForEveryAction: Record<TranslatorAction, RouteUnderTest | null> = {
 const refusingGuard = () => ({ check: vi.fn().mockReturnValue(false) });
 
 const callIt = async (endpoint: Endpoint): Promise<void> => {
-  const req = { headers: new Headers(), user: null, payload: {} } as unknown as PayloadRequest;
-  await endpoint.handler(req);
+  await endpoint.handler(aRequest());
 };
 
 describe("every route names its own action", () => {
@@ -171,5 +183,20 @@ describe("a read that answers better does not add an action", () => {
     expect(access.check).toHaveBeenCalledWith(
       expect.objectContaining({ action: "collection-status" })
     );
+  });
+});
+
+const answersOnly = (allowed: TranslatorAction): AccessGuard => ({
+  check: ({ action }) => action === allowed,
+});
+
+describe("a guard may permit one enqueue route and refuse the other", () => {
+  it("refuses the list route for a guard that names only the single-document action", async () => {
+    const response = await enqueueListRoute(answersOnly("enqueue")).handler(aRequest());
+
+    expect(
+      response.status,
+      "nothing behind the guard may run, so the doubles throw if it does"
+    ).toBe(403);
   });
 });

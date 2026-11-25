@@ -3,7 +3,10 @@ export { TranslationRepositoryProvider } from "./api/TranslationRepositoryContex
 export { useCancelCollectionTranslations } from "./mutations/useCancelCollectionTranslations.js";
 export { useCancelDocumentTranslation } from "./mutations/useCancelDocumentTranslation.js";
 export { useDismissStaleness } from "./mutations/useDismissStaleness.js";
-export { useQueueDocumentTranslation } from "./mutations/useQueueDocumentTranslation.js";
+export {
+  useQueueDocumentTranslation,
+  useQueueListTranslation,
+} from "./mutations/useQueueDocumentTranslation.js";
 export { useRunDocumentTranslation } from "./mutations/useRunDocumentTranslation.js";
 export { useTranslateField } from "./mutations/useTranslateField.js";
 export { useDocumentTranslationState } from "./queries/useDocumentTranslationState.js";

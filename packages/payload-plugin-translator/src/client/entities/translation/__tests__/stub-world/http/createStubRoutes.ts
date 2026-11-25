@@ -7,7 +7,7 @@ import { ENDPOINTS } from "../../../../../../types/wire/endpoints.js";
 import type { EndpointName } from "../../../../../../types/wire/endpoints.js";
 import type { TranslatorAction } from "../../../../../../types/TranslatorAction.js";
 
-import { cancel, dismissStaleness, enqueue, runNow } from "./actions.js";
+import { cancel, dismissStaleness, enqueue, enqueueList, runNow } from "./actions.js";
 import { readDocumentState, readListState } from "./reads.js";
 import { translateField } from "./translateField.js";
 import { delayed } from "./delayed.js";
@@ -30,6 +30,7 @@ const ALWAYS: readonly StubRoute[] = [
   { name: "documentState", action: "document-status", handler: readDocumentState },
   { name: "listState", action: "collection-status", handler: readListState },
   { name: "enqueue", action: "enqueue", handler: enqueue },
+  { name: "enqueueList", action: "enqueue-list", handler: enqueueList },
   { name: "dismissStaleness", action: "dismiss-staleness", handler: dismissStaleness },
   { name: "translateField", action: "translate-field", handler: translateField },
 ];

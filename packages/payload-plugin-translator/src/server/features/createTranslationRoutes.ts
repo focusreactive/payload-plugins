@@ -5,7 +5,7 @@ import type { SourceFingerprinter } from "../../core/domain/content-projection/s
 import type { TranslatableTextPresence } from "../../core/domain/content-projection/holdsTranslatableText.js";
 import type { CollectionCanHoldText } from "./_lib/index.js";
 
-import { createEnqueueRoute } from "./enqueue-translation/index.js";
+import { createEnqueueListRoute, createEnqueueRoute } from "./enqueue-translation/index.js";
 import { createRunRoute } from "./run-translation/index.js";
 import { createCancelRoute } from "./cancel/index.js";
 import { createGetDocumentStatusRoute } from "./get-document-status/index.js";
@@ -39,12 +39,14 @@ export function createTranslationRoutes({
 }: TranslationRoutesDeps): Endpoint[] {
   const { basePath, failedWindowMs } = settings;
   const { stop, run } = taskRunnerFactory.capabilities;
+  const enqueueConfig = { ...collectionConfig, holdsText, canHoldText };
 
   return [
-    createEnqueueRoute(
+    createEnqueueRoute(taskRunnerFactory, runRecordStoreFactory, enqueueConfig, access, basePath),
+    createEnqueueListRoute(
       taskRunnerFactory,
       runRecordStoreFactory,
-      { ...collectionConfig, holdsText, canHoldText },
+      enqueueConfig,
       access,
       basePath
     ),

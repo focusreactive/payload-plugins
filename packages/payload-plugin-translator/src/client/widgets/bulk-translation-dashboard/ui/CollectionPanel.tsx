@@ -10,7 +10,7 @@ import {
   batchSummary,
   collectionEnqueue,
   liveDocumentsOf,
-  useQueueDocumentTranslation,
+  useQueueListTranslation,
 } from "../../../entities/translation/index.js";
 import { useTranslateKitConfig } from "../../../shared/config/index.js";
 import { CloseIcon } from "../../../shared/lib/assets/icons/CloseIcon.js";
@@ -60,7 +60,7 @@ export function CollectionPanel({
   onClose,
 }: CollectionPanelProps) {
   const { abilities } = useTranslateKitConfig();
-  const queue = useQueueDocumentTranslation();
+  const queue = useQueueListTranslation();
   const { error, run } = useActionError();
 
   const [source, setSource] = useState<LocaleCode>(defaultLocale ?? locales[0]?.code ?? "");

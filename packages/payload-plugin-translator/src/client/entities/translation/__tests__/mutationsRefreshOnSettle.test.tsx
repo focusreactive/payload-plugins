@@ -91,3 +91,17 @@ describe("an action refreshes the translation reads when it settles", () => {
     await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
   });
 });
+
+describe("the single-document action takes one document", () => {
+  it("refuses a second id before any request is made", async () => {
+    const { result, read } = setup();
+    await waitFor(() => expect(read).toHaveBeenCalledTimes(1));
+
+    const refusal = await rejectionOf(() =>
+      result.current.enqueue.mutateAsync({ ...enqueueDe, collection_id: ["1", "2"] })
+    );
+
+    expect(refusal).toBeInstanceOf(ApiRequestError);
+    expect((refusal as ApiRequestError).message).toContain("one document");
+  });
+});

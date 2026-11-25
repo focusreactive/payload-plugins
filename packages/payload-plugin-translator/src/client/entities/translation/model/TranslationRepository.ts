@@ -1,7 +1,8 @@
 import type {
   CancelResponse,
   DismissStalenessRequest,
-  EnqueueRequest,
+  EnqueueDocumentRequest,
+  EnqueueListRequest,
   EnqueueResponse,
   FieldTranslationRequest,
 } from "../../../../types/wire/ActionBodies.js";
@@ -16,27 +17,19 @@ export type DocumentAddress = { collection: CollectionSlug; id: DocumentId };
 
 export type ListStateRequest = { collection: CollectionSlug; ids: readonly DocumentId[] };
 
-/**
- * The admin's only way to the translator's server. Each call is one request, and every failure
- * rejects with an `ApiRequestError`.
- */
 export interface TranslationRepository {
-  /** A locale holding content with no record of a run reads `untracked`, never `empty`. */
   getDocumentState(document: DocumentAddress): Promise<DocumentTranslationState>;
 
-  /** One request for every id; an id the server does not know is absent from the answer. */
   getListState(request: ListStateRequest): Promise<ListTranslationState>;
 
-  /** Rejects with reason `busy` when any requested document already has a live run. */
-  enqueue(request: EnqueueRequest): Promise<EnqueueResponse>;
+  enqueueDocument(request: EnqueueDocumentRequest): Promise<EnqueueResponse>;
 
-  /** Stops the document's whole run, on every locale it covers. */
+  enqueueList(request: EnqueueListRequest): Promise<EnqueueResponse>;
+
   cancel(document: DocumentAddress): Promise<CancelResponse>;
 
-  /** Stops every queued run in the collection, including runs queued after the list was read. */
   cancelByCollection(collection: CollectionSlug): Promise<void>;
 
-  /** Starts the document's whole run now, on every locale it covers; also retries a failed one. */
   runNow(document: DocumentAddress): Promise<void>;
 
   dismissStaleness(request: DismissStalenessRequest): Promise<void>;

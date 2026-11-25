@@ -102,7 +102,7 @@ function show({
       </TranslationRepositoryProvider>
     </TranslateKitConfigProvider>
   );
-  return { repository, enqueue: vi.spyOn(repository, "enqueue") };
+  return { repository, enqueue: vi.spyOn(repository, "enqueueList") };
 }
 
 async function openPanel(name: RegExp) {
@@ -191,7 +191,7 @@ describe("the collection panel", () => {
   it("shows a busy answer as the error", async () => {
     const { repository } = show({ selected: [1] });
     const panel = await openPanel(/^Translate · 1$/u);
-    await repository.enqueue({
+    await repository.enqueueList({
       source_lng: "en",
       target_lng: ["de"],
       collection_slug: "pages",

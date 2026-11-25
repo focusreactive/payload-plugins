@@ -54,7 +54,7 @@ export function describeTranslationRepositoryContract(
     it("shows an enqueued run on exactly the requested locales of that document only", async () => {
       const { repository, locales, first } = await setUp();
 
-      await repository.enqueue({
+      await repository.enqueueDocument({
         source_lng: locales.source,
         target_lng: [first],
         collection_slug: COLLECTION,
@@ -74,10 +74,26 @@ export function describeTranslationRepositoryContract(
       expect(Object.values(other)).toEqual(locales.targets.map(() => null));
     });
 
+    it("queues a run on every document of a list", async () => {
+      const { repository, locales, first } = await setUp();
+
+      await repository.enqueueList({
+        source_lng: locales.source,
+        target_lng: [first],
+        collection_slug: COLLECTION,
+        collection_id: [KNOWN[0], KNOWN[1]],
+      });
+
+      for (const id of [KNOWN[0], KNOWN[1]]) {
+        const runs = runsByLocale((await read(repository, id)).locales);
+        expect(runs[first]?.status, `${id} was queued`).toBeDefined();
+      }
+    });
+
     it("rejects a second enqueue for a document with a live run as busy and keeps the run", async () => {
       const { repository, locales, first, second } = await setUp();
       const enqueueInto = (target: LocaleCode) =>
-        repository.enqueue({
+        repository.enqueueDocument({
           source_lng: locales.source,
           target_lng: [target],
           collection_slug: COLLECTION,
@@ -101,7 +117,7 @@ export function describeTranslationRepositoryContract(
 
     it("cancels a run on every locale it covered", async () => {
       const { repository, locales, first, second } = await setUp();
-      await repository.enqueue({
+      await repository.enqueueDocument({
         source_lng: locales.source,
         target_lng: [first, second],
         collection_slug: COLLECTION,

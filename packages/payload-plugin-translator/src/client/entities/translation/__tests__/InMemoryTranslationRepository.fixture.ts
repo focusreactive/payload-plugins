@@ -4,7 +4,8 @@ import { SCENARIOS } from "./stub-world/scenarios/index.js";
 import type {
   CancelResponse,
   DismissStalenessRequest,
-  EnqueueRequest,
+  EnqueueDocumentRequest,
+  EnqueueListRequest,
   EnqueueResponse,
   FieldTranslationRequest,
 } from "../../../../types/wire/ActionBodies.js";
@@ -51,7 +52,17 @@ export class InMemoryTranslationRepository implements TranslationRepository {
     return this.world.listState(collection, knownIds, this.locales);
   }
 
-  async enqueue(request: EnqueueRequest): Promise<EnqueueResponse> {
+  async enqueueDocument(request: EnqueueDocumentRequest): Promise<EnqueueResponse> {
+    return await this.queue(request);
+  }
+
+  async enqueueList(request: EnqueueListRequest): Promise<EnqueueResponse> {
+    return await this.queue(request);
+  }
+
+  private async queue(
+    request: EnqueueDocumentRequest | EnqueueListRequest
+  ): Promise<EnqueueResponse> {
     const targets =
       typeof request.target_lng === "string" ? [request.target_lng] : request.target_lng;
     const { queued, busy, assignments } = this.world.enqueue(

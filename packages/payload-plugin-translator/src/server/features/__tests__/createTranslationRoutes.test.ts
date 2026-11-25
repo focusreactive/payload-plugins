@@ -29,6 +29,7 @@ describe("createTranslationRoutes (bundle contract)", () => {
 
     expect(routes.map((r) => `${r.method} ${r.path}`)).toEqual([
       "post /translate/enqueue",
+      "post /translate/enqueue-list",
       "post /translate/run/:collection_slug/:collection_id",
       "delete /translate/cancel",
       "get /translate/document/:collection_slug/:collection_id",

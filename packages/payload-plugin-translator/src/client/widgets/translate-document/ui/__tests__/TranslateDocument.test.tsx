@@ -132,7 +132,7 @@ describe("the document panel", () => {
 
   it("translates an empty locale whole, from the chosen source", async () => {
     const { repository } = show();
-    const enqueue = vi.spyOn(repository, "enqueue");
+    const enqueue = vi.spyOn(repository, "enqueueDocument");
     const dialog = await openPanel();
 
     fireEvent.click(await within(dialog).findByRole("button", { name: "Translate Español" }));
@@ -149,7 +149,7 @@ describe("the document panel", () => {
 
   it("translates the fields picked in a tracked locale's tree, the ones behind preselected", async () => {
     const { repository } = show();
-    const enqueue = vi.spyOn(repository, "enqueue");
+    const enqueue = vi.spyOn(repository, "enqueueDocument");
     const dialog = await openPanel();
 
     fireEvent.click(await within(dialog).findByRole("button", { name: "Show Français fields" }));
@@ -183,7 +183,7 @@ describe("the document panel", () => {
 
   it("translates only the fields ticked in a locale written by hand", async () => {
     const { repository } = show();
-    const enqueue = vi.spyOn(repository, "enqueue");
+    const enqueue = vi.spyOn(repository, "enqueueDocument");
     const dialog = await openPanel();
 
     fireEvent.click(await within(dialog).findByRole("button", { name: "Show Nederlands fields" }));
@@ -250,7 +250,7 @@ describe("the document panel", () => {
     const dialog = await openPanel();
     const translate = await within(dialog).findByRole("button", { name: "Translate Español" });
 
-    await repository.enqueue({
+    await repository.enqueueDocument({
       source_lng: "en",
       target_lng: "es",
       collection_slug: "pages",

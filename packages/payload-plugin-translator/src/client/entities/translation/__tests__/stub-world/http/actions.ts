@@ -1,6 +1,9 @@
 import { ServerResponse } from "../../../../../../server/shared/index.js";
 import type { RouteHandler } from "../../../../../../server/shared/http/withErrorHandler.js";
-import { EnqueueInputSchema } from "../../../../../../server/features/enqueue-translation/model.js";
+import {
+  EnqueueDocumentInputSchema,
+  EnqueueListInputSchema,
+} from "../../../../../../server/features/enqueue-translation/model.js";
 import { CancelInputSchema } from "../../../../../../server/features/cancel/model.js";
 import { RunInputSchema } from "../../../../../../server/features/run-translation/model.js";
 import { DismissStalenessInputSchema } from "../../../../../../server/features/staleness/model.js";
@@ -14,10 +17,12 @@ import type { StubDeps } from "./StubDeps.js";
 const asked = (target: LocaleCode | LocaleCode[]): LocaleCode[] =>
   typeof target === "string" ? [target] : target;
 
-/** Every caller the guard lets through is authorised: the stub keeps no per-document rights. */
-export function enqueue({ world, managed }: StubDeps): RouteHandler {
+function queueing(
+  schema: typeof EnqueueDocumentInputSchema | typeof EnqueueListInputSchema,
+  { world, managed }: StubDeps
+): RouteHandler {
   return async (req) => {
-    const parsed = EnqueueInputSchema.safeParse(await req.json?.());
+    const parsed = schema.safeParse(await req.json?.());
     if (parsed.error) return ServerResponse.validationError(parsed.error.issues);
 
     const { collection_slug, collection_id, source_lng, target_lng } = parsed.data;
@@ -54,6 +59,10 @@ export function enqueue({ world, managed }: StubDeps): RouteHandler {
     return ServerResponse.success(body);
   };
 }
+
+export const enqueue = (deps: StubDeps): RouteHandler => queueing(EnqueueDocumentInputSchema, deps);
+
+export const enqueueList = (deps: StubDeps): RouteHandler => queueing(EnqueueListInputSchema, deps);
 
 export function cancel({ world, managed }: StubDeps): RouteHandler {
   return async (req) => {

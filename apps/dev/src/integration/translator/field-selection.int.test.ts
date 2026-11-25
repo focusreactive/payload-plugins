@@ -116,21 +116,26 @@ describe("a run carries the fields it was asked for, through the stored job row"
     );
   });
 
-  it("applies one leaf list to every document it was sent with", async () => {
+  it("refuses a leaf list sent with a list of documents", async () => {
     const first = await create({ title: "One", note: "Not this" });
     const second = await create({ title: "Two", note: "Nor this" });
 
-    await enqueue({ id: first, collection_id: [first, second], filters: leaves("title") });
-    await work();
+    const response = await callEndpoint(ctx.payload, "post", "/translate/enqueue-list", {
+      body: {
+        source_lng: "en",
+        target_lng: "de",
+        collection_slug: "docs",
+        collection_id: [first, second],
+        publish_on_translation: true,
+        filters: leaves("title"),
+      },
+    });
 
-    for (const [id, title] of [
-      [first, "One"],
-      [second, "Two"],
-    ] as const) {
-      const de = await german(id);
-      expect(de.title).toBe(tr("de", title));
-      expect(de.note, "the same list narrowed both documents").not.toContain("de:");
-    }
+    expect(response.status).toBe(400);
+    await work();
+    expect((await german(first)).title, "nothing was queued, so nothing was translated").toBe(
+      undefined
+    );
   });
 
   it("fails the run rather than translate everything when nothing answers the rule", async () => {

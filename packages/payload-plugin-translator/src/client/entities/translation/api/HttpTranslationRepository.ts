@@ -2,7 +2,8 @@ import type {
   CancelRequest,
   CancelResponse,
   DismissStalenessRequest,
-  EnqueueRequest,
+  EnqueueDocumentRequest,
+  EnqueueListRequest,
   EnqueueResponse,
   FieldTranslationRequest,
   WireEnvelope,
@@ -69,16 +70,23 @@ export class HttpTranslationRepository implements TranslationRepository {
     return answer.data;
   }
 
-  async enqueue(request: EnqueueRequest): Promise<EnqueueResponse> {
-    const { method, path } = route("enqueue", {});
-    const answer = await this.request<WireEnvelope<EnqueueResponse>>(path, {
-      method,
-      body: request,
-    });
+  async enqueueDocument(request: EnqueueDocumentRequest): Promise<EnqueueResponse> {
+    return await this.queue("enqueue", request);
+  }
+
+  async enqueueList(request: EnqueueListRequest): Promise<EnqueueResponse> {
+    return await this.queue("enqueueList", request);
+  }
+
+  private async queue(
+    endpoint: "enqueue" | "enqueueList",
+    body: EnqueueDocumentRequest | EnqueueListRequest
+  ): Promise<EnqueueResponse> {
+    const { method, path } = route(endpoint, {});
+    const answer = await this.request<WireEnvelope<EnqueueResponse>>(path, { method, body });
     return rejectBusyEnqueue(answer.data);
   }
 
-  /** The route answers 204 when every run was stopped. */
   async cancel({ collection, id }: DocumentAddress): Promise<CancelResponse> {
     return this.sendCancel({ collection_slug: collection, collection_id: [id] });
   }

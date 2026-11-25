@@ -54,7 +54,7 @@ describe("HttpTranslationRepository", () => {
 
   it("answers a cancel the server took whole as nothing refused", async () => {
     const repository = overStub();
-    await repository.enqueue({
+    await repository.enqueueDocument({
       source_lng: "en",
       target_lng: ["de"],
       collection_slug: "pages",
@@ -65,7 +65,7 @@ describe("HttpTranslationRepository", () => {
 
   it("rejects running a run that is already running as busy, and a document with no run as not found", async () => {
     const repository = overStub();
-    await repository.enqueue({
+    await repository.enqueueDocument({
       source_lng: "en",
       target_lng: ["de"],
       collection_slug: "pages",
@@ -103,5 +103,45 @@ describe("HttpTranslationRepository", () => {
     await vi.advanceTimersByTimeAsync(FIELD_TRANSLATION_TIMEOUT_MS - REQUEST_TIMEOUT_MS);
 
     expect(await pending).toMatchObject({ reason: "timeout" });
+  });
+});
+
+const recordingFetch = () => {
+  const paths: string[] = [];
+  const fetch: typeof globalThis.fetch = (input) => {
+    paths.push(new URL(String(input)).pathname);
+    return Promise.resolve(Response.json({ data: { success: true, queued: 1 } }));
+  };
+  return { paths, fetch };
+};
+
+describe("the two enqueue routes", () => {
+  const overFetch = (fetch: typeof globalThis.fetch) =>
+    new HttpTranslationRepository(createRequest({ baseURL: "http://host/api/translate", fetch }));
+
+  it("sends one document to the single-document route", async () => {
+    const { paths, fetch } = recordingFetch();
+
+    await overFetch(fetch).enqueueDocument({
+      source_lng: "en",
+      target_lng: ["de"],
+      collection_slug: "pages",
+      collection_id: ["1"],
+    });
+
+    expect(paths).toStrictEqual(["/api/translate/enqueue"]);
+  });
+
+  it("sends a list of documents to the list route", async () => {
+    const { paths, fetch } = recordingFetch();
+
+    await overFetch(fetch).enqueueList({
+      source_lng: "en",
+      target_lng: ["de"],
+      collection_slug: "pages",
+      collection_id: ["1", "2"],
+    });
+
+    expect(paths).toStrictEqual(["/api/translate/enqueue-list"]);
   });
 });

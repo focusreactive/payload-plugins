@@ -82,7 +82,7 @@ describe("EnqueueTranslationHandler", () => {
         collection_id: ["doc-1"],
       });
 
-      const response = await handler.handle(req);
+      const response = await handler.handleDocument(req);
 
       expect(response.status).toBe(400);
       expect(mockTaskRunner.enqueue).not.toHaveBeenCalled();
@@ -93,7 +93,7 @@ describe("EnqueueTranslationHandler", () => {
     it("returns validation error for missing required fields", async () => {
       const req = requestWithoutLocalization({});
 
-      const response = await handler.handle(req);
+      const response = await handler.handleDocument(req);
 
       expect(response.status).toBe(400);
     });
@@ -105,7 +105,7 @@ describe("EnqueueTranslationHandler", () => {
         collection_id: ["doc-1"],
       });
 
-      const response = await handler.handle(req);
+      const response = await handler.handleDocument(req);
 
       expect(response.status).toBe(400);
     });
@@ -120,7 +120,7 @@ describe("EnqueueTranslationHandler", () => {
         collection_id: ["doc-1"],
       });
 
-      const response = await handler.handle(req);
+      const response = await handler.handleDocument(req);
 
       expect(response.status).toBe(400);
       const body = await response.json();
@@ -139,7 +139,7 @@ describe("EnqueueTranslationHandler", () => {
         collection_id: ["doc-1"],
       });
 
-      const response = await handler.handle(req);
+      const response = await handler.handleDocument(req);
 
       expect(response.status).toBe(400);
       const body = await response.json();
@@ -157,7 +157,7 @@ describe("EnqueueTranslationHandler", () => {
         collection_id: ["doc-1", "doc-2"],
       });
 
-      const response = await handler.handle(req);
+      const response = await handler.handleList(req);
 
       expect(response.status).toBe(200);
       const body = await response.json();
@@ -172,7 +172,7 @@ describe("EnqueueTranslationHandler", () => {
         collection_id: ["doc-123"],
       });
 
-      await handler.handle(req);
+      await handler.handleDocument(req);
 
       expect(mockTaskRunner.enqueue).toHaveBeenCalledWith(
         [
@@ -206,7 +206,7 @@ describe("EnqueueTranslationHandler", () => {
       });
       (req as any).payload = mockPayload;
 
-      await handler.handle(req);
+      await handler.handleDocument(req);
 
       expect(mockTaskRunnerFactory.create).toHaveBeenCalledWith(mockPayload);
     });
@@ -221,7 +221,7 @@ describe("EnqueueTranslationHandler", () => {
         collection_id: ["doc-1", "doc-2"],
       });
 
-      const response = await handler.handle(req);
+      const response = await handler.handleList(req);
 
       expect(response.status).toBe(200);
       expect((await response.json()).data.queued).toBe(4);
@@ -243,7 +243,7 @@ describe("EnqueueTranslationHandler", () => {
         collection_id: ["doc-1"],
       });
 
-      await handler.handle(req);
+      await handler.handleDocument(req);
 
       const tasks = enqueuedTasks();
       expect(tasks.map((t: any) => t.targetLng)).toEqual(["de"]);
@@ -259,7 +259,7 @@ describe("EnqueueTranslationHandler", () => {
         collection_id: ["doc-1"],
       });
 
-      await handler.handle(req);
+      await handler.handleDocument(req);
 
       expect(enqueuedTasks().map((t: any) => t.targetLng)).toEqual(["de", "fr"]);
     });
@@ -272,7 +272,7 @@ describe("EnqueueTranslationHandler", () => {
         collection_id: ["doc-1"],
       });
 
-      await handler.handle(req);
+      await handler.handleDocument(req);
 
       expect(enqueuedTasks().map((t: any) => t.targetLng)).toEqual(["de"]);
     });
@@ -285,7 +285,7 @@ describe("EnqueueTranslationHandler", () => {
         collection_id: ["doc-1"],
       });
 
-      const response = await handler.handle(req);
+      const response = await handler.handleDocument(req);
 
       expect(response.status).toBe(400);
       expect(mockTaskRunner.enqueue).not.toHaveBeenCalled();
@@ -299,7 +299,7 @@ describe("EnqueueTranslationHandler", () => {
         collection_id: ["doc-1"],
       });
 
-      await handler.handle(req);
+      await handler.handleDocument(req);
 
       expect(enqueuedTasks()).toEqual([
         {
@@ -316,7 +316,7 @@ describe("EnqueueTranslationHandler", () => {
 
   describe("filters", () => {
     const asked = (body: Record<string, unknown>) =>
-      handler.handle(
+      handler.handleDocument(
         createLocalizedRequest({
           source_lng: "en",
           target_lng: "de",
@@ -326,9 +326,20 @@ describe("EnqueueTranslationHandler", () => {
         })
       );
 
-    it("carries the addresses through to every task it queues", async () => {
+    const askedOfTheList = (body: Record<string, unknown>) =>
+      handler.handleList(
+        createLocalizedRequest({
+          source_lng: "en",
+          target_lng: "de",
+          collection_slug: "posts",
+          collection_id: ["doc-1", "doc-2"],
+          ...body,
+        })
+      );
+
+    it("carries the addresses through to every task of the document it names", async () => {
       const response = await asked({
-        collection_id: ["doc-1", "doc-2"],
+        target_lng: ["de", "fr"],
         filters: leaves("title", "content.#0.heading"),
       });
 
@@ -336,15 +347,36 @@ describe("EnqueueTranslationHandler", () => {
       expect(response.status).toBe(200);
       expect(mockTaskRunner.enqueue).toHaveBeenCalledWith(
         [
-          expect.objectContaining({ collectionId: "doc-1", filters: asksFor }),
-          expect.objectContaining({ collectionId: "doc-2", filters: asksFor }),
+          expect.objectContaining({ targetLng: "de", filters: asksFor }),
+          expect.objectContaining({ targetLng: "fr", filters: asksFor }),
         ],
         expect.anything()
       );
     });
 
-    it("carries them through select_all too", async () => {
-      const response = await asked({ select_all: true, filters: leaves("title") });
+    it("refuses a body naming more than one document", async () => {
+      const response = await asked({ collection_id: ["doc-1", "doc-2"] });
+
+      expect(response.status).toBe(400);
+      expect(mockTaskRunner.enqueue).not.toHaveBeenCalled();
+    });
+
+    it("refuses a whole-collection request on the single-document route", async () => {
+      expect((await asked({ select_all: true })).status).toBe(400);
+    });
+
+    it("refuses addresses on the list route", async () => {
+      expect((await askedOfTheList({ filters: leaves("title") })).status).toBe(400);
+    });
+
+    it("refuses addresses on the list route asking for the whole collection", async () => {
+      const response = await askedOfTheList({ select_all: true, filters: leaves("title") });
+
+      expect(response.status).toBe(400);
+    });
+
+    it("carries a rule through the list route", async () => {
+      const response = await askedOfTheList({ filters: [{ kind: "rule", name: "stale" }] });
 
       expect(response.status).toBe(200);
     });
@@ -403,7 +435,7 @@ describe("EnqueueTranslationHandler", () => {
         },
         mockTaskRunnerFactory,
         () => storeDouble()
-      ).handle(requestHolding(holding, body, collections));
+      ).handleDocument(requestHolding(holding, body, collections));
 
     it("refuses a locale holding nothing, which the write would leave with empty required fields", async () => {
       const response = await asked([], { filters: leaves("title") });
@@ -436,7 +468,7 @@ describe("EnqueueTranslationHandler", () => {
         },
         mockTaskRunnerFactory,
         () => storeDouble()
-      ).handle(requestHolding([], { filters: leaves("title") }));
+      ).handleDocument(requestHolding([], { filters: leaves("title") }));
 
       expect(response.status).toBe(200);
     });
@@ -468,7 +500,7 @@ describe("EnqueueTranslationHandler", () => {
 
   describe("a rule name", () => {
     const asked = (names: string[]) =>
-      handler.handle(
+      handler.handleList(
         createLocalizedRequest({
           source_lng: "en",
           target_lng: "de",

@@ -6,6 +6,7 @@ export const ENDPOINTS = {
   documentState: { method: "get", path: "/document-state/:collection_slug/:collection_id" },
   listState: { method: "get", path: "/list-state/:collection_slug" },
   enqueue: { method: "post", path: "/enqueue" },
+  enqueueList: { method: "post", path: "/enqueue-list" },
   cancel: { method: "delete", path: "/cancel" },
   runNow: { method: "post", path: "/run/:collection_slug/:collection_id" },
   dismissStaleness: { method: "post", path: "/stale/dismiss" },

@@ -1,10 +1,9 @@
-import type { EnqueueRequest } from "../../../../types/wire/ActionBodies.js";
+import type { EnqueueListRequest } from "../../../../types/wire/ActionBodies.js";
 import type { ListTranslationState } from "../../../../types/wire/ListTranslationState.js";
 import type { DocumentId, LocaleCode } from "../../../../types/wire/primitives.js";
 import { hasLiveRun } from "./documentPanelStatus.js";
 import type { CollectionSlug } from "./TranslationRepository.js";
 
-/** What a press of Translate sends: the documents to queue, and the ones left out for a live run. */
 export type Batch = { queue: readonly DocumentId[]; skipped: readonly DocumentId[] };
 
 /** Unknown until the list state is read: then nothing is marked, and the server answers `busy`. */
@@ -53,7 +52,7 @@ export function collectionEnqueue({
   targets,
   documents,
   onlyBehind,
-}: CollectionEnqueue): EnqueueRequest | null {
+}: CollectionEnqueue): EnqueueListRequest | null {
   const [first, ...rest] = documents;
   if (first === undefined || targets.length === 0) return null;
   return {
