@@ -158,7 +158,13 @@ describe("a read that answers better does not add an action", () => {
 
     await callIt(
       createGetDocumentStateRoute(
-        { availableCollections, schemaMap, fingerprintOf: () => null, holdsText: () => false },
+        {
+          availableCollections,
+          schemaMap,
+          fingerprintOf: () => null,
+          holdsText: () => false,
+          failedWindowMs: 0,
+        },
         runRecordStoreFactory,
         access
       )

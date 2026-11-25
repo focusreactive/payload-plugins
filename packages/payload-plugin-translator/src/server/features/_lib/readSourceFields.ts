@@ -3,7 +3,6 @@ import type { CollectionSlug, PayloadRequest } from "payload";
 import type { FieldFingerprints } from "../../../core/domain/content-projection/computeFieldFingerprints.js";
 import type { SourceFingerprinter } from "../../../core/domain/content-projection/sourceFingerprinter.js";
 import { fetchDocumentLocale } from "../../shared/payload/documentLocale.js";
-import { latestOf } from "../../shared/payload/worldOfCollection.js";
 
 /**
  * A source locale's per-leaf fingerprints as the caller may read them now; `null`, and a logged
@@ -22,7 +21,6 @@ export async function readSourceFields(question: {
     collection,
     id,
     locale,
-    read: latestOf(req.payload, collection),
     user: req.user,
   });
   if (document) return fingerprintOf(collection, document) ?? {};

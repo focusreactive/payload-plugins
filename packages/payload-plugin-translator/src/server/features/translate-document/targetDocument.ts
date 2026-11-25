@@ -5,7 +5,6 @@ import type { RunTarget } from "../../modules/translation-run/index.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 import { freshReq } from "../../shared/payload/RequestScope.shapes.js";
 import { fetchDocumentLocale } from "../../shared/payload/documentLocale.js";
-import { latestOf } from "../../shared/payload/worldOfCollection.js";
 import { SourceUnreadable } from "./SourceUnreadable.js";
 import { TranslationRefused } from "./TranslationRefused.js";
 import {
@@ -119,14 +118,12 @@ export async function openTargetDocument(args: {
 
   return {
     async readSourceIfAllowed(): Promise<ApprovedSource> {
-      const read = latestOf(payload, collection);
       const [sourceData, currentTarget] = await Promise.all([
         fetchDocumentLocale({
           payload,
           collection,
           id: String(documentId),
           locale: sourceLocale,
-          read,
           user: requester,
           scope,
         }),
@@ -135,7 +132,6 @@ export async function openTargetDocument(args: {
           collection,
           id: String(documentId),
           locale: targetLocale,
-          read,
           user: requester,
           scope,
         }),

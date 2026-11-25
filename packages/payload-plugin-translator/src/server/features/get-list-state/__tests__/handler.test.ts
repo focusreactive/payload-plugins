@@ -23,8 +23,7 @@ type World = {
   visible?: string[];
   holding?: Record<string, string[]>;
   receipts?: ProvenanceReceipt[];
-  live?: ReturnType<typeof runRow>[];
-  failed?: ReturnType<typeof runRow>[];
+  rows?: ReturnType<typeof runRow>[];
   localization?: unknown;
 };
 
@@ -74,8 +73,12 @@ const handlerFor = (world: World, keepsRecords = true) =>
     },
     () =>
       storeDouble({
-        findLiveForDocuments: vi.fn().mockResolvedValue(world.live ?? []),
-        findRecentlyUndeliveredInCollection: vi.fn().mockResolvedValue(world.failed ?? []),
+        findLiveOrUndeliveredSince: vi
+          .fn()
+          .mockResolvedValue((world.rows ?? []).filter((row) => row.outcome !== "delivered")),
+        findDeliveredSince: vi
+          .fn()
+          .mockResolvedValue((world.rows ?? []).filter((row) => row.outcome === "delivered")),
       })
   );
 
@@ -161,15 +164,15 @@ describe("what a row says about a locale", () => {
   });
 
   it("carries a live run", async () => {
-    const { body } = await answer({ live: [runRow({ collectionId: "doc-1", targetLng: "de" })] });
+    const { body } = await answer({ rows: [runRow({ collectionId: "doc-1", targetLng: "de" })] });
 
     expect(body.docs[0]?.locales[0]?.run).toMatchObject({ status: "queued" });
     expect(body.docs[1]?.locales[0]?.run).toBeNull();
   });
 
-  it("carries a failure that settled recently, which no live read would return", async () => {
+  it("carries a failure that settled inside the window", async () => {
     const { body } = await answer({
-      failed: [
+      rows: [
         runRow({
           collectionId: "doc-2",
           targetLng: "de",
@@ -181,5 +184,30 @@ describe("what a row says about a locale", () => {
     });
 
     expect(body.docs[1]?.locales[0]?.run).toMatchObject({ status: "failed" });
+  });
+
+  it("carries no run once a later delivered run replaced a failure", async () => {
+    const { body } = await answer({
+      rows: [
+        runRow({
+          handle: "first",
+          collectionId: "doc-2",
+          targetLng: "de",
+          outcome: "failed",
+          queuedAt: "2026-11-01T09:00:00.000Z",
+          settledAt: "2026-11-01T09:01:00.000Z",
+        }),
+        runRow({
+          handle: "again",
+          collectionId: "doc-2",
+          targetLng: "de",
+          outcome: "delivered",
+          queuedAt: "2026-11-01T10:00:00.000Z",
+          settledAt: "2026-11-01T10:01:00.000Z",
+        }),
+      ],
+    });
+
+    expect(body.docs[1]?.locales[0]?.run).toBeNull();
   });
 });

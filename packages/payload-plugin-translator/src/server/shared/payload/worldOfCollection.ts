@@ -127,9 +127,5 @@ const NOT_REGISTERED: CollectionVersions = {};
 export const worldOfRegistered = (payload: Payload, slug: CollectionSlug): CollectionWorld =>
   worldOfCollection(payload.collections[slug]?.config ?? NOT_REGISTERED);
 
-/**
- * The read every fingerprint path is expected to take. Nothing enforces it: one brand covers both
- * reads, so a caller may hand `read.published` to `fetchDocumentLocale` instead.
- */
 export const latestOf = (payload: Payload, slug: CollectionSlug): VersionRead =>
   worldOfRegistered(payload, slug).read.latest;

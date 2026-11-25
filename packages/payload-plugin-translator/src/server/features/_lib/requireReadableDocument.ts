@@ -3,7 +3,6 @@ import type { CollectionSlug, PayloadRequest } from "payload";
 import { ServerResponse } from "../../shared/http/ServerResponse.js";
 import { NOT_FOUND } from "../../shared/http/readRefusals.js";
 import { fetchDocumentLocale } from "../../shared/payload/documentLocale.js";
-import { latestOf } from "../../shared/payload/worldOfCollection.js";
 
 export type ReadableDocument =
   | { readable: true; document: Record<string, unknown> }
@@ -21,7 +20,6 @@ export async function requireReadableDocument(question: {
     collection,
     id,
     locale: sourceLocale,
-    read: latestOf(req.payload, collection),
     user: req.user,
   });
 

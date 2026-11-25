@@ -3,16 +3,15 @@ import type { CollectionSlug, PayloadRequest } from "payload";
 import type { ProvenanceReceipt } from "../../../core/domain/provenance/index.js";
 import type { DocumentTranslationState } from "../../../types/wire/DocumentTranslationState.js";
 import type { LocaleCode } from "../../../types/wire/primitives.js";
-import { reportedRuns, runStateOf } from "../../modules/runs/index.js";
-import type { ReportedRun, RunRecordStoreFactory } from "../../modules/runs/index.js";
+import { runStateOf } from "../../modules/runs/index.js";
+import type { RunRecordStoreFactory } from "../../modules/runs/index.js";
 import { ServerResponse } from "../../shared/index.js";
 import { NOT_MANAGED, NO_LOCALIZATION } from "../../shared/http/readRefusals.js";
-import { localesHoldingContent } from "../../shared/payload/localesHoldingContent.js";
-import { latestOf } from "../../shared/payload/worldOfCollection.js";
 import {
   isCollectionAvailable,
   readLocales,
   readSourceFields,
+  readState,
   requireReadableDocument,
 } from "../_lib/index.js";
 import type { ReadLocales } from "../_lib/index.js";
@@ -24,6 +23,19 @@ import { localeContentOf } from "./localeContent.js";
 import type { SourcesAsTheyStand } from "./localeContent.js";
 import { GetDocumentStateInputSchema } from "./model.js";
 import type { GetDocumentStateConfig } from "./model.js";
+
+type DocumentRead = {
+  req: PayloadRequest;
+  collection: CollectionSlug;
+  id: string;
+  document: Record<string, unknown>;
+  locales: ReadLocales;
+};
+
+const receiptsByLocale = (
+  receipts: readonly ProvenanceReceipt[]
+): ReadonlyMap<LocaleCode, ProvenanceReceipt> =>
+  new Map(receipts.map((receipt) => [receipt.targetLocale, receipt]));
 
 export class GetDocumentStateHandler {
   private readonly config: GetDocumentStateConfig;
@@ -58,37 +70,14 @@ export class GetDocumentStateHandler {
     );
   }
 
-  private async receiptsOf(
-    req: PayloadRequest,
-    collection: CollectionSlug,
-    id: string
-  ): Promise<ReadonlyMap<LocaleCode, ProvenanceReceipt>> {
-    const { provenance } = this.config;
-    if (!provenance) return new Map();
-    const records = await provenance.storeFactory(req.payload).findByDocument(collection, id);
-    return new Map(records.map((record) => [record.targetLocale, record]));
-  }
-
-  private async runsOf(
-    req: PayloadRequest,
-    collection: CollectionSlug,
-    id: string
-  ): Promise<ReportedRun[]> {
-    const rows = await this.runRecordStoreFactory(req.payload).findByDocument({
-      collectionSlug: collection,
-      collectionId: id,
-    });
-    return reportedRuns(rows);
-  }
-
-  private async stateOf(read: {
-    req: PayloadRequest;
-    collection: CollectionSlug;
-    id: string;
-    document: Record<string, unknown>;
-    locales: ReadLocales;
-  }): Promise<DocumentTranslationState> {
-    const { req, collection, id, document, locales } = read;
+  private shapeOf({
+    req,
+    collection,
+    document,
+  }: Pick<DocumentRead, "req" | "collection" | "document">): Pick<
+    DocumentTranslationState,
+    "tree" | "excluded"
+  > {
     const schema = this.config.schemaMap.get(collection) ?? [];
     const registered = req.payload.config.collections.find((one) => one.slug === collection);
     const presentation = collectionPresentation({
@@ -96,51 +85,65 @@ export class GetDocumentStateHandler {
       sharedBlocks: req.payload.config.blocks ?? [],
       language: req.i18n?.language,
     });
-    const currentFields = this.config.fingerprintOf(collection, document) ?? {};
+    return {
+      tree: documentTree({ document, schema, presentation }),
+      excluded: excludedLabels(schema, presentation),
+    };
+  }
 
-    const [holding, receipts, runs] = await Promise.all([
-      localesHoldingContent({
-        payload: req.payload,
-        collection,
-        grantedIds: [id],
-        locales: locales.targets,
-        holdsText: this.config.holdsText,
-        read: latestOf(req.payload, collection),
-      }),
-      this.receiptsOf(req, collection, id),
-      this.runsOf(req, collection, id),
-    ]);
+  private async sourcesAsTheyStand(
+    read: DocumentRead,
+    judgedFrom: readonly LocaleCode[]
+  ): Promise<SourcesAsTheyStand> {
+    const { req, collection, id, document, locales } = read;
+    const others = new Set(judgedFrom);
+    others.delete(locales.source);
 
-    const otherSources = new Set(
-      [...receipts.values()]
-        .filter((receipt) => locales.targets.includes(receipt.targetLocale))
-        .map((receipt) => receipt.sourceLocale)
+    const { fingerprintOf } = this.config;
+    const othersNow = await Promise.all(
+      [...others].map(
+        async (locale) =>
+          [locale, await readSourceFields({ req, collection, id, locale, fingerprintOf })] as const
+      )
     );
-    otherSources.delete(locales.source);
-    const sourceFieldsOf = (locale: LocaleCode) =>
-      readSourceFields({ req, collection, id, locale, fingerprintOf: this.config.fingerprintOf });
-    const sources: SourcesAsTheyStand = new Map([
-      [locales.source, currentFields],
-      ...(await Promise.all(
-        [...otherSources].map(async (locale) => [locale, await sourceFieldsOf(locale)] as const)
-      )),
-    ]);
+    return new Map([[locales.source, fingerprintOf(collection, document) ?? {}], ...othersNow]);
+  }
+
+  private async stateOf(read: DocumentRead): Promise<DocumentTranslationState> {
+    const { req, collection, id, locales } = read;
+    const shown = await readState({
+      payload: req.payload,
+      collection,
+      ids: [id],
+      targets: locales.targets,
+      holdsText: this.config.holdsText,
+      provenance: this.config.provenance,
+      runRecordStoreFactory: this.runRecordStoreFactory,
+      failedWindowMs: this.config.failedWindowMs,
+    });
+    const holdsContent = (locale: LocaleCode) => shown.holding.get(locale)?.has(id) === true;
+    const receipts = receiptsByLocale(shown.receipts.get(id) ?? []);
+    const receiptIfHeld = (locale: LocaleCode) =>
+      holdsContent(locale) ? receipts.get(locale) : undefined;
+    const sources = await this.sourcesAsTheyStand(
+      read,
+      locales.targets.flatMap((locale) => receiptIfHeld(locale)?.sourceLocale ?? [])
+    );
 
     return {
       collection,
       id,
       sourceLocale: locales.source,
-      tree: documentTree({ document, schema, presentation }),
-      excluded: excludedLabels(schema, presentation),
+      ...this.shapeOf(read),
       locales: locales.targets.map((locale) => ({
         locale,
         content: localeContentOf({
-          holdsContent: holding.get(locale)?.has(id) === true,
+          holdsContent: holdsContent(locale),
           keepsRecords: this.config.provenance !== undefined,
-          receipt: receipts.get(locale),
+          receipt: receiptIfHeld(locale),
           sources,
         }),
-        run: runStateOf({ runs, locale, configuredLocales: locales.configured }),
+        run: runStateOf({ runs: shown.runs, locale, configuredLocales: locales.configured }),
       })),
     };
   }

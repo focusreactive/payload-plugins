@@ -2,7 +2,6 @@ import type { PayloadRequest } from "payload";
 
 import { ServerResponse } from "../../../../../../server/shared/index.js";
 import { fetchDocumentLocale } from "../../../../../../server/shared/payload/documentLocale.js";
-import { latestOf } from "../../../../../../server/shared/payload/worldOfCollection.js";
 import type { RouteHandler } from "../../../../../../server/shared/http/withErrorHandler.js";
 import { GetDocumentStatusInputSchema } from "../../../../../../server/features/get-document-status/model.js";
 import { GetCollectionStatusInputSchema } from "../../../../../../server/features/get-collection-status/model.js";
@@ -24,7 +23,6 @@ async function heldIds(
   ids: readonly DocumentId[],
   source: string
 ): Promise<DocumentId[]> {
-  const read = latestOf(req.payload, collection);
   const found = await Promise.all(
     ids.map((id) =>
       fetchDocumentLocale({
@@ -32,7 +30,6 @@ async function heldIds(
         collection,
         id,
         locale: source,
-        read,
         user: req.user,
       })
     )

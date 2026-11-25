@@ -1,21 +1,18 @@
 import type { CollectionSlug, PayloadRequest } from "payload";
 
-import { receiptsByDocument } from "../../../core/domain/provenance/index.js";
 import type { ReceiptsByDocument } from "../../../core/domain/provenance/index.js";
 import type {
   ListDocumentState,
   ListTranslationState,
 } from "../../../types/wire/ListTranslationState.js";
 import type { DocumentId } from "../../../types/wire/primitives.js";
-import { reportedRuns, runStateOf } from "../../modules/runs/index.js";
-import type { ReportedRun, RunRecordStoreFactory } from "../../modules/runs/index.js";
+import { runStateOf } from "../../modules/runs/index.js";
+import type { RunRecordStoreFactory } from "../../modules/runs/index.js";
 import { ServerResponse } from "../../shared/index.js";
 import { NOT_MANAGED, NO_LOCALIZATION } from "../../shared/http/readRefusals.js";
 import { visibleIds } from "../../shared/payload/collections.js";
-import { localesHoldingContent } from "../../shared/payload/localesHoldingContent.js";
 import type { DocumentsHoldingContent } from "../../shared/payload/localesHoldingContent.js";
-import { latestOf } from "../../shared/payload/worldOfCollection.js";
-import { isCollectionAvailable, readLocales } from "../_lib/index.js";
+import { isCollectionAvailable, readLocales, readState } from "../_lib/index.js";
 import type { ReadLocales } from "../_lib/index.js";
 
 import { AskedIdsSchema, GetListStateInputSchema } from "./model.js";
@@ -69,31 +66,6 @@ export class GetListStateHandler {
     return ServerResponse.success(state);
   }
 
-  private async runsOf(
-    req: PayloadRequest,
-    collection: CollectionSlug,
-    ids: readonly DocumentId[]
-  ): Promise<ReportedRun[]> {
-    const store = this.runRecordStoreFactory(req.payload);
-    const since = new Date(Date.now() - this.config.failedWindowMs);
-    const [live, undelivered] = await Promise.all([
-      store.findLiveForDocuments(collection, [...ids]),
-      store.findRecentlyUndeliveredInCollection(collection, since),
-    ]);
-    const asked = new Set(ids);
-    return reportedRuns([...live, ...undelivered]).filter(({ row }) => asked.has(row.collectionId));
-  }
-
-  private async receiptsOf(
-    req: PayloadRequest,
-    collection: CollectionSlug,
-    ids: readonly DocumentId[]
-  ): Promise<ReceiptsByDocument> {
-    const { provenance } = this.config;
-    if (!provenance) return new Map();
-    return await receiptsByDocument(provenance.storeFactory(req.payload), collection, ids);
-  }
-
   private async rowsOf(read: {
     req: PayloadRequest;
     collection: CollectionSlug;
@@ -102,19 +74,16 @@ export class GetListStateHandler {
   }): Promise<ListDocumentState[]> {
     const { req, collection, ids, locales } = read;
     if (ids.length === 0) return [];
-
-    const [holding, receipts, runs] = await Promise.all([
-      localesHoldingContent({
-        payload: req.payload,
-        collection,
-        grantedIds: ids,
-        locales: locales.targets,
-        holdsText: this.config.holdsText,
-        read: latestOf(req.payload, collection),
-      }),
-      this.receiptsOf(req, collection, ids),
-      this.runsOf(req, collection, ids),
-    ]);
+    const { holding, receipts, runs } = await readState({
+      payload: req.payload,
+      collection,
+      ids,
+      targets: locales.targets,
+      holdsText: this.config.holdsText,
+      provenance: this.config.provenance,
+      runRecordStoreFactory: this.runRecordStoreFactory,
+      failedWindowMs: this.config.failedWindowMs,
+    });
 
     return ids.map((id) => ({
       id,

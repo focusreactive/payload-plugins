@@ -16,24 +16,20 @@ const docs: CollectionConfig = {
   ],
 };
 
-const read = async (ctx: TestPayload, id: string) => {
+const germanOf = async (ctx: TestPayload, id: string) => {
   const res = await callEndpoint(
     ctx.payload,
     "get",
     "/translate/document-state/:collection_slug/:collection_id",
     { routeParams: { collection_slug: "docs", collection_id: id } }
   );
-  return { state: (res.data as { data: State }).data };
+  const { locales } = (res.data as { data: State }).data;
+  return locales.find((one) => one.locale === "de")?.content as Tracked;
 };
 
 describe("the document state of a locale translated from another locale than the panel's source", () => {
   let ctx: TestPayload;
   let id: string;
-
-  const germanOf = async () => {
-    const { state } = await read(ctx, id);
-    return state.locales.find((one) => one.locale === "de")?.content as Tracked;
-  };
 
   beforeAll(async () => {
     ctx = await bootTestPayload({ collections: [docs] });
@@ -60,7 +56,7 @@ describe("the document state of a locale translated from another locale than the
   });
 
   it("reads a fresh translation as current, and names the locale it came from", async () => {
-    const german = await germanOf();
+    const german = await germanOf(ctx, id);
 
     expect(german.sourceLocale).toBe("fr");
     expect(german.verdicts).toStrictEqual({ title: "current", summary: "current" });
@@ -74,7 +70,10 @@ describe("the document state of a locale translated from another locale than the
       data: { title: "A new title" },
     });
 
-    expect((await germanOf()).verdicts).toStrictEqual({ title: "current", summary: "current" });
+    expect((await germanOf(ctx, id)).verdicts).toStrictEqual({
+      title: "current",
+      summary: "current",
+    });
   });
 
   it("drifts the one leaf its own source changed", async () => {
@@ -85,6 +84,9 @@ describe("the document state of a locale translated from another locale than the
       data: { title: "Un nouveau titre" },
     });
 
-    expect((await germanOf()).verdicts).toStrictEqual({ title: "drifted", summary: "current" });
+    expect((await germanOf(ctx, id)).verdicts).toStrictEqual({
+      title: "drifted",
+      summary: "current",
+    });
   });
 });

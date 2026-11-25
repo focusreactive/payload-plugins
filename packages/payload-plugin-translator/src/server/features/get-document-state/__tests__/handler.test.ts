@@ -17,6 +17,7 @@ const fields: FieldLike[] = [
 
 const DOCUMENT = { id: "doc-1", title: "An English title", summary: "An English summary" };
 const AT = "2026-11-01T09:00:00.000Z";
+const WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
 
 const schemaMap = new Map([["posts" as CollectionSlug, fields]]);
 const fingerprintOf = sourceFingerprinter(schemaMap, translationLanguages());
@@ -86,6 +87,7 @@ const handlerFor = (world: World, keepsRecords = true) =>
       schemaMap,
       fingerprintOf,
       holdsText: () => true,
+      failedWindowMs: WINDOW_MS,
       ...(keepsRecords
         ? {
             provenance: {
@@ -98,7 +100,15 @@ const handlerFor = (world: World, keepsRecords = true) =>
           }
         : {}),
     },
-    () => storeDouble({ findByDocument: vi.fn().mockResolvedValue(world.rows ?? []) })
+    () =>
+      storeDouble({
+        findLiveOrUndeliveredSince: vi
+          .fn()
+          .mockResolvedValue((world.rows ?? []).filter((row) => row.outcome !== "delivered")),
+        findDeliveredSince: vi
+          .fn()
+          .mockResolvedValue((world.rows ?? []).filter((row) => row.outcome === "delivered")),
+      })
   );
 
 const answer = async (world: World, keepsRecords = true) => {
@@ -115,6 +125,7 @@ describe("refusing to answer", () => {
         schemaMap,
         fingerprintOf,
         holdsText: () => true,
+        failedWindowMs: WINDOW_MS,
       },
       () => storeDouble()
     );
@@ -197,6 +208,37 @@ describe("what the answer carries about each locale", () => {
     const { body } = await answer({ holding: ["de"] }, false);
 
     expect(body.locales[0]?.content).toStrictEqual({ kind: "filled" });
+  });
+
+  it("carries a failure no later run replaced", async () => {
+    const { body } = await answer({
+      rows: [runRow({ targetLng: "de", outcome: "failed", settledAt: AT, error: "no answer" })],
+    });
+
+    expect(body.locales[0]?.run).toMatchObject({ status: "failed" });
+  });
+
+  it("carries no run once a later delivered run replaced a failure", async () => {
+    const { body } = await answer({
+      rows: [
+        runRow({
+          handle: "first",
+          targetLng: "de",
+          outcome: "failed",
+          queuedAt: "2026-11-01T09:00:00.000Z",
+          settledAt: "2026-11-01T09:01:00.000Z",
+        }),
+        runRow({
+          handle: "again",
+          targetLng: "de",
+          outcome: "delivered",
+          queuedAt: "2026-11-01T10:00:00.000Z",
+          settledAt: "2026-11-01T10:01:00.000Z",
+        }),
+      ],
+    });
+
+    expect(body.locales[0]?.run).toBeNull();
   });
 
   it("carries the run a locale is waiting on, and nothing where none is", async () => {

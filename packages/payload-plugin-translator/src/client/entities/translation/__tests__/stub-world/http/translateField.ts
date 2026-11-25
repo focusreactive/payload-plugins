@@ -1,7 +1,6 @@
 import { ServerResponse, getByPath } from "../../../../../../server/shared/index.js";
 import type { RouteHandler } from "../../../../../../server/shared/http/withErrorHandler.js";
 import { fetchDocumentLocale } from "../../../../../../server/shared/payload/documentLocale.js";
-import { latestOf } from "../../../../../../server/shared/payload/worldOfCollection.js";
 import { FieldTranslationInputSchema } from "../../../../../../server/features/translate-field/model.js";
 import type { FieldTranslationResult } from "../../../../../../types/wire/field-translation.js";
 
@@ -22,7 +21,6 @@ export function translateField({ managed }: Pick<StubDeps, "managed">): RouteHan
       collection: collection_slug,
       id: doc_id,
       locale: source_lng,
-      read: latestOf(req.payload, collection_slug),
       user: req.user,
     });
     if (!source) return ServerResponse.notFound();

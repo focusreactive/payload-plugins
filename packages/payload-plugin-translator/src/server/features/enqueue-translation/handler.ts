@@ -67,7 +67,6 @@ export class EnqueueTranslationHandler {
       grantedIds: ids,
       locales: targets,
       holdsText: this.config.holdsText,
-      read: world.read.latest,
     });
     return targets.filter((locale) => ids.some((id) => holding.get(locale)?.has(id) !== true));
   }
