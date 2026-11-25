@@ -1,3 +1,80 @@
+# @focus-reactive/payload-plugin-translator [1.0.0-next.12](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.11...@focus-reactive/payload-plugin-translator@1.0.0-next.12) (2026-11-25)
+
+
+* feat!: the document's translations open in a side panel driven by its state ([5452bdf](https://github.com/focusreactive/payload-plugins/commit/5452bdf727d3e923bef269bca144c51235f079ab))
+* feat!: the old admin is swept away, and targetSelection with it ([a936864](https://github.com/focusreactive/payload-plugins/commit/a9368640991b8f3fad9401ea9824574b87dd848c))
+
+
+### Bug Fixes
+
+* **translator:** a row with no news says so ([84e0ee9](https://github.com/focusreactive/payload-plugins/commit/84e0ee9804887cea1de28990a3475c1b4bdc0223))
+* **translator:** a run always ends, and its ending names what happened ([b2b161f](https://github.com/focusreactive/payload-plugins/commit/b2b161f24f599441ac9dcb8a8b479daa352ff1c4))
+* **translator:** a run that never started says so too ([692cac6](https://github.com/focusreactive/payload-plugins/commit/692cac6ef98ec33eddf5c9189dc30e28900776a2))
+* **translator:** a translation that landed is not bought again ([d43c69a](https://github.com/focusreactive/payload-plugins/commit/d43c69aff32c809ed38eac51a470bd62541396ea))
+* **translator:** auto-translate compares against the last publish ([c47c6a5](https://github.com/focusreactive/payload-plugins/commit/c47c6a5e2d4484fbff76f72665bf1b378d334abf))
+* **translator:** cancelling closes the run record, not just the queue ([9faa11b](https://github.com/focusreactive/payload-plugins/commit/9faa11b725eb5dfc7bb6f395d166afe619291e18))
+* **translator:** emptiness is decided from the values, not from a query ([b3c6ec6](https://github.com/focusreactive/payload-plugins/commit/b3c6ec6411e9810a6fe3914908991716c46c927e))
+* **translator:** one question decides what the queue adapter registered ([cc1fcfd](https://github.com/focusreactive/payload-plugins/commit/cc1fcfdf09e5d8f400193b0e034ef9fd95e42959))
+* what the branch review found across the admin steps ([034426b](https://github.com/focusreactive/payload-plugins/commit/034426b085074d3fd2ac27f56994201f1b7e7465))
+
+
+### Features
+
+* a stub module serves the 1.0 admin from memory ([193f857](https://github.com/focusreactive/payload-plugins/commit/193f85732290e9200f5360a174ac9947ed3e95e9))
+* a Translations column in the collection list, and a bulk panel on its selection ([75ae1a2](https://github.com/focusreactive/payload-plugins/commit/75ae1a2e66c3238c39c474f682e10939778f20a2))
+* hooks read a document's and a page's translation state ([d0a06ac](https://github.com/focusreactive/payload-plugins/commit/d0a06ac7de4be1648a2632d0f7f476219718b4a8))
+* the admin and the server share one description of what crosses between them ([bcd90d1](https://github.com/focusreactive/payload-plugins/commit/bcd90d1d81f5c6d921ab9436faf02b8d81d1b757))
+* the admin client's layers are enforced, not just named ([f812594](https://github.com/focusreactive/payload-plugins/commit/f812594fe5a88f4df89fdd205630ca36103fe1cc))
+* the admin is told which actions this installation can serve ([b673515](https://github.com/focusreactive/payload-plugins/commit/b6735155e8a453d1e3de1b3b4b18c34854a55d6e))
+* the admin provider builds the repository, and actions refresh on settle ([ef039f1](https://github.com/focusreactive/payload-plugins/commit/ef039f15c85ce074084c40f0eb0fc6a47f1ed2f4))
+* the admin reads and acts through one repository contract, proven red first ([823b0a9](https://github.com/focusreactive/payload-plugins/commit/823b0a9cb6bf6140a336b28c1039225001861c5b))
+* the admin talks to the plugin's endpoints through an HTTP repository ([fdfa887](https://github.com/focusreactive/payload-plugins/commit/fdfa8876dc0b6176a51518c43ec14420e6e3bcca))
+* the field control translates in place, with its states inline ([6294a8c](https://github.com/focusreactive/payload-plugins/commit/6294a8cb48b11fdd17271c9f40a48ba68542b080))
+* **translator:** one document, or a list, but never both ([790e45a](https://github.com/focusreactive/payload-plugins/commit/790e45a44a4ec22115fb60f627c5a3cdd2f6772b)), closes [docs/DEPRECATIONS.md#enqueue-splits-into-two-routes](https://github.com/docs/DEPRECATIONS.md/issues/enqueue-splits-into-two-routes)
+* **translator:** the admin stub stops being a published surface ([d09073a](https://github.com/focusreactive/payload-plugins/commit/d09073ac3561aad7cee24dfda593a4438907d4dc))
+* **translator:** the config refuses what the plugin cannot serve ([25c6aa6](https://github.com/focusreactive/payload-plugins/commit/25c6aa6da3b66627bb6da760e37f919a0fc5048b))
+* **translator:** the host's config becomes the plugin's own rules ([0f64c92](https://github.com/focusreactive/payload-plugins/commit/0f64c9258d3211e8bef702c0de3999fa2555aacf))
+* **translator:** the state reads answer from the host's own data ([921ebe5](https://github.com/focusreactive/payload-plugins/commit/921ebe58ebedeb4a14b9448c00effd1610bff10a))
+
+
+### BREAKING CHANGES
+
+* **translator:** `POST {basePath}/enqueue` now accepts exactly one
+document, and the two sizes of request are two routes.
+1. A caller naming several documents there is refused with 400. Send
+   them to `POST {basePath}/enqueue-list`.
+2. `select_all` is refused by `/enqueue` at any value, `false` included,
+   which the old route accepted. A request for a whole collection goes
+   to the list route. Dropping the key instead would have answered
+   success for a run over the one document `collection_id` carried.
+3. An access guard that answers by an explicit list of action names
+   refuses `/enqueue-list` until it adds `enqueue-list` to that list.
+   The refusal is a 403, which in the admin looks like bulk translation
+   quietly doing nothing. Guards answering a predicate are unaffected.
+The list route takes rule filters only: `{ kind: "rule", name }` is a
+question the server answers per document, while
+`{ kind: "leaves", addresses }` names the one document it was read from.
+Clients of the package: `EnqueueRequest` is replaced by
+`EnqueueDocumentRequest` and `EnqueueListRequest`, and the admin
+repository's `enqueue` by `enqueueDocument` and `enqueueList`.
+
+Refs: docs/plans/2026-11-25-one-document-or-a-list.task.md,
+* **translator:** the `@focus-reactive/payload-plugin-translator/stub` entry point
+is removed. It served an in-memory fake for developing against the plugin's
+admin and was never documented. Nothing replaces it.
+* **translator:** a project that sets `versions.drafts.localizeStatus` on a
+collection passed to the translator, together with `experimental.localizeStatus`
+at the root, no longer starts. Turn the setting off for that collection, or stop
+passing the collection to the translator. A collection whose auto-translate
+targets are all unknown to the project no longer starts either; give it a target
+the project declares, or drop `withAutoTranslate` from it.
+* the `targetSelection` option and the `TargetSelectionMode`
+type are removed — the document panel acts per locale and the collection
+panel always offers locales as checkboxes.
+* manual translations are always saved as drafts — the
+"publish after translation" checkbox is gone from the document panel; the
+popover form and its target-selection control are replaced by the panel.
+
 # @focus-reactive/payload-plugin-translator [1.0.0-next.11](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.10...@focus-reactive/payload-plugin-translator@1.0.0-next.11) (2026-11-18)
 
 
