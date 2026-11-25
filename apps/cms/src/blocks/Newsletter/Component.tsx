@@ -17,7 +17,6 @@ export const NewsletterBlockComponent: React.FC<NewsletterBlock> = ({
       inputPlaceholder={inputPlaceholder}
       buttonLabel={buttonLabel}
       disclaimer={disclaimer}
-      theme={section?.theme}
     />
   </SectionContainer>
 );

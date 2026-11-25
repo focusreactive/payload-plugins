@@ -38,7 +38,7 @@ describe("a draft read through Payload", () => {
     expect(markersAt(home, "title")).toEqual([{ ...page(site.home), path: "title" }]);
     expect(markersAt(home, "label")).toEqual([{ ...page(site.home), path: "label" }]);
     expect(markersAt(home, "seo.description")).toEqual([
-      { ...page(site.home), path: "seo.description" },
+      { ...page(site.home), multiline: true, path: "seo.description" },
     ]);
   });
 

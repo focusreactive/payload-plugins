@@ -18,11 +18,16 @@ import type { CustomPageKey } from "@/lib/config/customPages";
  * Rows of a "Buttons" list come from `buttonsField()`, which wraps this group in an array.
  */
 
+export type LinkType = "reference" | "custom" | "customPage";
+
 export type LinkAppearances = "default" | "outline" | "accent" | "ghost" | "link";
 
 export const appearanceOptions: Record<LinkAppearances, Option> = {
   default: {
-    label: { en: "Primary (solid)", es: "Primario (sólido)" },
+    label: {
+      en: "Primary (glass + glow)",
+      es: "Primario (cristal + resplandor)",
+    },
     value: "default",
   },
   outline: {
@@ -30,7 +35,10 @@ export const appearanceOptions: Record<LinkAppearances, Option> = {
     value: "outline",
   },
   accent: {
-    label: { en: "Accent (lime)", es: "Acento (lima)" },
+    label: {
+      en: "Accent (gradient)",
+      es: "Acento (degradado)",
+    },
     value: "accent",
   },
   ghost: {
@@ -54,11 +62,26 @@ export interface LinkFieldOptions {
   customPageDbName?: string;
   /** Heading above the link; `false` inside rows that already are the link (a "Buttons" row). */
   label?: GroupField["label"];
+  /** Ticks "Open in new tab" for new links (e.g. social profiles). Default: false. */
+  newTabByDefault?: boolean;
   /** Whether the destination (and the link text, when shown) must be filled in. */
   required?: boolean;
+  /**
+   * "Link to" choices, in this order. With a single choice the picker is hidden (e.g. social
+   * profiles, which are always a web address). Default: page or post, web address, built-in page.
+   */
+  types?: readonly LinkType[];
   /** Adds the "Link text" field. Off where the surrounding row already has the visible text. */
   withText?: boolean;
 }
+
+const LINK_TYPE_LABELS: Record<LinkType, Record<"en" | "es", string>> = {
+  custom: { en: "Web address (URL)", es: "Dirección web (URL)" },
+  customPage: { en: "Built-in page", es: "Página integrada" },
+  reference: { en: "Page or post", es: "Página o publicación" },
+};
+
+const ALL_LINK_TYPES: readonly LinkType[] = ["reference", "custom", "customPage"];
 
 const isType = (type: string) => (_: unknown, siblingData: { type?: string } | undefined) =>
   siblingData?.type === type;
@@ -68,29 +91,31 @@ export function link({
   condition,
   customPageDbName,
   label = { en: "Link", es: "Enlace" },
+  newTabByDefault = false,
   required = true,
+  types = ALL_LINK_TYPES,
   withText = true,
 }: LinkFieldOptions = {}): GroupField {
-  const destination: Field[] = [
-    {
+  const destinationByType: Record<LinkType, Field> = {
+    reference: {
       admin: { condition: isType("reference") },
-      label: { en: "Page or post", es: "Página o publicación" },
+      label: LINK_TYPE_LABELS.reference,
       name: "reference",
       relationTo: ["page", BLOG_CONFIG.collection],
       required,
       type: "relationship",
     },
-    {
+    custom: {
       admin: { condition: isType("custom"), placeholder: "https://" },
-      label: { en: "Web address (URL)", es: "Dirección web (URL)" },
+      label: LINK_TYPE_LABELS.custom,
       name: "url",
       required,
       type: "text",
     },
-    {
+    customPage: {
       admin: { condition: isType("customPage") },
       ...(customPageDbName ? { dbName: customPageDbName } : {}),
-      label: { en: "Built-in page", es: "Página integrada" },
+      label: LINK_TYPE_LABELS.customPage,
       name: "customPage",
       options: Object.entries(CUSTOM_PAGES_CONFIG).map(([key, entry]) => ({
         label: entry.label,
@@ -99,7 +124,8 @@ export function link({
       required,
       type: "select",
     },
-  ];
+  };
+  const destination = types.map((type) => destinationByType[type]);
 
   const sideBySide = withText && appearances !== false ? { width: "50%" } : {};
 
@@ -137,19 +163,16 @@ export function link({
       : [...text, ...style];
 
   const linkTo: Field = {
-    admin: { layout: "horizontal" },
-    defaultValue: "reference",
+    admin: { hidden: types.length === 1, layout: "horizontal" },
+    defaultValue: types[0],
     label: { en: "Link to", es: "Enlazar a" },
     name: "type",
-    options: [
-      { label: { en: "Page or post", es: "Página o publicación" }, value: "reference" },
-      { label: { en: "Web address (URL)", es: "Dirección web (URL)" }, value: "custom" },
-      { label: { en: "Built-in page", es: "Página integrada" }, value: "customPage" },
-    ],
+    options: types.map((type) => ({ label: LINK_TYPE_LABELS[type], value: type })),
     type: "radio",
   };
 
   const newTab: Field = {
+    ...(newTabByDefault ? { defaultValue: true } : {}),
     label: { en: "Open in new tab", es: "Abrir en una nueva pestaña" },
     name: "newTab",
     type: "checkbox",

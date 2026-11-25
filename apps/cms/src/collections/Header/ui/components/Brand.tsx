@@ -11,17 +11,17 @@ interface BrandProps {
 function toLogoMediaProps(logo: PreparedMedia): MediaProps {
   const imageProps = {
     ...logo.imageProps,
-    className: "w-auto h-7.5",
+    className: "h-6 w-auto",
   };
 
   return logo.data.kind === "video"
     ? { ...logo.data, visualEditing: logo.visualEditing, imageProps }
-    : { ...logo.data, visualEditing: logo.visualEditing, imageProps, width: 120, height: 30 };
+    : { ...logo.data, visualEditing: logo.visualEditing, imageProps, width: 128, height: 24 };
 }
 
 export function Brand({ brand }: BrandProps) {
   return (
-    <NextLink href={brand.href}>
+    <NextLink href={brand.href} aria-label={brand.label} className="inline-flex items-center">
       {brand.logo && <Media {...toLogoMediaProps(brand.logo)} />}
     </NextLink>
   );

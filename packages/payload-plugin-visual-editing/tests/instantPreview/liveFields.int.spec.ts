@@ -105,6 +105,24 @@ describe("the live fields of a preview page", () => {
     liveFields = createLiveFields(writeText);
   });
 
+  it("holds the form of a document once the admin sent a value of one of its fields", () => {
+    render("Hello");
+    const otherPage = { ...page, docId: "2" };
+
+    expect(liveFields.holdsFormOf(page)).toBe(false);
+
+    liveFields.apply(snapshot(field("Hello")));
+
+    expect(liveFields.holdsFormOf(page)).toBe(true);
+    expect(liveFields.holdsFormOf(otherPage)).toBe(false);
+  });
+
+  it("holds no form of a document whose values are of fields the page does not show", () => {
+    liveFields.apply(snapshot(field("Hello")));
+
+    expect(liveFields.holdsFormOf(page)).toBe(false);
+  });
+
   it("rewrites every node rendering the field", () => {
     const headline = render("Hell");
     const breadcrumb = render("Hell");

@@ -35,26 +35,26 @@ import { prepareCardsGridSettings } from "./gridSettings";
 import type { CardIcon } from "./icons";
 
 const ICON_MAP: Record<CardIcon, React.ReactElement> = {
-  activity: <Activity size={22} strokeWidth={1.8} />,
-  "bar-chart-3": <BarChart3 size={22} strokeWidth={1.8} />,
-  bell: <Bell size={22} strokeWidth={1.8} />,
-  calendar: <Calendar size={22} strokeWidth={1.8} />,
-  clock: <Clock size={22} strokeWidth={1.8} />,
-  compass: <Compass size={22} strokeWidth={1.8} />,
-  "file-text": <FileText size={22} strokeWidth={1.8} />,
-  gauge: <Gauge size={22} strokeWidth={1.8} />,
-  "git-branch": <GitBranch size={22} strokeWidth={1.8} />,
-  layers: <Layers size={22} strokeWidth={1.8} />,
-  "layout-grid": <LayoutGrid size={22} strokeWidth={1.8} />,
-  map: <Map size={22} strokeWidth={1.8} />,
-  plug: <Plug size={22} strokeWidth={1.8} />,
-  shield: <Shield size={22} strokeWidth={1.8} />,
-  sparkles: <Sparkles size={22} strokeWidth={1.8} />,
-  target: <Target size={22} strokeWidth={1.8} />,
-  users: <Users size={22} strokeWidth={1.8} />,
-  "wand-2": <Wand2 size={22} strokeWidth={1.8} />,
-  workflow: <Workflow size={22} strokeWidth={1.8} />,
-  zap: <Zap size={22} strokeWidth={1.8} />,
+  activity: <Activity size={32} strokeWidth={1.5} />,
+  "bar-chart-3": <BarChart3 size={32} strokeWidth={1.5} />,
+  bell: <Bell size={32} strokeWidth={1.5} />,
+  calendar: <Calendar size={32} strokeWidth={1.5} />,
+  clock: <Clock size={32} strokeWidth={1.5} />,
+  compass: <Compass size={32} strokeWidth={1.5} />,
+  "file-text": <FileText size={32} strokeWidth={1.5} />,
+  gauge: <Gauge size={32} strokeWidth={1.5} />,
+  "git-branch": <GitBranch size={32} strokeWidth={1.5} />,
+  layers: <Layers size={32} strokeWidth={1.5} />,
+  "layout-grid": <LayoutGrid size={32} strokeWidth={1.5} />,
+  map: <Map size={32} strokeWidth={1.5} />,
+  plug: <Plug size={32} strokeWidth={1.5} />,
+  shield: <Shield size={32} strokeWidth={1.5} />,
+  sparkles: <Sparkles size={32} strokeWidth={1.5} />,
+  target: <Target size={32} strokeWidth={1.5} />,
+  users: <Users size={32} strokeWidth={1.5} />,
+  "wand-2": <Wand2 size={32} strokeWidth={1.5} />,
+  workflow: <Workflow size={32} strokeWidth={1.5} />,
+  zap: <Zap size={32} strokeWidth={1.5} />,
 };
 
 export async function CardsGridBlockComponent({
@@ -81,7 +81,7 @@ export async function CardsGridBlockComponent({
 
   return (
     <SectionContainer sectionData={{ ...section, id }}>
-      <SectionHeading {...heading} className="mb-12" />
+      <SectionHeading {...heading} align="split" className="mb-sectionGap" />
       <CardsGrid items={cards} {...prepareCardsGridSettings(settings)} />
     </SectionContainer>
   );

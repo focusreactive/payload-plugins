@@ -72,6 +72,7 @@ export type VisualEditingPluginConfig = {
    *  `'explicit'` enriches only reads that pass `context: { visualEditing: true }`. */
   enrichment?: Enrichment;
   instantPreview?: boolean;
+  inlineEditing?: boolean;
   renderHtml?: RenderHtml;
   readWholeDocument?: boolean;
 };
@@ -87,9 +88,11 @@ export const visualEditingPlugin =
     const excludeValues = pluginConfig.excludeValues ?? defaultExcludeValues;
     const enrichment = pluginConfig.enrichment ?? "auto";
     const instantPreview = pluginConfig.instantPreview ?? false;
+    const inlineEditing = instantPreview && (pluginConfig.inlineEditing ?? false);
     const excludeFieldNames = pluginConfig.excludeFieldNames ?? [];
     const documentControlsOptions = {
       excludeFieldNames,
+      inlineEditing,
       instantPreview,
       rootLivePreview: config.admin?.livePreview,
     };
@@ -114,6 +117,7 @@ export const visualEditingPlugin =
         ? [
             ...(config.endpoints ?? []),
             ...visualEditingEndpoints({
+              inlineEditing,
               readWholeDocument: pluginConfig.readWholeDocument,
               renderHtml: pluginConfig.renderHtml,
             }),

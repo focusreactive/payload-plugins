@@ -20,7 +20,6 @@ export type TargetRegistryCtx = {
   adminOrigin: string;
   adminBasePath: string;
   locale?: string;
-  mode: "always" | "hover";
 };
 
 export interface TargetRegistry {

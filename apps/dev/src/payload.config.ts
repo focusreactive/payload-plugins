@@ -12,6 +12,7 @@ import {
   fieldLevel,
   withAutoTranslate,
 } from "@focus-reactive/payload-plugin-translator";
+import { auditLogPlugin } from "@focus-reactive/payload-plugin-audit-log";
 import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
 import { seoPlugin } from "@focus-reactive/payload-plugin-seo";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
@@ -37,6 +38,9 @@ const baseDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default buildConfig({
   admin: {
+    components: {
+      providers: ["/lib/seo/SeoExtractorRegistrar"],
+    },
     importMap: {
       baseDir,
     },
@@ -163,8 +167,8 @@ export default buildConfig({
             seoTitle: "seoTitle",
             metaDescription: "metaDescription",
             slug: "slug",
-            content: "sections",
           },
+          extractContentPath: "@/lib/seo/extractPageContent#default",
         },
       ],
       site: {
@@ -174,6 +178,7 @@ export default buildConfig({
       supportedLocales: ["en", "de", "fr", "es"],
       keyphraseIndex: false,
     }),
+    auditLogPlugin(),
   ],
   secret: process.env.PAYLOAD_SECRET || "",
   serverURL: process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4040",

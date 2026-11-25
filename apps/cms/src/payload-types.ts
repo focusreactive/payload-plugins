@@ -86,6 +86,7 @@ export interface Config {
     'comment-reads': CommentRead;
     'ab-experiments': AbExperiment;
     'payload-mcp-api-keys': PayloadMcpApiKey;
+    'audit-events': AuditEvent;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-folders': FolderInterface;
@@ -117,6 +118,7 @@ export interface Config {
     'comment-reads': CommentReadsSelect<false> | CommentReadsSelect<true>;
     'ab-experiments': AbExperimentsSelect<false> | AbExperimentsSelect<true>;
     'payload-mcp-api-keys': PayloadMcpApiKeysSelect<false> | PayloadMcpApiKeysSelect<true>;
+    'audit-events': AuditEventsSelect<false> | AuditEventsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-folders': PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
@@ -616,7 +618,7 @@ export interface ContentBlock {
         id?: string | null;
       }[]
     | null;
-  layout: 'image-text' | 'text-image';
+  layout: 'stacked' | 'image-text' | 'text-image';
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
     maxWidth?: ('none' | 'base') | null;
@@ -706,6 +708,9 @@ export interface TestimonialsListBlock {
     | null;
   showRating?: boolean | null;
   showAvatar?: boolean | null;
+  /**
+   * 0 turns automatic sliding off.
+   */
   duration?: number | null;
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
@@ -803,7 +808,7 @@ export interface CardsGridBlock {
   columns?: ('1' | '2' | '3' | '4') | null;
   alignVariant?: ('left' | 'center' | 'right') | null;
   rounded?: ('none' | 'large') | null;
-  backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
+  backgroundColor?: ('none' | 'light-gray' | 'dark' | 'dark-gray' | 'gradient-2') | null;
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
     maxWidth?: ('none' | 'base') | null;
@@ -1168,6 +1173,20 @@ export interface Footer {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Icons in the bottom-right corner of the footer.
+   */
+  socialLinks?:
+    | {
+        platform: 'instagram' | 'x' | 'facebook' | 'youtube' | 'github' | 'tiktok' | 'linkedin';
+        link?: {
+          type?: 'custom' | null;
+          url?: string | null;
+          newTab?: boolean | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
   copyrightText?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -1436,7 +1455,7 @@ export interface Preset {
               id?: string | null;
             }[]
           | null;
-        layout: 'image-text' | 'text-image';
+        layout: 'stacked' | 'image-text' | 'text-image';
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
           maxWidth?: ('none' | 'base') | null;
@@ -1506,6 +1525,9 @@ export interface Preset {
           | null;
         showRating?: boolean | null;
         showAvatar?: boolean | null;
+        /**
+         * 0 turns automatic sliding off.
+         */
         duration?: number | null;
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
@@ -1584,7 +1606,7 @@ export interface Preset {
         columns?: ('1' | '2' | '3' | '4') | null;
         alignVariant?: ('left' | 'center' | 'right') | null;
         rounded?: ('none' | 'large') | null;
-        backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
+        backgroundColor?: ('none' | 'light-gray' | 'dark' | 'dark-gray' | 'gradient-2') | null;
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
           maxWidth?: ('none' | 'base') | null;
@@ -2112,6 +2134,66 @@ export interface PayloadMcpApiKey {
   apiKeyIndex?: string | null;
   hasAPIKey?: boolean | null;
   collection: 'payload-mcp-api-keys';
+}
+/**
+ * Read-only journal of who changed what and when.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-events".
+ */
+export interface AuditEvent {
+  id: number;
+  occurredAt: string;
+  action: string;
+  status?: ('success' | 'failure') | null;
+  actor: {
+    type: 'user' | 'api_key' | 'agent' | 'system' | 'anonymous';
+    docId?: string | null;
+    collection?: string | null;
+    label?: string | null;
+    source?: ('context' | 'als' | 'auth' | 'inferred' | 'plugin') | null;
+  };
+  onBehalfOf?: {
+    collection?: string | null;
+    docId?: string | null;
+    label?: string | null;
+  };
+  agent?: {
+    keyId?: string | null;
+    name?: string | null;
+    model?: string | null;
+    tool?: string | null;
+  };
+  via?: ('admin' | 'rest' | 'graphql' | 'local' | 'mcp' | 'job') | null;
+  target?: {
+    kind?: ('collection' | 'global' | 'auth' | 'audit' | 'system') | null;
+    slug?: string | null;
+    docId?: string | null;
+    label?: string | null;
+    locale?: string | null;
+  };
+  changes?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  overrideAccess?: boolean | null;
+  requestId?: string | null;
+  ip?: string | null;
+  userAgent?: string | null;
+  metadata?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3217,6 +3299,19 @@ export interface FooterSelect<T extends boolean = true> {
             };
         id?: T;
       };
+  socialLinks?:
+    | T
+    | {
+        platform?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              url?: T;
+              newTab?: T;
+            };
+        id?: T;
+      };
   copyrightText?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -3891,6 +3986,55 @@ export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-events_select".
+ */
+export interface AuditEventsSelect<T extends boolean = true> {
+  occurredAt?: T;
+  action?: T;
+  status?: T;
+  actor?:
+    | T
+    | {
+        type?: T;
+        docId?: T;
+        collection?: T;
+        label?: T;
+        source?: T;
+      };
+  onBehalfOf?:
+    | T
+    | {
+        collection?: T;
+        docId?: T;
+        label?: T;
+      };
+  agent?:
+    | T
+    | {
+        keyId?: T;
+        name?: T;
+        model?: T;
+        tool?: T;
+      };
+  via?: T;
+  target?:
+    | T
+    | {
+        kind?: T;
+        slug?: T;
+        docId?: T;
+        label?: T;
+        locale?: T;
+      };
+  changes?: T;
+  overrideAccess?: T;
+  requestId?: T;
+  ip?: T;
+  userAgent?: T;
+  metadata?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -4241,7 +4385,7 @@ export interface CardsGridInlineBlock {
   columns?: ('1' | '2' | '3' | '4') | null;
   alignVariant?: ('left' | 'center' | 'right') | null;
   rounded?: ('none' | 'large') | null;
-  backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
+  backgroundColor?: ('none' | 'light-gray' | 'dark' | 'dark-gray' | 'gradient-2') | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'cardsGridInline';

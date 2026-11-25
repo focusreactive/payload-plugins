@@ -4,9 +4,10 @@ import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { imageField } from "@/lib/fields/imageField";
 import { buttonsField } from "@/lib/fields/link";
+import type { LinkAppearances } from "@/lib/fields/link";
 import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 
-const defaultHeroLinkItem = (label: string, appearance: "accent" | "outline") => ({
+const defaultHeroLinkItem = (label: string, appearance: LinkAppearances) => ({
   link: {
     appearance,
     label,
@@ -27,7 +28,10 @@ export const heroFields: Field[] = [
     label: { en: "Layout", es: "Diseño" },
     name: "variant",
     options: [
-      { label: { en: "Text with image", es: "Texto con imagen" }, value: "showcase" },
+      {
+        label: { en: "Text over a background image", es: "Texto sobre una imagen de fondo" },
+        value: "showcase",
+      },
       {
         label: { en: "Centered text, no image", es: "Texto centrado, sin imagen" },
         value: "centered",
@@ -37,7 +41,8 @@ export const heroFields: Field[] = [
     type: "select",
   },
   {
-    ...imageField("image", { required: false, withDefaultMedia: true }),
+    // The hero fills its background with the image, so a shape choice would change nothing.
+    ...imageField("image", { hideAspectRatio: true, required: false, withDefaultMedia: true }),
     admin: {
       condition: (_, siblingData) => siblingData?.variant !== "centered",
     },
@@ -45,12 +50,12 @@ export const heroFields: Field[] = [
   buttonsField({
     defaultValue: createLocalizedDefault({
       en: [
-        defaultHeroLinkItem("Start free", "accent"),
-        defaultHeroLinkItem("Watch the tour", "outline"),
+        defaultHeroLinkItem("Start free", "default"),
+        defaultHeroLinkItem("Watch the tour", "link"),
       ],
       es: [
-        defaultHeroLinkItem("Comenzar gratis", "accent"),
-        defaultHeroLinkItem("Ver el tour", "outline"),
+        defaultHeroLinkItem("Comenzar gratis", "default"),
+        defaultHeroLinkItem("Ver el tour", "link"),
       ],
     }),
     maxRows: 2,

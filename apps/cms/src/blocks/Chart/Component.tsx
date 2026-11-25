@@ -21,7 +21,7 @@ export const ChartBlockComponent: React.FC<ChartBlock> = ({
 
   return (
     <SectionContainer sectionData={{ ...section, id }}>
-      <SectionHeading {...heading} className="mb-12" />
+      <SectionHeading {...heading} align="center" className="mb-sectionGap" />
       <Chart title={title} subtitle={subtitle} ranges={cleanRanges} />
     </SectionContainer>
   );

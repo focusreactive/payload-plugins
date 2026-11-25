@@ -7,8 +7,8 @@ import { buttonsField } from "@/lib/fields/link";
 
 const fields: Field[] = [
   sectionHeadingField({
-    eyebrow: { en: "Get started", es: "Empieza ahora" },
-    title: { en: "Start shipping in rhythm.", es: "Empieza a publicar con ritmo." },
+    title: { en: "Get started", es: "Empieza ahora" },
+    description: { en: "Start shipping in rhythm.", es: "Empieza a publicar con ritmo." },
   }),
   buttonsField({ maxRows: 2, minRows: 1 }),
 ];

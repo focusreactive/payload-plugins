@@ -7,13 +7,18 @@ export const sectionFields: GroupField = {
       fields: [
         {
           admin: { width: "50%" },
-          label: { en: "Color scheme", es: "Esquema de color" },
+          label: { en: "Section look", es: "Aspecto de la sección" },
           name: "theme",
           options: [
-            { label: { en: "Light", es: "Claro" }, value: "light" },
-            { label: { en: "Dark", es: "Oscuro" }, value: "dark" },
-            { label: { en: "Light gray", es: "Gris claro" }, value: "light-gray" },
-            { label: { en: "Dark gray", es: "Gris oscuro" }, value: "dark-gray" },
+            // The site is dark-only: the stored values are kept, but each one now selects a
+            // surface treatment instead of a light/dark palette.
+            { label: { en: "Black", es: "Negro" }, value: "light" },
+            { label: { en: "Soft black", es: "Negro suave" }, value: "dark" },
+            { label: { en: "Glass panel", es: "Panel de cristal" }, value: "light-gray" },
+            {
+              label: { en: "Glass panel with glow", es: "Panel de cristal con brillo" },
+              value: "dark-gray",
+            },
           ],
           type: "select",
         },

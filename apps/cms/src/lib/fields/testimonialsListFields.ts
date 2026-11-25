@@ -53,13 +53,17 @@ export const testimonialsListLookFields: Field[] = [
   },
   {
     admin: {
+      description: {
+        en: "0 turns automatic sliding off.",
+        es: "0 desactiva el avance automático.",
+      },
       placeholder: "60",
       width: "50%",
     },
     defaultValue: 60,
     label: {
-      en: "Scroll speed (seconds per full loop)",
-      es: "Velocidad de desplazamiento (segundos por vuelta)",
+      en: "Auto-advance (seconds for a full round)",
+      es: "Avance automático (segundos por vuelta completa)",
     },
     name: "duration",
     type: "number",

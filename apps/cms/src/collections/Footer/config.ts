@@ -4,6 +4,7 @@ import { anyone, or, user, superAdmin } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { link, linkListRowLabel } from "@/lib/fields/link";
+import { SOCIAL_PLATFORMS, SOCIAL_PLATFORM_LABELS } from "@/components/SocialIcon/platforms";
 import {
   createLivePreviewEditComponents,
   createLivePreviewVersions,
@@ -176,9 +177,41 @@ export const Footer: CollectionConfig<"footer"> = {
       type: "array",
     },
     {
+      admin: {
+        components: { RowLabel: "@/components/admin/RowLabel#RowLabelSocial" },
+        description: {
+          en: "Icons in the bottom-right corner of the footer.",
+          es: "Iconos en la esquina inferior derecha del pie de página.",
+        },
+        initCollapsed: true,
+      },
+      fields: [
+        {
+          label: { en: "Platform", es: "Plataforma" },
+          name: "platform",
+          options: SOCIAL_PLATFORMS.map((platform) => ({
+            label: SOCIAL_PLATFORM_LABELS[platform],
+            value: platform,
+          })),
+          required: true,
+          type: "select",
+        },
+        // A profile is always a web address, opened in a new tab unless the editor unticks it.
+        link({ label: false, newTabByDefault: true, types: ["custom"], withText: false }),
+      ],
+      label: { en: "Social links", es: "Redes sociales" },
+      labels: {
+        plural: { en: "Social links", es: "Redes sociales" },
+        singular: { en: "Social link", es: "Red social" },
+      },
+      maxRows: 8,
+      name: "socialLinks",
+      type: "array",
+    },
+    {
       defaultValue: createLocalizedDefault({
-        en: "© 2026 Cadence Labs, Inc.",
-        es: "© 2026 Cadence Labs, Inc.",
+        en: "© 2026 Cadence (The Netherlands)",
+        es: "© 2026 Cadence (Países Bajos)",
       }),
       label: { en: "Copyright line", es: "Texto de copyright" },
       localized: true,

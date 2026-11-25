@@ -4,53 +4,54 @@
 
 /* ──────────────── Tier 1: primitives ──────────────── */
 @theme {
-  --font-display: var(--font-newsreader, "Times New Roman"), Georgia, serif;
-  --font-sans: var(--font-archivo, ui-sans-serif), system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-inter, ui-sans-serif), system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-inter, ui-sans-serif), system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-ibm-plex-mono, ui-monospace), "SF Mono", Menlo, monospace;
 
+  /* Neutrals */
   --color-white: #ffffff;
-  --color-slate-50: #eef2f3;
-  --color-slate-100: #dde6e7;
-  --color-slate-200: #e1e8e9;
-  --color-slate-300: #d3dedf;
-  --color-slate-400: #8fa3a1;
-  --color-slate-450: #9ab0ad;
-  --color-slate-500: #5a6a6b;
+  --color-black: #000000;
+  --color-ink-950: #0a0a0a;
+  --color-ink-900: #121212;
+  --color-ink-800: #1c1c1c;
 
-  --color-ink-950: #0a1314;
-  --color-deep-950: #08100f;
-  --color-deep-900: #11201d;
-  --color-deep-850: #16241f;
-  --color-pine-950: #17211f;
-  --color-pine-900: #212e2b;
-  --color-pine-850: #1b2724;
+  /* Translucent white ladder — every glass surface, hairline and muted text */
+  --color-white-2: rgba(255, 255, 255, 0.02);
+  --color-white-5: rgba(255, 255, 255, 0.05);
+  --color-white-10: rgba(255, 255, 255, 0.1);
+  --color-white-20: rgba(255, 255, 255, 0.2);
+  --color-white-40: rgba(255, 255, 255, 0.4);
+  --color-white-50: rgba(255, 255, 255, 0.5);
+  --color-white-70: rgba(255, 255, 255, 0.7);
 
-  --color-teal-600: #0d9488;
-  --color-teal-700: #0a7268;
-  --color-teal-400: #2dd4bf;
-  --color-teal-300: #5fe3d2;
-  --color-teal-soft-light: #d6efeb;
-  --color-teal-soft-dark: #103b35;
-  --color-teal-soft-pine: #1d3a35;
+  /* Brand */
+  --color-violet-600: #5745dc;
+  --color-violet-500: #6f5ff0;
+  --color-indigo-700: #3a1fa8;
+  --color-purple-600: #7b2bd6;
+  --color-magenta-500: #db51e1;
+  --color-magenta-400: #e57be9;
+  --color-plum-600: #812285;
+  --color-orange-400: #e19d65;
 
-  --color-lime-400: #d8ff3a;
-  --color-lime-500: #c6ec33;
+  --color-magenta-20: rgba(219, 81, 225, 0.2);
+  --color-magenta-35: rgba(219, 81, 225, 0.35);
+  --color-magenta-40: rgba(219, 81, 225, 0.4);
+  --color-plum-20: rgba(129, 34, 133, 0.2);
+  --color-plum-50: rgba(129, 34, 133, 0.5);
 
-  --color-ink-12: rgba(10, 19, 20, 0.12);
-  --color-ink-22: rgba(10, 19, 20, 0.22);
-  --color-white-11: rgba(255, 255, 255, 0.11);
-  --color-white-13: rgba(255, 255, 255, 0.13);
-  --color-white-24: rgba(255, 255, 255, 0.24);
-  --color-white-28: rgba(255, 255, 255, 0.28);
-
-  --color-cream-50: var(--color-slate-50);
-  --color-cream-100: var(--color-slate-100);
-  --color-white-10: var(--color-white-11);
-
+  /* Radii — 16 / 24 / 32 / 40 scale */
   --radius-sm: 8px;
   --radius-md: 16px;
-  --radius-lg: 28px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-2xl: 40px;
   --radius-pill: 999px;
+
+  /* Glass blur ladder */
+  --blur-glass-sm: 12px;
+  --blur-glass: 24px;
+  --blur-glass-lg: 32px;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
@@ -58,162 +59,226 @@
 
 /* ──────────────── Tier 2: semantic roles ──────────────── */
 @theme {
-  --color-background: var(--color-slate-50);
-  --color-foreground: var(--color-ink-950);
+  --color-background: var(--color-black);
+  --color-foreground: var(--color-white);
 
-  --color-surface: var(--color-white);
-  --color-surface-muted: var(--color-slate-100);
+  --color-surface: var(--color-white-5);
+  --color-surface-muted: var(--color-white-10);
+  --color-surface-solid: var(--color-ink-900);
 
-  --color-card: var(--color-white);
-  --color-card-foreground: var(--color-ink-950);
+  --color-card: var(--color-white-5);
+  --color-card-foreground: var(--color-white);
 
-  --color-popover: var(--color-white);
-  --color-popover-foreground: var(--color-ink-950);
+  --color-popover: var(--color-ink-900);
+  --color-popover-foreground: var(--color-white);
 
-  --color-primary: var(--color-teal-600);
-  --color-primary-foreground: var(--color-white);
-  --color-primary-hover: var(--color-teal-700);
-  --color-primary-soft: var(--color-teal-soft-light);
+  --color-primary: var(--color-white);
+  --color-primary-foreground: var(--color-black);
+  --color-primary-hover: var(--color-white-70);
+  --color-primary-soft: var(--color-white-10);
 
-  --color-secondary: var(--color-ink-950);
-  --color-secondary-foreground: var(--color-white);
-  --color-secondary-hover: color-mix(in srgb, var(--color-secondary) 80%, var(--color-background));
+  --color-secondary: var(--color-white);
+  --color-secondary-foreground: var(--color-black);
+  --color-secondary-hover: var(--color-white-70);
 
-  --color-muted: var(--color-slate-100);
-  --color-muted-foreground: var(--color-slate-500);
+  --color-muted: var(--color-white-5);
+  --color-muted-foreground: var(--color-white-70);
+  --color-subtle-foreground: var(--color-white-50);
+  --color-faint-foreground: var(--color-white-40);
 
-  --color-accent: var(--color-lime-400);
-  --color-accent-hover: var(--color-lime-500);
-  --color-accent-foreground: var(--color-ink-950);
+  --color-brand: var(--color-violet-600);
+  --color-brand-hover: var(--color-violet-500);
+  --color-brand-glow: var(--color-magenta-500);
 
-  --color-highlight: var(--color-primary);
+  --color-accent: var(--color-magenta-500);
+  --color-accent-hover: var(--color-magenta-400);
+  --color-accent-foreground: var(--color-white);
 
-  --color-destructive: oklch(0.577 0.245 27.325);
+  --color-highlight: var(--color-magenta-400);
+
+  --color-destructive: oklch(0.65 0.22 27);
   --color-destructive-foreground: var(--color-white);
 
-  --color-success: oklch(0.6 0.15 145);
-  --color-warning: oklch(0.75 0.15 85);
+  --color-success: oklch(0.72 0.17 150);
+  --color-warning: oklch(0.8 0.15 85);
 
-  --color-border: var(--color-ink-12);
-  --color-border-strong: var(--color-ink-22);
-  --color-input: var(--color-ink-22);
-  --color-ring: var(--color-teal-600);
+  --color-border: var(--color-white-10);
+  --color-border-strong: var(--color-white-20);
+  --color-input: var(--color-white-20);
+  --color-ring: var(--color-magenta-500);
+
+  /* Glow effects */
+  --shadow-glow-button: inset 16px -4px 24px 0 var(--color-magenta-40);
+  --shadow-glow-button-hover: inset 20px -8px 36px 0 var(--color-magenta-40);
+  --shadow-glow-tab: inset 8px -8px 24px 0 var(--color-magenta-20);
+  --shadow-glow-card: inset 16px -16px 80px 0 var(--color-magenta-35);
+  --shadow-popover: 0 32px 80px -24px rgba(0, 0, 0, 0.8);
 
   /* Prose */
   --tw-prose-headings: var(--color-foreground);
-  --tw-prose-invert-headings: var(--color-slate-50);
+  --tw-prose-invert-headings: var(--color-foreground);
 }
 
-/* ──────────────── Section theme zones ──────────────── */
+:root {
+  --gradient-brand: linear-gradient(
+    201deg,
+    var(--color-orange-400) 0%,
+    var(--color-magenta-500) 20.7%,
+    var(--color-violet-600) 100%
+  );
+  --gradient-glow: linear-gradient(
+    90deg,
+    transparent 12%,
+    var(--color-indigo-700) 30%,
+    var(--color-purple-600) 48%,
+    var(--color-plum-600) 66%,
+    transparent 86%
+  );
+  --gradient-panel: linear-gradient(180deg, var(--color-white-5) 0%, transparent 100%);
+  --glow-stripe-size: 6.25%;
+}
+
+/* ──────────────── Section theme zones ────────────────
+   The redesign is dark-only. The four section themes are surface treatments:
+   light      → base black (page default)
+   dark       → ink (slightly lifted black)
+   light-gray → glass panel
+   dark-gray  → glass panel with the striped glow behind its top edge */
 .dark-zone,
 [data-theme="dark"] {
-  --color-background: var(--color-deep-950);
-  --color-foreground: var(--color-slate-50);
-  --color-surface: var(--color-deep-900);
-  --color-surface-muted: var(--color-deep-850);
-  --color-card: var(--color-deep-900);
-  --color-card-foreground: var(--color-slate-50);
-  --color-popover: var(--color-deep-900);
-  --color-popover-foreground: var(--color-slate-50);
-  --color-primary: var(--color-teal-400);
-  --color-primary-hover: var(--color-teal-300);
-  --color-primary-soft: var(--color-teal-soft-dark);
-  --color-secondary: var(--color-slate-50);
-  --color-secondary-foreground: var(--color-ink-950);
-  --color-secondary-hover: var(--color-slate-100);
-  --color-muted: var(--color-deep-850);
-  --color-muted-foreground: var(--color-slate-400);
-  --color-border: var(--color-white-13);
-  --color-border-strong: var(--color-white-28);
-  --color-highlight: var(--color-accent);
+  --color-background: var(--color-ink-950);
 }
 
+[data-theme="light-gray"],
 [data-theme="dark-gray"] {
-  --color-background: var(--color-pine-950);
-  --color-foreground: var(--color-slate-50);
-  --color-surface: var(--color-pine-900);
-  --color-surface-muted: var(--color-pine-850);
-  --color-card: var(--color-pine-900);
-  --color-card-foreground: var(--color-slate-50);
-  --color-popover: var(--color-pine-900);
-  --color-popover-foreground: var(--color-slate-50);
-  --color-primary: var(--color-teal-400);
-  --color-primary-hover: var(--color-teal-300);
-  --color-primary-soft: var(--color-teal-soft-pine);
-  --color-secondary: var(--color-slate-50);
-  --color-secondary-foreground: var(--color-ink-950);
-  --color-secondary-hover: var(--color-slate-100);
-  --color-muted: var(--color-pine-850);
-  --color-muted-foreground: var(--color-slate-450);
-  --color-border: var(--color-white-11);
-  --color-border-strong: var(--color-white-24);
-  --color-highlight: var(--color-accent);
-}
-
-[data-theme="light-gray"] {
-  --color-background: var(--color-slate-200);
-  --color-surface-muted: var(--color-slate-300);
+  --color-background: var(--color-white-5);
 }
 
 /* ──────────────── Selection ──────────────── */
 ::selection {
-  background: var(--color-accent);
-  color: var(--color-ink-950);
+  background: var(--color-magenta-500);
+  color: var(--color-white);
 }
 
+/* ──────────────── Type scale (Inter Display) ──────────────── */
 @utility text-display-1 {
   font-family: var(--font-display);
-  font-weight: 500;
-  font-size: clamp(2.8rem, 7vw, 5.4rem);
-  line-height: 0.98;
-  letter-spacing: -0.02em;
+  font-weight: 600;
+  font-size: clamp(2.75rem, 6.12vw, 5.5rem);
+  line-height: 1;
+  letter-spacing: 0;
 }
 
 @utility text-display-2 {
   font-family: var(--font-display);
-  font-weight: 500;
-  font-size: clamp(2.2rem, 5vw, 3.6rem);
-  line-height: 1.02;
-  letter-spacing: -0.015em;
+  font-weight: 600;
+  font-size: clamp(2.5rem, 5.56vw, 5rem);
+  line-height: 1;
+  letter-spacing: 0;
 }
 
 @utility text-h-section {
   font-family: var(--font-display);
-  font-weight: 500;
-  font-size: clamp(1.9rem, 4vw, 3rem);
-  line-height: 1.05;
-  letter-spacing: -0.015em;
+  font-weight: 600;
+  font-size: clamp(2.125rem, 4.45vw, 4rem);
+  line-height: 1;
+  letter-spacing: 0;
 }
 
 @utility text-h-card {
   font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 1.5rem;
-  line-height: 1.1;
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  font-size: clamp(1.5rem, 2.23vw, 2rem);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+@utility text-h-stat {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2rem, 3.34vw, 3rem);
+  line-height: 1;
+}
+
+@utility text-h-item {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.125rem, 1.67vw, 1.5rem);
+  line-height: 1.1667;
+}
+
+@utility text-quote {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.125rem, 1.67vw, 1.5rem);
+  line-height: 1.3334;
 }
 
 @utility text-lead {
-  font-size: clamp(1.1rem, 1.6vw, 1.32rem);
-  line-height: 1.55;
+  font-size: clamp(1.125rem, 1.67vw, 1.5rem);
+  line-height: 1.3334;
 }
 
 @utility text-body-lg {
-  font-size: 1.0625rem;
-  line-height: 1.7;
+  font-size: clamp(1.0625rem, 1.39vw, 1.25rem);
+  line-height: 1.4;
+}
+
+@utility text-body {
+  font-size: 1rem;
+  line-height: 1.5;
 }
 
 @utility text-small {
-  font-size: 0.9375rem;
-  line-height: 1.55;
+  font-size: 0.875rem;
+  line-height: 1.4286;
+}
+
+@utility text-caption {
+  font-size: 0.75rem;
+  line-height: 1.3334;
 }
 
 @utility text-eyebrow {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-weight: 500;
-  font-size: 0.72rem;
-  letter-spacing: 0.16em;
+  font-size: 0.875rem;
+  line-height: 1.4286;
+  text-transform: capitalize;
+}
+
+@utility text-overline {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.875rem;
+  line-height: 1.2857;
   text-transform: uppercase;
+}
+
+/* ──────────────── Surfaces ──────────────── */
+@utility glass {
+  background-color: var(--color-white-5);
+  backdrop-filter: blur(var(--blur-glass));
+}
+
+@utility bg-brand-gradient {
+  background-image: var(--gradient-brand);
+}
+
+@utility bg-panel-gradient {
+  background-image: var(--gradient-panel);
+}
+
+/* Striped violet → magenta glow that sits behind glass panels. */
+@utility glow-stripes {
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.07) 0,
+      rgba(0, 0, 0, 0.22) var(--glow-stripe-size)
+    ),
+    var(--gradient-glow);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 42%, #000 58%, transparent 100%);
 }
 
 /* ──────────────── Custom utility ──────────────── */
@@ -221,34 +286,9 @@
   mask-image: linear-gradient(90deg, transparent, #fff 10%, #fff 90%, transparent);
 }
 
-/* ──────────────── Backdrop float keyframes (AbstractBackdrop) ──────────────── */
-@keyframes backdrop-float-a {
-  0%,
-  100% {
-    transform: translate(0, 0);
-  }
-  50% {
-    transform: translate(38px, 28px);
-  }
-}
-
-@keyframes backdrop-float-b {
-  0%,
-  100% {
-    transform: translate(0, 0);
-  }
-  50% {
-    transform: translate(-46px, 36px);
-  }
-}
-
-/* ──────────────── Showcase window slow float (Hero showcase variant) ──────────────── */
-@keyframes hero-bob {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-12px);
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
   }
 }

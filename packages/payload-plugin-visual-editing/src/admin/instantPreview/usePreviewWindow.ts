@@ -3,12 +3,17 @@ import type { LivePreviewURLType } from "payload";
 import { useLivePreviewContext } from "@payloadcms/ui";
 import { useCallback } from "react";
 
+import { isMessageFrom } from "../../shared/messageSource.js";
+
 export type PreviewWindow = {
   getFrame: () => HTMLIFrameElement | null;
   getWindow: () => Window | null;
   origin: string | null;
   post: (messages: readonly unknown[]) => void;
+  hear: (onMessage: (data: unknown) => void) => () => void;
 };
+
+const hearNothing = () => undefined;
 
 const originOf = (url: LivePreviewURLType) => {
   if (!url) return null;
@@ -44,5 +49,17 @@ export function usePreviewWindow(): PreviewWindow {
     [getWindow, origin]
   );
 
-  return { getFrame, getWindow, origin, post };
+  const hear = useCallback(
+    (onMessage: (data: unknown) => void) => {
+      if (!origin) return hearNothing;
+      const hearPreviewPage = (event: MessageEvent) => {
+        if (isMessageFrom(event, origin, getWindow())) onMessage(event.data);
+      };
+      window.addEventListener("message", hearPreviewPage);
+      return () => window.removeEventListener("message", hearPreviewPage);
+    },
+    [getWindow, origin]
+  );
+
+  return { getFrame, getWindow, hear, origin, post };
 }

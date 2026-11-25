@@ -294,26 +294,41 @@ const scrollSmoothlyIntoView = (el: HTMLElement): void => {
   }
 };
 
-const focusAndReveal = async (fieldEl: HTMLElement, walk: Walk): Promise<void> => {
+const focusAndReveal = async (
+  fieldEl: HTMLElement,
+  walk: Walk,
+  takesFocus: boolean
+): Promise<void> => {
   if (!isWhollyInView(fieldEl)) {
     scrollSmoothlyIntoView(fieldEl);
     await pause(POST_SCROLL_DELAY_MS);
   }
 
   const focusable = await focusableOf(fieldEl, walk);
-  focusable?.focus({ preventScroll: true });
+  if (takesFocus) focusable?.focus({ preventScroll: true });
   if (isOutOfView(fieldEl)) scrollSmoothlyIntoView(fieldEl);
 
   revealField(focusable ?? fieldEl);
 };
 
-export const expandAndFocus = async (
+const expandAndReveal = async (
   chain: readonly ContainerInstruction[],
-  fieldId: string | null
+  fieldId: string | null,
+  takesFocus: boolean
 ): Promise<void> => {
   const walk = startWalk(WALK_BUDGET_MS);
   const { scope } = await walkContainerChain(chain, walk);
   if (!fieldId) return;
   const fieldEl = await waitForRendered(() => findFieldElement(fieldId), fieldId, scope, walk);
-  if (fieldEl) await focusAndReveal(fieldEl, walk);
+  if (fieldEl) await focusAndReveal(fieldEl, walk, takesFocus);
 };
+
+export const expandAndFocus = (
+  chain: readonly ContainerInstruction[],
+  fieldId: string | null
+): Promise<void> => expandAndReveal(chain, fieldId, true);
+
+export const expandAndShow = (
+  chain: readonly ContainerInstruction[],
+  fieldId: string | null
+): Promise<void> => expandAndReveal(chain, fieldId, false);

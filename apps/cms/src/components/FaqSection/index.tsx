@@ -27,14 +27,18 @@ export function FaqSection({ heading, items }: FaqSectionProps) {
   const firstId = accordionItems[0]?.id ?? null;
 
   return (
-    <div className="grid grid-cols-1 items-start gap-[clamp(32px,6vw,80px)] min-[861px]:grid-cols-[0.8fr_1.2fr]">
+    <div className="grid grid-cols-1 items-start gap-x-gridGap gap-y-10 lg:grid-cols-12">
       {hasSectionHeading(heading) ? (
-        <SectionHeading {...heading} size="h-section" />
+        <SectionHeading {...heading} size="h-section" className="gap-8 lg:col-span-4" />
       ) : (
-        <div aria-hidden />
+        <div aria-hidden className="lg:col-span-4" />
       )}
-
-      <Accordion items={accordionItems} defaultOpenId={firstId} triggerHeadingLevel={3} />
+      <Accordion
+        items={accordionItems}
+        defaultOpenId={firstId}
+        triggerHeadingLevel={3}
+        className="lg:col-span-8"
+      />
     </div>
   );
 }

@@ -439,6 +439,7 @@ export default defineConfig({
         `${VISUAL_EDITING}/client/**`,
         `${VISUAL_EDITING}/shared/**`,
         `${VISUAL_EDITING}/dom/**`,
+        `${VISUAL_EDITING}/rich-text/**`,
         `${VISUAL_EDITING}/stripMarkers.ts`,
       ],
       rules: {

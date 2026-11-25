@@ -7,7 +7,7 @@ import {
   RichText as RichTextReact,
 } from "@payloadcms/richtext-lexical/react";
 import { withVisualEditingPath } from "@focus-reactive/payload-plugin-visual-editing/client";
-import { Check } from "lucide-react";
+import { Asterisk, Check, House, Link2 } from "lucide-react";
 import { Media } from "@/components/media";
 
 import { CardsGridInlineComponent } from "@/blocks/CardsGrid/InlineComponent";
@@ -30,6 +30,9 @@ type UploadNodeWithAspectRatio = DefaultNodeTypes & {
 };
 
 type NodeTypes = DefaultNodeTypes | UploadNodeWithAspectRatio;
+
+/** Highlight-list glyphs, cycled by item position (see the design's highlight panel). */
+const HIGHLIGHT_ICONS = [House, Asterisk, Link2, Check] as const;
 
 const createInternalDocToHref =
   (locale: Locale) =>
@@ -59,9 +62,12 @@ const createJsxConverters =
               return typeof fallback === "function" ? fallback(args) : null;
             }
 
+            const position = Math.max((node.value ?? 1) - 1, 0);
+            const Icon = HIGHLIGHT_ICONS[position % HIGHLIGHT_ICONS.length] ?? Check;
+
             return (
               <li>
-                <Check aria-hidden className="prose-content-check" />
+                <Icon aria-hidden strokeWidth={1.5} className="prose-content-check" />
                 {nodesToJSX({ nodes: node.children })}
               </li>
             );
@@ -91,7 +97,7 @@ const createJsxConverters =
       return (
         <Media
           {...prepared.data}
-          className={cn("my-6 overflow-hidden rounded-xl", isAuto && "w-fit")}
+          className={cn("my-6 overflow-hidden rounded-xl border border-border", isAuto && "w-fit")}
           visualEditing={prepared.visualEditing}
           imageProps={prepared.imageProps}
         />

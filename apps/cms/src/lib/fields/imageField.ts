@@ -5,8 +5,8 @@ import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 /**
  * The crops editors actually need. Stored values stay the CSS `aspect-ratio` strings the
  * frontend understands (`ImageAspectRatio`); removed ratios (9/16, 1/2, 4/1, 3/1) were migrated
- * to the nearest kept one in `20261120_123232_editor_friendly_choices`; the portrait 3/4 shape came
- * back in `20261120_134809_standard_link_field`.
+ * to the nearest kept one in `20261125_163100_editor_friendly_choices`; the portrait 3/4 shape came
+ * back in `20261125_163200_standard_link_field`.
  */
 const aspectRatioOptions = [
   { label: { en: "Wide (16:9)", es: "Panorámica (16:9)" }, value: "16/9" },
@@ -23,7 +23,14 @@ export function imageField(
     withDefaultMedia = false,
     required = true,
     withAspectRatio = true,
-  }: { withDefaultMedia?: boolean; required?: boolean; withAspectRatio?: boolean } = {}
+    hideAspectRatio = false,
+  }: {
+    withDefaultMedia?: boolean;
+    required?: boolean;
+    withAspectRatio?: boolean;
+    /** Keeps the stored shape but hides the choice, where the component draws the image its own way. */
+    hideAspectRatio?: boolean;
+  } = {}
 ): GroupField {
   const imageUpload: UploadField = {
     label: { en: "Image file", es: "Archivo de imagen" },
@@ -43,9 +50,9 @@ export function imageField(
       ? [
           {
             fields: [
-              { ...imageUpload, admin: { width: "50%" } },
+              { ...imageUpload, admin: { width: hideAspectRatio ? "100%" : "50%" } },
               {
-                admin: { width: "50%" },
+                admin: { hidden: hideAspectRatio, width: "50%" },
                 defaultValue: "1/1",
                 label: { en: "Image shape", es: "Forma de la imagen" },
                 name: "aspectRatio",

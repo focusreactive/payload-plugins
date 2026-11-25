@@ -5,8 +5,7 @@ import type {
   VeRenderedType,
 } from "../../shared/protocol.js";
 
-import { isMessageFrom } from "../../shared/messageSource.js";
-import { findAdminWindow } from "../adminWindow.js";
+import { findAdminWindow, hearTheAdmin } from "../adminWindow.js";
 import { PAGE_SHOWN_EVENT } from "../overlay/constants.js";
 import { isAnnounceRequest, isForAnotherLocale } from "./liveMessages.js";
 import { pageLoadIdOf } from "./pageLoad.js";
@@ -40,27 +39,28 @@ export function listenToAdmin<Message extends VeLiveDocument>({
   onMessage,
   read,
 }: AdminListener<Message>): () => void {
-  const handleAdminMessage = (event: MessageEvent) => {
-    const { adminOrigin, locale } = adminPage();
-    if (!isMessageFrom(event, adminOrigin, findAdminWindow(window))) return;
-    if (isAnnounceRequest(event.data)) {
-      announce();
-      return;
+  const stopHearing = hearTheAdmin(
+    window,
+    () => adminPage().adminOrigin,
+    (data) => {
+      if (isAnnounceRequest(data)) {
+        announce();
+        return;
+      }
+      const message = read(data);
+      if (message && !isForAnotherLocale(message, adminPage().locale)) onMessage(message);
     }
-    const message = read(event.data);
-    if (message && !isForAnotherLocale(message, locale)) onMessage(message);
-  };
+  );
 
   const announceRestoredPage = (event: PageTransitionEvent) => {
     if (event.persisted) announce();
   };
 
-  window.addEventListener("message", handleAdminMessage);
   window.addEventListener(PAGE_SHOWN_EVENT, announceRestoredPage);
   announce();
 
   return () => {
-    window.removeEventListener("message", handleAdminMessage);
+    stopHearing();
     window.removeEventListener(PAGE_SHOWN_EVENT, announceRestoredPage);
   };
 }

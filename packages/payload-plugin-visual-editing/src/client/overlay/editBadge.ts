@@ -1,4 +1,9 @@
 import {
+  ACTION_HIDDEN_DISPLAY,
+  ACTION_INSET_PX,
+  ACTION_SHOWN_DISPLAY,
+  ACTION_STYLES,
+  DATA_VE_ACTION_ATTR,
   DATA_VE_FOR_ATTR,
   DATA_VE_TARGET_ATTR,
   LABEL_CLASS,
@@ -10,15 +15,24 @@ import {
 } from "./constants.js";
 import { measureCovers } from "./covers.js";
 import { boxOfTarget, placeFrame } from "./frameLayer.js";
+import { rectInZoomOf, zoomOf } from "./zoom.js";
 
 type EditBadgeConfig = {
   href: string;
   clickHandler: (event: MouseEvent) => void;
 };
 
+export type BadgeAction = {
+  label: string;
+  run: (openField: () => void) => void;
+};
+
+export type ActionOf = (target: HTMLElement) => BadgeAction | null;
+
 export interface EditBadge {
   readonly labelElement: HTMLAnchorElement;
-  show(target: HTMLElement, config: EditBadgeConfig): void;
+  readonly actionElement: HTMLButtonElement;
+  show(target: HTMLElement, config: EditBadgeConfig, action?: BadgeAction | null): void;
   hide(): void;
   reposition(target: HTMLElement): void;
   dispose(): void;
@@ -94,6 +108,12 @@ const coversOutside = (target: HTMLElement): Box[] =>
     .filter(([cover]) => !cover.contains(target) && !target.contains(cover))
     .map(([, rect]) => rect);
 
+const insetInView = (start: number, size: number, actionSize: number): number => {
+  const hiddenBeforeTheView = Math.max(0, -start);
+  const lastInset = size - actionSize - ACTION_INSET_PX;
+  return Math.max(ACTION_INSET_PX, Math.min(hiddenBeforeTheView + ACTION_INSET_PX, lastInset));
+};
+
 export function createEditBadge(): EditBadge {
   const layer = document.createElement("div");
   layer.dataset.veLayer = "true";
@@ -132,17 +152,46 @@ export function createEditBadge(): EditBadge {
   label.rel = "noopener noreferrer";
   Object.assign(label.style, LABEL_STYLES, { right: "auto", transform: "none" });
 
+  const action = document.createElement("button");
+  action.type = "button";
+  action.setAttribute(DATA_VE_ACTION_ATTR, "");
+  Object.assign(action.style, ACTION_STYLES);
+
+  anchor.append(action);
   layer.append(anchor, label);
   document.body.append(layer);
 
   let currentClickHandler: ((event: MouseEvent) => void) | null = null;
+  let offeredAction: BadgeAction | null = null;
+  let openFieldOfTarget: ((event: MouseEvent) => void) | null = null;
+
+  const offer = (offered: BadgeAction | null) => {
+    offeredAction = offered;
+    action.textContent = offered?.label ?? "";
+    action.style.display = offered ? ACTION_SHOWN_DISPLAY : ACTION_HIDDEN_DISPLAY;
+  };
+
+  const runOfferedAction = (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const openField = openFieldOfTarget;
+    offeredAction?.run(() => openField?.(event));
+  };
+  action.addEventListener("click", runOfferedAction);
+
+  const keepActionInView = ({ height, left, top, width }: DOMRect) => {
+    action.style.left = `${insetInView(left, width, action.offsetWidth)}px`;
+    action.style.top = `${insetInView(top, height, action.offsetHeight)}px`;
+  };
 
   const reposition = (target: HTMLElement) => {
     placeFrame(anchor, target, FRAME_ACTIVE_WIDTH);
     const rect = boxOfTarget(target);
+    keepActionInView(rectInZoomOf(anchor, rect));
     const hidden = rect.width === 0 && rect.height === 0;
     label.style.display = hidden ? "none" : "inline-flex";
     if (hidden) return;
+    // Placed in viewport pixels, as measured; a page with CSS zoom draws the layer zoomed too.
     const size = label.getBoundingClientRect();
     const { left, side, top } = placeBadge({
       badge: { height: size.height, width: size.width },
@@ -151,7 +200,8 @@ export function createEditBadge(): EditBadge {
       target: rect,
       viewport: { height: window.innerHeight, width: window.innerWidth },
     });
-    label.style.transform = `translate(${left}px, ${top}px)`;
+    const zoom = zoomOf(label);
+    label.style.transform = `translate(${left / zoom}px, ${top / zoom}px)`;
     label.style.borderRadius = RADIUS_BY_SIDE[side];
     anchor.style.borderTopRightRadius = side === "above" ? "0" : FRAME_RADIUS;
   };
@@ -160,8 +210,13 @@ export function createEditBadge(): EditBadge {
     get labelElement() {
       return label;
     },
-    show(target, config) {
+    get actionElement() {
+      return action;
+    },
+    show(target, config, offered = null) {
+      offer(offered);
       reposition(target);
+      openFieldOfTarget = config.clickHandler;
       label.href = config.href;
       label.setAttribute(DATA_VE_FOR_ATTR, target.getAttribute(DATA_VE_TARGET_ATTR) ?? "");
       if (currentClickHandler) label.removeEventListener("click", currentClickHandler);
@@ -171,6 +226,8 @@ export function createEditBadge(): EditBadge {
     },
     hide() {
       layer.style.visibility = "hidden";
+      offer(null);
+      openFieldOfTarget = null;
       if (currentClickHandler) {
         label.removeEventListener("click", currentClickHandler);
         currentClickHandler = null;
@@ -182,6 +239,7 @@ export function createEditBadge(): EditBadge {
         label.removeEventListener("click", currentClickHandler);
         currentClickHandler = null;
       }
+      action.removeEventListener("click", runOfferedAction);
       layer.remove();
     },
   };

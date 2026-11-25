@@ -37,16 +37,23 @@ const fields: Field[] = [
   buttonsField({ maxRows: 2 }),
 ];
 
-/** Which side the image sits on. */
+/** Where the image sits: above the text, or beside it on either side. */
 const lookFields: Field[] = [
   {
-    defaultValue: "image-text",
+    defaultValue: "stacked",
     label: {
       en: "Image position",
       es: "Posición de la imagen",
     },
     name: "layout",
     options: [
+      {
+        label: {
+          en: "Wide image above the text",
+          es: "Imagen ancha encima del texto",
+        },
+        value: "stacked",
+      },
       {
         label: {
           en: "Image left, text right",

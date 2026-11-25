@@ -66,4 +66,39 @@ export const LABEL_STYLES: Partial<CSSStyleDeclaration> = {
   fontVariant: "normal",
 };
 
+export const DATA_VE_ACTION_ATTR = "data-ve-action";
+
+export const ACTION_INSET_PX = 8;
+
+const ACTION_INSET = `${ACTION_INSET_PX}px`;
+
+export const ACTION_SHOWN_DISPLAY = "inline-flex";
+export const ACTION_HIDDEN_DISPLAY = "none";
+
+export const ACTION_STYLES: Partial<CSSStyleDeclaration> = {
+  position: "absolute",
+  top: ACTION_INSET,
+  left: ACTION_INSET,
+  display: ACTION_HIDDEN_DISPLAY,
+  alignItems: "center",
+  margin: "0",
+  background: ACCENT_STRONG,
+  color: ACCENT_TEXT,
+  padding: "4px 8px",
+  fontSize: "12px",
+  fontFamily: FONT_STACK,
+  fontWeight: "500",
+  lineHeight: "16px",
+  letterSpacing: "0",
+  textTransform: "none",
+  border: "0",
+  borderRadius: FRAME_RADIUS,
+  boxShadow: "0 1px 2px rgba(0, 0, 0, 0.12)",
+  cursor: "pointer",
+  pointerEvents: "auto",
+  whiteSpace: "nowrap",
+  fontStyle: "normal",
+  fontVariant: "normal",
+};
+
 export const PAGE_SHOWN_EVENT = "pageshow";

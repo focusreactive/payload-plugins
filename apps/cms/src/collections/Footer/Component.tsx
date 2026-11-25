@@ -1,5 +1,5 @@
 import { Footer as SharedFooter } from "./ui";
-import type { FooterLink, FooterLinkGroup, IFooterProps } from "./ui/types";
+import type { FooterLink, FooterLinkGroup, FooterSocialLink, IFooterProps } from "./ui/types";
 import React from "react";
 
 import { resolveLocale } from "@/lib/utils/resolveLocale";
@@ -60,6 +60,11 @@ export async function Footer({ data: rawData, editable = false }: Props) {
     return resolved ? [resolved] : [];
   });
 
+  const socialLinks: FooterSocialLink[] = (data.socialLinks ?? []).flatMap((entry) => {
+    const href = entry.link ? prepareLinkProps(entry.link, locale).href : undefined;
+    return href ? [{ href, newTab: entry.link?.newTab ?? false, platform: entry.platform }] : [];
+  });
+
   const props: IFooterProps = {
     brand: {
       href: "/",
@@ -70,6 +75,7 @@ export async function Footer({ data: rawData, editable = false }: Props) {
     description: data.description ?? undefined,
     legalLinks,
     linkGroups,
+    socialLinks,
   };
 
   return <SharedFooter {...props} />;

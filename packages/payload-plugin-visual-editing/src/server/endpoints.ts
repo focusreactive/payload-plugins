@@ -4,7 +4,10 @@ import type { LiveRichTextField } from "../shared/protocol.js";
 import type { UnsavedRichTextDepth } from "./unsavedRichText/readAsUser.js";
 
 import { readUnsavedRichTextFor } from "../readUnsavedRichText.js";
-import { readJsonBody } from "./unsavedRichText/jsonBody.js";
+import { bodyOf, json, jsonBodyOf } from "./endpointJson.js";
+import { fieldEditEndpoint } from "./fieldEdit/fieldEditEndpoint.js";
+import { mediaOptionsEndpoint } from "./fieldEdit/mediaOptionsEndpoint.js";
+import { richTextValueEndpoint } from "./fieldEdit/richTextValueEndpoint.js";
 import { isPlainObject } from "../shared/plainObject.js";
 import { VE_PREVIEW_GRANT_PATH, VE_UNSAVED_RICH_TEXT_PATH } from "../shared/protocol.js";
 import { documentAddressOf, isVeDocument, veDocumentOf } from "../shared/veDocument.js";
@@ -19,17 +22,13 @@ export type RenderHtml = (args: {
 
 export type UnsavedRichTextEndpointOptions = {
   depth?: UnsavedRichTextDepth;
+  inlineEditing?: boolean;
   readWholeDocument?: boolean;
   renderHtml?: RenderHtml;
 };
 
-const MAX_BODY_BYTES = 4 * 1024 * 1024;
 export const ENDPOINT_READ_TIME_LIMIT_MS = 8000;
-const BODY_TIME_LIMIT_MS = 10_000;
 const HTML_FORMAT = "html";
-
-const json = (body: unknown, status: number): Response =>
-  Response.json(body, { headers: { "Cache-Control": "no-store" }, status });
 
 const jsonToAnyOrigin = (body: unknown, status: number, req: PayloadRequest): Response => {
   const origin = req.headers.get("Origin");
@@ -38,28 +37,11 @@ const jsonToAnyOrigin = (body: unknown, status: number, req: PayloadRequest): Re
   return Response.json(body, { headers, status });
 };
 
-const parsed = (text: string): unknown => {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
-};
-
-const bodyOf = async (req: PayloadRequest): Promise<unknown> => {
-  if (Number(req.headers.get("Content-Length") ?? 0) > MAX_BODY_BYTES) return null;
-  if (req.body instanceof ReadableStream) {
-    return readJsonBody(req as Request, MAX_BODY_BYTES, AbortSignal.timeout(BODY_TIME_LIMIT_MS));
-  }
-  const text = req.text ? await req.text() : "";
-  return text.length > MAX_BODY_BYTES ? null : parsed(text);
-};
-
 const grantEndpoint: Endpoint = {
   handler: async (req) => {
     const { user } = req;
     if (!user) return json({ grant: null }, 401);
-    const body = await bodyOf(req);
+    const body = await jsonBodyOf(req);
     if (!isPlainObject(body) || !isVeDocument(body)) return json({ grant: null }, 400);
 
     const expiresAt = Date.now() + PREVIEW_GRANT_TTL_MS;
@@ -99,7 +81,7 @@ const unsavedRichTextEndpoint = ({
   depth,
   readWholeDocument,
   renderHtml,
-}: UnsavedRichTextEndpointOptions): Endpoint => ({
+}: Omit<UnsavedRichTextEndpointOptions, "inlineEditing">): Endpoint => ({
   handler: async (req) => {
     const body = await bodyOf(req);
     if (!isPlainObject(body)) return jsonToAnyOrigin({ value: null }, 400, req);
@@ -130,7 +112,11 @@ const unsavedRichTextEndpoint = ({
   path: VE_UNSAVED_RICH_TEXT_PATH,
 });
 
-export const visualEditingEndpoints = (options: UnsavedRichTextEndpointOptions): Endpoint[] => [
+export const visualEditingEndpoints = ({
+  inlineEditing,
+  ...options
+}: UnsavedRichTextEndpointOptions): Endpoint[] => [
   grantEndpoint,
   unsavedRichTextEndpoint(options),
+  ...(inlineEditing ? [fieldEditEndpoint, mediaOptionsEndpoint, richTextValueEndpoint] : []),
 ];

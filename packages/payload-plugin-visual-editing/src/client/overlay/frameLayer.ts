@@ -5,25 +5,26 @@ import {
   FRAME_RADIUS,
 } from "./constants.js";
 import { clipUnderCovers, measureCovers } from "./covers.js";
-
-export type TargetBox = Pick<DOMRect, "left" | "top" | "right" | "bottom" | "width" | "height">;
+import { areaOf, rectOf } from "./targetArea.js";
+import { rectInZoomOf } from "./zoom.js";
 
 const MAX_MEASURED_DESCENDANTS = 64;
 
 /**
- * The box a target takes on screen. A wrapper around a `fill` image (absolutely positioned inside
- * a parent that gives it its size) has no height of its own, so it is measured by what it holds:
- * without that its frame and badge would never show, though a click on the image still opens it.
+ * The box a target takes on screen: the area it fills (`rectOf`). A wrapper around a `fill`
+ * image (absolutely positioned inside a parent that gives it its size) has no height of its own,
+ * so it is measured by what it holds: without that its frame and badge would never show, though
+ * a click on the image still opens it.
  */
-export const boxOfTarget = (target: HTMLElement): TargetBox => {
-  const own = target.getBoundingClientRect();
+export const boxOfTarget = (target: HTMLElement): DOMRect => {
+  const own = rectOf(target);
   if (own.width > 0 && own.height > 0) return own;
 
   let left = Infinity;
   let top = Infinity;
   let right = -Infinity;
   let bottom = -Infinity;
-  const descendants = target.querySelectorAll("*");
+  const descendants = areaOf(target).querySelectorAll("*");
   const count = Math.min(descendants.length, MAX_MEASURED_DESCENDANTS);
   for (let index = 0; index < count; index += 1) {
     const rect = (descendants[index] as Element).getBoundingClientRect();
@@ -34,7 +35,7 @@ export const boxOfTarget = (target: HTMLElement): TargetBox => {
     bottom = Math.max(bottom, rect.bottom);
   }
   if (left === Infinity) return own;
-  return { bottom, height: bottom - top, left, right, top, width: right - left };
+  return new DOMRect(left, top, right - left, bottom - top);
 };
 
 export const placeFrame = (
@@ -47,10 +48,11 @@ export const placeFrame = (
   const hidden = rect.width === 0 && rect.height === 0;
   box.style.display = hidden ? "none" : "block";
   if (hidden) return;
-  const origin = { x: rect.left - borderWidth, y: rect.top - borderWidth };
+  const { height, left, top, width } = rectInZoomOf(box, rect);
+  const origin = { x: left - borderWidth, y: top - borderWidth };
   box.style.transform = `translate(${origin.x}px, ${origin.y}px)`;
-  box.style.width = `${rect.width + borderWidth * 2}px`;
-  box.style.height = `${rect.height + borderWidth * 2}px`;
+  box.style.width = `${width + borderWidth * 2}px`;
+  box.style.height = `${height + borderWidth * 2}px`;
   clipUnderCovers(box, target, origin, covers);
 };
 
@@ -113,17 +115,17 @@ export function createFrameLayer(): FrameLayer {
         borderRadius: FRAME_RADIUS,
         pointerEvents: "none",
       } as Partial<CSSStyleDeclaration>);
-      placeFrame(frame, target, FRAME_IDLE_WIDTH);
       layer.append(frame);
+      placeFrame(frame, target, FRAME_IDLE_WIDTH);
       frames.set(target, frame);
-      resizes?.observe(target);
+      resizes?.observe(areaOf(target));
     },
     remove(target) {
       const frame = frames.get(target);
       if (!frame) return;
       frame.remove();
       frames.delete(target);
-      resizes?.unobserve(target);
+      resizes?.unobserve(areaOf(target));
     },
     dispose() {
       if (frameRequest !== 0) cancelAnimationFrame(frameRequest);

@@ -3,6 +3,8 @@
 import type { RowLabelProps } from "@payloadcms/ui";
 import { useRowLabel, useTranslation } from "@payloadcms/ui";
 
+import { SOCIAL_PLATFORM_LABELS } from "@/components/SocialIcon/platforms";
+import type { SocialPlatform } from "@/components/SocialIcon/platforms";
 import type { Header } from "@/payload-types";
 
 import { readPath } from "../readPath";
@@ -42,4 +44,11 @@ export const RowLabel: React.FC<RowLabelExtendedProps> = ({ titleField }) => {
 export const RowLabelGroupName: React.FC<RowLabelProps> = () => {
   const data = useRowLabel<NonNullable<Header["navItems"]>[number]>();
   return useRowText(data?.data?.label, data.rowNumber);
+};
+
+/** Social link rows: "01 · LinkedIn". */
+export const RowLabelSocial: React.FC<RowLabelProps> = () => {
+  const data = useRowLabel<{ platform?: SocialPlatform | null }>();
+  const platform = data?.data?.platform;
+  return useRowText(platform ? SOCIAL_PLATFORM_LABELS[platform] : undefined, data.rowNumber);
 };

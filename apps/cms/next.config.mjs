@@ -26,6 +26,8 @@ const nextConfig = {
   transpilePackages: ["@yoast/search-metadata-previews", "@yoast/components"],
   experimental: {
     inlineCss: true,
+    // Vercel restores .next/cache between deploys; a reused Turbopack cache shipped a stale styles.css build.
+    turbopackFileSystemCacheForBuild: false,
   },
   images: {
     localPatterns: [{ pathname: "**", search: "" }, { pathname: "/api/media/**" }],

@@ -1,4 +1,5 @@
 import type { AccentOptions } from "../client/accent.js";
+import type { RichTextEditorLoader } from "../client/inlineEditing/richTextEditor.js";
 import type { OverlayScope } from "../client/overlayScope.js";
 import type { SessionOptions } from "../client/session.js";
 import type { RenderRichTextHtml, RenderRichTextValue } from "./liveRichTextElements.js";
@@ -21,6 +22,8 @@ export type MountVisualEditingOptions = SessionOptions &
     renderRichTextValue?: RenderRichTextValue;
     optimistic?: boolean;
     onSave?: () => void;
+    onEdited?: () => void;
+    richTextEditor?: RichTextEditorLoader;
   };
 
 export interface VisualEditing {
@@ -36,6 +39,8 @@ export function mountVisualEditing({
   renderRichTextValue,
   optimistic = true,
   onSave,
+  onEdited,
+  richTextEditor,
   accentColor,
   accentTextColor,
   ...sessionOptions
@@ -47,7 +52,11 @@ export function mountVisualEditing({
   });
   const pageStore = createPageStore();
   pageStore.attach(window);
-  const session = () => sessionOf({ available: true, ...sessionOptions }, pageStore.read());
+  const session = () =>
+    sessionOf(
+      { available: true, ...sessionOptions, payloadApi: namedPayloadApi },
+      pageStore.read()
+    );
   const adminOrigin = () => session().adminOrigin;
   const scope: OverlayScope = { locale, savedShapes: savedShapesWithin(null) };
 
@@ -61,7 +70,13 @@ export function mountVisualEditing({
       renderValue: renderRichTextValue,
     });
 
-  const overlay = startSessionOverlay(root, () => scope, session);
+  const pageEditing = { onEdited, richTextEditor };
+  const overlay = startSessionOverlay(
+    root,
+    () => scope,
+    session,
+    () => pageEditing
+  );
   const toggle = showsToggle ? startSessionToggle(document, session, pageStore.setMode) : null;
   const followSession = () => {
     overlay.sync();

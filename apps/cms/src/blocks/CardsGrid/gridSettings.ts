@@ -21,7 +21,7 @@ export function prepareCardsGridSettings(
   settings: GridSettings
 ): ICardStyle & { columns: CardsGridColumns } {
   return {
-    alignVariant: settings.alignVariant ?? "center",
+    alignVariant: settings.alignVariant ?? "left",
     backgroundColor: settings.backgroundColor ?? "none",
     columns: toColumns(settings.columns),
     rounded: settings.rounded ?? "none",
