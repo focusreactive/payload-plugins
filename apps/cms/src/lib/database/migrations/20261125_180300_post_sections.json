@@ -44889,7 +44889,13 @@
         "calendar",
         "compass",
         "target",
-        "wand-2"
+        "wand-2",
+        "star",
+        "hourglass",
+        "lightning",
+        "lightbulb",
+        "monitor",
+        "notification-box"
       ]
     },
     "public.enum_page_blocks_cards_grid_items_image_aspect_ratio": {
@@ -45576,7 +45582,13 @@
         "calendar",
         "compass",
         "target",
-        "wand-2"
+        "wand-2",
+        "star",
+        "hourglass",
+        "lightning",
+        "lightbulb",
+        "monitor",
+        "notification-box"
       ]
     },
     "public.enum__page_v_blocks_cards_grid_items_image_aspect_ratio": {
@@ -46188,7 +46200,13 @@
         "calendar",
         "compass",
         "target",
-        "wand-2"
+        "wand-2",
+        "star",
+        "hourglass",
+        "lightning",
+        "lightbulb",
+        "monitor",
+        "notification-box"
       ]
     },
     "public.enum_posts_blocks_cards_grid_items_image_aspect_ratio": {
@@ -46792,7 +46810,13 @@
         "calendar",
         "compass",
         "target",
-        "wand-2"
+        "wand-2",
+        "star",
+        "hourglass",
+        "lightning",
+        "lightbulb",
+        "monitor",
+        "notification-box"
       ]
     },
     "public.enum__posts_v_blocks_cards_grid_items_image_aspect_ratio": {
@@ -47718,7 +47742,13 @@
         "calendar",
         "compass",
         "target",
-        "wand-2"
+        "wand-2",
+        "star",
+        "hourglass",
+        "lightning",
+        "lightbulb",
+        "monitor",
+        "notification-box"
       ]
     },
     "public.enum_gsec_blocks_cards_grid_items_image_aspect_ratio": {
@@ -48314,7 +48344,13 @@
         "calendar",
         "compass",
         "target",
-        "wand-2"
+        "wand-2",
+        "star",
+        "hourglass",
+        "lightning",
+        "lightbulb",
+        "monitor",
+        "notification-box"
       ]
     },
     "public.enum__gsec_v_blocks_cards_grid_items_image_aspect_ratio": {
@@ -49025,7 +49061,13 @@
         "calendar",
         "compass",
         "target",
-        "wand-2"
+        "wand-2",
+        "star",
+        "hourglass",
+        "lightning",
+        "lightbulb",
+        "monitor",
+        "notification-box"
       ]
     },
     "public.enum_presets_blocks_cards_grid_items_image_aspect_ratio": {

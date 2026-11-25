@@ -227,7 +227,7 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
   CREATE TYPE "public"."enum_posts_blocks_testimonials_list_section_max_width" AS ENUM('none', 'base');
   CREATE TYPE "public"."enum_posts_blocks_testimonials_list_section_padding_y" AS ENUM('none', 'base', 'large');
   CREATE TYPE "public"."enum_posts_blocks_testimonials_list_section_padding_x" AS ENUM('none', 'base');
-  CREATE TYPE "public"."enum_posts_blocks_cards_grid_items_icon" AS ENUM('map', 'clock', 'zap', 'activity', 'layout-grid', 'sparkles', 'file-text', 'users', 'bar-chart-3', 'plug', 'shield', 'git-branch', 'gauge', 'bell', 'layers', 'workflow', 'calendar', 'compass', 'target', 'wand-2');
+  CREATE TYPE "public"."enum_posts_blocks_cards_grid_items_icon" AS ENUM('map', 'clock', 'zap', 'activity', 'layout-grid', 'sparkles', 'file-text', 'users', 'bar-chart-3', 'plug', 'shield', 'git-branch', 'gauge', 'bell', 'layers', 'workflow', 'calendar', 'compass', 'target', 'wand-2', 'star', 'hourglass', 'lightning', 'lightbulb', 'monitor', 'notification-box');
   CREATE TYPE "public"."enum_posts_blocks_cards_grid_items_image_aspect_ratio" AS ENUM('16/9', '3/2', '4/3', '1/1', '3/4', 'auto');
   CREATE TYPE "public"."enum_posts_blocks_cards_grid_items_link_appearance" AS ENUM('default', 'outline', 'accent', 'ghost', 'link');
   CREATE TYPE "public"."enum_posts_blocks_cards_grid_items_link_type" AS ENUM('reference', 'custom', 'customPage');
@@ -291,7 +291,7 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
   CREATE TYPE "public"."enum__posts_v_blocks_testimonials_list_section_max_width" AS ENUM('none', 'base');
   CREATE TYPE "public"."enum__posts_v_blocks_testimonials_list_section_padding_y" AS ENUM('none', 'base', 'large');
   CREATE TYPE "public"."enum__posts_v_blocks_testimonials_list_section_padding_x" AS ENUM('none', 'base');
-  CREATE TYPE "public"."enum__posts_v_blocks_cards_grid_items_icon" AS ENUM('map', 'clock', 'zap', 'activity', 'layout-grid', 'sparkles', 'file-text', 'users', 'bar-chart-3', 'plug', 'shield', 'git-branch', 'gauge', 'bell', 'layers', 'workflow', 'calendar', 'compass', 'target', 'wand-2');
+  CREATE TYPE "public"."enum__posts_v_blocks_cards_grid_items_icon" AS ENUM('map', 'clock', 'zap', 'activity', 'layout-grid', 'sparkles', 'file-text', 'users', 'bar-chart-3', 'plug', 'shield', 'git-branch', 'gauge', 'bell', 'layers', 'workflow', 'calendar', 'compass', 'target', 'wand-2', 'star', 'hourglass', 'lightning', 'lightbulb', 'monitor', 'notification-box');
   CREATE TYPE "public"."enum__posts_v_blocks_cards_grid_items_image_aspect_ratio" AS ENUM('16/9', '3/2', '4/3', '1/1', '3/4', 'auto');
   CREATE TYPE "public"."enum__posts_v_blocks_cards_grid_items_link_appearance" AS ENUM('default', 'outline', 'accent', 'ghost', 'link');
   CREATE TYPE "public"."enum__posts_v_blocks_cards_grid_items_link_type" AS ENUM('reference', 'custom', 'customPage');

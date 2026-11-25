@@ -5,8 +5,8 @@ import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 /**
  * The crops editors actually need. Stored values stay the CSS `aspect-ratio` strings the
  * frontend understands (`ImageAspectRatio`); removed ratios (9/16, 1/2, 4/1, 3/1) were migrated
- * to the nearest kept one in `20261125_163100_editor_friendly_choices`; the portrait 3/4 shape came
- * back in `20261125_163200_standard_link_field`.
+ * to the nearest kept one in `20261125_180100_editor_friendly_choices`; the portrait 3/4 shape came
+ * back in `20261125_180200_standard_link_field`.
  */
 const aspectRatioOptions = [
   { label: { en: "Wide (16:9)", es: "Panorámica (16:9)" }, value: "16/9" },

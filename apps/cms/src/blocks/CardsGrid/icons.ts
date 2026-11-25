@@ -19,6 +19,12 @@ export const CARD_ICONS = [
   "compass",
   "target",
   "wand-2",
+  "star",
+  "hourglass",
+  "lightning",
+  "lightbulb",
+  "monitor",
+  "notification-box",
 ] as const;
 
 export type CardIcon = (typeof CARD_ICONS)[number];
