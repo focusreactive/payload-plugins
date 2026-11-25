@@ -60,6 +60,8 @@ type Run = {
   handle: RunHandle;
   collection: string;
   document: DocumentKey;
+  /** The locale the run translates from, which its finished locales are judged against. */
+  source: LocaleCode;
   locales: readonly LocaleCode[];
   queuedAt: IsoDateTime;
   status: SeededRun["status"];
@@ -157,7 +159,7 @@ export class StubWorld {
       }
 
       this.supersedeFailures(key, runTargets);
-      const run = this.admit(document, { status: "queued", locales: runTargets });
+      const run = this.admit(document, locales.source, { status: "queued", locales: runTargets });
       outcome.queued += runTargets.length;
       outcome.assignments.push(
         ...runTargets.map((target) => ({
@@ -230,15 +232,16 @@ export class StubWorld {
 
     const seed = this.rules.seed(document, locales.targets);
     this.contents.set(key, new Map(Object.entries(seed.contents)));
-    if (seed.run) this.admit(document, seed.run);
+    if (seed.run) this.admit(document, locales.source, seed.run);
     return key;
   }
 
-  private admit(document: DocumentRef, seeded: SeededRun): Run {
+  private admit(document: DocumentRef, source: LocaleCode, seeded: SeededRun): Run {
     const run: Run = {
       handle: `stub-run-${this.nextHandle}`,
       collection: document.collection,
       document: keyOf(document),
+      source,
       locales: seeded.locales,
       queuedAt: this.now(),
       status: seeded.status,
@@ -275,14 +278,14 @@ export class StubWorld {
 
     this.runs.delete(run.handle);
     const contents = this.contents.get(run.document);
-    for (const locale of run.locales) contents?.set(locale, this.translated());
+    for (const locale of run.locales) contents?.set(locale, this.translated(run.source));
   }
 
-  private translated(): ContentState {
+  private translated(source: LocaleCode): ContentState {
     if (!this.rules.keepsRecords) return { kind: "filled" };
     const verdicts = Object.fromEntries(
       leavesOf(this.rules.fixture.tree).map((leaf): [LeafAddress, LeafVerdict] => [leaf, "current"])
     );
-    return { kind: "tracked", verdicts, translatedAt: this.now() };
+    return { kind: "tracked", verdicts, translatedAt: this.now(), sourceLocale: source };
   }
 }

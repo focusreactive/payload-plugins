@@ -14,7 +14,6 @@ import type { DocumentStalenessIo } from "./DocumentStaleness.service.js";
 import { PayloadProvenanceStore } from "./Provenance.store.js";
 import type { ProvenanceStoreFactory } from "./Provenance.store.js";
 import { fetchDocumentLocale } from "../../shared/payload/documentLocale.js";
-import { latestOf } from "../../shared/payload/worldOfCollection.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 import type { SourceDocumentReader } from "./Provenance.shapes.js";
 import type { SourceFingerprinter } from "../../../core/domain/content-projection/sourceFingerprinter.js";
@@ -58,7 +57,6 @@ export const documentStalenessIo = (
       collection,
       id,
       locale,
-      read: latestOf(payload, collection),
       user,
       scope: OUTSIDE_THE_CALLERS_TRANSACTION,
     }),

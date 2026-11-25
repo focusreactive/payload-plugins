@@ -17,5 +17,6 @@ export type GetDocumentStateConfig = {
   schemaMap: CollectionSchemaMap;
   fingerprintOf: SourceFingerprinter;
   holdsText: TranslatableTextPresence;
+  failedWindowMs: number;
   provenance?: ProvenanceAccess;
 };

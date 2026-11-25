@@ -3,10 +3,6 @@ import type { Payload } from "payload";
 
 import type { TranslatableTextPresence } from "../../../../core/domain/content-projection/holdsTranslatableText.js";
 import { localesHoldingContent } from "../localesHoldingContent.js";
-import { worldOfCollection } from "../worldOfCollection.js";
-
-const LATEST_OF_A_DRAFTED_COLLECTION = worldOfCollection({ versions: { drafts: true } }).read
-  .latest;
 
 /** Stands in for the walk: a document holds text when its `title` does. */
 const titleHoldsText: TranslatableTextPresence = (_collection, doc) =>
@@ -18,7 +14,8 @@ const payloadReturning = (perLocale: Documents) => {
   const find = vi.fn(async ({ locale }: { locale: string }) => ({
     docs: perLocale[locale] ?? [],
   }));
-  return { payload: { find } as unknown as Payload, find };
+  const collections = { posts: { config: { versions: { drafts: true } } } };
+  return { payload: { find, collections } as unknown as Payload, find };
 };
 
 const ask = async (perLocale: Documents, over: Record<string, unknown> = {}) => {
@@ -29,7 +26,6 @@ const ask = async (perLocale: Documents, over: Record<string, unknown> = {}) => 
     grantedIds: ["doc-1", "doc-2"],
     locales: ["en", "de", "fr"],
     holdsText: titleHoldsText,
-    read: LATEST_OF_A_DRAFTED_COLLECTION,
     ...over,
   });
   return { holding, find };

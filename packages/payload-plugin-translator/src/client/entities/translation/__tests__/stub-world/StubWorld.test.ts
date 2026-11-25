@@ -200,7 +200,12 @@ describe("what a document reports", () => {
 
   it("hiding the mark rebases the locale's leaves onto the source as it stands", () => {
     const world = seeded({
-      de: { kind: "tracked", verdicts: { summary: "drifted" }, translatedAt: NOW },
+      de: {
+        kind: "tracked",
+        verdicts: { summary: "drifted" },
+        translatedAt: NOW,
+        sourceLocale: "en",
+      },
       fr: { kind: "empty" },
     });
 

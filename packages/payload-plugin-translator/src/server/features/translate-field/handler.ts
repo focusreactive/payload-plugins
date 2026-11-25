@@ -15,7 +15,6 @@ import type { FieldTranslationConfig } from "./model.js";
 import { resolveFieldSubtree } from "./resolveFieldSubtree.js";
 import { reportRunOutcome } from "../_lib/index.js";
 import { fetchDocumentLocale } from "../../shared/payload/documentLocale.js";
-import { latestOf } from "../../shared/payload/worldOfCollection.js";
 import { mayInitiate } from "../../shared/access/permission.js";
 
 const byteLength = (value: unknown): number =>
@@ -90,7 +89,6 @@ export class TranslateFieldHandler {
       collection: collection_slug,
       id: doc_id,
       locale: source_lng,
-      read: latestOf(req.payload, collection_slug),
       user: req.user,
     });
 

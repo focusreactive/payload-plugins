@@ -54,6 +54,7 @@ const tracked = (overrides: Record<string, "drifted" | "unanswered">): ContentSt
   kind: "tracked",
   verdicts: { ...Object.fromEntries(LEAVES.map((leaf) => [leaf, "current"])), ...overrides },
   translatedAt: AT,
+  sourceLocale: "en",
 });
 
 const CONTENTS: Record<string, ContentState> = {

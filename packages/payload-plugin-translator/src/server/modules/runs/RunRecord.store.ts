@@ -45,8 +45,14 @@ export interface RunRecordStore {
   /**
    * Undelivered means settled without delivering: failed, plus the siblings the run never got to.
    */
-  findRecentlyUndeliveredInCollection(
+  findLiveOrUndeliveredSince(
     collectionSlug: CollectionSlug,
+    ids: readonly ID[],
+    since: Date
+  ): Promise<RunRecord[]>;
+  findDeliveredSince(
+    collectionSlug: CollectionSlug,
+    ids: readonly ID[],
     since: Date
   ): Promise<RunRecord[]>;
   deleteByDocument(document: RunDocument): Promise<void>;
@@ -215,14 +221,42 @@ export class PayloadRunRecordStore implements RunRecordStore {
     });
   }
 
-  findRecentlyUndeliveredInCollection(
+  async findLiveOrUndeliveredSince(
     collectionSlug: CollectionSlug,
+    ids: readonly ID[],
     since: Date
   ): Promise<RunRecord[]> {
-    return this.rows({
+    if (ids.length === 0) return [];
+    return await this.rows({
       and: [
         { collectionSlug: { equals: collectionSlug } },
-        { outcome: { in: ["failed", "abandoned"] } },
+        { collectionId: { in: [...ids] } },
+        {
+          or: [
+            { settledAt: { exists: false } },
+            {
+              and: [
+                { outcome: { in: ["failed", "abandoned"] } },
+                { settledAt: { greater_than: since.toISOString() } },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+  }
+
+  async findDeliveredSince(
+    collectionSlug: CollectionSlug,
+    ids: readonly ID[],
+    since: Date
+  ): Promise<RunRecord[]> {
+    if (ids.length === 0) return [];
+    return await this.rows({
+      and: [
+        { collectionSlug: { equals: collectionSlug } },
+        { collectionId: { in: [...ids] } },
+        { outcome: { equals: "delivered" } },
         { settledAt: { greater_than: since.toISOString() } },
       ],
     });

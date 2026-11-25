@@ -23,13 +23,24 @@ type ContentSeed = "current" | "drifted" | "empty" | "untracked" | "filled";
 type RunSeed = SeededRun["status"] | null;
 
 const SEEDED_AT: IsoDateTime = "2026-11-01T09:00:00.000Z";
+const SEEDED_FROM: LocaleCode = "en";
 
 function contentOf(seed: ContentSeed): ContentState {
   if (seed === "current") {
-    return { kind: "tracked", verdicts: currentVerdicts(), translatedAt: SEEDED_AT };
+    return {
+      kind: "tracked",
+      verdicts: currentVerdicts(),
+      translatedAt: SEEDED_AT,
+      sourceLocale: SEEDED_FROM,
+    };
   }
   if (seed === "drifted") {
-    return { kind: "tracked", verdicts: driftedVerdicts(), translatedAt: SEEDED_AT };
+    return {
+      kind: "tracked",
+      verdicts: driftedVerdicts(),
+      translatedAt: SEEDED_AT,
+      sourceLocale: SEEDED_FROM,
+    };
   }
   return { kind: seed };
 }

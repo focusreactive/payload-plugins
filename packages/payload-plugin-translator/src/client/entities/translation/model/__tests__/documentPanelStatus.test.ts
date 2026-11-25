@@ -15,11 +15,11 @@ const locale = (overrides: Partial<LocaleState>): LocaleState => ({
 
 const upToDate = locale({
   locale: "de",
-  content: { kind: "tracked", verdicts: { a: "current" }, translatedAt: AT },
+  content: { kind: "tracked", verdicts: { a: "current" }, translatedAt: AT, sourceLocale: "en" },
 });
 const behind = locale({
   locale: "fr",
-  content: { kind: "tracked", verdicts: { a: "drifted" }, translatedAt: AT },
+  content: { kind: "tracked", verdicts: { a: "drifted" }, translatedAt: AT, sourceLocale: "en" },
 });
 const queued = locale({ locale: "es", run: { ...run, status: "queued" } });
 const failed = locale({ locale: "it", run: { ...run, status: "failed", message: "x" } });

@@ -5,7 +5,7 @@ import type { DocumentId, LocaleCode } from "../../../types/wire/primitives.js";
 
 import type { RequestScope } from "./RequestScope.shapes.js";
 import { freshReq } from "./RequestScope.shapes.js";
-import type { VersionRead } from "./worldOfCollection.js";
+import { latestOf } from "./worldOfCollection.js";
 
 /**
  * The values are read past the host's field rules and never leave this function — only the set of
@@ -20,7 +20,6 @@ export type LocaleContentQuery = {
   grantedIds: readonly DocumentId[];
   locales: readonly LocaleCode[];
   holdsText: TranslatableTextPresence;
-  read: VersionRead;
   scope?: RequestScope;
 };
 
@@ -37,7 +36,7 @@ export type DocumentsHoldingContent = ReadonlyMap<LocaleCode, ReadonlySet<Docume
 export async function localesHoldingContent(
   query: LocaleContentQuery
 ): Promise<DocumentsHoldingContent> {
-  const { payload, collection, grantedIds, locales, holdsText, read, scope } = query;
+  const { payload, collection, grantedIds, locales, holdsText, scope } = query;
   if (grantedIds.length === 0) return new Map();
 
   const answers = await Promise.all(
@@ -50,7 +49,7 @@ export async function localesHoldingContent(
         pagination: false,
         where: { id: { in: [...grantedIds] } },
         ...ON_DOCUMENTS_ALREADY_GRANTED,
-        ...read,
+        ...latestOf(payload, collection),
       });
       const held: ReadonlySet<DocumentId> = new Set(
         found.docs

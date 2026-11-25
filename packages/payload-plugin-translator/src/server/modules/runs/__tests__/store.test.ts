@@ -368,11 +368,12 @@ describe("the run record store", () => {
       );
     });
 
-    it("asks for the rows that settled without delivering, so an abandoned locale is not lost", async () => {
+    it("asks for these documents' rows that are live, or settled since without delivering", async () => {
       const { payload, spies } = payloadWith({});
 
-      await new PayloadRunRecordStore(payload, SLUG).findRecentlyUndeliveredInCollection(
+      await new PayloadRunRecordStore(payload, SLUG).findLiveOrUndeliveredSince(
         "posts" as RunRecord["collectionSlug"],
+        ["d1", "d2"],
         new Date("2026-10-20T00:00:00.000Z")
       );
 
@@ -381,12 +382,56 @@ describe("the run record store", () => {
           where: {
             and: [
               { collectionSlug: { equals: "posts" } },
-              { outcome: { in: ["failed", "abandoned"] } },
+              { collectionId: { in: ["d1", "d2"] } },
+              {
+                or: [
+                  { settledAt: { exists: false } },
+                  {
+                    and: [
+                      { outcome: { in: ["failed", "abandoned"] } },
+                      { settledAt: { greater_than: "2026-10-20T00:00:00.000Z" } },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        })
+      );
+    });
+
+    it("asks for these documents' rows that delivered since", async () => {
+      const { payload, spies } = payloadWith({});
+
+      await new PayloadRunRecordStore(payload, SLUG).findDeliveredSince(
+        "posts" as RunRecord["collectionSlug"],
+        ["d1"],
+        new Date("2026-10-20T00:00:00.000Z")
+      );
+
+      expect(spies.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            and: [
+              { collectionSlug: { equals: "posts" } },
+              { collectionId: { in: ["d1"] } },
+              { outcome: { equals: "delivered" } },
               { settledAt: { greater_than: "2026-10-20T00:00:00.000Z" } },
             ],
           },
         })
       );
+    });
+
+    it("asks nothing for no documents", async () => {
+      const { payload, spies } = payloadWith({});
+      const store = new PayloadRunRecordStore(payload, SLUG);
+      const since = new Date("2026-10-20T00:00:00.000Z");
+      const posts = "posts" as RunRecord["collectionSlug"];
+
+      expect(await store.findLiveOrUndeliveredSince(posts, [], since)).toStrictEqual([]);
+      expect(await store.findDeliveredSince(posts, [], since)).toStrictEqual([]);
+      expect(spies.find).not.toHaveBeenCalled();
     });
 
     it("bounds every read, because nothing prunes the rows", async () => {

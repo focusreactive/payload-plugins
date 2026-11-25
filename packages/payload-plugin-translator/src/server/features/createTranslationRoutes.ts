@@ -74,7 +74,7 @@ export function createTranslationRoutes({
       : []),
     createGetDocumentStatusRoute(collectionConfig, runRecordStoreFactory, access, basePath),
     createGetDocumentStateRoute(
-      { ...collectionConfig, schemaMap, holdsText, ...state },
+      { ...collectionConfig, schemaMap, failedWindowMs, holdsText, ...state },
       runRecordStoreFactory,
       access,
       basePath

@@ -20,12 +20,12 @@ export type ContentState =
       kind: "tracked";
       verdicts: Readonly<Record<LeafAddress, LeafVerdict>>;
       translatedAt: IsoDateTime;
+      sourceLocale: LocaleCode;
     };
 
 export type TreeNode =
   | { kind: "group"; label: string; children: readonly TreeNode[] }
   | {
-      /** A block list localized as a whole: each locale owns its blocks, so it goes as one. */
       kind: "whole-list";
       label: string;
       addresses: readonly LeafAddress[];
@@ -35,18 +35,14 @@ export type TreeNode =
 export type LocaleState = {
   locale: LocaleCode;
   content: ContentState;
-  /** Independent of `content`: an empty locale can be translating for the first time. */
   run: RunState | null;
 };
 
-/** `GET {basePath}/document-state/:collection_slug/:collection_id` */
 export type DocumentTranslationState = {
   collection: string;
   id: DocumentId;
   sourceLocale: LocaleCode;
-  /** The saved document's translatable shape, shared by every locale. */
   tree: readonly TreeNode[];
-  /** Labels of the fields excluded from translation. */
   excluded: readonly string[];
   locales: readonly LocaleState[];
 };
