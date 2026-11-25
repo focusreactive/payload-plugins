@@ -27,7 +27,7 @@ const asked = (over: Partial<Parameters<typeof localeContentOf>[0]> = {}) =>
     holdsContent: true,
     keepsRecords: true,
     receipt: undefined,
-    currentFields: current,
+    sources: new Map([["en", current]]),
     ...over,
   });
 
@@ -54,6 +54,7 @@ describe("what one target locale holds", () => {
       kind: "tracked",
       verdicts: { title: "current", body: "current" },
       translatedAt: AT,
+      sourceLocale: "en",
     });
   });
 
@@ -69,5 +70,36 @@ describe("what one target locale holds", () => {
     expect(asked({ receipt: receipt({ sourceFingerprint: null }) })).toMatchObject({
       verdicts: { title: "unrecorded", body: "unrecorded" },
     });
+  });
+
+  it("judges a locale against the source its own record names, not another one", () => {
+    const french = hashed({ title: "3333", body: "4444" });
+
+    expect(
+      asked({
+        receipt: receipt({ sourceLocale: "fr", sourceFingerprint: french }),
+        sources: new Map([
+          ["en", current],
+          ["fr", { ...french, body: asHash("5555") }],
+        ]),
+      })
+    ).toStrictEqual({
+      kind: "tracked",
+      verdicts: { title: "current", body: "drifted" },
+      translatedAt: AT,
+      sourceLocale: "fr",
+    });
+  });
+
+  it("owes every leaf the run covered where the record's source cannot be read", () => {
+    expect(
+      asked({
+        receipt: receipt({ sourceLocale: "fr" }),
+        sources: new Map([
+          ["en", current],
+          ["fr", null],
+        ]),
+      })
+    ).toMatchObject({ verdicts: { title: "unanswered", body: "unanswered" }, sourceLocale: "fr" });
   });
 });

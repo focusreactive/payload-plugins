@@ -9,13 +9,19 @@ import { ServerResponse } from "../../shared/index.js";
 import { NOT_MANAGED, NO_LOCALIZATION } from "../../shared/http/readRefusals.js";
 import { localesHoldingContent } from "../../shared/payload/localesHoldingContent.js";
 import { latestOf } from "../../shared/payload/worldOfCollection.js";
-import { isCollectionAvailable, readLocales, requireReadableDocument } from "../_lib/index.js";
+import {
+  isCollectionAvailable,
+  readLocales,
+  readSourceFields,
+  requireReadableDocument,
+} from "../_lib/index.js";
 import type { ReadLocales } from "../_lib/index.js";
 
 import { collectionPresentation } from "./collectionPresentation.js";
 import { documentTree } from "./documentTree.js";
 import { excludedLabels } from "./excludedLabels.js";
 import { localeContentOf } from "./localeContent.js";
+import type { SourcesAsTheyStand } from "./localeContent.js";
 import { GetDocumentStateInputSchema } from "./model.js";
 import type { GetDocumentStateConfig } from "./model.js";
 
@@ -105,6 +111,21 @@ export class GetDocumentStateHandler {
       this.runsOf(req, collection, id),
     ]);
 
+    const otherSources = new Set(
+      [...receipts.values()]
+        .filter((receipt) => locales.targets.includes(receipt.targetLocale))
+        .map((receipt) => receipt.sourceLocale)
+    );
+    otherSources.delete(locales.source);
+    const sourceFieldsOf = (locale: LocaleCode) =>
+      readSourceFields({ req, collection, id, locale, fingerprintOf: this.config.fingerprintOf });
+    const sources: SourcesAsTheyStand = new Map([
+      [locales.source, currentFields],
+      ...(await Promise.all(
+        [...otherSources].map(async (locale) => [locale, await sourceFieldsOf(locale)] as const)
+      )),
+    ]);
+
     return {
       collection,
       id,
@@ -117,7 +138,7 @@ export class GetDocumentStateHandler {
           holdsContent: holding.get(locale)?.has(id) === true,
           keepsRecords: this.config.provenance !== undefined,
           receipt: receipts.get(locale),
-          currentFields,
+          sources,
         }),
         run: runStateOf({ runs, locale, configuredLocales: locales.configured }),
       })),

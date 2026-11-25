@@ -9,7 +9,7 @@ const base = { locales: ["de", "fr"], queuedAt: AT };
 
 const tracked = (
   verdicts: Record<string, "current" | "drifted" | "unanswered" | "unrecorded">
-): ContentState => ({ kind: "tracked", verdicts, translatedAt: AT });
+): ContentState => ({ kind: "tracked", verdicts, translatedAt: AT, sourceLocale: "en" });
 
 const empty: ContentState = { kind: "empty" };
 

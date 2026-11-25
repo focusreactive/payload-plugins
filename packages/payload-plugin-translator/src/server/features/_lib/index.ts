@@ -4,6 +4,7 @@ export { collectionsThatCanHoldText, schemaLeaves } from "./schemaLeaves.js";
 export type { CollectionCanHoldText, SchemaLeaf } from "./schemaLeaves.js";
 export { readLocales } from "./readLocales.js";
 export type { ReadLocales } from "./readLocales.js";
+export { readSourceFields } from "./readSourceFields.js";
 export { requireReadableDocument } from "./requireReadableDocument.js";
 export type { ReadableDocument } from "./requireReadableDocument.js";
 export { translationLanguages } from "./translationLanguages.js";

@@ -33,6 +33,8 @@ const receipt = (over: Partial<ProvenanceReceipt> = {}): ProvenanceReceipt => ({
 
 type World = {
   document?: Record<string, unknown> | null;
+  /** The document as each locale other than the panel's source reads; `null` where it cannot be read. */
+  otherLocales?: Record<string, Record<string, unknown> | null>;
   holding?: readonly string[];
   receipts?: ProvenanceReceipt[];
   rows?: ReturnType<typeof runRow>[];
@@ -61,7 +63,11 @@ const requestFor = (world: World): PayloadRequest => {
       ],
       blocks: [],
     },
-    findByID: vi.fn().mockResolvedValue(document),
+    logger: { warn: vi.fn() },
+    findByID: vi.fn(async ({ locale }: { locale: string }) => {
+      const other = world.otherLocales?.[locale];
+      return other === undefined ? document : other;
+    }),
     find: vi.fn(async ({ locale }: { locale: string }) => ({
       docs: (world.holding ?? []).includes(locale) ? [{ id: "doc-1" }] : [],
     })),
@@ -183,6 +189,7 @@ describe("what the answer carries about each locale", () => {
       kind: "tracked",
       verdicts: { title: "current", summary: "current" },
       translatedAt: AT,
+      sourceLocale: "en",
     });
   });
 
@@ -197,5 +204,84 @@ describe("what the answer carries about each locale", () => {
 
     expect(body.locales[0]?.run).toMatchObject({ status: "queued", locales: ["de"] });
     expect(body.locales[1]?.run).toBeNull();
+  });
+});
+
+describe("a locale translated from another locale than the panel's source", () => {
+  const FRENCH = { id: "doc-1", title: "Un titre", summary: "Un résumé" };
+  const fromFrench = receipt({
+    sourceLocale: "fr",
+    sourceFingerprint: fingerprintOf("posts", FRENCH),
+  });
+
+  it("stands against the locale it was translated from, so a fresh translation reads current", async () => {
+    const { body } = await answer({
+      holding: ["de"],
+      receipts: [fromFrench],
+      otherLocales: { fr: FRENCH },
+    });
+
+    expect(body.locales[0]?.content).toStrictEqual({
+      kind: "tracked",
+      verdicts: { title: "current", summary: "current" },
+      translatedAt: AT,
+      sourceLocale: "fr",
+    });
+  });
+
+  it("drifts only the leaf its own source changed", async () => {
+    const { body } = await answer({
+      holding: ["de"],
+      receipts: [fromFrench],
+      otherLocales: { fr: { ...FRENCH, title: "Un nouveau titre" } },
+    });
+
+    expect(body.locales[0]?.content).toMatchObject({
+      verdicts: { title: "drifted", summary: "current" },
+    });
+  });
+
+  it("does not drift when only the panel's source changed", async () => {
+    const { body } = await answer({
+      document: { ...DOCUMENT, title: "A new English title" },
+      holding: ["de"],
+      receipts: [fromFrench],
+      otherLocales: { fr: FRENCH },
+    });
+
+    expect(body.locales[0]?.content).toMatchObject({
+      verdicts: { title: "current", summary: "current" },
+    });
+  });
+
+  it("owes every leaf the run covered, and says so in the log, when its source cannot be read", async () => {
+    const world: World = { holding: ["de"], receipts: [fromFrench], otherLocales: { fr: null } };
+    const request = requestFor(world);
+
+    const response = await handlerFor(world).handle(request);
+    const { data } = (await response.json()) as { data: DocumentTranslationState };
+
+    expect(data.locales[0]?.content).toMatchObject({
+      verdicts: { title: "unanswered", summary: "unanswered" },
+      sourceLocale: "fr",
+    });
+    expect(request.payload.logger.warn).toHaveBeenCalledOnce();
+  });
+
+  it("reads each source locale once, however many locales were translated from it", async () => {
+    const world: World = {
+      holding: ["de", "es"],
+      localization: { defaultLocale: "en", locales: ["en", "de", "fr", "es"] },
+      receipts: [fromFrench, { ...fromFrench, targetLocale: "es" }],
+      otherLocales: { fr: FRENCH },
+    };
+    const request = requestFor(world);
+
+    await handlerFor(world).handle(request);
+
+    const frenchReads = vi
+      .mocked(request.payload.findByID)
+      .mock.calls.filter(([query]) => query.locale === "fr");
+    expect(frenchReads).toHaveLength(1);
   });
 });
