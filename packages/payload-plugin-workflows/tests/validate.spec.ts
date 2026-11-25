@@ -369,10 +369,28 @@ describe("definition version", () => {
     expect(defineWorkflow(raw).version).toBe(definitionVersionOf(raw));
     expect(defineWorkflow(defineWorkflow(raw)).version).toBe(definitionVersionOf(raw));
   });
-  it("requiredToPublish is a boolean", () => {
-    expect(
-      definitionIssues({ ...minimal(), requiredToPublish: "yes" } as unknown as WorkflowDefinition)
-    ).toContain("requiredToPublish: requiredToPublish must be a boolean");
-    expect(definitionIssues({ ...minimal(), requiredToPublish: true })).toEqual([]);
+  it("requiredToPublish names one or more terminal stages", () => {
+    const requiredIssues = (requiredToPublish: unknown) =>
+      definitionIssues({ ...minimal(), requiredToPublish } as unknown as WorkflowDefinition);
+    expect(requiredIssues("b")).toEqual([]);
+    expect(requiredIssues(["b"])).toEqual([]);
+    const booleanForm =
+      'requiredToPublish: requiredToPublish names the terminal stage(s) that approve, e.g. `requiredToPublish: "approved"` or `["approved", "approved-with-edits"]`; `true` / `false` are no longer accepted';
+    expect(requiredIssues(true)).toEqual([booleanForm]);
+    expect(requiredIssues(false)).toEqual([booleanForm]);
+    const shape =
+      "requiredToPublish: requiredToPublish must be a terminal stage name or a non-empty list of them";
+    expect(requiredIssues([])).toEqual([shape]);
+    expect(requiredIssues(["b", 3])).toEqual([shape]);
+    expect(requiredIssues("")).toEqual([shape]);
+    expect(requiredIssues("a")).toEqual([
+      'requiredToPublish: stage "a" is not terminal (it has transitions): only a stage the workflow ends in can approve a publish',
+    ]);
+    expect(requiredIssues(["b", "approved"])).toEqual([
+      'requiredToPublish: stage "approved" is not a declared stage. Known stages: "a", "b"',
+    ]);
+    expect(() => defineWorkflow({ ...minimal(), requiredToPublish: "nope" })).toThrowError(
+      'stage "nope" is not a declared stage'
+    );
   });
 });

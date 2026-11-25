@@ -13,6 +13,7 @@ import type {
 } from "payload";
 
 import { decodeAssignees, roleToken, userToken } from "../assignees.js";
+import { approvingStages } from "../define.js";
 import { RUNS_SLUG } from "../constants.js";
 import { findStage } from "../engine/engine.js";
 import { WorkflowError } from "../engine/errors.js";
@@ -136,8 +137,11 @@ export interface WorkflowState {
     description?: string;
     /** Its stages in order, so the drawer can show what starting it leads to. */
     stages: { name: string; title: string }[];
-    /** Publishing the document needs a completed run of it (`requiredToPublish`). */
-    requiredToPublish?: true;
+    /**
+     * Publishing the document needs a run of it completed in one of these terminal stages
+     * (`requiredToPublish`).
+     */
+    requiredToPublish?: string[];
   }[];
   /**
    * Set when a workflow on this collection is `requiredToPublish`: whether publishing the
@@ -202,7 +206,7 @@ export const getWorkflowState = async (
           name: stage.name,
           title: titleIn(req, stage.title, stage.name),
         })),
-        ...(def.requiredToPublish === true ? { requiredToPublish: true as const } : {}),
+        ...(approvingStages(def).length > 0 ? { requiredToPublish: approvingStages(def) } : {}),
       });
     }
   }

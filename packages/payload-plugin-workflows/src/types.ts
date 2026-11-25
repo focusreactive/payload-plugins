@@ -212,10 +212,12 @@ export interface WorkflowDefinition {
   collections: string[];
   start?: StartOnCreate;
   /**
-   * `true`: every publish of a document it covers needs a completed run of this workflow that no
-   * publish has used yet; the publish uses it. Needs drafts on its collections.
+   * The terminal stage (or stages) that approve: every publish of a document it covers needs a
+   * run of this workflow that completed in one of them and that no publish has used yet; the
+   * publish uses it. A run that ended in another terminal stage does not count. Needs drafts on
+   * its collections.
    */
-  requiredToPublish?: boolean;
+  requiredToPublish?: string | string[];
   initialStage: string;
   fields?: FieldDef[];
   stages: StageDef[];
@@ -452,8 +454,11 @@ export interface InstanceView {
    */
   titles: Record<string, string>;
   canAbort: boolean;
-  /** The workflow is `requiredToPublish`: a publish needs a completed run no publish has used. */
-  requiredToPublish?: true;
+  /**
+   * The workflow is `requiredToPublish`: the terminal stages that approve. A publish needs a run
+   * completed in one of them that no publish has used.
+   */
+  requiredToPublish?: string[];
   /** When a publish went through on this run: it can let no other publish through. */
   publishedAt?: string;
   subject?: { collection: string; id: string; title?: string };

@@ -13,18 +13,20 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { bootWorkflowsPayload, historyOf } from "./bootWorkflowsPayload";
 import type { WorkflowsTestPayload } from "./bootWorkflowsPayload";
 
-// `requiredToPublish`: every publish of a covered document needs a completed run of the workflow
-// that no publish has used yet; the publish uses it.
+// `requiredToPublish`: every publish of a covered document needs a run of the workflow that
+// completed in one of the approving stages it names and that no publish has used yet; the
+// publish uses it.
 
 const NOTES = "notes";
 const BRIEFS = "briefs";
+const MEMOS = "memos";
 
 const approval = (name: string, title: string, collections: string[]) =>
   defineWorkflow({
     name,
     title,
     collections,
-    requiredToPublish: true,
+    requiredToPublish: "approved",
     initialStage: "review",
     stages: [
       {
@@ -39,7 +41,41 @@ const approval = (name: string, title: string, collections: string[]) =>
 const signoff = approval("signoff", "Sign-off", [NOTES, BRIEFS]);
 const legal = approval("legal", "Legal review", [BRIEFS]);
 
+/** Three endings: two approve, one does not. */
+const verdict = defineWorkflow({
+  name: "verdict",
+  title: "Verdict",
+  collections: [MEMOS],
+  requiredToPublish: ["approved", "approved-with-edits"],
+  initialStage: "review",
+  fields: [{ name: "outcome", type: "string" }],
+  stages: [
+    {
+      name: "review",
+      actions: [
+        { name: "approve", status: "done", set: { outcome: "approved" } },
+        { name: "approve-with-edits", status: "done", set: { outcome: "approved-with-edits" } },
+        { name: "reject", status: "done", set: { outcome: "rejected" } },
+      ],
+      transitions: [
+        { name: "approved", to: "approved", when: ({ fields }) => fields.outcome === "approved" },
+        {
+          name: "edited",
+          to: "approved-with-edits",
+          when: ({ fields }) => fields.outcome === "approved-with-edits",
+        },
+        { name: "rejected", to: "rejected", when: ({ fields }) => fields.outcome === "rejected" },
+      ],
+    },
+    { name: "approved", title: "Approved" },
+    { name: "approved-with-edits", title: "Approved with edits" },
+    { name: "rejected", title: "Rejected" },
+  ],
+});
+
 const NONE = "Publishing requires a completed Sign-off. Start it from the Workflow button.";
+const UNAPPROVED =
+  "The Verdict ended without approval (Rejected). Publishing requires a new Verdict; start it from the Workflow button.";
 const RUNNING = "Publishing requires a completed Sign-off; it is in progress.";
 const USED = "This version was approved and published; changes need a new Sign-off.";
 
@@ -112,8 +148,8 @@ const refused = (message: string) => ({ status: 403, message });
 
 beforeAll(async () => {
   booted = await bootWorkflowsPayload({
-    workflows: [signoff, legal],
-    collections: [drafts(NOTES), drafts(BRIEFS)],
+    workflows: [signoff, legal, verdict],
+    collections: [drafts(NOTES), drafts(BRIEFS), drafts(MEMOS)],
   });
   payload = booted.payload;
   const doc = await payload.create({
@@ -221,7 +257,7 @@ describe("requiredToPublish", () => {
       user: editor,
     });
     expect(before.publish).toEqual({ clear: true });
-    expect(before.instances[0]).toMatchObject({ requiredToPublish: true });
+    expect(before.instances[0]).toMatchObject({ requiredToPublish: ["approved"] });
     expect(before.instances[0]).not.toHaveProperty("publishedAt");
 
     expect(await publish(NOTES, note.id)).toBe("published");
@@ -305,10 +341,55 @@ describe("requiredToPublish", () => {
     const state = (await tools.workflows_get_state.execute({
       collectionSlug: NOTES,
       documentId: String(note.id),
-    })) as { publish?: unknown; available: { name: string; requiredToPublish?: boolean }[] };
+    })) as { publish?: unknown; available: { name: string; requiredToPublish?: string[] }[] };
     expect(state.publish).toEqual({ clear: false, reason: NONE });
     expect(state.available).toContainEqual(
-      expect.objectContaining({ name: "signoff", requiredToPublish: true })
+      expect.objectContaining({ name: "signoff", requiredToPublish: ["approved"] })
     );
+  });
+
+  /** Starts `verdict` on the memo and ends it with `action`. */
+  const decide = async (id: string | number, action: string) => {
+    const run = await startWorkflow(payload, {
+      workflow: "verdict",
+      collection: MEMOS,
+      id,
+      user: editor,
+    });
+    await fireWorkflowAction(payload, { instanceId: run.id as string, action, user: editor });
+    return run.id as string;
+  };
+
+  it("refuses a publish when the run ended in a stage that does not approve", async () => {
+    const memo = await createDraft(MEMOS, "Rejected memo");
+    const run = await decide(memo.id, "reject");
+    expect(await publish(MEMOS, memo.id)).toEqual(refused(UNAPPROVED));
+    const state = await getWorkflowState(payload, { collection: MEMOS, id: memo.id, user: editor });
+    expect(state.publish).toEqual({ clear: false, reason: UNAPPROVED });
+    expect(state.instances[0]).toMatchObject({
+      id: run,
+      status: "completed",
+      stage: { name: "rejected" },
+      requiredToPublish: ["approved", "approved-with-edits"],
+    });
+    expect(state.available).toContainEqual(
+      expect.objectContaining({
+        name: "verdict",
+        requiredToPublish: ["approved", "approved-with-edits"],
+      })
+    );
+    // Not used by the refused publish; a new, approving run lets it through.
+    expect((await historyOf(payload, run)).at(-1)?.type).toBe("completed");
+    await decide(memo.id, "approve");
+    expect(await publish(MEMOS, memo.id)).toBe("published");
+  });
+
+  it("with two approving stages, either one lets a publish through", async () => {
+    for (const action of ["approve", "approve-with-edits"]) {
+      const memo = await createDraft(MEMOS, `Memo ${action}`);
+      const run = await decide(memo.id, action);
+      expect(await publish(MEMOS, memo.id)).toBe("published");
+      expect((await historyOf(payload, run)).at(-1)).toMatchObject({ type: "published" });
+    }
   });
 });

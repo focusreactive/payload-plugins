@@ -416,7 +416,9 @@ const record = async (req: PayloadRequest, doc: InstanceDoc, result: Result): Pr
 };
 
 /**
- * Inserts a new run with its first events and its visibility values (`visibility.ts`). A second
+ * Inserts a new run with its first events and its visibility values (`visibility.ts`); with
+ * `recheck`, called after the insert in its transaction, the values it returns (they changed
+ * since: a concurrent save that moved the document did not see this run) are written. A second
  * active run of the same workflow on a document is `already-running`.
  * Losing that race inside a caller's transaction ends the transaction (Payload rolls it back when
  * `create` fails): the error says so, so the caller does not commit believing its writes survived.
@@ -426,7 +428,8 @@ export const createRun = async (
   def: WorkflowDefinition,
   result: Result,
   subject: Subject,
-  visibility: Record<string, unknown> = {}
+  visibility: Record<string, unknown> = {},
+  recheck?: (inserted: InstanceDoc) => Promise<Record<string, unknown> | undefined>
 ): Promise<Committed> => {
   const began = await transactionOf(req);
   try {
@@ -442,6 +445,19 @@ export const createRun = async (
         overrideAccess: true,
         req,
       })) as unknown as InstanceDoc;
+      const latest = recheck ? await recheck(doc) : undefined;
+      if (latest) {
+        await writing(req, () =>
+          req.payload.db.updateOne({
+            collection: RUNS_SLUG,
+            id: doc.id,
+            data: latest,
+            req,
+            returning: false,
+          })
+        );
+        Object.assign(doc, latest);
+      }
       return { doc, jobs: await record(req, doc, result) };
     });
   } catch (error) {

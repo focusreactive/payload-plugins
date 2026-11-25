@@ -104,17 +104,22 @@ export const runsOf = (
 
 /**
  * What a run (or none) means for publishing, with a workflow `requiredToPublish`: `required` (not
- * started, or stopped: publishing is refused), `ready` (completed, no publish used it yet), `used`
- * (completed and published: further changes need a new run). Nothing while one is in progress
- * (its stage and guards say so) or when no workflow is required.
+ * started, or stopped: publishing is refused), `ready` (completed in an approving stage, no
+ * publish used it yet), `used` (completed and published: further changes need a new run),
+ * `unapproved` (completed in a stage that does not approve, e.g. rejected: publishing is refused,
+ * as with none). Nothing while one is in progress (its stage and guards say so) or when no
+ * workflow is required.
  */
-export type PublishNote = "required" | "ready" | "used";
+export type PublishNote = "required" | "ready" | "used" | "unapproved";
 
 export const publishNoteOf = (
   state: WorkflowState,
   view: InstanceView | undefined
 ): PublishNote | undefined => {
   if (view?.status === "completed" && view.requiredToPublish) {
+    if (!view.requiredToPublish.includes(view.stage.name)) {
+      return "unapproved";
+    }
     return view.publishedAt ? "used" : "ready";
   }
   if (view?.status === "active" || !state.publish || state.publish.clear) {
@@ -142,10 +147,16 @@ export const indicatorOf = (state: WorkflowState, me: string | undefined): Indic
     return { kind: "none" };
   }
   const note = publish ? { publish } : {};
-  // A completed run shows as completed; publishing that needs a workflow first asks for it; a
-  // stopped run, or none, shows as a plain "Workflow".
+  // A completed run shows as completed (one that ended without approval asks for a new one, as
+  // none would); publishing that needs a workflow first asks for it; a stopped run, or none,
+  // shows as a plain "Workflow".
   if (finished?.status === "completed") {
-    return { kind: "idle", finished, tone: "success", ...note };
+    return {
+      kind: "idle",
+      finished,
+      tone: publish === "unapproved" ? "attention" : "success",
+      ...note,
+    };
   }
   return {
     kind: "idle",

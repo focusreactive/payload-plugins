@@ -43,7 +43,7 @@ import { readEvents } from "./events.js";
 import { createRun, isRunning, loadRun, mutateRun, subjectOf, toState } from "./store.js";
 import type { Committed, InstanceDoc, JobId, Subject } from "./store.js";
 import { transactionOf } from "./transaction.js";
-import { visibilityOf } from "./visibility.js";
+import { sameValues, valuesOfRun, visibilityOf } from "./visibility.js";
 
 type Via = UserActor["via"];
 
@@ -430,8 +430,29 @@ export const startRun = async (
   // Started by nobody in particular: the auto-start on create.
   const cause: Cause = args.user ? STEP : { kind: "start" };
   const result = start(def, { fields: args.fields, actor }, { doc, now: new Date(), cause });
-  const visible = visibilityOf(req, args.collection, doc);
-  const committed = await createRun(req, def, result, subject, visible);
+  // Who may see the run: a start never creates a run without its visibility values.
+  const valuesOf = (current: Record<string, unknown> | null) => {
+    try {
+      return visibilityOf(req, args.collection, current);
+    } catch (error) {
+      throw new Error(
+        `Could not start "${def.name}": the document's workflow visibility could not be computed (visibility.fromDocument threw). No run was created.`,
+        { cause: error }
+      );
+    }
+  };
+  const visible = valuesOf(doc);
+  // A person's start reads the document again after the insert, in the same transaction, so a
+  // save that changed the values meanwhile (and so did not see this run) is not missed. The
+  // auto-start on create runs inside the creating save, on a document nobody else can change.
+  const recheck =
+    visible && args.user
+      ? async (inserted: InstanceDoc) => {
+          const latest = valuesOf(await loadSubject(req, subject, null));
+          return latest && !sameValues(valuesOfRun(inserted, latest), latest) ? latest : undefined;
+        }
+      : undefined;
+  const committed = await createRun(req, def, result, subject, visible, recheck);
   return answer(req, committed, doc, args.user, via);
 };
 

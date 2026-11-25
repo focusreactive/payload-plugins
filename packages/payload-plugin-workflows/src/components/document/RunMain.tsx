@@ -100,8 +100,12 @@ export const PublishLine = ({ note }: { note: PublishNote | undefined }) => {
   if (!note) {
     return null;
   }
-  if (note === "used") {
-    return <p className="field-description workflows-publish">{t("publishUsed")}</p>;
+  if (note === "used" || note === "unapproved") {
+    return (
+      <p className="field-description workflows-publish">
+        {t(note === "used" ? "publishUsed" : "publishUnapproved")}
+      </p>
+    );
   }
   return (
     <p className="workflows-publish" data-publish={note}>

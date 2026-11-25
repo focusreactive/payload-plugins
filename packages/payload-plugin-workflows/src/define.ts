@@ -277,6 +277,65 @@ const checkStage = (
   }
 };
 
+/**
+ * The terminal stages whose completion approves a publish (`requiredToPublish`), as a list; `[]`
+ * when the workflow is not required to publish.
+ */
+export const approvingStages = (def: Pick<WorkflowDefinition, "requiredToPublish">): string[] => {
+  const named = def.requiredToPublish;
+  if (named === undefined) {
+    return [];
+  }
+  return typeof named === "string" ? [named] : [...named];
+};
+
+/** `requiredToPublish` names one or more declared terminal stages (the approving endings). */
+const checkRequiredToPublish = (
+  issues: Issue[],
+  def: WorkflowDefinition,
+  stages: StageDef[]
+): void => {
+  const named: unknown = def.requiredToPublish;
+  if (named === undefined) {
+    return;
+  }
+  const path = "requiredToPublish";
+  if (typeof named === "boolean") {
+    issues.push({
+      path,
+      message:
+        'requiredToPublish names the terminal stage(s) that approve, e.g. `requiredToPublish: "approved"` or `["approved", "approved-with-edits"]`; `true` / `false` are no longer accepted',
+    });
+    return;
+  }
+  const names = typeof named === "string" ? [named] : named;
+  if (
+    !Array.isArray(names) ||
+    names.length === 0 ||
+    names.some((name) => typeof name !== "string" || name.length === 0)
+  ) {
+    issues.push({
+      path,
+      message: "requiredToPublish must be a terminal stage name or a non-empty list of them",
+    });
+    return;
+  }
+  for (const name of names as string[]) {
+    const stage = stages.find((entry) => entry.name === name);
+    if (!stage) {
+      issues.push({
+        path,
+        message: `stage "${name}" is not a declared stage. Known stages: ${quoted(stages.map((entry) => entry.name))}`,
+      });
+    } else if ((stage.transitions ?? []).length > 0) {
+      issues.push({
+        path,
+        message: `stage "${name}" is not terminal (it has transitions): only a stage the workflow ends in can approve a publish`,
+      });
+    }
+  }
+};
+
 /** Every problem with a definition, path-prefixed. Empty when it is valid. */
 export const definitionIssues = (def: WorkflowDefinition): string[] => {
   const issues: Issue[] = [];
@@ -309,9 +368,7 @@ export const definitionIssues = (def: WorkflowDefinition): string[] => {
         'start must be `{ on: "create", when? }` (started when a document is created); leave it out for a workflow people start',
     });
   }
-  if (def.requiredToPublish !== undefined && typeof def.requiredToPublish !== "boolean") {
-    issues.push({ path: "requiredToPublish", message: "requiredToPublish must be a boolean" });
-  }
+  checkRequiredToPublish(issues, def, stages);
   const { version } = def;
   if (
     version !== undefined &&

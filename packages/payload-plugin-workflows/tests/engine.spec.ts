@@ -1704,9 +1704,11 @@ describe("recordPublish (requiredToPublish)", () => {
   });
 
   it("the view says whether the workflow is required", () => {
-    const required = defineWorkflow({ ...editorialReview, requiredToPublish: true });
+    const required = defineWorkflow({ ...editorialReview, requiredToPublish: "approved" });
     const { state } = start(required, { actor: { system: true } }, env());
-    expect(view(required, state, { actor, roles: [] }, env()).requiredToPublish).toBe(true);
+    expect(view(required, state, { actor, roles: [] }, env()).requiredToPublish).toEqual([
+      "approved",
+    ]);
     expect(view(editorialReview, state, { actor, roles: [] }, env())).not.toHaveProperty(
       "requiredToPublish"
     );

@@ -5,10 +5,12 @@
 // step with the document. A workflow error never fails a save by itself: it is logged and the
 // save goes on. Unless it cost the save its transaction (see `server/transaction.ts`): then the
 // save is already rolled back, and the hook fails it loudly instead of letting it report a
-// success. Conditions see the document in the default locale (`loadSubject`): a hook that holds
+// success. And unless the runs' visibility values cannot be kept up to date (`syncVisibility`):
+// they decide who sees the runs, so that save fails too. Conditions see the document in the default locale (`loadSubject`): a hook that holds
 // it in another locale reads it again, only when something is to be evaluated.
 
 import type {
+  CollectionSlug,
   CollectionAfterChangeHook,
   CollectionAfterDeleteHook,
   CollectionBeforeChangeHook,
@@ -19,7 +21,7 @@ import type {
 } from "payload";
 import { APIError } from "payload";
 
-import { WORKFLOW_BYPASS, WORKFLOW_SKIP } from "./constants.js";
+import { RUNS_SLUG, WORKFLOW_BYPASS, WORKFLOW_SKIP } from "./constants.js";
 import {
   SYSTEM,
   findStage,
@@ -51,6 +53,7 @@ import type { InstanceDoc, JobId } from "./server/store.js";
 import { transactionLost, transactionOf } from "./server/transaction.js";
 import type { TransactionId } from "./server/transaction.js";
 import { applyVisibility, sameValues, valuesOfRun, visibilityOf } from "./server/visibility.js";
+import type { VisibilityValues } from "./server/visibility.js";
 import type { GuardDef, GuardOperation, StartOnCreate } from "./types.js";
 import { labelText } from "./vocabulary.js";
 
@@ -59,6 +62,17 @@ type Doc = Record<string, unknown>;
 /** One query for a document's active runs. */
 const activeRuns = (req: PayloadRequest, collection: string, id: string | number) =>
   findRuns(req, subjectWhere({ collection, id: String(id) }, true));
+
+/** Whether the document has any run, finished ones included (one indexed count). */
+const hasRuns = async (req: PayloadRequest, collection: string, id: string): Promise<boolean> =>
+  (
+    await req.payload.count({
+      collection: RUNS_SLUG as CollectionSlug,
+      where: subjectWhere({ collection, id }, false),
+      overrideAccess: true,
+      req,
+    })
+  ).totalDocs > 0;
 
 export const hasDrafts = (collection: CollectionConfig | undefined): boolean =>
   Boolean(
@@ -99,17 +113,27 @@ const savedForEvaluation = async (
 const logged = (req: PayloadRequest, msg: string, error: unknown) =>
   req.payload.logger.error({ err: error, msg: `workflows: ${msg}` });
 
-/** The save failed because a workflow error ended its transaction. */
-class SaveRolledBack extends APIError {
-  constructor() {
-    super(
-      "The document was not saved: its workflow could not be updated, and the failure rolled back the save. Try again; if it keeps failing, see the server log.",
-      500,
-      null,
-      true
-    );
+/** A save the hook fails on purpose (the cause is logged); passed through `handled` as is. */
+class SaveFailed extends APIError {
+  constructor(message: string) {
+    super(message, 500, null, true);
   }
 }
+
+/** The save failed because a workflow error ended its transaction. */
+const saveRolledBack = () =>
+  new SaveFailed(
+    "The document was not saved: its workflow could not be updated, and the failure rolled back the save. Try again; if it keeps failing, see the server log."
+  );
+
+/**
+ * The save failed because the runs' visibility values could not be brought up to date: saving
+ * anyway could leave the document's workflows visible to the wrong people.
+ */
+const visibilityNotUpdated = () =>
+  new SaveFailed(
+    "The document was not saved: its workflow visibility could not be updated, so its workflows could be shown to the wrong people. Try again; if it keeps failing, see the server log."
+  );
 
 /**
  * Handles a workflow error in a hook: logs it in full and lets the save go on, unless the save's
@@ -122,13 +146,13 @@ const handled = async (
   msg: string,
   error: unknown
 ): Promise<void> => {
-  if (error instanceof SaveRolledBack) {
+  if (error instanceof SaveFailed) {
     throw error;
   }
   logged(req, msg, error);
   if (await transactionLost(req, began)) {
     logged(req, "the error ended the save's transaction: failing the save", error);
-    throw new SaveRolledBack();
+    throw saveRolledBack();
   }
 };
 
@@ -380,8 +404,14 @@ const abortRuns = async (req: PayloadRequest, collection: string, id: string | n
 /**
  * Keeps the runs' visibility values (`visibility`) in step with the saved document: written on
  * every run of it, finished ones included, when they changed with this save (`saved` against
- * `previous`, same locale) or differ from what its active runs hold. Nothing is read for it, and
- * nothing written when nothing changed. `current` is the document as conditions see it.
+ * `previous`, same locale; unknown when `fromDocument` throws for `previous`) or differ from what
+ * its active runs hold. Nothing is read for it, and nothing written when nothing changed.
+ * `current` is the document as conditions see it.
+ *
+ * The one deliberate exception to "a workflow error never fails a save": these values decide who
+ * sees the runs. If they cannot be computed for the saved document (`fromDocument` throws) or
+ * their write fails, and the document has runs, the save fails (`visibilityNotUpdated`). A
+ * document without runs saves (the error is logged).
  */
 const syncVisibility = async (
   req: PayloadRequest,
@@ -389,18 +419,40 @@ const syncVisibility = async (
   saved: { doc: Doc; previous: Doc | undefined; current: () => Promise<Doc> },
   runs: InstanceDoc[]
 ): Promise<void> => {
-  const before = visibilityOf(req, collection, saved.previous ?? null);
-  const after = visibilityOf(req, collection, saved.doc);
-  if (!(before && after)) {
+  if (!settingsOf(req.payload).visibility) {
     return;
   }
-  const moved = !sameValues(before, after);
-  if (!moved && runs.length === 0) {
-    return;
-  }
-  const values = visibilityOf(req, collection, await saved.current()) ?? after;
-  if (moved || runs.some((run) => !sameValues(valuesOfRun(run, values), values))) {
-    await applyVisibility(req, { collection, id: String(saved.doc.id) }, values);
+  const id = String(saved.doc.id);
+  let writeTried = false;
+  try {
+    let before: VisibilityValues | undefined;
+    try {
+      before = visibilityOf(req, collection, saved.previous ?? null);
+    } catch (error) {
+      // What they were is unknown: treat them as changed, if the saved document's are known.
+      logged(req, `visibility.fromDocument failed for the previous ${collection} ${id}`, error);
+    }
+    const after = visibilityOf(req, collection, saved.doc);
+    if (!after) {
+      return;
+    }
+    const moved = !(before && sameValues(before, after));
+    if (!moved && runs.length === 0) {
+      return;
+    }
+    const values = visibilityOf(req, collection, await saved.current()) ?? after;
+    if (moved || runs.some((run) => !sameValues(valuesOfRun(run, values), values))) {
+      writeTried = true;
+      await applyVisibility(req, { collection, id }, values);
+    }
+  } catch (error) {
+    logged(req, `could not update who sees the runs of ${collection} ${id}`, error);
+    // `fromDocument` threw: a document without runs has no visibility to keep, and its save goes
+    // on (runs already known, else one indexed count). A failed write, or a count that fails,
+    // fails the save.
+    if (writeTried || runs.length > 0 || (await hasRuns(req, collection, id).catch(() => true))) {
+      throw visibilityNotUpdated();
+    }
   }
 };
 

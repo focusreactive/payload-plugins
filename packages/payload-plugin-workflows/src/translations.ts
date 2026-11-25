@@ -78,6 +78,7 @@ export const en = {
   publishReady: "Approved — ready to publish",
   publishReadyShort: "Ready to publish",
   publishUsed: "Published with this approval. Further changes need a new workflow.",
+  publishUnapproved: "Ended without approval, so it does not allow publishing.",
   you: "you",
   waitingOn: "Waiting on {{who}}",
   waitingOnAnyone: "Anyone can act",

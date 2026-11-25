@@ -10,7 +10,13 @@ import type {
 } from "payload";
 
 import { JOBS_QUEUE, WIDGET_SLUG, componentPath } from "./constants.js";
-import { activitiesWithPaths, defineWorkflow, definitionIssues, formatIssues } from "./define.js";
+import {
+  activitiesWithPaths,
+  approvingStages,
+  defineWorkflow,
+  definitionIssues,
+  formatIssues,
+} from "./define.js";
 import { workflowEndpoints } from "./endpoints.js";
 import { hasDrafts, withWorkflowHooks } from "./hooks.js";
 import { effectTask, tickTask } from "./server/effects.js";
@@ -196,7 +202,7 @@ const optionIssues = (options: WorkflowsPluginOptions, config: Config): string[]
       const collection = collections.find((entry) => entry.slug === slug);
       return collection && !hasDrafts(collection);
     });
-    if (def.requiredToPublish === true) {
+    if (approvingStages(def).length > 0) {
       for (const slug of draftless) {
         issues.push(
           `${path}.requiredToPublish: workflow "${def.name}" is required to publish, but collection "${slug}" has no drafts (versions.drafts), so it has no publish to require it for. Enable drafts on "${slug}" or leave \`requiredToPublish\` out`

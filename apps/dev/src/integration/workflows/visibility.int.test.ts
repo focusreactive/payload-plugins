@@ -159,6 +159,10 @@ const rest = async (who: string, path: string) => {
 
 const ids = (values: string[]) => [...values].sort();
 
+/** While set, `visibility.fromDocument` throws (a host lookup that fails). */
+let broken = false;
+const NOT_UPDATED = /^The document was not saved: its workflow visibility could not be updated/u;
+
 beforeAll(async () => {
   booted = await bootWorkflowsPayload({
     workflows: BASE_WORKFLOWS,
@@ -166,7 +170,12 @@ beforeAll(async () => {
     plugins: [tenancy],
     visibility: {
       fields: [{ name: "tenant", type: "relationship", relationTo: "tenants", index: true }],
-      fromDocument: ({ doc }) => ({ tenant: doc.tenant }),
+      fromDocument: ({ doc }) => {
+        if (broken) {
+          throw new Error("tenant lookup failed");
+        }
+        return { tenant: doc.tenant };
+      },
       read: ({ req }) => tenantRule(req.user),
     },
   });
@@ -194,6 +203,7 @@ afterAll(async () => {
 });
 
 afterEach(() => {
+  broken = false;
   vi.restoreAllMocks();
 });
 
@@ -380,5 +390,142 @@ describe("visibility: each tenant sees only its own workflows", () => {
     expect((await readAs(EVENTS, alice)).every((doc) => String(doc.run) === runs["A one"])).toBe(
       true
     );
+  });
+});
+
+describe("visibility that cannot be updated fails the save or the start", () => {
+  const tenantOfPage = async (id: string | number) =>
+    String(
+      idOf(
+        (
+          (await payload.findByID({
+            collection: "pages",
+            id,
+            draft: true,
+            depth: 0,
+            overrideAccess: true,
+          })) as { tenant?: unknown }
+        ).tenant
+      )
+    );
+  const tenantsOfRuns = async (id: string | number) =>
+    (
+      await payload.find({
+        collection: RUNS as never,
+        where: { subjectId: { equals: String(id) } },
+        depth: 0,
+        pagination: false,
+        overrideAccess: true,
+      })
+    ).docs.map((row) => String(idOf((row as { tenant?: unknown }).tenant)));
+  const moveTo = (id: string | number, tenant: string | number, title?: string) =>
+    payload
+      .update({
+        collection: "pages",
+        id,
+        data: { tenant, ...(title ? { title } : {}) } as never,
+        draft: true,
+        overrideAccess: true,
+      })
+      .then(() => "saved")
+      .catch((error: { status?: number; message?: string }) => ({
+        status: error.status,
+        message: error.message,
+      }));
+  const notUpdated = { status: 500, message: expect.stringMatching(NOT_UPDATED) };
+
+  it("fromDocument throws on a save of a document with runs: the save fails, nothing changes", async () => {
+    const page = await createPage("Throws on save", tenantA);
+    const finished = await start("Throws on save");
+    await abortWorkflow(payload, { instanceId: finished, user: root });
+    await start("Throws on save");
+    broken = true;
+    expect(await moveTo(page.id, tenantB, "Moved")).toEqual(notUpdated);
+    // A save that keeps the tenant cannot be told apart: it fails too.
+    expect(await moveTo(page.id, tenantA, "Renamed")).toEqual(notUpdated);
+    broken = false;
+    expect(await tenantOfPage(page.id)).toBe(String(tenantA));
+    const row = (await payload.findByID({
+      collection: "pages",
+      id: page.id,
+      draft: true,
+      overrideAccess: true,
+    })) as { title?: string };
+    expect(row.title).toBe("Throws on save");
+    expect(await tenantsOfRuns(page.id)).toEqual([String(tenantA), String(tenantA)]);
+    // Once it works again, the move goes through and the runs follow.
+    expect(await moveTo(page.id, tenantB)).toBe("saved");
+    expect(await tenantsOfRuns(page.id)).toEqual([String(tenantB), String(tenantB)]);
+  });
+
+  it("the write of the new values fails: the save fails, nothing changes", async () => {
+    const page = await createPage("Write fails", tenantA);
+    await start("Write fails");
+    const original = payload.db.updateMany.bind(payload.db);
+    vi.spyOn(payload.db, "updateMany").mockImplementation((args) =>
+      args.collection === RUNS ? Promise.reject(new Error("disk full")) : original(args)
+    );
+    expect(await moveTo(page.id, tenantB)).toEqual(notUpdated);
+    vi.restoreAllMocks();
+    expect(await tenantOfPage(page.id)).toBe(String(tenantA));
+    expect(await tenantsOfRuns(page.id)).toEqual([String(tenantA)]);
+  });
+
+  it("a document without runs saves even if fromDocument throws", async () => {
+    const page = await createPage("No runs", tenantA);
+    broken = true;
+    expect(await moveTo(page.id, tenantB)).toBe("saved");
+    broken = false;
+    expect(await tenantOfPage(page.id)).toBe(String(tenantB));
+  });
+
+  it("fromDocument throws at start: the start fails and no run is created", async () => {
+    const page = await createPage("Throws on start", tenantA);
+    broken = true;
+    const failed = await startWorkflow(payload, {
+      workflow: "review",
+      collection: "pages",
+      id: page.id,
+      user: root,
+    }).catch((error: { message?: string }) => error.message);
+    expect(failed).toBe(
+      'Could not start "review": the document\'s workflow visibility could not be computed (visibility.fromDocument threw). No run was created.'
+    );
+    // The auto-start on create: the document is saved, without a run.
+    const auto = await payload.create({
+      collection: "pages",
+      data: { title: "Auto", tenant: tenantA } as never,
+      draft: true,
+      overrideAccess: true,
+    });
+    broken = false;
+    expect(await tenantsOfRuns(page.id)).toEqual([]);
+    expect(await tenantsOfRuns(auto.id)).toEqual([]);
+  });
+
+  it("a run started while the document moves gets the new values", async () => {
+    const page = await createPage("Moves during start", tenantA);
+    // The move commits right after the start read the document, before its run is inserted, so
+    // the move's own sync cannot see the run.
+    const findByID = payload.findByID.bind(payload);
+    let moved = false;
+    vi.spyOn(payload, "findByID").mockImplementation(async (args) => {
+      const doc = await findByID(args as never);
+      if (!moved && (args.collection as string) === "pages") {
+        moved = true;
+        // A whole save, committed on its own (no run yet for its sync to move).
+        await payload.update({
+          collection: "pages",
+          id: page.id,
+          data: { tenant: tenantB } as never,
+          draft: true,
+          overrideAccess: true,
+        });
+      }
+      return doc as never;
+    });
+    await start("Moves during start");
+    vi.restoreAllMocks();
+    expect(await tenantsOfRuns(page.id)).toEqual([String(tenantB)]);
   });
 });

@@ -1,12 +1,14 @@
-// `requiredToPublish`: every publish of a document a required workflow covers needs a completed
-// run of it that no publish has used yet, and uses it. The verdict is computed here once, for the
+// `requiredToPublish`: every publish of a document a required workflow covers needs a run of it
+// that completed in one of the approving stages it names and that no publish has used yet, and
+// uses it. A run that ended in another terminal stage counts as none. The verdict is computed here once, for the
 // hook that enforces it and for the state the drawer and agents read.
 
 import type { CollectionSlug, PayloadRequest } from "payload";
 import { APIError } from "payload";
 
 import { RUNS_SLUG } from "../constants.js";
-import { recordBypass, recordPublish } from "../engine/engine.js";
+import { approvingStages } from "../define.js";
+import { findStage, recordBypass, recordPublish } from "../engine/engine.js";
 import { isWorkflowError } from "../engine/errors.js";
 import type { WorkflowDefinition } from "../types.js";
 import { settingsOf, titleIn, userRefOf, writerOf } from "./operations.js";
@@ -16,25 +18,36 @@ import type { InstanceDoc, Subject } from "./store.js";
 /** The workflows required before publishing a document of `collection`. */
 export const requiredWorkflows = (req: PayloadRequest, collection: string): WorkflowDefinition[] =>
   settingsOf(req.payload).workflows.filter(
-    (def) => def.requiredToPublish === true && def.collections.includes(collection)
+    (def) => approvingStages(def).length > 0 && def.collections.includes(collection)
   );
 
 /** One required workflow, its latest run on the document, and why a publish is refused, if it is. */
 export interface PublishCheck {
   workflow: WorkflowDefinition;
   run?: InstanceDoc;
-  /** The refusal, in words; none when the latest run is completed and unused. */
+  /** The refusal, in words; none when the latest run completed in an approving stage, unused. */
   refusal?: string;
 }
 
 /** Why a publish is refused given the workflow's latest run on the document; none: allowed. */
-const refusalOf = (title: string, run: InstanceDoc | undefined): string | undefined => {
+const refusalOf = (
+  req: PayloadRequest,
+  workflow: WorkflowDefinition,
+  run: InstanceDoc | undefined
+): string | undefined => {
+  const title = titleIn(req, workflow.title, workflow.name);
   if (run?.status === "active") {
     return `Publishing requires a completed ${title}; it is in progress.`;
   }
   if (run?.status !== "completed") {
     // None yet, or the last one was stopped.
     return `Publishing requires a completed ${title}. Start it from the Workflow button.`;
+  }
+  if (!approvingStages(workflow).includes(run.stage)) {
+    // Completed, but in an ending that does not approve (e.g. rejected): like a stopped one.
+    const stage = findStage(workflow, run.stage);
+    const ended = titleIn(req, stage?.title, run.stage);
+    return `The ${title} ended without approval (${ended}). Publishing requires a new ${title}; start it from the Workflow button.`;
   }
   if (run.publishedAt) {
     return `This version was approved and published; changes need a new ${title}.`;
@@ -72,7 +85,7 @@ export const publishChecks = async (
       });
       run = found.docs[0] as unknown as InstanceDoc | undefined;
     }
-    const refusal = refusalOf(titleIn(req, workflow.title, workflow.name), run);
+    const refusal = refusalOf(req, workflow, run);
     checks.push({ workflow, ...(run ? { run } : {}), ...(refusal ? { refusal } : {}) });
   }
   return checks;
@@ -112,9 +125,7 @@ export const usePublish = async (
         throw error;
       }
       // Another publish used it first.
-      throw refusedPublish(
-        refusalOf(titleIn(req, workflow.title, workflow.name), { ...run, publishedAt: "used" })
-      );
+      throw refusedPublish(refusalOf(req, workflow, { ...run, publishedAt: "used" }));
     }
   }
 };

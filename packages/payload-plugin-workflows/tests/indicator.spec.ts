@@ -230,7 +230,7 @@ describe("the drawer's state after an operation (stateAfter)", () => {
 });
 
 describe("publishNoteOf and the indicator (requiredToPublish)", () => {
-  const required = { ...editorialReview, requiredToPublish: true };
+  const required = { ...editorialReview, requiredToPublish: "approved" };
   const completed = (publishedAt?: string): InstanceView => {
     const sim = createWorkflowSimulator(required);
     sim.fire("submit", author);
@@ -244,7 +244,7 @@ describe("publishNoteOf and the indicator (requiredToPublish)", () => {
   it("not started (or stopped) and required: required, asking for attention", () => {
     const state: WorkflowState = {
       instances: [],
-      available: [{ ...available[0]!, requiredToPublish: true }],
+      available: [{ ...available[0]!, requiredToPublish: ["approved"] }],
       publish: refusedNone,
     };
     expect(publishNoteOf(state, undefined)).toBe("required");
@@ -277,6 +277,29 @@ describe("publishNoteOf and the indicator (requiredToPublish)", () => {
     expect(publishNoteOf({ ...state, instances: [running], publish: refusedNone }, running)).toBe(
       undefined
     );
+  });
+
+  it("completed in a stage that does not approve: unapproved, asking for a new run", () => {
+    // As a run of a workflow with a second ending ("rejected") would look.
+    const rejected: InstanceView = {
+      ...completed(),
+      stage: { name: "rejected", title: "Rejected" },
+    };
+    const state: WorkflowState = {
+      instances: [rejected],
+      available: [{ ...available[0]!, requiredToPublish: ["approved"] }],
+      publish: refusedNone,
+    };
+    expect(publishNoteOf(state, rejected)).toBe("unapproved");
+    expect(indicatorOf(state, editor.user)).toEqual({
+      kind: "idle",
+      finished: rejected,
+      tone: "attention",
+      publish: "unapproved",
+    });
+    // Two approving endings: either one is ready.
+    const twice = { ...rejected, requiredToPublish: ["approved", "rejected"] };
+    expect(publishNoteOf({ ...state, instances: [twice] }, twice)).toBe("ready");
   });
 
   it("says nothing when no workflow is required", () => {

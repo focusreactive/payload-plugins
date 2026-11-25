@@ -445,7 +445,7 @@ describe("requiredToPublish and visibility at config time", () => {
         { slug: "posts", fields: [] },
       ],
     }) as unknown as Config;
-  const minimalOn = (collections: string[], requiredToPublish?: boolean) => ({
+  const minimalOn = (collections: string[], requiredToPublish?: string) => ({
     ...minimal(),
     collections,
     ...(requiredToPublish === undefined ? {} : { requiredToPublish }),
@@ -453,7 +453,7 @@ describe("requiredToPublish and visibility at config time", () => {
 
   it("rejects requiredToPublish on a collection without drafts", () => {
     expect(() =>
-      workflowsPlugin({ workflows: [minimalOn(["pages", "posts"], true)] })(withDrafts())
+      workflowsPlugin({ workflows: [minimalOn(["pages", "posts"], "b")] })(withDrafts())
     ).toThrowError(
       [
         "workflowsPlugin() failed validation (1 issue):",
@@ -461,7 +461,7 @@ describe("requiredToPublish and visibility at config time", () => {
       ].join("\n")
     );
     expect(() =>
-      workflowsPlugin({ workflows: [minimalOn(["pages"], true)] })(withDrafts())
+      workflowsPlugin({ workflows: [minimalOn(["pages"], "b")] })(withDrafts())
     ).not.toThrow();
   });
 

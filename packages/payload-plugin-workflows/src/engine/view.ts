@@ -1,4 +1,4 @@
-import { definitionVersionOf } from "../define.js";
+import { approvingStages, definitionVersionOf } from "../define.js";
 import type {
   Caller,
   CallerActionDef,
@@ -177,7 +177,7 @@ export const view = (
     definitionChanged: state.definitionVersion !== definitionVersionOf(def),
     titles: titlesOf(def, text),
     canAbort: false,
-    ...(def.requiredToPublish === true ? { requiredToPublish: true as const } : {}),
+    ...(approvingStages(def).length > 0 ? { requiredToPublish: approvingStages(def) } : {}),
     ...(state.publishedAt ? { publishedAt: state.publishedAt } : {}),
   };
 };

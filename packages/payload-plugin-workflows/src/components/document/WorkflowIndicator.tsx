@@ -36,6 +36,15 @@ const describe = (
         title: finished.title,
         stage: finished.stage.title,
       });
+      if (publish === "unapproved") {
+        // Ended without approval: publishing needs a new run, as with none.
+        return {
+          text: t("publishRequired"),
+          label: `${t("indicatorLabel")}: ${completed}. ${t("publishUnapproved")} ${t("publishRequired")}. ${open}`,
+          tone: indicator.tone,
+          completed: false,
+        };
+      }
       let note = "";
       if (publish === "ready") {
         note = ` ${t("publishReady")}.`;
