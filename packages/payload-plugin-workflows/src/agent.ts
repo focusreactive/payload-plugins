@@ -53,7 +53,10 @@ export const workflowTools = {
   workflows_list_definitions: define(
     "List the editorial workflows configured in this CMS: their names, the collections they run on and their stages.",
     z.object({}),
-    (_input, { payload, req }) => listWorkflowDefinitions(payload, req?.i18n?.language)
+    (_input, { payload, user, req }) => {
+      requireUser(payload, user);
+      return listWorkflowDefinitions(payload, req?.i18n?.language);
+    }
   ),
   workflows_list_instances: define(
     "List workflow runs. scope 'mine' returns runs waiting on the current user; 'all' returns every run. Filter by workflow name and status.",
@@ -67,7 +70,7 @@ export const workflowTools = {
     (input, { payload, user, req }) => listWorkflowInstances(payload, { ...input, user, req })
   ),
   workflows_get_state: define(
-    "Get the workflow runs on one document: current stage, activities, the actions you may fire (with reasons when you may not and the params they take), holding guards and history. Also lists workflows that can be started on it.",
+    "Get the workflow runs on one document: current stage, activities, the actions you may fire (with reasons when you may not and the params they take), holding guards and history. Also lists workflows that can be started on it, and, when a workflow is required before publishing (`requiredToPublish`), whether the document may be published now (`publish.clear`, else `publish.reason`).",
     z.object({ collectionSlug: z.string(), documentId: z.string() }),
     (input, { payload, user, req }) =>
       getWorkflowState(payload, {
@@ -93,7 +96,7 @@ export const workflowTools = {
         id: input.documentId,
         fields: input.fields,
         // Never as the system: an agent without a user may not start anything.
-        user: requireUser(user),
+        user: requireUser(payload, user),
         req,
         via: "agent",
       })

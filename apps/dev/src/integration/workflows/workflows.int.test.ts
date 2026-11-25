@@ -173,7 +173,6 @@ describe("workflows against a real Payload", () => {
     );
     expect(approveEntry?.actor).toEqual({
       id: String(editor.id),
-      collection: "users",
       via: "agent",
     });
 

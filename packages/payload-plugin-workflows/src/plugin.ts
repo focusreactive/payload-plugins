@@ -1,4 +1,13 @@
-import type { Config, Payload, PayloadRequest, Plugin, TypedUser, WidgetInstance } from "payload";
+import type {
+  Access,
+  Config,
+  Field,
+  Payload,
+  PayloadRequest,
+  Plugin,
+  TypedUser,
+  WidgetInstance,
+} from "payload";
 
 import { JOBS_QUEUE, WIDGET_SLUG, componentPath } from "./constants.js";
 import { activitiesWithPaths, defineWorkflow, definitionIssues, formatIssues } from "./define.js";
@@ -6,7 +15,7 @@ import { workflowEndpoints } from "./endpoints.js";
 import { hasDrafts, withWorkflowHooks } from "./hooks.js";
 import { effectTask, tickTask } from "./server/effects.js";
 import { eventsCollection } from "./server/events.js";
-import { runsCollection } from "./server/store.js";
+import { RUN_COLUMNS, runsCollection } from "./server/store.js";
 import { NAMESPACE, en } from "./translations.js";
 import type { InstanceView, Patch, QueuedEffect, WorkflowDefinition } from "./types.js";
 
@@ -52,6 +61,35 @@ export interface WorkflowAccessArgs {
 
 export type WorkflowAccess = (args: WorkflowAccessArgs) => boolean | Promise<boolean>;
 
+/**
+ * Which facts about a document decide who may see its workflows, kept on its runs, and the rule
+ * over them. Configure it when subject collections have per-document read rules on many documents
+ * (multi-tenancy): visibility is then one ordinary access rule, with no per-document resolution.
+ */
+export interface WorkflowVisibility {
+  /**
+   * Payload fields added to the runs collection (e.g. a `tenant` relationship), read-only. Each needs
+   * a name, and no name of the plugin's own columns.
+   */
+  fields: Field[];
+  /**
+   * Their values for a document: synchronous and pure. Gets the document as conditions do (latest
+   * draft, default locale); a relationship populated in it is stored as its id. Missing keys are
+   * stored as `null`.
+   */
+  fromDocument: (args: {
+    doc: Record<string, unknown>;
+    collection: string;
+    req: PayloadRequest;
+  }) => Record<string, unknown>;
+  /**
+   * Who may see a workflow: a normal Payload access function over those fields (`true`, `false`
+   * or a query on them), for users of the admin user collection. Applied to runs as is and to
+   * their events through `run` (`tenant` there reads `run.tenant`).
+   */
+  read: Access;
+}
+
 export interface WorkflowsPluginOptions {
   /**
    * Default `true`. `false` keeps the runs collection (its data and schema) and the job tasks (so
@@ -64,18 +102,28 @@ export interface WorkflowsPluginOptions {
   /** Roles of a user. Default: `user.roles` (array) or `user.role` (string), else none. */
   roles?: (user: TypedUser) => string[];
   /**
-   * Who may start a run, fire an action or abort a run. Only `true` allows. Default: a user of the
-   * admin user collection (`admin.user`). The document is always read with the user's access
-   * first, so someone who cannot read it is refused before these run. `fire` also gets the stage,
+   * Who may start a run, fire an action or abort a run. Only `true` allows. Default: everyone who
+   * takes part. Only users of the admin user collection (`admin.user`) take part, whatever these
+   * return: they narrow, never widen. The document is always read with the user's access first,
+   * so someone who cannot read it is refused before these run. `fire` also gets the stage,
    * activity, action and run (`{ id, fields }`); `abort` the stage and run.
    */
   access?: { start?: WorkflowAccess; fire?: WorkflowAccess; abort?: WorkflowAccess };
   /** Default `true`: the "Workflows" dashboard widget, first on the default dashboard. */
   dashboard?: boolean;
+  /**
+   * Who sees which workflows, decided by facts kept on the runs (see `WorkflowVisibility`).
+   * Without it, a run is visible to whoever may read its document, resolved per request to at
+   * most 5,000 documents per collection.
+   */
+  visibility?: WorkflowVisibility;
 }
 
 /** The options as the server reads them back (`config.custom.workflows`), defaults filled in. */
-export type WorkflowsSettings = Required<Omit<WorkflowsPluginOptions, "enabled" | "dashboard">>;
+export type WorkflowsSettings = Required<
+  Omit<WorkflowsPluginOptions, "enabled" | "dashboard" | "visibility">
+> &
+  Pick<WorkflowsPluginOptions, "visibility">;
 
 const defaultRoles = (user: TypedUser): string[] => {
   const record = user as unknown as Record<string, unknown>;
@@ -86,6 +134,43 @@ const defaultRoles = (user: TypedUser): string[] => {
 };
 
 // ---- Checks against the config --------------------------------------------------------------
+
+/** The `visibility` option: named fields that do not collide with the runs' own columns. */
+const visibilityIssues = (visibility: WorkflowVisibility | undefined): string[] => {
+  if (visibility === undefined) {
+    return [];
+  }
+  const issues: string[] = [];
+  if (typeof visibility.fromDocument !== "function") {
+    issues.push("visibility.fromDocument: must be a function ({ doc, collection, req }) => values");
+  }
+  if (typeof visibility.read !== "function") {
+    issues.push("visibility.read: must be an access function ({ req }) => boolean | Where");
+  }
+  const fields = Array.isArray(visibility.fields) ? visibility.fields : [];
+  if (fields.length === 0) {
+    issues.push("visibility.fields: at least one field is required");
+  }
+  const seen = new Set<string>();
+  fields.forEach((field, i) => {
+    const name = "name" in field ? field.name : undefined;
+    if (typeof name !== "string" || name.length === 0) {
+      issues.push(
+        `visibility.fields[${i}]: needs a name (layout fields such as rows and tabs are not supported)`
+      );
+    } else if (RUN_COLUMNS.includes(name)) {
+      issues.push(
+        `visibility.fields[${i}].name: "${name}" is a column of the plugin's runs collection; choose another name`
+      );
+    } else if (seen.has(name)) {
+      issues.push(`visibility.fields[${i}].name: duplicate field name "${name}"`);
+    }
+    if (typeof name === "string") {
+      seen.add(name);
+    }
+  });
+  return issues;
+};
 
 /** Every problem with the options against the config, in one list. */
 const optionIssues = (options: WorkflowsPluginOptions, config: Config): string[] => {
@@ -111,6 +196,13 @@ const optionIssues = (options: WorkflowsPluginOptions, config: Config): string[]
       const collection = collections.find((entry) => entry.slug === slug);
       return collection && !hasDrafts(collection);
     });
+    if (def.requiredToPublish === true) {
+      for (const slug of draftless) {
+        issues.push(
+          `${path}.requiredToPublish: workflow "${def.name}" is required to publish, but collection "${slug}" has no drafts (versions.drafts), so it has no publish to require it for. Enable drafts on "${slug}" or leave \`requiredToPublish\` out`
+        );
+      }
+    }
     (def.stages ?? []).forEach((stage, s) => {
       (stage.guards ?? []).forEach((guard, g) => {
         if (!(guard.operations ?? []).includes("publish")) {
@@ -135,6 +227,7 @@ const optionIssues = (options: WorkflowsPluginOptions, config: Config): string[]
       }
     });
   });
+  issues.push(...visibilityIssues(options.visibility));
   return issues;
 };
 
@@ -230,15 +323,17 @@ export const workflowsPlugin =
       effects: options.effects ?? {},
       roles: options.roles ?? defaultRoles,
       access: options.access ?? {},
+      ...(options.visibility ? { visibility: options.visibility } : {}),
     };
     const subjects = new Set(enabled ? settings.workflows.flatMap((def) => def.collections) : []);
     const translations = (config.i18n?.translations ?? {}) as Record<
       string,
       Record<string, unknown>
     >;
+    const visibilityFields = options.visibility?.fields ?? [];
     const runs = enabled
-      ? runsCollection({ components: true, endpoints: workflowEndpoints() })
-      : runsCollection({ components: false });
+      ? runsCollection({ components: true, endpoints: workflowEndpoints(), visibilityFields })
+      : runsCollection({ components: false, visibilityFields });
     return {
       ...config,
       collections: [

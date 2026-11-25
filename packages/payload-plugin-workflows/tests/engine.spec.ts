@@ -12,6 +12,7 @@ import {
   patchFields,
   recordBypass,
   recordEffect,
+  recordPublish,
   settle,
   start,
   validateParams,
@@ -31,7 +32,7 @@ import { NOW, author, editor, editorialReview } from "./fixtures.js";
 
 const env = (over: Partial<Env> = {}): Env => ({ doc: null, now: NOW, ...over });
 const caller = (id: string, roles: string[] = []): Caller => ({
-  actor: { id, collection: "users", via: "api" },
+  actor: { id, via: "api" },
   roles,
 });
 
@@ -964,7 +965,7 @@ describe("start", () => {
         { name: "headline", type: "string", initialValue: ({ doc }) => doc?.title },
       ],
     };
-    const ann = { id: "u-ann", collection: "users", via: "admin" } as const;
+    const ann = { id: "u-ann", via: "admin" } as const;
     expect(start(owned, { actor: ann }, env({ doc: { title: "Hi" } })).state.fields).toEqual({
       author: "u-ann",
       headline: "Hi",
@@ -992,21 +993,17 @@ describe("start", () => {
   });
 
   it("records who started it, from which definition version, and numbers its events from 1", () => {
-    const { state, events } = start(
-      editorialReview,
-      { actor: { id: "u1", collection: "users", via: "admin" } },
-      env()
-    );
+    const { state, events } = start(editorialReview, { actor: { id: "u1", via: "admin" } }, env());
     expect(events[0]).toEqual({
       seq: 1,
       at: NOW.toISOString(),
-      actor: { id: "u1", collection: "users", via: "admin" },
+      actor: { id: "u1", via: "admin" },
       type: "started",
       stage: "drafting",
       definitionVersion: editorialReview.version,
     });
     expect(state.startedAt).toBe(NOW.toISOString());
-    expect(state.startedBy).toEqual({ id: "u1", collection: "users", via: "admin" });
+    expect(state.startedBy).toEqual({ id: "u1", via: "admin" });
     expect(state.definitionVersion).toBe(editorialReview.version);
     expect(state).toMatchObject({ visit: 0, visited: ["drafting"], nextSeq: events.length + 1 });
   });
@@ -1589,7 +1586,7 @@ describe("what caused the system's entries", () => {
       ],
     });
     const { state } = start(def, { actor: { system: true } }, env());
-    const by = { id: "u9", collection: "users" };
+    const by = { id: "u9" };
     const saved = settle(def, state, env({ doc: { ready: true }, cause: { kind: "save", by } }));
     expect(saved.events.map((entry) => entry.cause)).toEqual([
       { kind: "save", by },
@@ -1648,7 +1645,7 @@ describe("bounded free text", () => {
 describe("recordBypass", () => {
   it("adds one numbered entry and changes nothing else", () => {
     const { state } = start(editorialReview, { actor: { system: true } }, env());
-    const actor = { id: "u1", collection: "users", via: "admin" } as const;
+    const actor = { id: "u1", via: "admin" } as const;
     const result = recordBypass(
       state,
       { operation: "publish", guards: ["hold-publish"], actor },
@@ -1666,6 +1663,53 @@ describe("recordBypass", () => {
       },
     ]);
     expect(result.state).toEqual({ ...state, nextSeq: state.nextSeq + 1 });
+  });
+});
+
+describe("recordPublish (requiredToPublish)", () => {
+  const completed = () => {
+    const sim = createWorkflowSimulator(editorialReview);
+    sim.fire("submit", author);
+    sim.fire("claim", editor);
+    sim.fire("approve", editor);
+    return sim.state;
+  };
+  const actor = { id: "u1", via: "admin" } as const;
+
+  it("marks a completed run as used, with one entry", () => {
+    const state = completed();
+    const result = recordPublish(state, { actor }, env());
+    expect(result.state).toEqual({
+      ...state,
+      publishedAt: NOW.toISOString(),
+      nextSeq: state.nextSeq + 1,
+    });
+    expect(result.events).toEqual([
+      { seq: state.nextSeq, at: NOW.toISOString(), actor, type: "published", stage: "approved" },
+    ]);
+    expect(view(editorialReview, result.state, { actor, roles: [] }, env())).toMatchObject({
+      publishedAt: NOW.toISOString(),
+    });
+  });
+
+  it("refuses a run that is not completed, or already used", () => {
+    const { state } = start(editorialReview, { actor: { system: true } }, env());
+    expect(() => recordPublish(state, { actor }, env())).toThrowError(
+      new WorkflowError("instance-not-active", "The workflow is active, not completed.")
+    );
+    const used = recordPublish(completed(), { actor }, env()).state;
+    expect(() => recordPublish(used, { actor }, env())).toThrowError(
+      "This run was already used for a publish."
+    );
+  });
+
+  it("the view says whether the workflow is required", () => {
+    const required = defineWorkflow({ ...editorialReview, requiredToPublish: true });
+    const { state } = start(required, { actor: { system: true } }, env());
+    expect(view(required, state, { actor, roles: [] }, env()).requiredToPublish).toBe(true);
+    expect(view(editorialReview, state, { actor, roles: [] }, env())).not.toHaveProperty(
+      "requiredToPublish"
+    );
   });
 });
 

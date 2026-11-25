@@ -196,6 +196,8 @@ export const stepSentence = (entry: WorkflowEvent, titles: Titles, t: T): string
       return t("historyAborted");
     case "guard-bypassed":
       return t("historyBypassed", { operation: operationsText([entry.operation], t) });
+    case "published":
+      return t("historyPublished");
     default:
       return "";
   }
@@ -255,6 +257,8 @@ export const rowWhat = (row: TimelineRow, titles: Titles, t: T): string => {
       parts.push(t("timelineAborted"));
     } else if (first.type === "guard-bypassed") {
       parts.push(t("timelineBypassed", { operation: operationsText([first.operation], t) }));
+    } else if (first.type === "published") {
+      parts.push(t("timelinePublished"));
     }
   }
   if (row.movedTo !== undefined) {

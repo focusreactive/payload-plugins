@@ -288,8 +288,8 @@ describe("the README's audit queries", () => {
     // 2. Writes that went past a hold.
     const bypasses = await eventsAs(editor, { type: { equals: "guard-bypassed" } });
     expect(bypasses).toHaveLength(1);
+    expect(String(bypasses[0]?.run)).toBe(String(held));
     expect(bypasses[0]).toMatchObject({
-      run: held,
       subjectId: String(forced.id),
       stage: "review",
       actorId: String(author.id),
@@ -464,7 +464,7 @@ describe("the skip flag", () => {
     expect((await historyOf(payload, run.id as string)).at(-1)).toMatchObject({
       type: "completed",
       cause: "save",
-      causeDetail: { by: { id: String(author.id), collection: "users" } },
+      causeDetail: { by: { id: String(author.id) } },
     });
   });
 

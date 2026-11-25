@@ -33,7 +33,7 @@ const t: T = (key, vars = {}) => {
 };
 
 const SYSTEM = { system: true } as const;
-const ann = { id: "u1", collection: "users", via: "admin" as const };
+const ann = { id: "u1", via: "admin" as const };
 
 /** Local times, so day grouping does not depend on the machine's time zone. */
 const local = (day: number, hour: number, minute = 0, second = 0) =>
@@ -108,7 +108,7 @@ describe("timelineRows", () => {
   });
 
   it("folds what a step caused, even much later (its effects); what nobody caused is its own row", () => {
-    const save = { kind: "save", by: { id: "u2", collection: "users" } } as const;
+    const save = { kind: "save", by: { id: "u2" } } as const;
     const history = numbered([
       { at: local(1, 9), actor: ann, type: "started", stage: "drafting", definitionVersion: "v" },
       {
@@ -285,6 +285,22 @@ describe("how rows read", () => {
         guards: ["hold"],
       })
     ).toBe("Went past the hold on publishing.");
+    expect(say({ at, actor: ann, type: "published", stage: "approved" })).toBe(
+      "The document was published with this approval."
+    );
+  });
+
+  it("a publish that used the run is a row of the person who published", () => {
+    const published = {
+      seq: 9,
+      at: local(1, 9),
+      actor: ann,
+      type: "published",
+      stage: "approved",
+    } as const;
+    const [row] = timelineRows([published]);
+    expect(row).toMatchObject({ kind: "person", lead: published });
+    expect(rowWhat(row!, undefined, t)).toBe("Published the document with this approval");
   });
 });
 
@@ -296,7 +312,7 @@ describe("enteredBecause", () => {
     sim.fire("claim", { user: "u2", roles: ["editor"] });
     sim.fire("reject", { user: "u2", roles: ["editor"], params: { reason: "Too long" } });
     expect(enteredBecause(sim.view({ user: "u1" }), t)).toEqual({
-      actor: { id: "u2", collection: "users", via: "api" },
+      actor: { id: "u2", via: "api" },
       action: "Request changes",
       details: ["Reason: Too long"],
     });
@@ -385,7 +401,7 @@ describe("what caused an automatic row (rowCause)", () => {
   const people = { me: "u1", labels: { u2: "Bea" } };
 
   it("says a save (by whom), a delete, the clock, the auto-start and an effect", () => {
-    expect(rowCause(row({ kind: "save", by: { id: "u2", collection: "users" } }), people, t)).toBe(
+    expect(rowCause(row({ kind: "save", by: { id: "u2" } }), people, t)).toBe(
       "after Bea saved the document"
     );
     expect(rowCause(row({ kind: "save" }), people, t)).toBe("after a save");

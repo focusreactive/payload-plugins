@@ -2,6 +2,7 @@ import type { CollectionConfig, Config, Payload } from "payload";
 import { describe, expect, it, vi } from "vitest";
 
 import { warnWithoutRunner, workflowsPlugin } from "../src/plugin.js";
+import { readWorkflowEvents, readWorkflows } from "../src/server/access.js";
 import { listWorkflowDefinitions } from "../src/server/queries.js";
 import type { WorkflowsSettings } from "../src/plugin.js";
 import { editorialReview, minimal } from "./fixtures.js";
@@ -68,6 +69,7 @@ describe("workflowsPlugin", () => {
       "revision",
       "activeKey",
       "completedAt",
+      "publishedAt",
     ]);
     expect(instances.fields.find((f) => "name" in f && f.name === "activeKey")).toMatchObject({
       unique: true,
@@ -91,8 +93,15 @@ describe("workflowsPlugin", () => {
     expect((access.create as () => boolean)()).toBe(false);
     expect((access.update as () => boolean)()).toBe(false);
     expect((access.delete as () => boolean)()).toBe(false);
-    // The very function the runs collection reads with: one rule, on the subject columns.
-    expect(access.read).toBe(bySlug(run(), "workflow-instances").access?.read);
+    // Exactly who may read the run: the same rule, its visibility part read through `run`.
+    expect(access.read).toBe(readWorkflowEvents);
+    expect(bySlug(run(), "workflow-instances").access?.read).toBe(readWorkflows);
+    expect(events.fields[0]).toMatchObject({
+      name: "run",
+      type: "relationship",
+      relationTo: "workflow-instances",
+      maxDepth: 0,
+    });
     expect(events.admin?.hidden).toBe(true);
     expect(events.timestamps).toBe(false);
     const names = events.fields.map((field) => ("name" in field ? field.name : null));
@@ -106,7 +115,6 @@ describe("workflowsPlugin", () => {
       "subjectId",
       "stage",
       "actorId",
-      "actorCollection",
       "via",
       "cause",
       "activity",
@@ -418,6 +426,92 @@ describe("publish guards need drafts", () => {
         effects: { "notify-author": notify },
       })(withDrafts())
     ).not.toThrow();
+  });
+});
+
+/** A `visibility` option with these fields. */
+const visibility = (fields: unknown[]) => ({
+  fields: fields as never,
+  fromDocument: () => ({}),
+  read: () => true,
+});
+
+describe("requiredToPublish and visibility at config time", () => {
+  const withDrafts = () =>
+    ({
+      ...config(),
+      collections: [
+        { slug: "pages", fields: [], versions: { drafts: true } },
+        { slug: "posts", fields: [] },
+      ],
+    }) as unknown as Config;
+  const minimalOn = (collections: string[], requiredToPublish?: boolean) => ({
+    ...minimal(),
+    collections,
+    ...(requiredToPublish === undefined ? {} : { requiredToPublish }),
+  });
+
+  it("rejects requiredToPublish on a collection without drafts", () => {
+    expect(() =>
+      workflowsPlugin({ workflows: [minimalOn(["pages", "posts"], true)] })(withDrafts())
+    ).toThrowError(
+      [
+        "workflowsPlugin() failed validation (1 issue):",
+        '  - workflows[0].requiredToPublish: workflow "minimal" is required to publish, but collection "posts" has no drafts (versions.drafts), so it has no publish to require it for. Enable drafts on "posts" or leave `requiredToPublish` out',
+      ].join("\n")
+    );
+    expect(() =>
+      workflowsPlugin({ workflows: [minimalOn(["pages"], true)] })(withDrafts())
+    ).not.toThrow();
+  });
+
+  it("rejects visibility fields without a name or named like the runs' own columns", () => {
+    const issues = () =>
+      workflowsPlugin({
+        workflows: [minimalOn(["pages"])],
+        visibility: visibility([
+          { name: "tenant", type: "text" },
+          { name: "status", type: "text" },
+          { name: "createdAt", type: "date" },
+          { type: "row", fields: [] },
+          { name: "tenant", type: "text" },
+        ]),
+      })(withDrafts());
+    expect(issues).toThrowError(
+      [
+        "workflowsPlugin() failed validation (4 issues):",
+        '  - visibility.fields[1].name: "status" is a column of the plugin\'s runs collection; choose another name',
+        '  - visibility.fields[2].name: "createdAt" is a column of the plugin\'s runs collection; choose another name',
+        "  - visibility.fields[3]: needs a name (layout fields such as rows and tabs are not supported)",
+        '  - visibility.fields[4].name: duplicate field name "tenant"',
+      ].join("\n")
+    );
+  });
+
+  it("adds the visibility fields to the runs collection, read-only, enabled or not", () => {
+    for (const enabled of [true, false]) {
+      const result = workflowsPlugin({
+        enabled,
+        workflows: [minimalOn(["pages"])],
+        visibility: visibility([{ name: "tenant", type: "text", index: true }]),
+      })(withDrafts()) as Config;
+      expect(bySlug(result, "workflow-instances").fields.at(-1)).toEqual({
+        name: "tenant",
+        type: "text",
+        index: true,
+        admin: { readOnly: true },
+      });
+    }
+    // Nothing is added to the events: they follow their run.
+    const result = workflowsPlugin({
+      workflows: [minimalOn(["pages"])],
+      visibility: visibility([{ name: "tenant", type: "text" }]),
+    })(withDrafts()) as Config;
+    expect(
+      bySlug(result, "workflow-events").fields.some(
+        (field) => "name" in field && field.name === "tenant"
+      )
+    ).toBe(false);
   });
 });
 

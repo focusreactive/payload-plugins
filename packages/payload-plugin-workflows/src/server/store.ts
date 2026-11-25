@@ -8,6 +8,7 @@ import type {
   CollectionConfig,
   CollectionSlug,
   Endpoint,
+  Field,
   Payload,
   PayloadRequest,
   Where,
@@ -70,6 +71,8 @@ const LIST_COLUMNS = {
 export const runsCollection = (options: {
   endpoints?: Endpoint[];
   components: boolean;
+  /** The host's `visibility.fields`: read-only columns the read rule may query. */
+  visibilityFields?: Field[];
 }): CollectionConfig => {
   const cell = (entry: "client" | "rsc", name: string) =>
     options.components ? { components: { Cell: componentPath(entry, name) } } : {};
@@ -178,9 +181,26 @@ export const runsCollection = (options: {
       // `<workflow>:<collection>:<id>` while active, `done:<random>` after: one active run per document.
       { name: "activeKey", type: "text", required: true, unique: true, admin: internal },
       { name: "completedAt", type: "date", label: label("columnFinished") },
+      // A completed run of a workflow `requiredToPublish`: when a publish went through on it. A
+      // run lets one publish through; the next needs a new run.
+      { name: "publishedAt", type: "date", admin: internal },
+      // Who may see the run (`visibility`): the host's fields, written by the plugin only.
+      ...(options.visibilityFields ?? []).map(
+        (field) => ({ ...field, admin: { ...field.admin, readOnly: true } }) as Field
+      ),
     ],
   };
 };
+
+/** The runs collection's own columns: `visibility.fields` may not use these names. */
+export const RUN_COLUMNS: readonly string[] = [
+  "id",
+  "createdAt",
+  "updatedAt",
+  ...runsCollection({ components: false }).fields.flatMap((field) =>
+    "name" in field ? [field.name] : []
+  ),
+];
 
 /** A row of the runs collection. */
 export interface InstanceDoc {
@@ -204,8 +224,11 @@ export interface InstanceDoc {
   revision: number;
   activeKey: string;
   completedAt?: string | null;
+  publishedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  /** The host's visibility fields (`visibility.fields`), by name. */
+  [visibility: string]: unknown;
 }
 
 export interface Subject {
@@ -237,6 +260,7 @@ export const toState = (doc: InstanceDoc): InstanceState => ({
   startedBy: doc.startedBy ?? { system: true },
   startedAt: doc.createdAt,
   ...(doc.completedAt ? { completedAt: doc.completedAt } : {}),
+  ...(doc.publishedAt ? { publishedAt: doc.publishedAt } : {}),
 });
 
 const toData = (state: InstanceState, def: WorkflowDefinition | undefined, subject: Subject) => {
@@ -260,6 +284,7 @@ const toData = (state: InstanceState, def: WorkflowDefinition | undefined, subje
     activeKey:
       state.status === "active" ? activeKeyOf(state.workflow, subject) : `done:${randomUUID()}`,
     completedAt: state.completedAt ?? null,
+    publishedAt: state.publishedAt ?? null,
   };
 };
 
@@ -391,8 +416,8 @@ const record = async (req: PayloadRequest, doc: InstanceDoc, result: Result): Pr
 };
 
 /**
- * Inserts a new run with its first events. A second active run of the same workflow on a document
- * is `already-running`.
+ * Inserts a new run with its first events and its visibility values (`visibility.ts`). A second
+ * active run of the same workflow on a document is `already-running`.
  * Losing that race inside a caller's transaction ends the transaction (Payload rolls it back when
  * `create` fails): the error says so, so the caller does not commit believing its writes survived.
  */
@@ -400,7 +425,8 @@ export const createRun = async (
   req: PayloadRequest,
   def: WorkflowDefinition,
   result: Result,
-  subject: Subject
+  subject: Subject,
+  visibility: Record<string, unknown> = {}
 ): Promise<Committed> => {
   const began = await transactionOf(req);
   try {
@@ -408,6 +434,7 @@ export const createRun = async (
       const doc = (await req.payload.create({
         collection: RUNS_SLUG as CollectionSlug,
         data: {
+          ...visibility,
           ...toData(result.state, def, subject),
           revision: 1,
         } as never,
@@ -536,7 +563,7 @@ export const pruneWorkflows = async (
       if (ids.length === 0) {
         return 0;
       }
-      const ofRuns: Where = { run: { in: ids.map(String) } };
+      const ofRuns: Where = { run: { in: ids } };
       const { totalDocs } = await payload.count({
         collection: EVENTS_SLUG as CollectionSlug,
         where: ofRuns,

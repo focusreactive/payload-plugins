@@ -13,7 +13,7 @@ import type {
   WorkflowsPluginOptions,
 } from "@focus-reactive/payload-plugin-workflows";
 import { buildConfig, getPayload } from "payload";
-import type { Config, Payload, Plugin } from "payload";
+import type { CollectionConfig, Config, Payload, Plugin } from "payload";
 
 import { createTestDatabase } from "../../lib/database/resolveAdapter";
 
@@ -286,6 +286,10 @@ export async function bootWorkflowsPayload(
     transactions?: boolean;
     workflows?: WorkflowDefinition[];
     access?: WorkflowsPluginOptions["access"];
+    visibility?: WorkflowsPluginOptions["visibility"];
+    localization?: Config["localization"];
+    /** More collections, beside `users`, `clients`, `pages` and `posts`. */
+    collections?: CollectionConfig[];
     /** More plugins, after the workflows plugin (e.g. the MCP plugin). */
     plugins?: Plugin[];
   } = {}
@@ -305,6 +309,7 @@ export async function bootWorkflowsPayload(
     db,
     telemetry: false,
     ...(options.jobs ? { jobs: options.jobs } : {}),
+    ...(options.localization ? { localization: options.localization } : {}),
     typescript: { autoGenerate: false },
     collections: [
       {
@@ -335,6 +340,7 @@ export async function bootWorkflowsPayload(
       },
       // Exists, but no workflow runs on it.
       { slug: "posts", fields: [{ name: "title", type: "text" }] },
+      ...(options.collections ?? []),
     ],
     plugins: [
       workflowsPlugin({
@@ -353,6 +359,7 @@ export async function bootWorkflowsPayload(
           },
         },
         ...(options.access ? { access: options.access } : {}),
+        ...(options.visibility ? { visibility: options.visibility } : {}),
       }),
       ...(options.plugins ?? []),
     ],

@@ -25,6 +25,7 @@ export const KNOWN_EVENT_TYPES: readonly KnownWorkflowEvent["type"][] = [
   "completed",
   "aborted",
   "guard-bypassed",
+  "published",
 ];
 
 /** Narrow an entry to the types this version knows; show or skip the others. */

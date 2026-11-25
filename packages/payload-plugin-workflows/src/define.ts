@@ -309,6 +309,9 @@ export const definitionIssues = (def: WorkflowDefinition): string[] => {
         'start must be `{ on: "create", when? }` (started when a document is created); leave it out for a workflow people start',
     });
   }
+  if (def.requiredToPublish !== undefined && typeof def.requiredToPublish !== "boolean") {
+    issues.push({ path: "requiredToPublish", message: "requiredToPublish must be a boolean" });
+  }
   const { version } = def;
   if (
     version !== undefined &&

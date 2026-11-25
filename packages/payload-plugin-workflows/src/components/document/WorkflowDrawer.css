@@ -282,6 +282,24 @@
   color: var(--theme-elevation-500);
 }
 
+/* What publishing needs (`requiredToPublish`): one line, in the status colours. */
+.workflows-publish {
+  margin: 0;
+  font-weight: 600;
+}
+
+.workflows-publish[data-publish="required"] {
+  color: var(--theme-warning-750);
+}
+
+.workflows-publish[data-publish="ready"] {
+  color: var(--theme-success-750);
+}
+
+.workflows-publish.field-description {
+  font-weight: normal;
+}
+
 .workflows-turn[data-turn="stuck"] .workflows-turn__title {
   color: var(--theme-error-500);
 }

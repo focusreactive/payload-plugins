@@ -19,7 +19,7 @@ describe("events as rows", () => {
     }
     const reject = sim.events.find((entry) => entry.type === "action" && entry.action === "reject");
     expect(toRow(reject!, owner)).toEqual({
-      run: "12",
+      run: 12,
       seq: reject!.seq,
       type: "action",
       at: reject!.at,
@@ -30,7 +30,6 @@ describe("events as rows", () => {
       activity: "review",
       action: "reject",
       actorId: "u-editor",
-      actorCollection: "users",
       via: "api",
       cause: null,
       detail: { params: { reason: "Too long" } },
@@ -63,7 +62,7 @@ describe("events as rows", () => {
     const future = {
       seq: 9,
       at: "2026-01-01T00:00:00.000Z",
-      actor: { id: "u1", collection: "users", via: "agent" },
+      actor: { id: "u1", via: "agent" },
       type: "escalated",
       stage: "review",
       to: "legal",

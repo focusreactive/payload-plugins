@@ -369,4 +369,10 @@ describe("definition version", () => {
     expect(defineWorkflow(raw).version).toBe(definitionVersionOf(raw));
     expect(defineWorkflow(defineWorkflow(raw)).version).toBe(definitionVersionOf(raw));
   });
+  it("requiredToPublish is a boolean", () => {
+    expect(
+      definitionIssues({ ...minimal(), requiredToPublish: "yes" } as unknown as WorkflowDefinition)
+    ).toContain("requiredToPublish: requiredToPublish must be a boolean");
+    expect(definitionIssues({ ...minimal(), requiredToPublish: true })).toEqual([]);
+  });
 });

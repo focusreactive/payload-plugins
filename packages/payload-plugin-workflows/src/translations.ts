@@ -74,6 +74,10 @@ export const en = {
   turnAbortedBody: "Stopped by {{who}}, {{when}}.",
   turnAbortedBodyShort: "Stopped {{when}}.",
   definitionChanged: "The workflow has changed since this run started.",
+  publishRequired: "Required before publishing",
+  publishReady: "Approved — ready to publish",
+  publishReadyShort: "Ready to publish",
+  publishUsed: "Published with this approval. Further changes need a new workflow.",
   you: "you",
   waitingOn: "Waiting on {{who}}",
   waitingOnAnyone: "Anyone can act",
@@ -134,6 +138,7 @@ export const en = {
   timelineMovedTo: "moved to {{stage}}",
   timelineCompleted: "workflow complete",
   timelineBypassed: "Went past the hold on {{operation}}",
+  timelinePublished: "Published the document with this approval",
   timelineSteps_one: "{{count}} automatic step",
   timelineSteps_other: "{{count}} automatic steps",
   timelineShowOlder_one: "Show {{count}} older entry",
@@ -155,6 +160,7 @@ export const en = {
   historyAborted: "Stopped the workflow.",
   historyReason: "Reason",
   historyBypassed: "Went past the hold on {{operation}}.",
+  historyPublished: "The document was published with this approval.",
   historyUnknown: "{{type}} (recorded by a newer version of the plugin).",
 
   // What caused an automatic row ("Automated after Ann saved the document")

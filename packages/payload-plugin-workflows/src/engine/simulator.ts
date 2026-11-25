@@ -21,7 +21,7 @@ export interface SimulatedCaller {
 }
 
 const callerOf = (who: SimulatedCaller = {}): Caller => ({
-  actor: { id: who.user ?? "user", collection: "users", via: "api" },
+  actor: { id: who.user ?? "user", via: "api" },
   roles: who.roles ?? [],
 });
 

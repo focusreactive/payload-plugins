@@ -4,6 +4,7 @@ import {
   PILL_STYLE,
   indicatorOf,
   primaryActionOf,
+  publishNoteOf,
   runsOf,
   shownActions,
   stateAfter,
@@ -225,5 +226,64 @@ describe("the drawer's state after an operation (stateAfter)", () => {
     expect(stateAfter(state, "fire", withId(active, "9"))).toBeNull();
     expect(stateAfter(null, "fire", active)).toBeNull();
     expect(stateAfter(state, "fire", undefined)).toBeNull();
+  });
+});
+
+describe("publishNoteOf and the indicator (requiredToPublish)", () => {
+  const required = { ...editorialReview, requiredToPublish: true };
+  const completed = (publishedAt?: string): InstanceView => {
+    const sim = createWorkflowSimulator(required);
+    sim.fire("submit", author);
+    sim.fire("claim", editor);
+    sim.fire("approve", editor);
+    const view = sim.view(editor);
+    return publishedAt ? { ...view, publishedAt } : view;
+  };
+  const refusedNone = { clear: false, reason: "Publishing requires a completed Editorial review." };
+
+  it("not started (or stopped) and required: required, asking for attention", () => {
+    const state: WorkflowState = {
+      instances: [],
+      available: [{ ...available[0]!, requiredToPublish: true }],
+      publish: refusedNone,
+    };
+    expect(publishNoteOf(state, undefined)).toBe("required");
+    expect(indicatorOf(state, "u1")).toEqual({
+      kind: "idle",
+      tone: "attention",
+      publish: "required",
+    });
+    // Even for someone who may not start it.
+    expect(indicatorOf({ ...state, available: [] }, "u1")).toMatchObject({ publish: "required" });
+    const stopped = inReview();
+    stopped.abort();
+    const aborted = stopped.view(editor);
+    expect(publishNoteOf({ ...state, instances: [aborted] }, aborted)).toBe("required");
+  });
+
+  it("completed and unused: ready; completed and used: used; in progress: nothing", () => {
+    const ready = completed();
+    const state: WorkflowState = { instances: [ready], available: [], publish: { clear: true } };
+    expect(publishNoteOf(state, ready)).toBe("ready");
+    expect(indicatorOf(state, editor.user)).toEqual({
+      kind: "idle",
+      finished: ready,
+      tone: "success",
+      publish: "ready",
+    });
+    const used = completed("2026-01-01T00:00:00.000Z");
+    expect(publishNoteOf({ ...state, instances: [used], publish: refusedNone }, used)).toBe("used");
+    const running = inReview().view(editor);
+    expect(publishNoteOf({ ...state, instances: [running], publish: refusedNone }, running)).toBe(
+      undefined
+    );
+  });
+
+  it("says nothing when no workflow is required", () => {
+    const sim = inReview(editor.user);
+    sim.fire("approve", editor);
+    const finished = sim.view(editor);
+    expect(publishNoteOf({ instances: [finished], available: [] }, finished)).toBeUndefined();
+    expect(publishNoteOf({ instances: [], available }, undefined)).toBeUndefined();
   });
 });

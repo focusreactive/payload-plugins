@@ -43,6 +43,7 @@ import { readEvents } from "./events.js";
 import { createRun, isRunning, loadRun, mutateRun, subjectOf, toState } from "./store.js";
 import type { Committed, InstanceDoc, JobId, Subject } from "./store.js";
 import { transactionOf } from "./transaction.js";
+import { visibilityOf } from "./visibility.js";
 
 type Via = UserActor["via"];
 
@@ -57,9 +58,16 @@ export const titleIn = (req: PayloadRequest, label: Label | undefined, fallback:
 export const viaOf = (user: TypedUser): Via =>
   (user as { _strategy?: string })._strategy === "api-key" ? "api" : "admin";
 
-/** A user as a cause names them. */
-export const userRefOf = (user: TypedUser | null | undefined): UserRef | undefined =>
-  user ? { id: String(user.id), collection: user.collection } : undefined;
+/** Whether `user` is a user of the admin user collection: the only users who take part. */
+export const isParticipant = (payload: Payload, user: TypedUser | null | undefined): boolean =>
+  Boolean(user) && user?.collection === payload.config.admin?.user;
+
+/** A user as a cause names them: only a user of the admin user collection is named. */
+export const userRefOf = (
+  payload: Payload,
+  user: TypedUser | null | undefined
+): UserRef | undefined =>
+  user && isParticipant(payload, user) ? { id: String(user.id) } : undefined;
 
 /** What caused a step a person or agent took (the system's entries in it). */
 const STEP: Cause = { kind: "step" };
@@ -91,30 +99,39 @@ export const definitionOrStandIn = (payload: Payload, doc: InstanceDoc): Workflo
     stages: [],
   };
 
-/** Public functions act for a real user; `null` / missing is `unauthorized`. */
-export const requireUser = (user: TypedUser | null | undefined): TypedUser => {
+/**
+ * Where every caller is admitted: public functions act for a real user (`unauthorized` without
+ * one) of the admin user collection (`admin.user`). A user of any other auth collection is
+ * `not-allowed`, whatever `access` says: user ids in runs (assignees, `user` fields, actors) are
+ * ids of that one collection, so a user of another one would be mistaken for someone else.
+ */
+export const requireUser = (payload: Payload, user: TypedUser | null | undefined): TypedUser => {
   if (!user) {
     throw new WorkflowError("unauthorized", "You must be logged in.");
+  }
+  if (!isParticipant(payload, user)) {
+    const admin = payload.config.admin?.user ?? "";
+    throw new WorkflowError(
+      "not-allowed",
+      `Only users of the admin user collection ("${admin}") can take part in workflows; this request acts as a user of "${user.collection}".`
+    );
   }
   return user;
 };
 
 const callerOf = (payload: Payload, user: TypedUser, via: Via): Caller => ({
-  actor: { id: String(user.id), collection: user.collection, via },
+  actor: { id: String(user.id), via },
   roles: settingsOf(payload).roles(user),
 });
 
 /**
- * An access check for `user` (never `req.user`). Without a check of its own: a user of the admin
- * user collection. Callers have already read the document with the user's access.
+ * An access check for `user` (never `req.user`), already admitted by `requireUser`. Without a
+ * check of its own: allowed. Callers have already read the document with the user's access.
  */
 export const allowedBy = async (
   check: WorkflowAccess | undefined,
   args: WorkflowAccessArgs
-): Promise<boolean> =>
-  check
-    ? (await check(args)) === true
-    : args.user.collection === args.req.payload.config.admin?.user;
+): Promise<boolean> => (check ? (await check(args)) === true : true);
 
 /** The run as access callbacks see it. */
 const runOf = (doc: InstanceDoc): NonNullable<WorkflowAccessArgs["run"]> => ({
@@ -123,8 +140,8 @@ const runOf = (doc: InstanceDoc): NonNullable<WorkflowAccessArgs["run"]> => ({
 });
 
 /**
- * May `user` stop this run? `access.abort` decides when the host set it. Otherwise a user of the
- * admin user collection, and while a guard holds the document only one who may act in its stage
+ * May `user` (admitted) stop this run? `access.abort` decides when the host set it. Otherwise
+ * anyone, except that while a guard holds the document only one who may act in its stage
  * (`mayAbort`): stopping is never a way around a hold.
  */
 const mayStop = async (
@@ -151,14 +168,17 @@ const mayStop = async (
   }
   // A finished run is left to the engine, which refuses it as not active.
   return (
-    (await allowedBy(undefined, args)) &&
-    (doc.status !== "active" ||
-      mayAbort(def, toState(doc), callerOf(payload, user, via), {
-        doc: subject,
-        now: new Date(),
-      }))
+    doc.status !== "active" ||
+    mayAbort(def, toState(doc), callerOf(payload, user, via), { doc: subject, now: new Date() })
   );
 };
+
+/**
+ * Who made a document write the run records (a bypass, a publish): the user, when they take part
+ * in workflows; anyone else (another auth collection, no user) is recorded as the system.
+ */
+export const writerOf = (payload: Payload, user: TypedUser | null | undefined): Actor =>
+  user && isParticipant(payload, user) ? callerOf(payload, user, viaOf(user)).actor : SYSTEM;
 
 /** The request an operation runs in: the caller's, else a fresh local one. */
 export const requestFor = async (
@@ -177,16 +197,36 @@ export const assertSubjectCollection = (payload: Payload, collection: string): v
   }
 };
 
+/** The project's default locale; `undefined` when it is not localized. */
+const defaultLocaleOf = (payload: Payload): string | undefined => {
+  const { localization } = payload.config;
+  return localization ? localization.defaultLocale : undefined;
+};
+
 /**
- * Reads the subject document (latest draft). As a user: with their access, so a caller who cannot
- * read the document can neither see nor move its workflow. As the system (`user` null): with full
- * access, and `null` when it is gone.
+ * Whether `req` holds documents in a locale other than the project's default one (`all`
+ * included): a hook's document must then be read again in the default locale to be evaluated.
+ */
+export const inOtherLocale = (req: PayloadRequest): boolean => {
+  const locale = defaultLocaleOf(req.payload);
+  return locale !== undefined && typeof req.locale === "string" && req.locale !== locale;
+};
+
+/**
+ * Reads the subject document (latest draft) as every condition sees it: in the project's default
+ * locale, with Payload's normal fallback, whatever the request's locale. As a user: with their
+ * access, so a caller who cannot read the document can neither see nor move its workflow. As the
+ * system (`user` null): with full access, and `null` when it is gone. The one place a document is
+ * read for evaluation.
  */
 export const loadSubject = async (
   req: PayloadRequest,
   subject: Subject,
   user: TypedUser | null
 ): Promise<Record<string, unknown> | null> => {
+  const locale = defaultLocaleOf(req.payload);
+  // The Local API sets a `locale` it is given on the shared `req`: put the request's back.
+  const { locale: requestLocale, fallbackLocale } = req;
   const doc = await req.payload
     .findByID({
       collection: subject.collection as CollectionSlug,
@@ -195,7 +235,14 @@ export const loadSubject = async (
       draft: true,
       disableErrors: true,
       req,
+      ...(locale === undefined ? {} : { locale }),
       ...(user ? { overrideAccess: false, user } : { overrideAccess: true }),
+    })
+    .finally(() => {
+      if (locale !== undefined) {
+        req.locale = requestLocale;
+        req.fallbackLocale = fallbackLocale;
+      }
     })
     .catch((error: unknown) => {
       // Access denied and not found read the same: the caller learns nothing about the document.
@@ -265,7 +312,7 @@ export const runJobsInline = async (payload: Payload, jobs: JobId[]): Promise<bo
 // ---- The answer: a run's view -------------------------------------------------------------------
 
 /** Who the system is when a view is built for it (effect handlers): it may fire nothing. */
-const SYSTEM_CALLER: Caller = { actor: { id: "system", collection: "", via: "api" }, roles: [] };
+const SYSTEM_CALLER: Caller = { actor: { id: "system", via: "api" }, roles: [] };
 
 /** The subject document's title (its collection's `useAsTitle`), if it has one. */
 export const titleOf = (
@@ -383,13 +430,14 @@ export const startRun = async (
   // Started by nobody in particular: the auto-start on create.
   const cause: Cause = args.user ? STEP : { kind: "start" };
   const result = start(def, { fields: args.fields, actor }, { doc, now: new Date(), cause });
-  const committed = await createRun(req, def, result, subject);
+  const visible = visibilityOf(req, args.collection, doc);
+  const committed = await createRun(req, def, result, subject, visible);
   return answer(req, committed, doc, args.user, via);
 };
 
 /** Starts a run of `workflow` on a document, as `user`. */
 export const startWorkflow = async (payload: Payload, args: StartArgs): Promise<InstanceView> => {
-  const user = requireUser(args.user);
+  const user = requireUser(payload, args.user);
   return startRun(await requestFor(payload, user, args.req), { ...args, user });
 };
 
@@ -411,7 +459,7 @@ export const fireWorkflowAction = async (
   payload: Payload,
   args: FireArgs
 ): Promise<InstanceView> => {
-  const user = requireUser(args.user);
+  const user = requireUser(payload, args.user);
   const req = await requestFor(payload, user, args.req);
   const via = args.via ?? "api";
   const existing = await loadRun(req, args.instanceId);
@@ -489,7 +537,7 @@ export const abortRun = async (
 
 /** Ends an active run, as `user`. */
 export const abortWorkflow = async (payload: Payload, args: AbortArgs): Promise<InstanceView> => {
-  const user = requireUser(args.user);
+  const user = requireUser(payload, args.user);
   return abortRun(await requestFor(payload, user, args.req), { ...args, user });
 };
 
@@ -530,15 +578,12 @@ export const traceBypass = async (
   input: { operation: GuardOperation; guards: GuardDef[]; user: TypedUser | null | undefined }
 ): Promise<void> => {
   const def = settingsOf(req.payload).workflows.find((entry) => entry.name === doc.workflow);
-  const actor: Actor = input.user
-    ? callerOf(req.payload, input.user, viaOf(input.user)).actor
-    : SYSTEM;
   const guards = input.guards.map((guard) => guard.name);
   await mutateRun(req, def, doc, (state) =>
     recordBypass(
       state,
-      { operation: input.operation, guards, actor },
-      { doc: null, now: new Date() }
+      { operation: input.operation, guards, actor: writerOf(req.payload, input.user) },
+      { doc: null, now: new Date(), cause: { kind: "save" } }
     )
   );
 };

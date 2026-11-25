@@ -8,14 +8,19 @@
  */
 export type Label = string | Record<string, string>;
 
-export type UserActor = { id: string; collection: string; via: "admin" | "api" | "agent" };
+/**
+ * A person or an agent: a user of the admin user collection (`admin.user`), by id. Only those users
+ * take part in workflows, so an id alone names them.
+ */
+export type UserActor = { id: string; via: "admin" | "api" | "agent" };
 /** The engine itself (cascade, hooks, tick, effects). `id` is declared so `actor.id` reads as optional. */
-export type SystemActor = { system: true; id?: undefined; collection?: undefined; via?: undefined };
+export type SystemActor = { system: true; id?: undefined; via?: undefined };
 export type Actor = UserActor | SystemActor;
 
 export type ActivityStatus = "active" | "done" | "skipped" | "failed";
 export type ResolvedStatus = Exclude<ActivityStatus, "active">;
 
+/** `user`: the id of a user of the admin user collection (`admin.user`), the only users who take part. */
 export type FieldType = "string" | "text" | "number" | "boolean" | "date" | "user" | "json";
 
 /** What a field's `initialValue` function sees when a run starts. */
@@ -206,6 +211,11 @@ export interface WorkflowDefinition {
   version?: string | number;
   collections: string[];
   start?: StartOnCreate;
+  /**
+   * `true`: every publish of a document it covers needs a completed run of this workflow that no
+   * publish has used yet; the publish uses it. Needs drafts on its collections.
+   */
+  requiredToPublish?: boolean;
   initialStage: string;
   fields?: FieldDef[];
   stages: StageDef[];
@@ -219,10 +229,9 @@ export interface ActivityState {
   by?: Actor;
 }
 
-/** A user as an event or a cause names them. */
+/** A user (of the admin user collection) as a cause names them. */
 export interface UserRef {
   id: string;
-  collection: string;
 }
 
 /**
@@ -277,11 +286,19 @@ export type KnownWorkflowEvent = EventBase &
     | { type: "completed"; stage: string }
     | { type: "aborted"; stage: string; reason?: string }
     | {
-        /** A write went through a holding guard with the bypass flag (`WORKFLOW_BYPASS`). */
+        /**
+         * A write went through with the bypass flag (`WORKFLOW_BYPASS`) that a holding guard, or
+         * `requiredToPublish` (named `"requiredToPublish"` in `guards`), would have refused.
+         */
         type: "guard-bypassed";
         stage: string;
         operation: GuardOperation;
         guards: string[];
+      }
+    | {
+        /** A publish of the document went through on this completed run (`requiredToPublish`). */
+        type: "published";
+        stage: string;
       }
   );
 
@@ -321,6 +338,8 @@ export interface InstanceState {
   startedBy: Actor;
   startedAt: string;
   completedAt?: string;
+  /** When a publish went through on this completed run (`requiredToPublish`): it is used. */
+  publishedAt?: string;
 }
 
 /** What conditions read besides the run (the document and the clock), and what caused the step. */
@@ -433,5 +452,9 @@ export interface InstanceView {
    */
   titles: Record<string, string>;
   canAbort: boolean;
+  /** The workflow is `requiredToPublish`: a publish needs a completed run no publish has used. */
+  requiredToPublish?: true;
+  /** When a publish went through on this run: it can let no other publish through. */
+  publishedAt?: string;
   subject?: { collection: string; id: string; title?: string };
 }

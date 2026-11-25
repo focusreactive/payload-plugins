@@ -13,7 +13,7 @@ import { NOW } from "./fixtures.js";
 
 const env = (): Env => ({ doc: null, now: NOW });
 const as = (id: string, via: UserActor["via"], roles: string[] = []): Caller => ({
-  actor: { id, collection: "users", via },
+  actor: { id, via },
   roles,
 });
 
@@ -97,8 +97,13 @@ describe("agent tools", () => {
     "workflows_fire_action",
   ];
   const payload = {
-    config: { custom: { workflows: { workflows: [def], roles: () => [] } } },
+    config: {
+      admin: { user: "users" },
+      custom: { workflows: { workflows: [def], roles: () => [] } },
+    },
   } as unknown as Payload;
+  const person = { id: 1, collection: "users" } as never;
+  const client = { id: 1, collection: "clients" } as never;
 
   it("both surfaces expose the same five tools, descriptions and schemas", () => {
     const sdk = workflowAgentTools({ payload, user: null });
@@ -139,7 +144,18 @@ describe("agent tools", () => {
       sdk.workflows_fire_action.execute({ instanceId: 1 } as never)
     ).resolves.toMatchObject({ code: "invalid-params" });
     await expect(sdk.workflows_list_definitions.execute({})).resolves.toMatchObject({
-      definitions: [{ name: "signoff" }],
+      code: "unauthorized",
+    });
+    await expect(
+      workflowAgentTools({ payload, user: person }).workflows_list_definitions.execute({})
+    ).resolves.toMatchObject({ definitions: [{ name: "signoff" }] });
+    // Only users of the admin user collection take part, in every tool.
+    await expect(
+      workflowAgentTools({ payload, user: client }).workflows_list_definitions.execute({})
+    ).resolves.toEqual({
+      error:
+        'Only users of the admin user collection ("users") can take part in workflows; this request acts as a user of "clients".',
+      code: "not-allowed",
     });
   });
 
@@ -155,7 +171,10 @@ describe("agent tools", () => {
       error: "You must be logged in.",
       code: "unauthorized",
     });
-    const listed = await byName.workflows_list_definitions!.handler({}, req);
+    const listed = await byName.workflows_list_definitions!.handler({}, {
+      ...req,
+      user: person,
+    } as PayloadRequest);
     expect(listed.isError).toBeUndefined();
     expect(JSON.parse(listed.content[0]!.text).definitions[0].name).toBe("signoff");
   });

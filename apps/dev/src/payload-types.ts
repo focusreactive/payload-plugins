@@ -843,6 +843,7 @@ export interface WorkflowInstance {
   revision: number;
   activeKey: string;
   completedAt?: string | null;
+  publishedAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -852,7 +853,7 @@ export interface WorkflowInstance {
  */
 export interface WorkflowEvent {
   id: number;
-  run: string;
+  run: number | WorkflowInstance;
   seq: number;
   type: string;
   at: string;
@@ -861,7 +862,6 @@ export interface WorkflowEvent {
   subjectId: string;
   stage?: string | null;
   actorId?: string | null;
-  actorCollection?: string | null;
   via?: string | null;
   cause?: string | null;
   activity?: string | null;
@@ -916,7 +916,7 @@ export interface PayloadMcpApiKey {
      */
     workflowsListInstances?: boolean | null;
     /**
-     * Get the workflow runs on one document: current stage, activities, the actions you may fire (with reasons when you may not and the params they take), holding guards and history. Also lists workflows that can be started on it.
+     * Get the workflow runs on one document: current stage, activities, the actions you may fire (with reasons when you may not and the params they take), holding guards and history. Also lists workflows that can be started on it, and, when a workflow is required before publishing (`requiredToPublish`), whether the document may be published now (`publish.clear`, else `publish.reason`).
      */
     workflowsGetState?: boolean | null;
     /**
@@ -1534,6 +1534,7 @@ export interface WorkflowInstancesSelect<T extends boolean = true> {
   revision?: T;
   activeKey?: T;
   completedAt?: T;
+  publishedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1551,7 +1552,6 @@ export interface WorkflowEventsSelect<T extends boolean = true> {
   subjectId?: T;
   stage?: T;
   actorId?: T;
-  actorCollection?: T;
   via?: T;
   cause?: T;
   activity?: T;

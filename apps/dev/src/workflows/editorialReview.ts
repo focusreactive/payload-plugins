@@ -14,6 +14,7 @@ export const editorialReview = defineWorkflow({
   title: "Editorial review",
   description: "Draft, review and approve a page before it is published.",
   collections: ["pages"],
+  // requiredToPublish: true, // every publish needs a completed review that no publish has used
   initialStage: "drafting",
   fields: [
     { name: "author", type: "user", title: "Author", initialValue: ({ actor }) => actor.id },

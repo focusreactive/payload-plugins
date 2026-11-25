@@ -40,6 +40,7 @@ import {
   titleIn,
   titleOf,
 } from "./operations.js";
+import { publishChecks } from "./publishing.js";
 import { subjectWhere } from "./store.js";
 import type { InstanceDoc } from "./store.js";
 
@@ -135,7 +136,14 @@ export interface WorkflowState {
     description?: string;
     /** Its stages in order, so the drawer can show what starting it leads to. */
     stages: { name: string; title: string }[];
+    /** Publishing the document needs a completed run of it (`requiredToPublish`). */
+    requiredToPublish?: true;
   }[];
+  /**
+   * Set when a workflow on this collection is `requiredToPublish`: whether publishing the
+   * document would go through now, else the refusal it would get (the same check the save makes).
+   */
+  publish?: { clear: boolean; reason?: string };
   /**
    * Set when runs on this document's collection are hidden from the caller because their read
    * access allows more documents than the plugin resolves (`READABLE_IDS_CAP`).
@@ -156,7 +164,7 @@ export const getWorkflowState = async (
     req?: PayloadRequest;
   }
 ): Promise<WorkflowState> => {
-  const user = requireUser(args.user);
+  const user = requireUser(payload, args.user);
   const req = await requestFor(payload, user, args.req);
   assertSubjectCollection(payload, args.collection);
   const subject = { collection: args.collection, id: String(args.id) };
@@ -194,10 +202,20 @@ export const getWorkflowState = async (
           name: stage.name,
           title: titleIn(req, stage.title, stage.name),
         })),
+        ...(def.requiredToPublish === true ? { requiredToPublish: true as const } : {}),
       });
     }
   }
-  return { instances, available, ...hiddenOf(req, args.collection) };
+  const checks = await publishChecks(req, args.collection, subject.id);
+  const refusal = checks.find((check) => check.refusal)?.refusal;
+  return {
+    instances,
+    available,
+    ...(checks.length > 0
+      ? { publish: { clear: !refusal, ...(refusal ? { reason: refusal } : {}) } }
+      : {}),
+    ...hiddenOf(req, args.collection),
+  };
 };
 
 /** Most entries one history page returns. */
@@ -220,7 +238,7 @@ export const getWorkflowHistory = async (
     req?: PayloadRequest;
   }
 ): Promise<{ entries: WorkflowEvent[]; older: number }> => {
-  const user = requireUser(args.user);
+  const user = requireUser(payload, args.user);
   const req = await requestFor(payload, user, args.req);
   const limit = Math.min(HISTORY_PAGE_MAX, Math.max(1, Math.floor(args.limit ?? HISTORY_IN_VIEW)));
   const before = args.before === undefined ? undefined : Math.max(1, Math.floor(args.before));
@@ -362,7 +380,7 @@ export const listWorkflowInstances = async (
   payload: Payload,
   args: ListArgs
 ): Promise<InstanceList> => {
-  const user = requireUser(args.user);
+  const user = requireUser(payload, args.user);
   const req = await requestFor(payload, user, args.req);
   const settings = settingsOf(payload);
   const filters: Where[] = [];
@@ -483,7 +501,7 @@ export const workflowBoards = async (
     stuckTitle: string;
   }
 ): Promise<{ boards: Board[]; unshown: number; hiddenCollections?: string[] }> => {
-  const user = requireUser(args.user);
+  const user = requireUser(payload, args.user);
   const req = await requestFor(payload, user, args.req);
   const active: Where = { status: { equals: "active" } };
   const columns: { column: BoardColumn; docs: InstanceDoc[] }[] = [];

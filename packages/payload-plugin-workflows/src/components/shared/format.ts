@@ -36,16 +36,16 @@ export const personName = (id: string, people: People, t: T): string =>
   id === people.me ? t("you") : (people.labels?.[id] ?? id);
 
 /** The user ids runs name: who they wait on, assignees, who started them, people in their history. */
-export const userIdsIn = (views: InstanceView[], usersSlug: string): string[] =>
+export const userIdsIn = (views: InstanceView[]): string[] =>
   views.flatMap((view) => [
     ...view.waitingOn.users,
     ...view.activities.flatMap((activity) => (activity.assignee ? [activity.assignee] : [])),
     ...[view.started.actor, ...view.history.map((entry) => entry.actor)].flatMap((actor) =>
-      actor.id !== undefined && actor.collection === usersSlug ? [actor.id] : []
+      actor.id === undefined ? [] : [actor.id]
     ),
     ...view.history.flatMap((entry) => {
       const by = entry.cause && "by" in entry.cause ? entry.cause.by : undefined;
-      return by?.collection === usersSlug ? [by.id] : [];
+      return by ? [by.id] : [];
     }),
   ]);
 

@@ -6,7 +6,6 @@ import {
   Button,
   CheckIcon,
   Drawer,
-  useConfig,
   useDocumentInfo,
   useDrawerSlug,
   useModal,
@@ -29,12 +28,23 @@ const describe = (
 ): { text: string; label: string; tone: RunTone; completed: boolean } => {
   const open = t("indicatorOpen");
   if (indicator.kind === "idle") {
-    const { finished } = indicator;
-    // A completed run names where it ended ("✓ Approved"); a stopped one, or none, is neutral.
+    const { finished, publish } = indicator;
+    // A completed run names where it ended ("✓ Approved"), or, when it lets the next publish
+    // through, says so; publishing that needs a workflow first asks for it; else neutral.
     if (finished?.status === "completed") {
+      const completed = t("indicatorCompletedIn", {
+        title: finished.title,
+        stage: finished.stage.title,
+      });
+      let note = "";
+      if (publish === "ready") {
+        note = ` ${t("publishReady")}.`;
+      } else if (publish === "used") {
+        note = ` ${t("publishUsed")}`;
+      }
       return {
-        text: finished.stage.title,
-        label: `${t("indicatorLabel")}: ${t("indicatorCompletedIn", { title: finished.title, stage: finished.stage.title })}. ${open}`,
+        text: publish === "ready" ? t("publishReadyShort") : finished.stage.title,
+        label: `${t("indicatorLabel")}: ${completed}.${note} ${open}`,
         tone: "success",
         completed: true,
       };
@@ -42,10 +52,11 @@ const describe = (
     const summary = finished
       ? t("indicatorAborted", { title: finished.title })
       : t("indicatorNone");
+    const required = publish === "required" ? ` ${t("publishRequired")}.` : "";
     return {
-      text: t("indicatorLabel"),
-      label: `${t("indicatorLabel")}: ${summary}. ${open}`,
-      tone: "neutral",
+      text: publish === "required" ? t("publishRequired") : t("indicatorLabel"),
+      label: `${t("indicatorLabel")}: ${summary}.${required} ${open}`,
+      tone: indicator.tone,
       completed: false,
     };
   }
@@ -80,12 +91,11 @@ const IndicatorBody = ({
   refreshKey: unknown;
 }) => {
   const { t } = useWorkflowsT();
-  const { config } = useConfig();
   const { openModal, isModalOpen } = useModal();
   const drawerSlug = useDrawerSlug("workflow");
   const controls = useWorkflowState(collection, id, refreshKey);
   const { state, error, reload } = controls;
-  const people = usePeople(userIdsIn(state?.instances ?? [], config.admin.user));
+  const people = usePeople(userIdsIn(state?.instances ?? []));
   const isOpen = isModalOpen(drawerSlug);
 
   let indicator: Indicator | null = null;

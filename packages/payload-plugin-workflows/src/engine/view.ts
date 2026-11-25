@@ -177,5 +177,7 @@ export const view = (
     definitionChanged: state.definitionVersion !== definitionVersionOf(def),
     titles: titlesOf(def, text),
     canAbort: false,
+    ...(def.requiredToPublish === true ? { requiredToPublish: true as const } : {}),
+    ...(state.publishedAt ? { publishedAt: state.publishedAt } : {}),
   };
 };

@@ -20,11 +20,12 @@ import type { ReactNode } from "react";
 import type { WorkflowState } from "../../server/queries.js";
 import type { InstanceView, ViewAction, ViewActivity } from "../../types.js";
 import type { People } from "../shared/format.js";
-import { runsOf } from "../shared/indicator.js";
+import { publishNoteOf, runsOf } from "../shared/indicator.js";
+import type { PublishNote } from "../shared/indicator.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
 import { HistoryList } from "./HistoryList.js";
 import { RunFacts } from "./RunFacts.js";
-import { RunMain, StartAgain } from "./RunMain.js";
+import { PublishLine, RunMain, StartAgain } from "./RunMain.js";
 import type { PendingAction } from "./RunMain.js";
 import { StageStepper } from "./StageStepper.js";
 import type { useWorkflowState } from "./useWorkflowState.js";
@@ -140,16 +141,19 @@ const StartPanel = ({
   available,
   busy,
   start,
+  publish,
 }: {
   available: Available[];
   busy: boolean;
   start: Controls["start"];
+  publish?: PublishNote;
 }) => {
   const { t } = useWorkflowsT();
   const [only] = available;
   if (available.length === 1 && only) {
     return (
       <>
+        <PublishLine note={publish} />
         {only.description ? <p className="workflows-lead">{only.description}</p> : null}
         <StageStepper stages={previewStages(only)} />
         <div className="workflows-actions">
@@ -171,7 +175,8 @@ const StartPanel = ({
   }
   return (
     <>
-      <p className="workflows-lead">{t("startChoose")}</p>
+      <PublishLine note={publish} />
+      {available.length > 0 ? <p className="workflows-lead">{t("startChoose")}</p> : null}
       <ul className="workflows-choices">
         {available.map((def) => (
           <li className="workflows-choice" key={def.name}>
@@ -269,6 +274,7 @@ export const WorkflowDrawerBody = ({
   const view: InstanceView | undefined =
     active.find((entry) => entry.id === selected) ?? active[0] ?? runs.finished;
   const finished = view && view.status !== "active";
+  const publish = publishNoteOf(state, view);
   const again = finished ? state.available.find((def) => def.name === view.workflow) : undefined;
 
   const menu: MenuItem[] = [];
@@ -358,6 +364,7 @@ export const WorkflowDrawerBody = ({
         }}
         pending={pending}
         people={people}
+        publish={publish}
         view={view}
       />
       {again ? (
@@ -367,7 +374,7 @@ export const WorkflowDrawerBody = ({
   ) : (
     <>
       {notice}
-      <StartPanel available={state.available} busy={busy} start={start} />
+      <StartPanel available={state.available} busy={busy} publish={publish} start={start} />
     </>
   );
 

@@ -5,10 +5,10 @@
 import type { CollectionConfig, CollectionSlug, PayloadRequest } from "payload";
 
 import type { TKey } from "../components/shared/format.js";
-import { EVENTS_SLUG } from "../constants.js";
+import { EVENTS_SLUG, RUNS_SLUG } from "../constants.js";
 import { NAMESPACE } from "../translations.js";
 import type { Actor, Cause, KnownWorkflowEvent, UserActor, WorkflowEvent } from "../types.js";
-import { readWorkflows } from "./access.js";
+import { readWorkflowEvents } from "./access.js";
 import { writing } from "./transaction.js";
 
 const label =
@@ -25,9 +25,10 @@ const text = (name: string, extra: { index?: boolean; required?: boolean } = {})
 /**
  * One row per history entry. Columns are what audits filter on; whatever else an entry carries
  * (params, a reason, an error, a job id…) is in `detail`. The subject is copied onto every row so
- * an audit needs no join, and so the runs' read rule (`readWorkflows`, on the subject columns)
- * applies to events as is. Nobody writes over the API; hidden from the admin nav (the drawer shows
- * a run's history), readable over REST, GraphQL and the Local API.
+ * an audit needs no join. An event is readable exactly when its run is (`readWorkflowEvents`: the
+ * subject part on its own columns, the host's `visibility` rule through `run`). Nobody writes over
+ * the API; hidden from the admin nav (the drawer shows a run's history), readable over REST,
+ * GraphQL and the Local API.
  */
 export const eventsCollection = (): CollectionConfig => ({
   slug: EVENTS_SLUG,
@@ -36,7 +37,7 @@ export const eventsCollection = (): CollectionConfig => ({
   defaultSort: "-at",
   admin: { hidden: true, useAsTitle: "type", disableCopyToLocale: true },
   access: {
-    read: readWorkflows,
+    read: readWorkflowEvents,
     create: () => false,
     update: () => false,
     delete: () => false,
@@ -48,9 +49,15 @@ export const eventsCollection = (): CollectionConfig => ({
     { fields: ["subjectCollection", "subjectId"] },
   ],
   fields: [
-    // The run's id as text (runs' ids are numbers on SQL, strings on MongoDB): no foreign key, so
-    // an insert is one plain statement and deleting a run deletes nothing by itself.
-    text("run", { required: true }),
+    // The run, as a relationship so the runs' visibility rule applies through it (`run.tenant`).
+    // Never populated: an event answers with the run's id.
+    {
+      name: "run",
+      type: "relationship",
+      relationTo: RUNS_SLUG as CollectionSlug,
+      required: true,
+      maxDepth: 0,
+    },
     { name: "seq", type: "number", required: true },
     text("type", { required: true, index: true }),
     { name: "at", type: "date", required: true, index: true },
@@ -58,9 +65,9 @@ export const eventsCollection = (): CollectionConfig => ({
     text("subjectCollection", { required: true }),
     text("subjectId", { required: true }),
     text("stage"),
-    // Who: none on the system's entries, which say what caused them (`cause`, details in `detail`).
+    // Who: a user of the admin user collection (the only users who take part), by id; none on the
+    // system's entries, which say what caused them (`cause`, details in `detail`).
     text("actorId", { index: true }),
-    text("actorCollection"),
     text("via"),
     text("cause"),
     // Per type: an action's activity and name, a transition's name and target, an effect's name
@@ -78,7 +85,7 @@ export const eventsCollection = (): CollectionConfig => ({
 /** An events row as stored. */
 export interface EventRow {
   id?: string | number;
-  run: string;
+  run: string | number;
   seq: number;
   type: string;
   at: string;
@@ -87,7 +94,6 @@ export interface EventRow {
   subjectId: string;
   stage?: string | null;
   actorId?: string | null;
-  actorCollection?: string | null;
   via?: string | null;
   cause?: string | null;
   activity?: string | null;
@@ -119,23 +125,12 @@ export interface EventOwner {
   subject: { collection: string; id: string };
 }
 
-/**
- * Who, as columns. The one place an actor is written; part 2 (user identity) changes it here and
- * in `actorOf`.
- */
+/** Who, as columns: the one place an actor is written (and `actorOf`, read). */
 const actorColumns = (actor: Actor) =>
-  actor.id === undefined
-    ? { actorId: null, actorCollection: null, via: null }
-    : { actorId: actor.id, actorCollection: actor.collection, via: actor.via };
+  actor.id === undefined ? { actorId: null, via: null } : { actorId: actor.id, via: actor.via };
 
 const actorOf = (row: EventRow): Actor =>
-  row.actorId
-    ? {
-        id: row.actorId,
-        collection: row.actorCollection ?? "",
-        via: (row.via ?? "api") as UserActor["via"],
-      }
-    : { system: true };
+  row.actorId ? { id: row.actorId, via: (row.via ?? "api") as UserActor["via"] } : { system: true };
 
 /** An entry as a row: known fields to their columns, everything else into `detail`. */
 export const toRow = (event: WorkflowEvent, owner: EventOwner): EventRow => {
@@ -157,7 +152,7 @@ export const toRow = (event: WorkflowEvent, owner: EventOwner): EventRow => {
     }
   }
   return {
-    run: String(owner.run),
+    run: owner.run,
     seq: event.seq,
     type: event.type,
     at: event.at,
@@ -236,7 +231,7 @@ export const readEvents = async (
     collection: EVENTS_SLUG as CollectionSlug,
     where: {
       and: [
-        { run: { equals: String(run) } },
+        { run: { equals: run } },
         ...(options.before === undefined ? [] : [{ seq: { less_than: options.before } }]),
       ],
     },

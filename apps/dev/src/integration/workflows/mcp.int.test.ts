@@ -219,7 +219,6 @@ describe("workflow tools over MCP", () => {
     expect(run.stage.name).toBe("drafting");
     expect(run.history[0]?.actor).toMatchObject({
       id: String(author.id),
-      collection: "users",
       via: "agent",
     });
 

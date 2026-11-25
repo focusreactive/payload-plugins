@@ -9,7 +9,7 @@ import { formatDateTime, holdLead, personName } from "../shared/format.js";
 import type { People, T } from "../shared/format.js";
 import { enteredBecause, lastStepOf } from "../shared/history.js";
 import { primaryActionOf, turnOf } from "../shared/indicator.js";
-import type { Turn } from "../shared/indicator.js";
+import type { PublishNote, Turn } from "../shared/indicator.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
 import { ActivityItem } from "./ActivityItem.js";
 import { ParamForm } from "./ParamForm.js";
@@ -90,7 +90,25 @@ interface Props {
   onSubmitParams: (pending: PendingAction, params: Record<string, unknown>) => void;
   onCancelParams: () => void;
   idPrefix: string;
+  /** What this run means for publishing (`requiredToPublish`), if anything. */
+  publish?: PublishNote;
 }
+
+/** One line on publishing: what it needs, or that this run lets the next publish through. */
+export const PublishLine = ({ note }: { note: PublishNote | undefined }) => {
+  const { t } = useWorkflowsT();
+  if (!note) {
+    return null;
+  }
+  if (note === "used") {
+    return <p className="field-description workflows-publish">{t("publishUsed")}</p>;
+  }
+  return (
+    <p className="workflows-publish" data-publish={note}>
+      {t(note === "ready" ? "publishReady" : "publishRequired")}
+    </p>
+  );
+};
 
 /**
  * After an action, focus moves to the turn line (it says what happened next) rather than staying
@@ -159,6 +177,7 @@ export const RunMain = ({
   onSubmitParams,
   onCancelParams,
   idPrefix,
+  publish,
 }: Props) => {
   const { t, language } = useWorkflowsT();
   const turnRef = useFocusAfter(busy, pending);
@@ -231,6 +250,7 @@ export const RunMain = ({
           {text.title}
         </h3>
         <p className="workflows-turn__body">{text.body}</p>
+        <PublishLine note={publish} />
         {active && view.stage.description ? (
           <p className="field-description workflows-turn__hint">{view.stage.description}</p>
         ) : null}

@@ -923,6 +923,27 @@ export const recordBypass = (
     ],
   });
 
+/**
+ * Records that a publish of the document went through on this completed run (`requiredToPublish`):
+ * the run is used, and lets no other publish through. A run that is not completed, or is already
+ * used, is refused (`instance-not-active`).
+ */
+export const recordPublish = (state: InstanceState, input: { actor: Actor }, env: Env): Result => {
+  if (state.status !== "completed" || state.publishedAt) {
+    throw new WorkflowError(
+      "instance-not-active",
+      state.publishedAt
+        ? "This run was already used for a publish."
+        : `The workflow is ${state.status}, not completed.`
+    );
+  }
+  return numbered({
+    state: { ...state, publishedAt: env.now.toISOString() },
+    effects: [],
+    events: [newEvent(env, input.actor, { type: "published", stage: state.stage })],
+  });
+};
+
 /** Ends an active run. Needs no definition, so a stuck run can always be aborted. */
 export const abort = (
   state: InstanceState,

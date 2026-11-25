@@ -24,8 +24,11 @@ export const PILL_STYLE: Record<RunTone, "warning" | "light" | "success" | "ligh
 export type Indicator =
   /** No run on the document and nothing the reader may start: no indicator at all. */
   | { kind: "none" }
-  /** Nothing running; something to start, or a finished run to look back at. */
-  | { kind: "idle"; finished?: InstanceView; tone: RunTone }
+  /**
+   * Nothing running; something to start, or a finished run to look back at. `publish`: what it
+   * means for publishing, with a workflow `requiredToPublish` (see `publishNoteOf`).
+   */
+  | { kind: "idle"; finished?: InstanceView; tone: RunTone; publish?: PublishNote }
   | { kind: "run"; view: InstanceView; tone: RunTone; waitsOnMe: boolean; more: number };
 
 /**
@@ -99,6 +102,27 @@ export const runsOf = (
   };
 };
 
+/**
+ * What a run (or none) means for publishing, with a workflow `requiredToPublish`: `required` (not
+ * started, or stopped: publishing is refused), `ready` (completed, no publish used it yet), `used`
+ * (completed and published: further changes need a new run). Nothing while one is in progress
+ * (its stage and guards say so) or when no workflow is required.
+ */
+export type PublishNote = "required" | "ready" | "used";
+
+export const publishNoteOf = (
+  state: WorkflowState,
+  view: InstanceView | undefined
+): PublishNote | undefined => {
+  if (view?.status === "completed" && view.requiredToPublish) {
+    return view.publishedAt ? "used" : "ready";
+  }
+  if (view?.status === "active" || !state.publish || state.publish.clear) {
+    return undefined;
+  }
+  return "required";
+};
+
 /** What the indicator names: the first active run, else a finished one or something to start. */
 export const indicatorOf = (state: WorkflowState, me: string | undefined): Indicator => {
   const { active, finished } = runsOf(state, me);
@@ -113,13 +137,22 @@ export const indicatorOf = (state: WorkflowState, me: string | undefined): Indic
       more: active.length - 1,
     };
   }
-  if (!finished && state.available.length === 0) {
+  const publish = publishNoteOf(state, finished);
+  if (!finished && state.available.length === 0 && !publish) {
     return { kind: "none" };
   }
-  // A completed run shows as completed; a stopped one, or none, as a plain "Workflow".
-  return finished?.status === "completed"
-    ? { kind: "idle", finished, tone: "success" }
-    : { kind: "idle", ...(finished ? { finished } : {}), tone: "neutral" };
+  const note = publish ? { publish } : {};
+  // A completed run shows as completed; publishing that needs a workflow first asks for it; a
+  // stopped run, or none, shows as a plain "Workflow".
+  if (finished?.status === "completed") {
+    return { kind: "idle", finished, tone: "success", ...note };
+  }
+  return {
+    kind: "idle",
+    ...(finished ? { finished } : {}),
+    tone: publish === "required" ? "attention" : "neutral",
+    ...note,
+  };
 };
 
 /**
