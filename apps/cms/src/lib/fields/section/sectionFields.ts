@@ -10,10 +10,15 @@ export const sectionFields: GroupField = {
           label: { en: "Theme", es: "Tema" },
           name: "theme",
           options: [
-            { label: { en: "Light", es: "Claro" }, value: "light" },
-            { label: { en: "Dark", es: "Oscuro" }, value: "dark" },
-            { label: { en: "Light Gray", es: "Gris Claro" }, value: "light-gray" },
-            { label: { en: "Dark Gray", es: "Gris Oscuro" }, value: "dark-gray" },
+            // The redesign is dark-only: the stored values are kept, but each one now
+            // selects a surface treatment instead of a light/dark palette.
+            { label: { en: "Base (black)", es: "Base (negro)" }, value: "light" },
+            { label: { en: "Ink (lifted black)", es: "Tinta (negro elevado)" }, value: "dark" },
+            { label: { en: "Glass panel", es: "Panel de cristal" }, value: "light-gray" },
+            {
+              label: { en: "Glass panel + glow", es: "Panel de cristal + resplandor" },
+              value: "dark-gray",
+            },
           ],
           type: "select",
         },

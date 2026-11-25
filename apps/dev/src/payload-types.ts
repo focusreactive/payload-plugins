@@ -78,6 +78,7 @@ export interface Config {
     'comment-reads': CommentRead;
     'translator-provenance': TranslatorProvenance;
     'translator-runs': TranslatorRun;
+    'audit-events': AuditEvent;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -97,6 +98,7 @@ export interface Config {
     'comment-reads': CommentReadsSelect<false> | CommentReadsSelect<true>;
     'translator-provenance': TranslatorProvenanceSelect<false> | TranslatorProvenanceSelect<true>;
     'translator-runs': TranslatorRunsSelect<false> | TranslatorRunsSelect<true>;
+    'audit-events': AuditEventsSelect<false> | AuditEventsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -773,6 +775,66 @@ export interface TranslatorRun {
   createdAt: string;
 }
 /**
+ * Read-only journal of who changed what and when.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-events".
+ */
+export interface AuditEvent {
+  id: number;
+  occurredAt: string;
+  action: string;
+  status?: ('success' | 'failure') | null;
+  actor: {
+    type: 'user' | 'api_key' | 'agent' | 'system' | 'anonymous';
+    docId?: string | null;
+    collection?: string | null;
+    label?: string | null;
+    source?: ('context' | 'als' | 'auth' | 'inferred' | 'plugin') | null;
+  };
+  onBehalfOf?: {
+    collection?: string | null;
+    docId?: string | null;
+    label?: string | null;
+  };
+  agent?: {
+    keyId?: string | null;
+    name?: string | null;
+    model?: string | null;
+    tool?: string | null;
+  };
+  via?: ('admin' | 'rest' | 'graphql' | 'local' | 'mcp' | 'job') | null;
+  target?: {
+    kind?: ('collection' | 'global' | 'auth' | 'audit' | 'system') | null;
+    slug?: string | null;
+    docId?: string | null;
+    label?: string | null;
+    locale?: string | null;
+  };
+  changes?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  overrideAccess?: boolean | null;
+  requestId?: string | null;
+  ip?: string | null;
+  userAgent?: string | null;
+  metadata?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -1348,6 +1410,55 @@ export interface TranslatorRunsSelect<T extends boolean = true> {
   attempts?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-events_select".
+ */
+export interface AuditEventsSelect<T extends boolean = true> {
+  occurredAt?: T;
+  action?: T;
+  status?: T;
+  actor?:
+    | T
+    | {
+        type?: T;
+        docId?: T;
+        collection?: T;
+        label?: T;
+        source?: T;
+      };
+  onBehalfOf?:
+    | T
+    | {
+        collection?: T;
+        docId?: T;
+        label?: T;
+      };
+  agent?:
+    | T
+    | {
+        keyId?: T;
+        name?: T;
+        model?: T;
+        tool?: T;
+      };
+  via?: T;
+  target?:
+    | T
+    | {
+        kind?: T;
+        slug?: T;
+        docId?: T;
+        label?: T;
+        locale?: T;
+      };
+  changes?: T;
+  overrideAccess?: T;
+  requestId?: T;
+  ip?: T;
+  userAgent?: T;
+  metadata?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

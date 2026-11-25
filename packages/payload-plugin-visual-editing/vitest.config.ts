@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react";
 const SPECS_THAT_RUN_PAYLOAD = ["tests/realPayload/**/*.int.spec.ts"];
 
 const SPECS_OF_SERVER_CODE = [
+  "tests/server/draftField.int.spec.ts",
   "tests/server/latestReads.int.spec.ts",
   "tests/server/unsavedRichTextWithoutSchemaCache.int.spec.ts",
 ];
@@ -16,6 +17,7 @@ const SPECS_WITHOUT_A_DOM = [
 const SPECS_THAT_RUN_PAYLOAD_NEXT_TO_A_DOM = [
   "tests/realPayload/realPayloadRichTextLive.int.spec.ts",
   "tests/realPayload/realPayloadDomPage.int.spec.ts",
+  "tests/realPayload/realPayloadRichTextOnThePage.int.spec.ts",
 ];
 
 export default defineConfig({

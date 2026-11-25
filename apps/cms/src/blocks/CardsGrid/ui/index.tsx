@@ -15,9 +15,7 @@ export function CardsGrid(props: ICardsGridProps) {
           : "lg:grid-cols-1";
 
   return (
-    <div
-      className={cn("not-prose grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:gap-6", gridCols)}
-    >
+    <div className={cn("not-prose grid grid-cols-1 gap-gridGap sm:grid-cols-2", gridCols)}>
       {items?.map((item, i) => (
         <DefaultCard key={i} {...item} />
       ))}

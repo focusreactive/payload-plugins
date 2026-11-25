@@ -25,7 +25,7 @@ packages/
   payload-plugin-html-preview/        → @focus-reactive/payload-plugin-html-preview (published)
   payload-plugin-netlify-deploy/      → @focus-reactive/payload-plugin-netlify-deploy (not yet published)
   payload-plugin-visual-editing/      → @focus-reactive/payload-plugin-visual-editing (published)
-  payload-plugin-stacked-editing/     → @focus-reactive/payload-plugin-stacked-editing (private, not yet published)
+  payload-plugin-stacked-editing/     → @focus-reactive/payload-plugin-stacked-editing (published)
   ui/                                 → @repo/ui — shared React UI components (private)
   tailwind-config/                    → @repo/tailwind-config — shared Tailwind v4 config (private)
   typescript-config/                  → @repo/typescript-config (private)
@@ -109,10 +109,11 @@ Releases are fully automated via **multi-semantic-release** + **semantic-release
 
 ## Adding a New Plugin
 
-1. Create `packages/your-plugin-name/` with `package.json` (set `"private": false`, `"publishConfig": { "access": "public" }`)
+1. Create `packages/your-plugin-name/` with `package.json` (keep `"private": true` until the first release, `"publishConfig": { "access": "public" }`)
 2. Set `"repository".url` to `https://github.com/focusreactive/payload-plugins` (no hyphen — matches git remote)
 3. Add a `build` script compatible with turbo
-4. It will be auto-discovered by bun workspaces and included in releases
+4. It will be auto-discovered by bun workspaces
+5. First release: follow the `payload-plugins-add-package` skill. Publishing by hand, the npm trusted publisher and the version tag must all exist before `"private": false` reaches `main`, or the Release workflow fails for every package.
 
 ## Gotchas
 

@@ -1,6 +1,5 @@
-import { cn, resolveBackdropTone } from "@/components/utils";
-import { AbstractBackdrop } from "@/components/AbstractBackdrop";
-import { GridLines } from "@/components/GridLines";
+import { cn } from "@/components/utils";
+import { GlowBackdrop } from "@/components/GlowBackdrop";
 import { Media } from "@/components/media";
 import type { PreparedMedia } from "@/components/media";
 import { Link } from "@/components/link";
@@ -16,7 +15,7 @@ interface HeroActionsProps {
 function HeroActions({ links, className }: HeroActionsProps) {
   if (!links?.length) return null;
   return (
-    <ul className={cn("flex flex-wrap items-center gap-3.5", className)}>
+    <ul className={cn("flex flex-wrap items-center gap-x-8 gap-y-4", className)}>
       {links.map((link, i) => (
         <li key={i}>
           <Link {...link} />
@@ -26,56 +25,60 @@ function HeroActions({ links, className }: HeroActionsProps) {
   );
 }
 
-function HeroImage({ image }: { image: PreparedMedia }) {
+/** Full-bleed hero artwork with the plum soft-light wash and bottom highlight from the design. */
+function HeroBackground({ image }: { image: PreparedMedia }) {
   return (
-    <div className="relative ml-auto w-full max-w-[480px] overflow-hidden rounded-md">
-      <Media {...image.data} visualEditing={image.visualEditing} imageProps={image.imageProps} />
+    <div aria-hidden className="pointer-events-none absolute inset-0 -z-1">
+      <Media
+        {...image.data}
+        visualEditing={image.visualEditing}
+        className="absolute inset-0"
+        imageProps={{
+          ...image.imageProps,
+          aspectRatio: undefined,
+          className: "object-cover",
+          fill: true,
+          priority: true,
+          sizes: "100vw",
+        }}
+        videoProps={{ className: "size-full object-cover" }}
+      />
+      <div className="absolute inset-0 bg-plum-50 mix-blend-soft-light" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white-10" />
     </div>
   );
 }
 
-export function Hero({ variant, theme, heading, image, links }: IHeroProps) {
-  const backdropTone = resolveBackdropTone(theme);
+export function Hero({ variant, heading, image, links }: IHeroProps) {
   const hasImage = typeof image?.data?.src === "string" && image.data.src.length > 0;
-
-  if (variant === "centered") {
-    return (
-      <>
-        <AbstractBackdrop variant="blobs" tone={backdropTone} />
-        <GridLines tone={backdropTone} />
-        <div className="relative z-1 mx-auto flex max-w-[840px] flex-col items-center gap-6 text-center">
-          <SectionHeading
-            {...heading}
-            as="h1"
-            align="center"
-            size="display-1"
-            className="max-w-[840px] gap-6"
-          />
-          <HeroActions links={links} className="mt-2 justify-center" />
-        </div>
-      </>
-    );
-  }
+  const isCentered = variant === "centered";
 
   return (
     <>
-      <AbstractBackdrop variant="orbs" tone={backdropTone} />
-      <GridLines tone={backdropTone} />
-      <div
-        className={cn(
-          "relative z-1 grid grid-cols-1 items-center gap-10 lg:gap-16",
-          hasImage && "lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]"
-        )}
-      >
-        <div className="flex max-w-[620px] flex-col gap-6">
-          <SectionHeading {...heading} as="h1" size="display-1" className="gap-6" />
-          <HeroActions links={links} className="mt-2" />
+      {isCentered || !hasImage ? (
+        <GlowBackdrop placement="center" className="top-full opacity-80" />
+      ) : (
+        <HeroBackground image={image} />
+      )}
+
+      <div className="grid w-full grid-cols-1 gap-gridGap lg:grid-cols-12">
+        <div
+          className={cn(
+            "flex flex-col gap-12 md:gap-20",
+            isCentered
+              ? "items-center text-center lg:col-span-8 lg:col-start-3"
+              : "items-start lg:col-span-7"
+          )}
+        >
+          <SectionHeading
+            {...heading}
+            as="h1"
+            align={isCentered ? "center" : "left"}
+            size="display-1"
+            className={cn("gap-8", !isCentered && "[&>p:last-child]:max-w-[75%]")}
+          />
+          <HeroActions links={links} className={cn(isCentered && "justify-center")} />
         </div>
-        {hasImage && (
-          <div className="hidden lg:block">
-            <HeroImage image={image} />
-          </div>
-        )}
       </div>
     </>
   );

@@ -1,4 +1,4 @@
-import { StarIcon } from "lucide-react";
+import { Sparkle } from "lucide-react";
 import React from "react";
 
 import { Media } from "@/components/media";
@@ -9,12 +9,13 @@ const StarRow: React.FC<{ rating: number | null | undefined }> = ({ rating }) =>
   const filled = typeof rating === "number" && rating > 0 ? Math.min(5, Math.round(rating)) : 5;
 
   return (
-    <div className="flex gap-1" aria-label={`${filled} out of 5 stars`} role="img">
+    <div className="flex" aria-label={`${filled} out of 5 stars`} role="img">
       {[1, 2, 3, 4, 5].map((star) => (
-        <StarIcon
+        <Sparkle
           key={star}
-          size={16}
-          className={star <= filled ? "fill-primary text-primary" : "fill-muted text-muted"}
+          size={24}
+          strokeWidth={0}
+          className={star <= filled ? "fill-foreground" : "fill-border-strong"}
           aria-hidden
         />
       ))}
@@ -35,12 +36,12 @@ const Avatar: React.FC<{ avatar: (number | null) | MediaType | undefined; name: 
         {...media.data}
         visualEditing={media.visualEditing}
         htmlElement="div"
-        className="size-[42px] shrink-0 overflow-hidden rounded-full"
+        className="size-11 shrink-0 overflow-hidden rounded-pill"
         imageProps={{
           ...media.imageProps,
           className: "size-full object-cover",
           pictureClassName: "block size-full",
-          sizes: "42px",
+          sizes: "44px",
         }}
       />
     );
@@ -50,7 +51,7 @@ const Avatar: React.FC<{ avatar: (number | null) | MediaType | undefined; name: 
 
   return (
     <span
-      className="flex size-[42px] shrink-0 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary"
+      className="flex size-11 shrink-0 items-center justify-center rounded-pill border border-border-strong bg-surface text-body font-semibold text-foreground"
       aria-hidden
     >
       {initial}
@@ -70,22 +71,18 @@ export const TestimonialCard: React.FC<{
   const roleCompany = [testimonial.position, testimonial.company].filter(Boolean).join(" · ");
 
   return (
-    <article className="flex w-[380px] shrink-0 flex-col gap-4 rounded-md border border-border bg-surface p-7">
+    <article className="flex flex-col gap-8 overflow-clip rounded-2xl border border-border-strong bg-surface p-8 text-foreground md:gap-10 md:p-10 md:pr-12 md:pb-12">
       {showRating && <StarRow rating={testimonial.rating} />}
-
       {testimonial.content && (
-        <blockquote className="flex-1 font-display text-body-lg leading-relaxed text-foreground">
+        <blockquote className="pb-6 text-quote [text-indent:-0.45em]">
           &ldquo;{testimonial.content}&rdquo;
         </blockquote>
       )}
-
-      <footer className="mt-auto flex items-center gap-3 border-t border-border pt-5">
+      <footer className="flex items-center gap-4">
         {showAvatar && <Avatar avatar={testimonial.avatar} name={testimonial.author} />}
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-foreground">{testimonial.author}</p>
-          {roleCompany && (
-            <p className="mt-0.5 truncate text-small text-muted-foreground">{roleCompany}</p>
-          )}
+        <div className="flex min-w-0 flex-1 flex-col gap-1 text-body leading-5">
+          <p className="truncate text-foreground">{testimonial.author}</p>
+          {roleCompany && <p className="truncate text-subtle-foreground">{roleCompany}</p>}
         </div>
       </footer>
     </article>

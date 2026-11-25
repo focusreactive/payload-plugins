@@ -1,5 +1,6 @@
 import { abTestingPlugin } from "@focus-reactive/payload-plugin-ab";
 import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
+import { auditLogPlugin } from "@focus-reactive/payload-plugin-audit-log";
 import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
@@ -158,6 +159,9 @@ const askTranslationModel: AskModel = async (request) => {
 
   return await ask(request);
 };
+
+const runAfter = (earlier: Plugin, plugin: Plugin): Plugin =>
+  Object.assign(plugin, { order: (earlier.order ?? 0) + 1 });
 
 export const plugins: Plugin[] = [
   vercelBlobStorage({
@@ -460,6 +464,7 @@ export const plugins: Plugin[] = [
   visualEditingPlugin({
     adminBasePath: "/admin",
     enrichment: "explicit",
+    inlineEditing: true,
     instantPreview: true,
     skipCollections: [
       "users",
@@ -480,6 +485,13 @@ export const plugins: Plugin[] = [
   }),
 
   mcpPluginConfig,
+
+  runAfter(
+    mcpPluginConfig,
+    auditLogPlugin({
+      access: { read: superAdmin },
+    })
+  ),
 
   // Must stay last so it also protects collections and globals added by the plugins above.
   restrictApiAccess({

@@ -1,26 +1,26 @@
-import { resolveBackdropTone } from "@/components/utils";
-import { AbstractBackdrop } from "@/components/AbstractBackdrop";
-import { GridLines } from "@/components/GridLines";
+import { GlowBackdrop } from "@/components/GlowBackdrop";
 import type { SectionHeadingContent } from "@/components/SectionHeading";
 import { SectionHeading } from "@/components/SectionHeading";
 
 interface CtaBandProps {
   heading?: SectionHeadingContent | null;
-  theme?: string | null;
   actions: React.ReactNode;
+  /** Paint the striped glow behind the band (it bleeds under whatever follows). */
+  glow?: boolean;
 }
 
-export function CtaBand({ heading, theme, actions }: CtaBandProps) {
-  const backdropTone = resolveBackdropTone(theme);
-
+export function CtaBand({ heading, actions, glow = true }: CtaBandProps) {
   return (
-    <div>
-      <AbstractBackdrop variant="blobs" tone={backdropTone} intensity="subtle" />
-      <GridLines tone={backdropTone} />
-      <div className="relative z-10 flex flex-col items-center gap-[26px] py-[clamp(56px,8vw,104px)] text-center">
-        <SectionHeading {...heading} align="center" className="max-w-[760px]" />
-        <div className="flex flex-wrap items-center justify-center gap-3.5">{actions}</div>
+    <>
+      {glow && <GlowBackdrop placement="center" className="top-[calc(50%+80px)]" />}
+      <div className="relative flex flex-col items-center gap-12 text-center">
+        <SectionHeading {...heading} align="center" />
+        {actions && (
+          <div className="flex flex-wrap items-center justify-center gap-4 rounded-[2.5rem] border border-border bg-surface p-2 backdrop-blur-[20px] sm:rounded-pill">
+            {actions}
+          </div>
+        )}
       </div>
-    </div>
+    </>
   );
 }

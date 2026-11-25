@@ -62,7 +62,8 @@ describe("a page without React that reads Payload over HTTP", () => {
 
   const askEndpoint = async (path: string, init: RequestInit, user?: PayloadRequest["user"]) => {
     const endpoint = payload.config.endpoints.find((candidate) => candidate.path === path);
-    const headers = new Headers({ Origin: SITE_ORIGIN });
+    const headers = new Headers(init.headers);
+    headers.set("Origin", SITE_ORIGIN);
     const req = await createLocalReq(
       { req: { headers } as Partial<PayloadRequest>, user: user ?? undefined },
       payload
@@ -129,7 +130,7 @@ describe("a page without React that reads Payload over HTTP", () => {
   const grantFromAdmin = async (docId: string) => {
     const response = await askEndpoint(
       VE_PREVIEW_GRANT_PATH,
-      { body: JSON.stringify(page(docId)) },
+      { body: JSON.stringify(page(docId)), headers: { "Content-Type": "application/json" } },
       editor
     );
     const { expiresAt, grant } = (await response.json()) as { expiresAt: number; grant: string };

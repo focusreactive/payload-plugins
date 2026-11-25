@@ -1,3 +1,4 @@
+import { ChevronRight } from "lucide-react";
 import NextLink from "next/link";
 
 import { Button } from "@/components/button";
@@ -20,10 +21,13 @@ export function HeaderActions({ actions }: HeaderActionsProps) {
             asChild
             size={ButtonSize.Small}
             variant={action.variant}
+            className="pr-5"
           >
             <NextLink href={action.href} {...newTabProps}>
               {action.label}
-              {action.variant === ButtonVariant.Accent && <span aria-hidden>&rarr;</span>}
+              {action.variant !== ButtonVariant.Default && (
+                <ChevronRight aria-hidden size={16} strokeWidth={1.5} className="mt-0.5" />
+              )}
             </NextLink>
           </Button>
         );

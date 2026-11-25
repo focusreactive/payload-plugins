@@ -8,6 +8,7 @@ import {
   DATA_VE_KIND_ATTR,
   DATA_VE_LOCALE_ATTR,
   DATA_VE_PATH_ATTR,
+  DATA_VE_VALUE_ID_ATTR,
 } from "../../src/shared/protocol";
 import { markRead } from "../../src/server/markRead";
 
@@ -33,6 +34,16 @@ describe("withVisualEditingPath", () => {
       [DATA_VE_COLLECTION_ATTR]: "pages",
       [DATA_VE_KIND_ATTR]: "collection",
     });
+  });
+
+  it("states the id of the document a value holds", () => {
+    const attrs = withVisualEditingPath({
+      _meta: { collectionSlug: "pages", kind: "collection", path: "image" },
+      id: 4,
+      url: "/media/lighthouse.jpg",
+    });
+
+    expect(attrs[DATA_VE_VALUE_ID_ATTR]).toBe("4");
   });
 
   it("states the locale of a value read with every locale", () => {
@@ -87,7 +98,7 @@ describe("withVisualEditingPath", () => {
 });
 
 describe("withVisualEditingPath — upload end-to-end", () => {
-  it("returns data-ve-* attrs pointing at the upload field of the document that holds it", () => {
+  it("returns data-ve-* attrs pointing at the upload field of the document that holds it, and the media it holds", () => {
     const inPage = { collectionSlug: "pages", docId: "p-1", kind: "collection" } as const;
     const result = markRead(
       { image: { alt: "alt", id: "m-1" } },
@@ -99,6 +110,7 @@ describe("withVisualEditingPath — upload end-to-end", () => {
       [DATA_VE_DOC_ID_ATTR]: "p-1",
       [DATA_VE_COLLECTION_ATTR]: "pages",
       [DATA_VE_KIND_ATTR]: "collection",
+      [DATA_VE_VALUE_ID_ATTR]: "m-1",
     });
   });
 });

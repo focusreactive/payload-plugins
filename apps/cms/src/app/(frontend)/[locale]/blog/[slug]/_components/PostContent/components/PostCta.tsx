@@ -8,8 +8,8 @@ interface PostCtaProps {
 
 export function PostCta({ cta }: PostCtaProps) {
   return (
-    <SectionContainer sectionData={{ paddingY: "none", theme: "dark" }}>
-      <CtaBandSection heading={cta.heading} actions={cta.actions} theme="dark" />
+    <SectionContainer sectionData={{ paddingY: "large" }}>
+      <CtaBandSection heading={cta.heading} actions={cta.actions} />
     </SectionContainer>
   );
 }

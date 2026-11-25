@@ -1,5 +1,5 @@
 import type { Viewport } from "next";
-import { Archivo, IBM_Plex_Mono, Newsreader } from "next/font/google";
+import { IBM_Plex_Mono, Inter } from "next/font/google";
 import { getMessages } from "next-intl/server";
 import { draftMode } from "next/headers";
 import React from "react";
@@ -11,20 +11,16 @@ import { AnalyticsProviderClient } from "@/lib/plugins/analytics/AnalyticsProvid
 import type { Locale } from "@/lib/types";
 import { LivePreviewListener } from "@/components/LivePreviewListener";
 import { VisualEditingEditRouter } from "@/components/VisualEditingEditRouter";
+import { VisualEditingSession } from "@/components/VisualEditingSession";
 
-const newsreader = Newsreader({
+// Inter with the optical-size axis: `font-variation-settings: "opsz" 32` in
+// styles.css pins it to the Display cut the design uses at every size.
+const inter = Inter({
+  axes: ["opsz"],
   display: "swap",
   style: ["normal", "italic"],
   subsets: ["latin"],
-  variable: "--font-newsreader",
-  weight: ["400", "500", "600"],
-});
-
-const archivo = Archivo({
-  display: "swap",
-  subsets: ["latin"],
-  variable: "--font-archivo",
-  weight: ["400", "500", "600"],
+  variable: "--font-inter",
 });
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -36,10 +32,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 
 export const viewport: Viewport = {
   initialScale: 1,
-  themeColor: [
-    { color: "#eef2f3", media: "(prefers-color-scheme: light)" },
-    { color: "#08100f", media: "(prefers-color-scheme: dark)" },
-  ],
+  themeColor: [{ color: "#000000" }],
   width: "device-width",
 };
 
@@ -54,22 +47,18 @@ export default async function RootLayout({ children, params }: Props) {
   const messages = await getMessages();
 
   return (
-    <html
-      lang={locale}
-      data-theme="light"
-      className={`${newsreader.variable} ${archivo.variable} ${ibmPlexMono.variable}`}
-    >
+    <html lang={locale} data-theme="light" className={`${inter.variable} ${ibmPlexMono.variable}`}>
       <head />
       <body>
         <AnalyticsProviderClient measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID!}>
           <Providers locale={locale as Locale} messages={messages}>
             {draft ? (
-              <VisualEditing.Provider available instantPreview adminBasePath="/admin">
+              <VisualEditingSession>
                 <VisualEditing.Toggle />
                 <VisualEditing.Overlay locale={locale}>{children}</VisualEditing.Overlay>
                 <LivePreviewListener />
                 <VisualEditingEditRouter />
-              </VisualEditing.Provider>
+              </VisualEditingSession>
             ) : (
               children
             )}

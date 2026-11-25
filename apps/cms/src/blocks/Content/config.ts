@@ -13,13 +13,20 @@ import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 const fields: Field[] = [
   sectionHeadingField({ title: DEFAULT_VALUES.blocks.content.heading }),
   {
-    defaultValue: "image-text",
+    defaultValue: "stacked",
     label: {
       en: "Layout",
       es: "Diseño",
     },
     name: "layout",
     options: [
+      {
+        label: {
+          en: "Wide image on top",
+          es: "Imagen ancha arriba",
+        },
+        value: "stacked",
+      },
       {
         label: {
           en: "50/50 Image + Text",

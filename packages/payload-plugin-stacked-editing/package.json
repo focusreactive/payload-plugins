@@ -1,7 +1,7 @@
 {
   "name": "@focus-reactive/payload-plugin-stacked-editing",
-  "version": "0.0.0",
-  "private": true,
+  "version": "1.0.1",
+  "private": false,
   "description": "Stacked, breadcrumb-navigated editing panels for nested Payload CMS blocks and arrays, built on Payload's own drawers and fields",
   "license": "MIT",
   "author": "FocusReactive <ship@focusreactive.com>",

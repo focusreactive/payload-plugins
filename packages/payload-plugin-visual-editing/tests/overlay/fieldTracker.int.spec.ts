@@ -221,6 +221,19 @@ describe("createFieldTracker", () => {
     expect(photo.getAttribute("data-ve-path")).toBe("gallery");
   });
 
+  it("tells an element the page marked from one it marked itself", async () => {
+    const photo = document.createElement("img");
+    photo.setAttribute("data-ve-path", "image");
+    photo.setAttribute("data-ve-collection", "page");
+    main.append(photo);
+    await flushMutations();
+
+    expect(tracker.isIdentifiedByThePage(photo)).toBe(true);
+    expect(tracker.isIdentifiedByThePage(image)).toBe(false);
+    expect(tracker.isIdentifiedByThePage(heading)).toBe(false);
+    expect(tracker.isIdentifiedByThePage(main)).toBe(false);
+  });
+
   describe("when the page renders an attribute again", () => {
     it("strips the markers of the new value", async () => {
       await flushMutations();

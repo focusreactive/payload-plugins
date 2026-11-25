@@ -62,7 +62,7 @@ export const cardsGridFields: Field[] = [
         fields: [
           {
             admin: { width: "33%" },
-            defaultValue: "center",
+            defaultValue: "left",
             label: { en: "Alignment", es: "Alineación" },
             name: "alignVariant",
             options: [
@@ -89,16 +89,16 @@ export const cardsGridFields: Field[] = [
             label: { en: "Background Color", es: "Color de fondo" },
             name: "backgroundColor",
             options: [
-              { label: { en: "None", es: "Ninguno" }, value: "none" },
-              { label: { en: "Light", es: "Claro" }, value: "light" },
-              { label: { en: "Dark", es: "Oscuro" }, value: "dark" },
+              { label: { en: "Glass (default)", es: "Cristal (por defecto)" }, value: "none" },
+              { label: { en: "Glass", es: "Cristal" }, value: "light" },
+              { label: { en: "Ink", es: "Tinta" }, value: "dark" },
               {
-                label: { en: "Light Gray", es: "Gris claro" },
+                label: { en: "Frosted glass", es: "Cristal esmerilado" },
                 value: "light-gray",
               },
-              { label: { en: "Dark Gray", es: "Gris oscuro" }, value: "dark-gray" },
+              { label: { en: "Ink (lifted)", es: "Tinta (elevada)" }, value: "dark-gray" },
               {
-                label: { en: "Gradient 2", es: "Gradiente 2" },
+                label: { en: "Brand gradient", es: "Degradado de marca" },
                 value: "gradient-2",
               },
             ],

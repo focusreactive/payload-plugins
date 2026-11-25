@@ -17,7 +17,11 @@ import { flushMutations } from "../support/time";
 const PAGE = { collectionSlug: "page", docId: "1", kind: "collection" } as const;
 const MARKED_TITLE = markedText("Hello", { ...PAGE, path: "title" });
 const SITE_ORIGIN = "https://site.example";
-const FRAMED: PageState = { isFramed: true, mode: "off", pageOrigin: SITE_ORIGIN };
+const FRAMED: PageState = {
+  isFramed: true,
+  chosenMode: "off",
+  pageOrigin: SITE_ORIGIN,
+};
 const STANDALONE: PageState = { ...FRAMED, isFramed: false };
 const DRAFT: SessionOptions = { adminOrigin: ADMIN_ORIGIN, available: true };
 
@@ -65,7 +69,7 @@ describe("the session of a page, followed", () => {
     };
 
     it("outlines editable text in the mode of the session", async () => {
-      page = { ...FRAMED, mode: "always" };
+      page = { ...FRAMED, chosenMode: "always" };
 
       start();
       await flushMutations();
@@ -86,7 +90,7 @@ describe("the session of a page, followed", () => {
     it("follows the mode the editor picks", async () => {
       const overlay = start();
 
-      page = { ...FRAMED, mode: "always" };
+      page = { ...FRAMED, chosenMode: "always" };
       overlay.sync();
       await flushMutations();
       expect(targets()).toHaveLength(1);
@@ -101,7 +105,7 @@ describe("the session of a page, followed", () => {
       const overlay = start();
       await flushMutations();
 
-      page = { ...FRAMED, mode: "always" };
+      page = { ...FRAMED, chosenMode: "always" };
       overlay.sync();
       overlay.sync();
       await flushMutations();
@@ -111,7 +115,7 @@ describe("the session of a page, followed", () => {
 
     it("announces no fields without instant preview", async () => {
       options = { ...DRAFT, instantPreview: false };
-      page = { ...FRAMED, mode: "always" };
+      page = { ...FRAMED, chosenMode: "always" };
 
       start();
       await flushMutations();
@@ -122,7 +126,7 @@ describe("the session of a page, followed", () => {
 
     it("starts to announce fields when instant preview is turned on", async () => {
       options = { ...DRAFT, instantPreview: false };
-      page = { ...FRAMED, mode: "always" };
+      page = { ...FRAMED, chosenMode: "always" };
       const overlay = start();
       await flushMutations();
 
@@ -167,7 +171,7 @@ describe("the session of a page, followed", () => {
         const overlay = start();
 
         options = DRAFT;
-        page = { ...FRAMED, mode: "always" };
+        page = { ...FRAMED, chosenMode: "always" };
         overlay.sync();
         await flushMutations();
 
@@ -177,7 +181,7 @@ describe("the session of a page, followed", () => {
 
       it("takes the page back from the overlay", async () => {
         options = { ...DRAFT, instantPreview: false };
-        page = { ...FRAMED, mode: "always" };
+        page = { ...FRAMED, chosenMode: "always" };
         const overlay = start();
         await flushMutations();
 
@@ -234,7 +238,7 @@ describe("the session of a page, followed", () => {
       const toggle = start();
       expect(checkedLabels()).toEqual(["Off"]);
 
-      page = { ...FRAMED, mode: "hover" };
+      page = { ...FRAMED, chosenMode: "hover" };
       toggle.sync();
 
       expect(checkedLabels()).toEqual(["Hover"]);
@@ -271,6 +275,14 @@ describe("the session of a page, followed", () => {
       following = null;
 
       expect(host()).toBeNull();
+    });
+
+    it("offers only its modes where the site turned editing on the page on", () => {
+      options = { ...DRAFT, inlineEditing: true };
+
+      start();
+
+      expect(buttons().map((button) => button.textContent)).toEqual(["Off", "Hover", "Always"]);
     });
   });
 });

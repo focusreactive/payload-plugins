@@ -32,6 +32,8 @@ To add an individual plugin to an existing Payload project, see the install comm
 | [`@focus-reactive/payload-plugin-html-preview`](./packages/payload-plugin-html-preview) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-html-preview)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-html-preview) | HTML preview plugin — live preview and click-to-edit for static and template-rendered sites |
 | [`@focus-reactive/payload-plugin-netlify-deploy`](./packages/payload-plugin-netlify-deploy) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-netlify-deploy)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-netlify-deploy) | Netlify deploy plugin — build, preview and publish Netlify sites from the admin, with the live build log |
 | [`@focus-reactive/payload-plugin-visual-editing`](./packages/payload-plugin-visual-editing) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-visual-editing)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-visual-editing) | Visual editing plugin — click-to-edit overlays on your Next.js frontend that deep-link into the admin field |
+| [`@focus-reactive/payload-plugin-stacked-editing`](./packages/payload-plugin-stacked-editing) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-stacked-editing)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-stacked-editing) | Stacked editing plugin - nested blocks and arrays open in layered panels with breadcrumbs, built on Payload drawers |
+| [`@focus-reactive/payload-plugin-audit-log`](./packages/payload-plugin-audit-log) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-audit-log)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-audit-log) | Audit log plugin — read-only log of who changed what and when, sign-ins, API keys and AI agents, CSV / NDJSON export |
 
 
 ## A/B Testing Plugin for Payload CMS
@@ -172,7 +174,7 @@ bun add @focus-reactive/payload-plugin-netlify-deploy
 
 ## Visual Editing Plugin for Payload CMS
 
-Click-to-edit for React/Next.js frontends. Draft content read through the Local API carries invisible field-path markers (Vercel stega); a frontend overlay turns them into Edit badges, and a click opens the exact document and field in the admin — tabs, collapsibles and array rows expanded, the input scrolled into view and focused. Works in Live Preview and in a separate tab.
+Click-to-edit for React/Next.js frontends. Draft content read through the Local API carries invisible field-path markers (Vercel stega); a frontend overlay turns them into Edit badges, and a click opens the exact document and field in the admin — tabs, collapsibles and array rows expanded, the input scrolled into view and focused. Works in Live Preview and in a separate tab. Optional instant preview shows text typed in the admin before it is saved, and editing on the page lets editors change text, rich text and images right in the preview. The package README has an AI prompt that wires it into an existing project.
 
 ```bash
 npm install @focus-reactive/payload-plugin-visual-editing
@@ -183,6 +185,36 @@ bun add @focus-reactive/payload-plugin-visual-editing
 
 - Package: [`@focus-reactive/payload-plugin-visual-editing`](./packages/payload-plugin-visual-editing)
 - [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-visual-editing)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-visual-editing)
+
+## Stacked Editing Plugin for Payload CMS
+
+Nested content without endless accordions. Clicking an array or blocks row opens it in a panel layered on top of the previous one, with breadcrumbs to jump between levels, at any depth. Payload's own fields, validation, permissions and drawers stay as they are; only where a row's fields are shown changes.
+
+```bash
+npm install @focus-reactive/payload-plugin-stacked-editing
+yarn add @focus-reactive/payload-plugin-stacked-editing
+pnpm add @focus-reactive/payload-plugin-stacked-editing
+bun add @focus-reactive/payload-plugin-stacked-editing
+```
+
+- Package: [`@focus-reactive/payload-plugin-stacked-editing`](./packages/payload-plugin-stacked-editing)
+- [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-stacked-editing)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-stacked-editing)
+
+## Audit Log Plugin for Payload CMS
+
+![Audit log list](https://raw.githubusercontent.com/focusreactive/payload-plugins/main/packages/payload-plugin-audit-log/docs/list.png)
+
+Who changed what and when. Every create, update, delete, publish and version restore of documents and globals, plus sign-ins, failed sign-ins and password resets, lands in a read-only collection with the actor (user, API key, MCP agent, script), the paths of the changed fields — never their values — IP and User-Agent. Events are written in the same transaction as the change, the site's reads are not affected, and the admin list exports the current filter to CSV or NDJSON.
+
+```bash
+npm install @focus-reactive/payload-plugin-audit-log
+yarn add @focus-reactive/payload-plugin-audit-log
+pnpm add @focus-reactive/payload-plugin-audit-log
+bun add @focus-reactive/payload-plugin-audit-log
+```
+
+- Package: [`@focus-reactive/payload-plugin-audit-log`](./packages/payload-plugin-audit-log)
+- [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-audit-log)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-audit-log)
 
 ## Run Demo Locally
 
