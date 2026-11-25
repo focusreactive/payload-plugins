@@ -950,6 +950,12 @@ export interface CardsGridBlock {
           | 'compass'
           | 'target'
           | 'wand-2'
+          | 'star'
+          | 'hourglass'
+          | 'lightning'
+          | 'lightbulb'
+          | 'monitor'
+          | 'notification-box'
         )
       | null;
     title: string;
@@ -1720,6 +1726,12 @@ export interface Preset {
                 | 'compass'
                 | 'target'
                 | 'wand-2'
+                | 'star'
+                | 'hourglass'
+                | 'lightning'
+                | 'lightbulb'
+                | 'monitor'
+                | 'notification-box'
               )
             | null;
           title: string;
@@ -4391,6 +4403,12 @@ export interface CardsGridInlineBlock {
           | 'compass'
           | 'target'
           | 'wand-2'
+          | 'star'
+          | 'hourglass'
+          | 'lightning'
+          | 'lightbulb'
+          | 'monitor'
+          | 'notification-box'
         )
       | null;
     title: string;

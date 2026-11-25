@@ -12,7 +12,10 @@ interface TestimonialsSliderProps {
 
 const EDGE_TOLERANCE_PX = 4;
 
-/** Horizontal, snap-scrolling row of testimonial cards with the shared prev / next pill. */
+/**
+ * Horizontal, snap-scrolling row of testimonial cards with the shared prev / next pill. The track
+ * bleeds to the viewport edges while the first card stays on the content edge (100cqw = content width).
+ */
 export function TestimonialsSlider({ children, duration = 0 }: TestimonialsSliderProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
@@ -66,7 +69,7 @@ export function TestimonialsSlider({ children, duration = 0 }: TestimonialsSlide
 
   return (
     <div
-      className="flex flex-col gap-6"
+      className="@container flex flex-col gap-6"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
@@ -75,7 +78,7 @@ export function TestimonialsSlider({ children, duration = 0 }: TestimonialsSlide
       <div
         ref={trackRef}
         onScroll={syncEdges}
-        className="-mx-containerBase flex snap-x snap-mandatory scroll-px-containerBase items-start gap-gridGap overflow-x-auto px-containerBase scrollbar-none"
+        className="mx-[calc(50cqw-50vw)] flex snap-x snap-mandatory scroll-px-[calc(50vw-50cqw)] items-start gap-gridGap overflow-x-auto px-[calc(50vw-50cqw)] scrollbar-none"
       >
         {React.Children.map(children, (child, index) => (
           <div
