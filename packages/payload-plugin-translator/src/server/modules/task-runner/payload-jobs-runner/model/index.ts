@@ -5,3 +5,4 @@ export { owedIfGaveUp } from "./owedIfGaveUp.js";
 export { deliveredLocales } from "./deliveredLocales.js";
 export { owedOnCancel } from "./owedOnCancel.js";
 export { WhatOurHandlerDid } from "./WhatOurHandlerDid.js";
+export { whatALocalesThrowMeans } from "./whatALocalesThrowMeans.js";

@@ -34,5 +34,6 @@ export type PayloadJob = {
   error?: unknown;
   processing?: boolean | null;
   waitUntil?: string | null;
-  input?: StoredWorkflowInput;
+  /** Unvalidated until read: the one place that reads it parses it. */
+  input?: unknown;
 };

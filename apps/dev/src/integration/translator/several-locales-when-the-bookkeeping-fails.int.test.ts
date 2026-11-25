@@ -24,7 +24,8 @@ const outcomesByLocale = async (id: string): Promise<Record<string, string | nul
   });
   return Object.fromEntries(
     found.docs.map((row) => {
-      const run = row as { targetLng: string; outcome?: string | null };
+      const run = row as { targetLng?: string; outcome?: string | null };
+      if (run.targetLng === undefined) throw new Error("a run record that names no locale");
       return [run.targetLng, run.outcome ?? null];
     })
   );

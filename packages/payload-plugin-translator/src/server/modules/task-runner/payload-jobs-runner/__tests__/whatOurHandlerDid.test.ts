@@ -1,7 +1,8 @@
 import type { Config, Payload } from "payload";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, expectTypeOf, it, vi } from "vitest";
 
 import { createPayloadJobsRunner } from "../PayloadJobsRunnerProvider.js";
+import type { WhatOurHandlerDid } from "../model/WhatOurHandlerDid.js";
 import type { TaskRunnerContext } from "../../TaskRunnerProvider.interface.js";
 
 const WORKFLOW_SLUG = "translate_document_locales";
@@ -53,5 +54,16 @@ describe("a failure raised before the plugin's own handler runs", () => {
     const { report } = await runTheWorkflow(() => Promise.reject(theQueueFellOverFirst));
 
     expect(report).not.toHaveBeenCalled();
+  });
+});
+
+/*
+ * A mark that could be dropped would make an absent entry mean two opposite things: the handler was
+ * never reached, or it ran and its answer was lost. The second is removed by refusing to record
+ * anything without the row the mark belongs to.
+ */
+describe("the mark a locale leaves behind", () => {
+  it("cannot be left without the job row it belongs to", () => {
+    expectTypeOf<undefined>().not.toExtend<Parameters<WhatOurHandlerDid["note"]>[0]>();
   });
 });
