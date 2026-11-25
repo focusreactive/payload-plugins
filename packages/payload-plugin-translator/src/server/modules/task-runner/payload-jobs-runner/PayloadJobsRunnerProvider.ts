@@ -8,7 +8,13 @@ import { PayloadJobsTaskRunner } from "./PayloadJobsTaskRunner.js";
 import { chain, contribute } from "../../../shared/payload/contribute.js";
 import { pointerOf, TaskInputSchema, toPayloadFields, WorkflowInputSchema } from "./store/index.js";
 import type { PayloadJob, StoredWorkflowInput, TaskStatusByLocale } from "./store/index.js";
-import { attemptsBefore, deliveredLocales, owedIfGaveUp, retryLimitOf } from "./model/index.js";
+import {
+  attemptsBefore,
+  deliveredLocales,
+  owedIfGaveUp,
+  retryLimitOf,
+  WhatOurHandlerDid,
+} from "./model/index.js";
 import type { TaskRunnerContext, TaskRunnerProvider } from "../TaskRunnerProvider.interface.js";
 import type { RunnerCapabilities } from "../RunnerCapabilities.js";
 import type { TaskEvent } from "../types.js";
@@ -89,7 +95,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
 
   configure(context: TaskRunnerContext): (config: Config) => Config {
     const { queueName, autoRun } = this.config;
-    const thrown = new WeakMap<object, unknown>();
+    const did = new WhatOurHandlerDid();
 
     return (config) => {
       // Read before `??=` creates the bag, so an absent `jobs` is not mistaken for one that opted in.
@@ -98,12 +104,12 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
 
       jobs.tasks = contribute(
         jobs.tasks,
-        [this.translateOneLocale(context, thrown)],
+        [this.translateOneLocale(context, did)],
         (registered) => registered.slug
       );
       jobs.workflows = contribute(
         jobs.workflows,
-        [this.walkTheRunsLocales(context, thrown, exclusivePerRun)],
+        [this.walkTheRunsLocales(context, did, exclusivePerRun)],
         (registered) => registered.slug
       );
       if (autoRun) {
@@ -120,8 +126,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
     };
   }
 
-  /** A throw is kept against the job so the workflow can read back which locale gave up. */
-  private translateOneLocale(context: TaskRunnerContext, thrown: WeakMap<object, unknown>) {
+  private translateOneLocale(context: TaskRunnerContext, did: WhatOurHandlerDid) {
     const { taskName, retries } = this.config;
 
     return {
@@ -138,9 +143,10 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
             ),
           });
         } catch (error) {
-          if (args.job) thrown.set(args.job, error);
+          did.note(args.job, args.input.target_lng, { kind: "failed", error });
           throw error;
         }
+        did.note(args.job, args.input.target_lng, { kind: "translated" });
         return { output: {} };
       },
     };
@@ -148,7 +154,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
 
   private walkTheRunsLocales(
     context: TaskRunnerContext,
-    thrown: WeakMap<object, unknown>,
+    did: WhatOurHandlerDid,
     exclusivePerRun: boolean
   ): WorkflowConfig<StoredJobInput> {
     const { taskName, workflowName, retries } = this.config;
@@ -178,15 +184,34 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
           return;
         }
 
-        const reportFor = (targetLng: string, event: TaskEvent) =>
-          report(req.payload, { handle: pointer.handle, targetLng }, event);
+        const reportFor = (targetLng: string, event: TaskEvent) => {
+          return report(req.payload, { handle: pointer.handle, targetLng }, event);
+        };
+
         const deliveredBefore = deliveredLocales(job as PayloadJob);
+        const deliver = async (targetLng: string) => {
+          if (!deliveredBefore.has(targetLng)) await reportFor(targetLng, { state: "delivered" });
+        };
+        let saidTheQueueCannotRecord = false;
 
         for (const target of pointer.locales) {
           try {
             await runLocale(target, { input: { handle: pointer.handle, target_lng: target } });
-            if (!deliveredBefore.has(target)) await reportFor(target, { state: "delivered" });
+            await deliver(target);
           } catch (error) {
+            const ours = did.forLocale(job, target);
+            if (ours === undefined) throw error;
+            if (ours.kind === "translated") {
+              if (!saidTheQueueCannotRecord) {
+                saidTheQueueCannotRecord = true;
+                req.payload.logger?.warn?.(
+                  `[payload-plugin-translator] the queue could not record a finished step of run ${pointer.handle} and its log will read empty; the translations themselves are done and are not repeated. The write it refused is its own: ${String(error)}`
+                );
+              }
+              await deliver(target);
+              continue;
+            }
+
             const owed = owedIfGaveUp(
               job as PayloadJob,
               taskName,
@@ -194,14 +219,11 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
               retryLimit,
               pointer.locales
             );
-
-            const translationThrew = thrown.get(job);
-            const endedTheLocale: TaskEvent =
-              translationThrew === undefined
-                ? { state: "delivered" }
-                : { state: "failed", error: translationThrew };
             for (const dead of owed) {
-              await reportFor(dead, dead === target ? endedTheLocale : { state: "abandoned" });
+              await reportFor(
+                dead,
+                dead === target ? { state: "failed", error: ours.error } : { state: "abandoned" }
+              );
             }
             throw error;
           }

@@ -56,6 +56,8 @@ const germanTitleOf = async (id: string): Promise<unknown> => {
 
 describe("a task whose work succeeded and whose bookkeeping then failed", () => {
   let id: string;
+  let translationsBought = 0;
+  let settledAfterOnePass = false;
 
   beforeAll(async () => {
     ctx = await bootTestPayload({
@@ -72,6 +74,17 @@ describe("a task whose work succeeded and whose bookkeeping then failed", () => 
     await ctx?.cleanup();
   });
 
+  const jobRow = async () => {
+    const found = await ctx.payload.find({
+      collection: "payload-jobs",
+      depth: 0,
+      pagination: false,
+      overrideAccess: true,
+    });
+    const row = found.docs[0] as { completedAt?: unknown; hasError?: unknown } | undefined;
+    return { completed: row?.completedAt != null, hasError: row?.hasError === true };
+  };
+
   it("settles the run instead of leaving it in flight for ever", async () => {
     const made = await ctx.payload.create({
       collection: "docs",
@@ -80,6 +93,7 @@ describe("a task whose work succeeded and whose bookkeeping then failed", () => 
     });
     id = String(made.id);
 
+    const before = ctx.translateCount();
     await callEndpoint(ctx.payload, "post", "/translate/enqueue", {
       body: {
         source_lng: "en",
@@ -89,9 +103,13 @@ describe("a task whose work succeeded and whose bookkeeping then failed", () => 
         publish_on_translation: false,
       },
     });
-    for (let pass = 0; pass < DRAIN; pass++) {
+    await ctx.payload.jobs.run({ queue: "translations" });
+    settledAfterOnePass = (await liveRunsFor(id)) === 0;
+
+    for (let pass = 1; pass < DRAIN; pass++) {
       await ctx.payload.jobs.run({ queue: "translations" });
     }
+    translationsBought = ctx.translateCount() - before;
 
     expect(
       await liveRunsFor(id),
@@ -116,5 +134,22 @@ describe("a task whose work succeeded and whose bookkeeping then failed", () => 
       completed: onCompleted.mock.calls.map(([task]) => task.targetLng),
       failed: onFailed.mock.calls.map(([task]) => task.targetLng),
     }).toStrictEqual({ completed: ["de"], failed: [] });
+  });
+
+  /*
+   * The queue remembers a finished step in its own log, and writing that log is what fails here —
+   * so nothing is remembered, and every retry runs the step again. Each one calls the provider and
+   * writes the same text back, over a translation that landed on the first attempt.
+   */
+  it("settles on the first pass, rather than waiting for the retries to run out", () => {
+    expect(settledAfterOnePass).toBe(true);
+  });
+
+  it("leaves the queue nothing to run again", async () => {
+    expect(await jobRow()).toStrictEqual({ completed: true, hasError: false });
+  });
+
+  it("pays the provider once, because the translation succeeded the first time", () => {
+    expect(translationsBought).toBe(1);
   });
 });
