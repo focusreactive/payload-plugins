@@ -3,6 +3,7 @@ import type { DefaultServerCellComponentProps } from "payload";
 
 import { settingsOf } from "../../server/operations.js";
 import { NAMESPACE } from "../../translations.js";
+import { labelText } from "../../vocabulary.js";
 import { PILL_STYLE } from "../shared/indicator.js";
 import type { RunTone } from "../shared/indicator.js";
 
@@ -38,12 +39,12 @@ export const RunCell = ({
     const stage = def?.stages.find((entry) => entry.name === value);
     // A stage removed from the definition: the run is stuck.
     return stage ? (
-      <span>{stage.title ?? stage.name}</span>
+      <span>{labelText(stage.title, i18n.language) ?? stage.name}</span>
     ) : (
       <Pill pillStyle={PILL_STYLE.error} size="small">
         {value}
       </Pill>
     );
   }
-  return <span>{def?.title ?? value}</span>;
+  return <span>{labelText(def?.title, i18n.language) ?? value}</span>;
 };

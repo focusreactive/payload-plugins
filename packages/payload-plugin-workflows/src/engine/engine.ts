@@ -1,10 +1,12 @@
-// The engine: state in, state out, no Payload. Every operation returns the new run state and the
-// effects it queued; the server layer loads, calls one of these, and stores the result.
+// The engine: state in, state out, no Payload. Every operation returns the new run state, the
+// effects it queued and the history entries (events) it produced, numbered from the state's
+// `nextSeq`; the server layer loads, calls one of these, and stores the state and the events.
 //
 //   start / fire / patchFields  change the run, then `settle`
 //   settle                      fires due automatic actions, takes the first open transition,
 //                               and repeats until nothing moves (the cascade)
 //   abort                       ends the run
+//   recordEffect / recordBypass record what happened outside the engine
 //
 // The file reads from the bottom up: each section is built from the ones above it. Above the
 // operations: the cascade, its steps, who may fire (the verdict), params and field types, guards,
@@ -25,8 +27,8 @@ import type {
   FieldDef,
   GuardDef,
   GuardOperation,
-  HistoryEntry,
   InstanceState,
+  KnownWorkflowEvent,
   ParamDef,
   Patch,
   QueuedEffect,
@@ -36,6 +38,9 @@ import type {
   ViewActionReason,
   WorkflowDefinition,
 } from "../types.js";
+import { TEXT_MAX_LENGTH } from "../constants.js";
+import { definitionVersionOf } from "../define.js";
+import { labelText } from "../vocabulary.js";
 import { WorkflowError } from "./errors.js";
 import type { WorkflowErrorCode } from "./errors.js";
 
@@ -43,6 +48,56 @@ import type { WorkflowErrorCode } from "./errors.js";
 export const CASCADE_LIMIT = 50;
 
 export const SYSTEM: SystemActor = { system: true };
+
+// ---- Events -------------------------------------------------------------------------------------
+
+/** An event before it is numbered: the engine numbers a step's events once, at the end. */
+type Draft = KnownWorkflowEvent extends infer E
+  ? E extends unknown
+    ? Omit<E, "seq">
+    : never
+  : never;
+
+/** What the steps inside an operation pass along: the state so far and what it produced. */
+interface Step {
+  state: InstanceState;
+  effects: QueuedEffect[];
+  events: Draft[];
+}
+
+/** A new entry at `env.now`; the system's entries carry `env.cause`. */
+const newEvent = (env: Env, actor: Actor, body: DistributiveBody): Draft =>
+  ({
+    at: env.now.toISOString(),
+    actor,
+    ...(actor.id === undefined && env.cause ? { cause: env.cause } : {}),
+    ...body,
+  }) as Draft;
+
+type DistributiveBody = Draft extends infer E
+  ? E extends unknown
+    ? Omit<E, "at" | "actor" | "cause">
+    : never
+  : never;
+
+/**
+ * Numbers a step's events from the state's `nextSeq` and advances it. A step that produced nothing
+ * returns its state as is (the very same object), so callers can tell nothing happened.
+ */
+const numbered = (step: Step): Result => {
+  if (step.events.length === 0) {
+    return { state: step.state, effects: step.effects, events: [] };
+  }
+  const first = step.state.nextSeq;
+  const events = step.events.map(
+    (event, i) => ({ ...event, seq: first + i }) as KnownWorkflowEvent
+  );
+  return {
+    state: { ...step.state, nextSeq: first + events.length },
+    effects: step.effects,
+    events,
+  };
+};
 
 // ---- What conditions see ------------------------------------------------------------------------
 
@@ -193,12 +248,16 @@ const isJson = (value: unknown): boolean => {
 const isDate = (value: unknown): boolean =>
   typeof value === "string" && !Number.isNaN(Date.parse(value));
 
+/** A problem with free text that is too long to keep in the history, or `null`. */
+const lengthProblem = (value: string, max = TEXT_MAX_LENGTH): string | null =>
+  value.length > max ? `must be at most ${max} characters` : null;
+
 /** A problem with a caller-supplied param value, or `null`. */
 const paramProblem = (def: ParamDef, value: unknown): string | null => {
   switch (def.type) {
     case "string":
     case "text":
-      return typeof value === "string" ? null : "must be a string";
+      return typeof value === "string" ? lengthProblem(value, def.maxLength) : "must be a string";
     case "number":
       return typeof value === "number" && Number.isFinite(value) ? null : "must be a number";
     case "boolean":
@@ -358,7 +417,7 @@ export const verdictFor = (
     return {
       allowed: false,
       code: "activity-not-active",
-      reason: `"${activity.title ?? activity.name}" is already ${status}.`,
+      reason: `"${labelText(activity.title) ?? activity.name}" is already ${status}.`,
       reasonCode: "not-active",
     };
   }
@@ -436,18 +495,13 @@ export const mayAbort = (
 
 // ---- Steps --------------------------------------------------------------------------------------
 
-/**
- * Which visit of its stage the run is in: the number of transitions it has taken. Every stage
- * entry after the first is a transition, and the history only grows, so the count is exact across
- * loop-backs into the same stage.
- */
-export const visitOf = (state: InstanceState): number =>
-  state.history.reduce((count, entry) => count + (entry.type === "transition" ? 1 : 0), 0);
+/** Which visit of its stage the run is in: the transitions it has taken (kept on the run). */
+export const visitOf = (state: InstanceState): number => state.visit;
 
-/** Records one action firing: fields, activity status, history and the effects it queues. */
+/** Records one action firing: fields, activity status, its entry and the effects it queues. */
 const applyAction = (
   def: WorkflowDefinition,
-  state: InstanceState,
+  step: Step,
   firing: {
     activity: string;
     action: ActionDef;
@@ -457,7 +511,8 @@ const applyAction = (
     params?: Record<string, unknown>;
   },
   env: Env
-): Result => {
+): Step => {
+  const { state } = step;
   const at = env.now.toISOString();
   const { action, activity, actor } = firing;
   const auto = isAuto(action);
@@ -466,30 +521,12 @@ const applyAction = (
   const activities: Record<string, ActivityState> = action.status
     ? { ...state.activities, [activity]: { status: action.status, at, by: actor } }
     : state.activities;
-  const entry: HistoryEntry = {
-    at,
-    actor,
-    type: "action",
-    stage: state.stage,
-    activity,
-    action: action.name,
-    auto,
-    ...(firing.params && Object.keys(firing.params).length > 0 ? { params: firing.params } : {}),
-  };
-  const visit = visitOf(state);
   const effects: QueuedEffect[] = (action.effects ?? []).map((name) => ({
     name,
     activity,
     action: action.name,
     stage: state.stage,
-    visit,
-  }));
-  const queued: HistoryEntry[] = effects.map((effect) => ({
-    at,
-    actor: SYSTEM,
-    type: "effect",
-    effect: effect.name,
-    status: "queued",
+    visit: state.visit,
   }));
   return {
     state: {
@@ -497,26 +534,49 @@ const applyAction = (
       fields,
       activities,
       fired: auto ? [...state.fired, firedKey(activity, action.name)] : state.fired,
-      history: [...state.history, entry, ...queued],
     },
-    effects,
+    effects: [...step.effects, ...effects],
+    events: [
+      ...step.events,
+      newEvent(env, actor, {
+        type: "action",
+        stage: state.stage,
+        activity,
+        action: action.name,
+        ...(firing.params && Object.keys(firing.params).length > 0
+          ? { params: firing.params }
+          : {}),
+      }),
+      ...effects.map((effect) =>
+        newEvent(env, SYSTEM, {
+          type: "effect",
+          stage: effect.stage,
+          effect: effect.name,
+          status: "queued",
+        })
+      ),
+    ],
   };
 };
 
-/** Enters a stage: resets the visit, evaluates activity filters, completes on a terminal stage. */
-const enterStage = (
-  state: InstanceState,
-  stage: StageDef,
-  env: Env,
-  transition?: string
-): InstanceState => {
+/**
+ * Enters a stage: counts the visit (after a transition), resets the activities, evaluates their
+ * `skipIf`, and completes the run on a terminal stage.
+ */
+const enterStage = (step: Step, stage: StageDef, env: Env, transition?: string): Step => {
+  const { state } = step;
   const at = env.now.toISOString();
-  const history: HistoryEntry[] = transition
+  const events = transition
     ? [
-        ...state.history,
-        { at, actor: SYSTEM, type: "transition", from: state.stage, to: stage.name, transition },
+        ...step.events,
+        newEvent(env, SYSTEM, {
+          type: "transition",
+          stage: state.stage,
+          transition,
+          toStage: stage.name,
+        }),
       ]
-    : state.history;
+    : step.events;
   const fresh: Record<string, ActivityState> = {};
   for (const activity of activitiesOf(stage)) {
     fresh[activity.name] = { status: "active" };
@@ -526,46 +586,44 @@ const enterStage = (
     stage: stage.name,
     activities: fresh,
     fired: [],
-    history,
+    visit: transition ? state.visit + 1 : state.visit,
+    visited: state.visited.includes(stage.name) ? state.visited : [...state.visited, stage.name],
   };
   const ctx = conditionContext(entered, env, stage);
   const activities: Record<string, ActivityState> = {};
   for (const activity of activitiesOf(stage)) {
-    const exists = activity.filter
-      ? evaluate(`stage "${stage.name}" activity "${activity.name}" filter`, activity.filter, ctx)
-      : true;
-    activities[activity.name] = exists ? { status: "active" } : { status: "skipped", at };
+    const skipped = activity.skipIf
+      ? evaluate(`stage "${stage.name}" activity "${activity.name}" skipIf`, activity.skipIf, ctx)
+      : false;
+    activities[activity.name] = skipped ? { status: "skipped", at } : { status: "active" };
   }
   if ((stage.transitions ?? []).length === 0) {
     return {
-      ...entered,
-      activities,
-      status: "completed",
-      completedAt: at,
-      history: [...history, { at, actor: SYSTEM, type: "completed" }],
+      state: { ...entered, activities, status: "completed", completedAt: at },
+      effects: step.effects,
+      events: [...events, newEvent(env, SYSTEM, { type: "completed", stage: stage.name })],
     };
   }
-  return { ...entered, activities };
+  return { state: { ...entered, activities }, effects: step.effects, events };
 };
 
 // ---- The cascade --------------------------------------------------------------------------------
 
-const fireAutoActions = (def: WorkflowDefinition, state: InstanceState, env: Env): Result => {
-  let current = state;
-  const effects: QueuedEffect[] = [];
-  const stage = findStage(def, state.stage);
+const fireAutoActions = (def: WorkflowDefinition, step: Step, env: Env): Step => {
+  let current = step;
+  const stage = findStage(def, step.state.stage);
   for (const activity of activitiesOf(stage)) {
     for (const action of activity.actions) {
       if (
         !isAuto(action) ||
-        statusOf(current, activity.name) !== "active" ||
-        current.fired.includes(firedKey(activity.name, action.name))
+        statusOf(current.state, activity.name) !== "active" ||
+        current.state.fired.includes(firedKey(activity.name, action.name))
       ) {
         continue;
       }
       const auto = action as AutoActionDef;
-      const label = `stage "${current.stage}" activity "${activity.name}" action "${action.name}"`;
-      const ctx = conditionContext(current, env, stage);
+      const label = `stage "${current.state.stage}" activity "${activity.name}" action "${action.name}"`;
+      const ctx = conditionContext(current.state, env, stage);
       if (!evaluate(`${label} when`, auto.when, ctx)) {
         continue;
       }
@@ -579,29 +637,23 @@ const fireAutoActions = (def: WorkflowDefinition, state: InstanceState, env: Env
               params: {},
             })
           : auto.set;
-      const result = applyAction(
+      current = applyAction(
         def,
         current,
         { activity: activity.name, action, actor: SYSTEM, patch },
         env
       );
-      current = result.state;
-      effects.push(...result.effects);
     }
   }
-  return { state: current, effects };
+  return current;
 };
 
-const takeTransition = (
-  def: WorkflowDefinition,
-  state: InstanceState,
-  env: Env
-): InstanceState | null => {
-  const stage = findStage(def, state.stage);
+const takeTransition = (def: WorkflowDefinition, step: Step, env: Env): Step | null => {
+  const stage = findStage(def, step.state.stage);
   if (!stage) {
     return null;
   }
-  const ctx = conditionContext(state, env, stage);
+  const ctx = conditionContext(step.state, env, stage);
   for (const transition of stage.transitions ?? []) {
     const open = transition.when
       ? evaluate(`stage "${stage.name}" transition "${transition.name}" when`, transition.when, ctx)
@@ -616,21 +668,17 @@ const takeTransition = (
         `Transition "${transition.name}" leads to undeclared stage "${transition.to}".`
       );
     }
-    return enterStage(state, target, env, transition.name);
+    return enterStage(step, target, env, transition.name);
   }
   return null;
 };
 
-/**
- * Fires due automatic actions, takes the first open transition, and repeats until nothing moves.
- * Returns the very same state object when nothing changed, so callers can skip the write.
- */
-export const settle = (def: WorkflowDefinition, state: InstanceState, env: Env): Result => {
-  if (state.status !== "active" || !findStage(def, state.stage)) {
-    return { state, effects: [] };
+/** The cascade on a step: auto actions, the first open transition, until nothing moves. */
+const settleStep = (def: WorkflowDefinition, step: Step, env: Env): Step => {
+  if (step.state.status !== "active" || !findStage(def, step.state.stage)) {
+    return step;
   }
-  let current = state;
-  const effects: QueuedEffect[] = [];
+  let current = step;
   for (let round = 0; ; round += 1) {
     if (round >= CASCADE_LIMIT) {
       throw new WorkflowError(
@@ -639,20 +687,20 @@ export const settle = (def: WorkflowDefinition, state: InstanceState, env: Env):
       );
     }
     const fired = fireAutoActions(def, current, env);
-    effects.push(...fired.effects);
-    const next = takeTransition(def, fired.state, env) ?? fired.state;
-    if (next === current || next.status !== "active") {
-      return { state: next, effects };
+    const next = takeTransition(def, fired, env) ?? fired;
+    if (next.state === current.state || next.state.status !== "active") {
+      return next;
     }
     current = next;
   }
 };
 
-/** Settles after a change; a cascade that ends where it began still returns the changed state. */
-const settleAfter = (def: WorkflowDefinition, changed: Result, env: Env): Result => {
-  const settled = settle(def, changed.state, env);
-  return { state: settled.state, effects: [...changed.effects, ...settled.effects] };
-};
+/**
+ * Fires due automatic actions, takes the first open transition, and repeats until nothing moves.
+ * Returns the very same state object when nothing changed, so callers can skip the write.
+ */
+export const settle = (def: WorkflowDefinition, state: InstanceState, env: Env): Result =>
+  numbered(settleStep(def, { state, effects: [], events: [] }, env));
 
 // ---- Operations ---------------------------------------------------------------------------------
 
@@ -722,6 +770,7 @@ export const start = (
     );
   }
   const at = env.now.toISOString();
+  const definitionVersion = definitionVersionOf(def);
   const created: InstanceState = {
     workflow: def.name,
     stage: stage.name,
@@ -729,10 +778,19 @@ export const start = (
     fields,
     activities: {},
     fired: [],
-    history: [{ at, actor: input.actor, type: "started", stage: stage.name }],
+    visit: 0,
+    visited: [],
+    nextSeq: 1,
+    definitionVersion,
+    startedBy: input.actor,
     startedAt: at,
   };
-  return settleAfter(def, { state: enterStage(created, stage, env), effects: [] }, env);
+  const started: Step = {
+    state: created,
+    effects: [],
+    events: [newEvent(env, input.actor, { type: "started", stage: stage.name, definitionVersion })],
+  };
+  return numbered(settleStep(def, enterStage(started, stage, env), env));
 };
 
 /**
@@ -784,57 +842,86 @@ export const fire = (
       : callable.set;
   const fired = applyAction(
     def,
-    state,
+    { state, effects: [], events: [] },
     { activity: activity.name, action, actor: caller.actor, patch, params },
     env
   );
-  return settleAfter(def, fired, env);
+  return numbered(settleStep(def, fired, env));
 };
 
 /** Writes fields from outside a caller action (an effect reporting back), then settles. */
+const patchStep = (def: WorkflowDefinition, step: Step, patch: Patch, env: Env): Step => {
+  assertActive(step.state);
+  const fields = applyPatch(def, step.state.fields, patch, "patchFields");
+  return settleStep(def, { ...step, state: { ...step.state, fields } }, env);
+};
+
+/** Writes fields from outside a caller action, then settles. */
 export const patchFields = (
   def: WorkflowDefinition,
   state: InstanceState,
   patch: Patch,
   env: Env
-): Result => {
-  assertActive(state);
-  const fields = applyPatch(def, state.fields, patch, "patchFields");
-  return settleAfter(def, { state: { ...state, fields }, effects: [] }, env);
-};
+): Result => numbered(patchStep(def, { state, effects: [], events: [] }, patch, env));
 
 /**
- * Records an effect's outcome in the history and, if it reported fields back, applies them and
- * settles. The fields land only while the run is still in the stage visit that queued the effect
+ * Records an effect's outcome and, if it reported fields back, applies them and settles. The
+ * fields land only while the run is still in the stage visit that queued the effect
  * (`effect.stage` / `effect.visit`); otherwise the outcome is recorded as `stale` and the fields
- * are ignored. An effect queued before visits were recorded has no `visit` and is not checked.
+ * are ignored.
  */
 export const recordEffect = (
   def: WorkflowDefinition | undefined,
   state: InstanceState,
-  effect: Pick<QueuedEffect, "name"> & Partial<Pick<QueuedEffect, "stage" | "visit">>,
+  effect: Pick<QueuedEffect, "name" | "stage" | "visit"> & { job?: string },
   outcome: { status: "done" | "failed"; error?: string; set?: Patch },
   env: Env
 ): Result => {
   const reported = outcome.set && Object.keys(outcome.set).length > 0 ? outcome.set : undefined;
-  const sameVisit =
-    effect.visit === undefined || (state.stage === effect.stage && visitOf(state) === effect.visit);
+  const sameVisit = state.stage === effect.stage && state.visit === effect.visit;
   const stale = Boolean(reported) && (state.status !== "active" || !sameVisit || !def);
-  const entry: HistoryEntry = {
-    at: env.now.toISOString(),
-    actor: SYSTEM,
-    type: "effect",
-    effect: effect.name,
-    status: outcome.status,
-    ...(outcome.error ? { error: outcome.error } : {}),
-    ...(stale ? { stale: true } : {}),
+  const recorded: Step = {
+    state,
+    effects: [],
+    events: [
+      newEvent(env, SYSTEM, {
+        type: "effect",
+        stage: effect.stage,
+        effect: effect.name,
+        status: outcome.status,
+        ...(outcome.error ? { error: outcome.error } : {}),
+        ...(stale ? { stale: true as const } : {}),
+        ...(effect.job === undefined ? {} : { job: effect.job }),
+      }),
+    ],
   };
-  const recorded = { ...state, history: [...state.history, entry] };
   if (!reported || stale || !def) {
-    return { state: recorded, effects: [] };
+    return numbered(recorded);
   }
-  return patchFields(def, recorded, reported, env);
+  return numbered(patchStep(def, recorded, reported, env));
 };
+
+/**
+ * Records that a write went through guards of the current stage that would have held it, with
+ * the bypass flag. Changes nothing else.
+ */
+export const recordBypass = (
+  state: InstanceState,
+  input: { operation: GuardOperation; guards: string[]; actor: Actor },
+  env: Env
+): Result =>
+  numbered({
+    state,
+    effects: [],
+    events: [
+      newEvent(env, input.actor, {
+        type: "guard-bypassed",
+        stage: state.stage,
+        operation: input.operation,
+        guards: input.guards,
+      }),
+    ],
+  });
 
 /** Ends an active run. Needs no definition, so a stuck run can always be aborted. */
 export const abort = (
@@ -843,15 +930,20 @@ export const abort = (
   env: Env
 ): Result => {
   assertActive(state);
+  const problem = input.reason ? lengthProblem(input.reason) : null;
+  if (problem) {
+    throw new WorkflowError("invalid-params", `Invalid parameters: "reason" ${problem}.`);
+  }
   const at = env.now.toISOString();
-  const entry: HistoryEntry = {
-    at,
-    actor: input.actor,
-    type: "aborted",
-    ...(input.reason ? { reason: input.reason } : {}),
-  };
-  return {
-    state: { ...state, status: "aborted", completedAt: at, history: [...state.history, entry] },
+  return numbered({
+    state: { ...state, status: "aborted", completedAt: at },
     effects: [],
-  };
+    events: [
+      newEvent(env, input.actor, {
+        type: "aborted",
+        stage: state.stage,
+        ...(input.reason ? { reason: input.reason } : {}),
+      }),
+    ],
+  });
 };

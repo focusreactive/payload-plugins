@@ -58,7 +58,12 @@ describe("workflowsPlugin", () => {
       "fields",
       "activities",
       "fired",
-      "history",
+      "visit",
+      "visited",
+      "nextSeq",
+      "startedBy",
+      "schemaVersion",
+      "definitionVersion",
       "assignees",
       "revision",
       "activeKey",
@@ -78,6 +83,48 @@ describe("workflowsPlugin", () => {
       stage: true,
       status: true,
     });
+  });
+
+  it("adds the events collection: append-only, read like runs, hidden from the nav", async () => {
+    const events = bySlug(run(), "workflow-events");
+    const access = events.access!;
+    expect((access.create as () => boolean)()).toBe(false);
+    expect((access.update as () => boolean)()).toBe(false);
+    expect((access.delete as () => boolean)()).toBe(false);
+    // The very function the runs collection reads with: one rule, on the subject columns.
+    expect(access.read).toBe(bySlug(run(), "workflow-instances").access?.read);
+    expect(events.admin?.hidden).toBe(true);
+    expect(events.timestamps).toBe(false);
+    const names = events.fields.map((field) => ("name" in field ? field.name : null));
+    expect(names).toEqual([
+      "run",
+      "seq",
+      "type",
+      "at",
+      "workflow",
+      "subjectCollection",
+      "subjectId",
+      "stage",
+      "actorId",
+      "actorCollection",
+      "via",
+      "cause",
+      "activity",
+      "action",
+      "transition",
+      "toStage",
+      "effect",
+      "status",
+      "detail",
+    ]);
+    expect(events.indexes).toEqual([
+      { fields: ["run", "seq"], unique: true },
+      { fields: ["subjectCollection", "subjectId"] },
+    ]);
+    const indexed = events.fields.flatMap((field) =>
+      "name" in field && "index" in field && field.index ? [field.name] : []
+    );
+    expect(indexed).toEqual(["type", "at", "actorId"]);
   });
 
   it("injects the indicator and the hooks into subject collections only, with no sidebar field", () => {
@@ -246,7 +293,19 @@ describe("the workflows list (runs collection in the admin)", () => {
   });
 
   it("hides the run's internals and renders names through the plugin's cells", () => {
-    for (const name of ["fields", "activities", "fired", "history", "revision", "activeKey"]) {
+    for (const name of [
+      "fields",
+      "activities",
+      "fired",
+      "visit",
+      "visited",
+      "nextSeq",
+      "startedBy",
+      "schemaVersion",
+      "definitionVersion",
+      "revision",
+      "activeKey",
+    ]) {
       expect(field(name).admin?.hidden, name).toBe(true);
     }
     expect(field("subjectId").admin?.components?.Cell).toBe(

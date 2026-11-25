@@ -222,6 +222,54 @@ export type WorkflowsTestPayload = {
   cleanup: () => Promise<void>;
 };
 
+/** A history row as stored in `workflow-events`, with its `detail` spread onto it. */
+export interface HistoryRow {
+  seq: number;
+  type: string;
+  at: string;
+  run: string;
+  workflow: string;
+  subjectCollection: string;
+  subjectId: string;
+  stage?: string | null;
+  activity?: string | null;
+  action?: string | null;
+  transition?: string | null;
+  toStage?: string | null;
+  effect?: string | null;
+  status?: string | null;
+  actorId?: string | null;
+  via?: string | null;
+  cause?: string | null;
+  reason?: string;
+  error?: string;
+  stale?: boolean;
+  job?: string;
+  params?: Record<string, unknown>;
+  /** The cause beyond its kind (`cause`): who saved, which effect and job. */
+  causeDetail?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+/** A run's whole history as stored, oldest first (full access). */
+export const historyOf = async (payload: Payload, run: string | number): Promise<HistoryRow[]> => {
+  const found = await payload.find({
+    collection: "workflow-events" as never,
+    where: { run: { equals: String(run) } },
+    sort: "seq",
+    limit: 0,
+    pagination: false,
+    depth: 0,
+    overrideAccess: true,
+  });
+  return (
+    found.docs as unknown as (HistoryRow & { detail?: Record<string, unknown> | null })[]
+  ).map(({ detail, ...row }) => {
+    const { cause, ...rest } = detail ?? {};
+    return { ...row, ...rest, ...(cause ? { causeDetail: cause } : {}) } as HistoryRow;
+  });
+};
+
 /** True when the suite runs on Postgres (`DB_ADAPTER=postgres`), the only adapter here with concurrent writers. */
 export const ON_POSTGRES = process.env.DB_ADAPTER === "postgres";
 

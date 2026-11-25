@@ -145,7 +145,11 @@ describe("stopping is not a way around a hold", () => {
       user: bea,
     });
     expect(stopped.status).toBe("aborted");
-    expect(stopped.history.at(-1)).toMatchObject({ type: "aborted", reason: "Duplicate" });
+    expect(stopped.history.at(-1)).toMatchObject({
+      type: "aborted",
+      reason: "Duplicate",
+      seq: stopped.olderHistory + stopped.history.length,
+    });
   });
 
   it("anyone may stop a run in a stage without guards", async () => {

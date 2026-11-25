@@ -8,8 +8,8 @@ import { commitTransaction, createLocalReq, initTransaction } from "payload";
 import type { Payload, TypedUser } from "payload";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { ON_POSTGRES, bootWorkflowsPayload } from "./bootWorkflowsPayload";
-import type { WorkflowsTestPayload } from "./bootWorkflowsPayload";
+import { ON_POSTGRES, bootWorkflowsPayload, historyOf } from "./bootWorkflowsPayload";
+import type { HistoryRow, WorkflowsTestPayload } from "./bootWorkflowsPayload";
 
 // Real races: every call below is an independent Local API call with its own request and its own
 // transaction, started together with `Promise.all`, so the database decides who wins. Postgres only:
@@ -130,7 +130,9 @@ interface RunRow {
   stage: string;
   activeKey: string;
   fields: Record<string, unknown>;
-  history: { type: string; activity?: string; action?: string; effect?: string; status?: string }[];
+  nextSeq: number;
+  /** From the events collection, oldest first. */
+  history: HistoryRow[];
 }
 
 let booted: WorkflowsTestPayload;
@@ -148,13 +150,22 @@ const createPage = async (title = `Page ${(page += 1)}`) =>
     overrideAccess: true,
   });
 
-const run = async (id: string) =>
-  (await payload.findByID({
+/**
+ * A run with its history. Every time: the history is numbered 1, 2, … with no gap and no repeat,
+ * and the run's `nextSeq` follows the last entry, however the writers raced.
+ */
+const run = async (id: string): Promise<RunRow> => {
+  const row = (await payload.findByID({
     collection: SLUG as never,
     id,
     depth: 0,
     overrideAccess: true,
   })) as unknown as RunRow;
+  const history = await historyOf(payload, id);
+  expect(history.map((entry) => entry.seq)).toEqual(history.map((_, i) => i + 1));
+  expect(row.nextSeq).toBe(history.length + 1);
+  return { ...row, history };
+};
 
 const startOn = async (workflow: string) => {
   const doc = await createPage();

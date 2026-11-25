@@ -9,7 +9,7 @@ import {
 import type { Payload, TypedUser } from "payload";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { bootWorkflowsPayload } from "./bootWorkflowsPayload";
+import { bootWorkflowsPayload, historyOf } from "./bootWorkflowsPayload";
 import type { WorkflowsTestPayload } from "./bootWorkflowsPayload";
 
 const SLUG = "workflow-instances";
@@ -60,7 +60,6 @@ const instanceDoc = async (id: string) =>
     stage: string;
     activeKey: string;
     assignees: string | null;
-    history: { type: string; effect?: string; status?: string; reason?: string }[];
   };
 
 beforeAll(async () => {
@@ -285,7 +284,8 @@ describe("workflows against a real Payload", () => {
       const after = await instanceDoc(id);
       // One foreign bump + our own write.
       expect(after.revision).toBe(before.revision + 2);
-      expect(after.history.filter((h) => h.type === "action")).toHaveLength(2); // submit + auto reset, once
+      // submit + auto reset, once
+      expect((await historyOf(payload, id)).filter((h) => h.type === "action")).toHaveLength(2);
 
       bumps = 100;
       expect(
@@ -347,6 +347,7 @@ describe("workflows against a real Payload", () => {
       user: editor,
     });
     const before = await instanceDoc(id);
+    const events = (await historyOf(payload, id)).length;
     const queue = payload.jobs.queue;
     payload.jobs.queue = (() => Promise.reject(new Error("queue down"))) as typeof queue;
     try {
@@ -365,6 +366,7 @@ describe("workflows against a real Payload", () => {
     expect(after.revision).toBe(before.revision);
     expect(after.stage).toBe("review");
     expect(after.status).toBe("active");
+    expect(await historyOf(payload, id)).toHaveLength(events);
   });
 
   it("auto-starts on create inside the save's transaction; a delete guard holds; the tick settles", async () => {
@@ -439,7 +441,13 @@ describe("workflows against a real Payload", () => {
     await payload.delete({ collection: "pages", id: page.id, overrideAccess: true });
     const doc = await instanceDoc(run.id as string);
     expect(doc.status).toBe("aborted");
-    expect(doc.history.at(-1)).toMatchObject({ type: "aborted", reason: "Subject deleted" });
+    // The run's history stays: it is the audit trail.
+    expect((await historyOf(payload, run.id as string)).at(-1)).toMatchObject({
+      type: "aborted",
+      reason: "Subject deleted",
+      cause: "delete",
+      actorId: null,
+    });
   });
 
   it("the instances collection cannot be written over the API", async () => {

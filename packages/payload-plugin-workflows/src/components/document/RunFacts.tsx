@@ -6,7 +6,6 @@ import type { ReactNode } from "react";
 import type { InstanceView } from "../../types.js";
 import { formatDateTime, personName } from "../shared/format.js";
 import type { People, T } from "../shared/format.js";
-import { startOf } from "../shared/history.js";
 import { PILL_STYLE, toneOf } from "../shared/indicator.js";
 import type { RunTone } from "../shared/indicator.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
@@ -26,7 +25,7 @@ const LABEL: Record<RunTone, Parameters<T>[0]> = {
 export const RunFacts = ({ view, people }: { view?: InstanceView; people: People }) => {
   const { t, language } = useWorkflowsT();
   const tone = view ? toneOf(view, people.me) : undefined;
-  const started = view ? (view.started ?? startOf(view.history)) : undefined;
+  const started = view?.started;
   const changed = view?.history.at(-1)?.at;
   const assignees = [
     ...new Set(

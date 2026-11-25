@@ -5,20 +5,21 @@ import { useId, useState } from "react";
 import type { ReactNode } from "react";
 
 import { ENDPOINTS } from "../../constants.js";
-import type { HistoryEntry, InstanceView } from "../../types.js";
+import type { InstanceView, WorkflowEvent } from "../../types.js";
 import { formatDateTime } from "../shared/format.js";
 import type { People, T } from "../shared/format.js";
 import {
   TIMELINE_VISIBLE,
   groupByDay,
   mergeHistory,
+  rowCause,
   rowDetails,
   rowWhat,
   rowWho,
   stepSentence,
   timelineRows,
 } from "../shared/history.js";
-import type { ActorKind, LoadedHistory, TimelineDay, TimelineRow } from "../shared/history.js";
+import type { ActorKind, TimelineDay, TimelineRow } from "../shared/history.js";
 import { useWorkflowsApi } from "../shared/useWorkflowsApi.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
 
@@ -41,6 +42,7 @@ const Row = ({ row, view, people }: { row: TimelineRow; view: InstanceView; peop
   const [open, setOpen] = useState(false);
   const stepsId = useId();
   const details = rowDetails(row, view.titles, t);
+  const cause = rowCause(row, people, t);
   // A single automatic step is the row's own text: nothing to fold.
   const folded = row.lead ? row.steps : row.steps.length > 1 ? row.steps : [];
   return (
@@ -58,13 +60,16 @@ const Row = ({ row, view, people }: { row: TimelineRow; view: InstanceView; peop
             {detail}
           </p>
         ))}
-        {row.failed.map((entry, index) => (
-          <p className="workflows-history__detail" data-tone="error" key={`${entry.at}-${index}`}>
+        {row.failed.map((entry) => (
+          <p className="workflows-history__detail" data-tone="error" key={entry.seq}>
             {stepSentence(entry, view.titles, t)}
           </p>
         ))}
         <p className="workflows-history__meta">
-          <span className="workflows-history__who">{rowWho(row, people, t)}</span>
+          <span className="workflows-history__who">
+            {rowWho(row, people, t)}
+            {cause ? <span className="workflows-history__cause"> {cause}</span> : null}
+          </span>
           {row.kind === "api" ? (
             <span className="workflows-history__marker">{t("timelineApi")}</span>
           ) : null}
@@ -95,8 +100,8 @@ const Row = ({ row, view, people }: { row: TimelineRow; view: InstanceView; peop
         </p>
         {open && folded.length > 0 ? (
           <ol className="workflows-history__steps" id={stepsId}>
-            {folded.map((entry, index) => (
-              <li className="workflows-history__step" key={`${entry.at}-${index}`}>
+            {folded.map((entry) => (
+              <li className="workflows-history__step" key={entry.seq}>
                 <time dateTime={entry.at}>{timeOf(entry.at, language)}</time>
                 <span>{stepSentence(entry, view.titles, t)}</span>
               </li>
@@ -128,7 +133,7 @@ export const HistoryList = ({ view, people }: { view?: InstanceView; people: Peo
   const { t, language } = useWorkflowsT();
   const api = useWorkflowsApi();
   const [all, setAll] = useState(false);
-  const [loaded, setLoaded] = useState<LoadedHistory | null>(null);
+  const [loaded, setLoaded] = useState<WorkflowEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const headingId = useId();
   const run = view;
@@ -142,11 +147,14 @@ export const HistoryList = ({ view, people }: { view?: InstanceView; people: Peo
     }
     setLoading(true);
     try {
-      const page = await api<{ entries: HistoryEntry[]; older: number }>(ENDPOINTS.history, {
-        query: { instanceId: run.id, before: merged.older },
+      // Entries are numbered from 1 without gaps: the page before the first one shown.
+      const page = await api<{ entries: WorkflowEvent[]; older: number }>(ENDPOINTS.history, {
+        query: { instanceId: run.id, before: merged.older + 1 },
       });
-      const continued = loaded && loaded.from === merged.older ? loaded.entries : [];
-      setLoaded({ from: page.older, entries: [...page.entries, ...continued] });
+      setLoaded([
+        ...page.entries,
+        ...merged.history.filter((entry) => entry.seq < (run.history[0]?.seq ?? 0)),
+      ]);
       setAll(true);
     } catch (caught) {
       toast.error(caught instanceof Error ? caught.message : t("somethingWentWrong"));

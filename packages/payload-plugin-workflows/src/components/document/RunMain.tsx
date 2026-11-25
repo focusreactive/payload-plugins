@@ -234,6 +234,9 @@ export const RunMain = ({
         {active && view.stage.description ? (
           <p className="field-description workflows-turn__hint">{view.stage.description}</p>
         ) : null}
+        {view.definitionChanged ? (
+          <p className="field-description workflows-turn__changed">{t("definitionChanged")}</p>
+        ) : null}
       </div>
       {active
         ? view.guards.map((guard) => (

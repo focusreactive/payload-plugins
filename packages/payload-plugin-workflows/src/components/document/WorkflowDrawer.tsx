@@ -133,7 +133,7 @@ const Layout = ({ main, sidebar }: { main: ReactNode; sidebar: ReactNode }) => (
 );
 
 const previewStages = (def: Available) =>
-  def.stages.map((stage) => ({ ...stage, state: "upcoming" as const }));
+  def.stages.map((stage) => ({ ...stage, state: "unvisited" as const }));
 
 /** Nothing running: what the workflow is, its stages, one primary Start (or a choice of them). */
 const StartPanel = ({

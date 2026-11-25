@@ -37,9 +37,9 @@ export const en = {
   startChoose: "Choose a workflow for this document.",
   stagesLabel: "Stages",
   stageProgress: "Stage {{current}} of {{total}}: {{stage}}",
-  stagePast: "done",
+  stageVisited: "done",
   stageCurrent: "current",
-  stageUpcoming: "next",
+  stageUnvisited: "not reached",
   statusActive: "To do",
   statusDone: "Done",
   statusSkipped: "Skipped",
@@ -73,6 +73,7 @@ export const en = {
   turnAborted: "Workflow stopped",
   turnAbortedBody: "Stopped by {{who}}, {{when}}.",
   turnAbortedBodyShort: "Stopped {{when}}.",
+  definitionChanged: "The workflow has changed since this run started.",
   you: "you",
   waitingOn: "Waiting on {{who}}",
   waitingOnAnyone: "Anyone can act",
@@ -113,6 +114,7 @@ export const en = {
   paramsRequired: "{{label}} is required.",
   paramsNumber: "{{label}} must be a number.",
   paramsDate: "{{label}} must be a date.",
+  paramsTooLong: "{{label}} can be at most {{max}} characters.",
   paramsChoose: "Choose…",
 
   // History timeline
@@ -131,6 +133,7 @@ export const en = {
   timelineAborted: "Stopped the workflow",
   timelineMovedTo: "moved to {{stage}}",
   timelineCompleted: "workflow complete",
+  timelineBypassed: "Went past the hold on {{operation}}",
   timelineSteps_one: "{{count}} automatic step",
   timelineSteps_other: "{{count}} automatic steps",
   timelineShowOlder_one: "Show {{count}} older entry",
@@ -151,6 +154,17 @@ export const en = {
   historyCompleted: "The workflow completed.",
   historyAborted: "Stopped the workflow.",
   historyReason: "Reason",
+  historyBypassed: "Went past the hold on {{operation}}.",
+  historyUnknown: "{{type}} (recorded by a newer version of the plugin).",
+
+  // What caused an automatic row ("Automated after Ann saved the document")
+  causeSave: "after a save",
+  causeSaveBy: "after {{name}} saved the document",
+  causeDelete: "after the document was deleted",
+  causeDeleteBy: "after {{name}} deleted the document",
+  causeTick: "on schedule",
+  causeStart: "when the document was created",
+  causeEffect: "from {{effect}}",
 
   // Dashboard widget
   widgetTitle: "Workflows",
@@ -181,6 +195,10 @@ export const en = {
   columnWaitingOn: "Waiting on",
   columnWaitingOnRoles: "Waiting on roles",
   columnFinished: "Finished",
+
+  // The events collection (hidden from the nav; its API is for audits)
+  eventsSingular: "Workflow event",
+  eventsPlural: "Workflow events",
 };
 
 export type WorkflowsTranslations = typeof en;

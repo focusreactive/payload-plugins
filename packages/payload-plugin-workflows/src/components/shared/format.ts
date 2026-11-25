@@ -1,8 +1,9 @@
 // Pure helpers behind the admin UI: names, who a run waits on, the param form, dates. No React,
 // no Payload imports, so they are unit-tested directly.
 
+import { TEXT_MAX_LENGTH } from "../../constants.js";
 import type { WorkflowsTranslations } from "../../translations.js";
-import type { InstanceView, ParamDef } from "../../types.js";
+import type { InstanceView, ViewParam } from "../../types.js";
 
 type Key = keyof WorkflowsTranslations;
 type PluralBase<K> = K extends `${infer Base}_one` ? Base : never;
@@ -34,14 +35,18 @@ export interface People {
 export const personName = (id: string, people: People, t: T): string =>
   id === people.me ? t("you") : (people.labels?.[id] ?? id);
 
-/** The user ids runs name: who they wait on, assignees, and people in their history. */
+/** The user ids runs name: who they wait on, assignees, who started them, people in their history. */
 export const userIdsIn = (views: InstanceView[], usersSlug: string): string[] =>
   views.flatMap((view) => [
     ...view.waitingOn.users,
     ...view.activities.flatMap((activity) => (activity.assignee ? [activity.assignee] : [])),
-    ...view.history.flatMap((entry) =>
-      entry.actor.id !== undefined && entry.actor.collection === usersSlug ? [entry.actor.id] : []
+    ...[view.started.actor, ...view.history.map((entry) => entry.actor)].flatMap((actor) =>
+      actor.id !== undefined && actor.collection === usersSlug ? [actor.id] : []
     ),
+    ...view.history.flatMap((entry) => {
+      const by = entry.cause && "by" in entry.cause ? entry.cause.by : undefined;
+      return by?.collection === usersSlug ? [by.id] : [];
+    }),
   ]);
 
 /** Who a run waits on, in words: "you, editor (role)". Empty when anyone may act. */
@@ -82,22 +87,22 @@ export const holdLead = (operations: string[], t: T): string => {
 /** What the form holds per param before it is sent: text for inputs, a flag for a checkbox. */
 export type ParamInput = string | boolean;
 
-export const paramLabel = (def: ParamDef): string => def.title ?? humanize(def.name);
+export const paramLabel = (def: ViewParam): string => def.title ?? humanize(def.name);
 
-export const optionsOf = (def: ParamDef): { label: string; value: string }[] =>
+export const optionsOf = (def: ViewParam): { label: string; value: string }[] =>
   (def.options ?? []).map((option) =>
     typeof option === "string" ? { label: option, value: option } : option
   );
 
-export const initialInputs = (defs: ParamDef[]): Record<string, ParamInput> =>
+export const initialInputs = (defs: ViewParam[]): Record<string, ParamInput> =>
   Object.fromEntries(defs.map((def) => [def.name, def.type === "boolean" ? false : ""]));
 
 /**
  * The form's inputs as the params the engine expects, or a message per invalid field. Mirrors the
- * server's checks that a person can fix (required, numbers); the server still has the last word.
+ * server's checks that a person can fix (required, numbers, length); the server has the last word.
  */
 export const readParams = (
-  defs: ParamDef[],
+  defs: ViewParam[],
   inputs: Record<string, ParamInput>,
   t: T
 ): { params: Record<string, unknown>; errors: Record<string, string> } => {
@@ -133,6 +138,11 @@ export const readParams = (
       } else {
         params[def.name] = new Date(time).toISOString();
       }
+      continue;
+    }
+    const max = def.maxLength ?? TEXT_MAX_LENGTH;
+    if ((def.type === "string" || def.type === "text") && text.length > max) {
+      errors[def.name] = t("paramsTooLong", { label, max });
       continue;
     }
     params[def.name] = text;

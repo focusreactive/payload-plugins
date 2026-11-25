@@ -15,13 +15,14 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   BASE_WORKFLOWS,
   bootWorkflowsPayload,
+  historyOf,
   flaky,
   gate,
   leak,
   onSave,
   timer,
 } from "./bootWorkflowsPayload";
-import type { WorkflowsTestPayload } from "./bootWorkflowsPayload";
+import type { HistoryRow, WorkflowsTestPayload } from "./bootWorkflowsPayload";
 
 const SLUG = "workflow-instances";
 
@@ -100,23 +101,29 @@ type Run = {
   workflow: string;
   status: string;
   stage: string;
-  history: { type: string; effect?: string; status?: string; reason?: string; error?: string }[];
+  /** From the events collection, oldest first. */
+  history: HistoryRow[];
 };
 
-const runsOf = async (pageId: number | string, workflow?: string): Promise<Run[]> =>
-  (
-    await payload.find({
-      collection: SLUG as never,
-      where: {
-        and: [
-          { subjectId: { equals: String(pageId) } },
-          ...(workflow ? [{ workflow: { equals: workflow } }] : []),
-        ],
-      },
-      overrideAccess: true,
-      pagination: false,
-    })
-  ).docs as unknown as Run[];
+const runsOf = async (pageId: number | string, workflow?: string): Promise<Run[]> => {
+  const found = await payload.find({
+    collection: SLUG as never,
+    where: {
+      and: [
+        { subjectId: { equals: String(pageId) } },
+        ...(workflow ? [{ workflow: { equals: workflow } }] : []),
+      ],
+    },
+    overrideAccess: true,
+    pagination: false,
+  });
+  return Promise.all(
+    (found.docs as unknown as Run[]).map(async (run) => ({
+      ...run,
+      history: await historyOf(payload, run.id),
+    }))
+  );
+};
 
 const jobsOf = async (effect: string) =>
   (
@@ -502,14 +509,19 @@ describe("effects and transactions", () => {
       id: page.id,
       user: author,
     });
-    const updateOne = payload.db.updateOne.bind(payload.db);
-    payload.db.updateOne = (async (args: Parameters<typeof updateOne>[0]) => {
-      const history = (args.data as { history?: { type: string; status?: string }[] }).history;
-      if (history?.some((entry) => entry.type === "effect" && entry.status === "failed")) {
+    // Recording the failure fails: the insert of its `failed` entry.
+    const create = payload.db.create.bind(payload.db);
+    payload.db.create = (async (args: Parameters<typeof create>[0]) => {
+      const data = args.data as { type?: string; status?: string };
+      if (
+        args.collection === "workflow-events" &&
+        data.type === "effect" &&
+        data.status === "failed"
+      ) {
         throw new Error("db down");
       }
-      return updateOne(args);
-    }) as typeof payload.db.updateOne;
+      return create(args);
+    }) as typeof payload.db.create;
     try {
       await fireWorkflowAction(payload, {
         instanceId: run.id as string,
@@ -518,7 +530,7 @@ describe("effects and transactions", () => {
         user: author,
       });
     } finally {
-      payload.db.updateOne = updateOne;
+      payload.db.create = create;
     }
     const [job] = await jobsOf("boom");
     const recorded = JSON.stringify([job?.log, job?.error]);
@@ -554,7 +566,7 @@ describe("smaller", () => {
     }
   });
 
-  it("a save that moves nothing reads the active runs once per hook, without their history", async () => {
+  it("a save that moves nothing reads the active runs once per hook, and nothing else", async () => {
     const page = await createPage("Cheap");
     for (const workflow of ["review", "leak"]) {
       await startWorkflow(payload, { workflow, collection: "pages", id: page.id, user: author });
@@ -588,9 +600,6 @@ describe("smaller", () => {
       payload.findByID = findByID;
     }
     expect(finds).toHaveLength(2); // beforeChange guard + afterChange settle
-    expect(finds.every((args) => (args.select as Record<string, unknown>)?.history === false)).toBe(
-      true
-    );
     expect(byIds).toBe(0);
   });
 

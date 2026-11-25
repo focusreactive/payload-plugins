@@ -175,7 +175,20 @@ describe("a workflow write fails during a save", () => {
 
   it("rejects the save when a Payload operation of the hook fails (it rolls the transaction back)", async () => {
     const { page, run } = await followedPage();
-    // `loadRun` (inside `mutateRun`) is a `findByID`: Payload kills `req`'s transaction when it throws.
+    // The settle writes the run as the hook read it; when that compare-and-swap loses, `mutateRun`
+    // reloads it with `findByID`, a Payload operation, which kills `req`'s transaction when it throws.
+    let raced = false;
+    patchDb(
+      "updateOne",
+      (updateOne) =>
+        (async (args) => {
+          if (onRuns(args) && !raced) {
+            raced = true;
+            return null;
+          }
+          return updateOne(args);
+        }) as Payload["db"]["updateOne"]
+    );
     patchDb(
       "findOne",
       (findOne) =>

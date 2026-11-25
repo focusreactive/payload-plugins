@@ -259,7 +259,7 @@ describe("workflow tools over MCP", () => {
       documentId: String(page.id),
     });
     const [view] = state.value!.instances as InstanceView[];
-    const steps = view!.history.filter((entry) => entry.type === "action" && !entry.auto);
+    const steps = view!.history.filter((entry) => entry.type === "action" && entry.actor.id);
     expect(steps.map((entry) => entry.actor.via)).toEqual(["agent", "agent", "agent"]);
     expect(steps.map((entry) => entry.actor.id)).toEqual([
       String(author.id),

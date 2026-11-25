@@ -3,9 +3,8 @@ import type { Endpoint, PayloadRequest, TypedUser } from "payload";
 import { ENDPOINTS, RUNS_SLUG } from "./constants.js";
 import { isWorkflowError } from "./engine/errors.js";
 import type { WorkflowErrorCode } from "./engine/errors.js";
-import { abortWorkflow, fireWorkflowAction, startWorkflow } from "./server/operations.js";
+import { abortWorkflow, fireWorkflowAction, startWorkflow, viaOf } from "./server/operations.js";
 import { getWorkflowHistory, getWorkflowState } from "./server/queries.js";
-import type { UserActor } from "./types.js";
 
 const json = (body: unknown, status = 200) =>
   Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
@@ -51,10 +50,6 @@ const record = (value: unknown): Record<string, unknown> | undefined =>
   value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : undefined;
-
-// An API key is a script; any other session is someone in the admin.
-const viaOf = (user: TypedUser): UserActor["via"] =>
-  (user as { _strategy?: string })._strategy === "api-key" ? "api" : "admin";
 
 const missing = (names: string[]) => fail(`Missing ${names.join(", ")}.`, 400);
 

@@ -28,9 +28,54 @@ export const activitiesWithPaths = (
   }));
 };
 
-/** The one shape the engine works on: every stage's task as `activities`. Idempotent. */
+// ---- Version --------------------------------------------------------------------------------
+
+/** cyrb53: a fast 53-bit string hash, in base 36 (at most 11 characters). Stable everywhere. */
+const hash = (text: string): string => {
+  let h1 = 0xde_ad_be_ef;
+  let h2 = 0x41_c6_ce_57;
+  for (let i = 0; i < text.length; i += 1) {
+    const code = text.codePointAt(i) ?? 0;
+    h1 = Math.imul(h1 ^ code, 2_654_435_761);
+    h2 = Math.imul(h2 ^ code, 1_597_334_677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2_246_822_507) ^ Math.imul(h2 ^ (h2 >>> 13), 3_266_489_909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2_246_822_507) ^ Math.imul(h1 ^ (h1 >>> 13), 3_266_489_909);
+  return (4_294_967_296 * (2_097_151 & h2) + (h1 >>> 0)).toString(36);
+};
+
+/**
+ * The definition's version: its own `version`, else a hash of its structure: the workflow's name,
+ * its stages in order and, per stage, its activities' and actions' names and its transitions'
+ * names and targets, and the fields' names and types. Titles, descriptions and function bodies
+ * do not count; either form of a stage's task (plain `actions` or `activities`) hashes the same.
+ */
+export const definitionVersionOf = (def: WorkflowDefinition): string => {
+  if (def.version !== undefined) {
+    return String(def.version);
+  }
+  const structure = [
+    def.name,
+    (def.fields ?? []).map((field) => [field.name, field.type]),
+    (def.stages ?? []).map((stage) => [
+      stage.name,
+      activitiesWithPaths(stage, "").map(({ activity }) => [
+        activity.name,
+        (activity.actions ?? []).map((action) => action.name),
+      ]),
+      (stage.transitions ?? []).map((transition) => [transition.name, transition.to]),
+    ]),
+  ];
+  return hash(JSON.stringify(structure));
+};
+
+/**
+ * The one shape the engine works on: every stage's task as `activities`, and the version filled
+ * in. Idempotent.
+ */
 const normalize = (def: WorkflowDefinition): WorkflowDefinition => ({
   ...def,
+  version: definitionVersionOf(def),
   stages: def.stages.map((stage) => {
     if (!stage.actions) {
       return stage;
@@ -162,6 +207,20 @@ const checkActivity = (
           message: `select param "${param.name}" needs options`,
         });
       }
+      if (param.maxLength === undefined) {
+        return;
+      }
+      if (param.type !== "string" && param.type !== "text") {
+        issues.push({
+          path: `${actionPath}.params[${p}].maxLength`,
+          message: `\`maxLength\` applies to "string" and "text" params, not "${param.type}"`,
+        });
+      } else if (!Number.isInteger(param.maxLength) || param.maxLength < 1) {
+        issues.push({
+          path: `${actionPath}.params[${p}].maxLength`,
+          message: `param "${param.name}" \`maxLength\` must be a positive integer`,
+        });
+      }
     });
   });
 };
@@ -243,6 +302,21 @@ export const definitionIssues = (def: WorkflowDefinition): string[] => {
       });
     }
   });
+  if (def.start !== undefined && (typeof def.start !== "object" || def.start?.on !== "create")) {
+    issues.push({
+      path: "start",
+      message:
+        'start must be `{ on: "create", when? }` (started when a document is created); leave it out for a workflow people start',
+    });
+  }
+  const { version } = def;
+  if (
+    version !== undefined &&
+    !(typeof version === "string" && version.length > 0) &&
+    !(typeof version === "number" && Number.isFinite(version))
+  ) {
+    issues.push({ path: "version", message: "version must be a non-empty string or a number" });
+  }
   if (!known.includes(def.initialStage)) {
     issues.push({
       path: "initialStage",
@@ -272,8 +346,9 @@ export const formatIssues = (subject: string, issues: string[]): string =>
 
 /**
  * Declares a workflow: validates it, reporting every problem in one error, and returns it in the
- * shape the engine works on (plain stage `actions` become one activity named after the stage).
- * The plugin and the simulator do the same, so a definition built by hand is checked too.
+ * shape the engine works on (plain stage `actions` become one activity named after the stage, and
+ * `version` is filled in). The plugin and the simulator do the same, so a definition built by
+ * hand is checked too.
  */
 export const defineWorkflow = (definition: WorkflowDefinition): WorkflowDefinition => {
   const issues = definitionIssues(definition);

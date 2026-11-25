@@ -53,7 +53,7 @@ export const workflowTools = {
   workflows_list_definitions: define(
     "List the editorial workflows configured in this CMS: their names, the collections they run on and their stages.",
     z.object({}),
-    (_input, { payload }) => listWorkflowDefinitions(payload)
+    (_input, { payload, req }) => listWorkflowDefinitions(payload, req?.i18n?.language)
   ),
   workflows_list_instances: define(
     "List workflow runs. scope 'mine' returns runs waiting on the current user; 'all' returns every run. Filter by workflow name and status.",

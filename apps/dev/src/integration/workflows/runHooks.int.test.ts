@@ -40,7 +40,7 @@ describe("workflows with jobs.runHooks", () => {
     });
     expect(view.status).toBe("completed");
     expect(
-      view.history.filter((entry) => entry.type === "effect").map((entry) => entry.status)
+      view.history.flatMap((entry) => (entry.type === "effect" ? [entry.status] : []))
     ).toEqual(["queued", "done"]);
   });
 });

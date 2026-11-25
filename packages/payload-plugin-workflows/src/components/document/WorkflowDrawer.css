@@ -185,7 +185,10 @@
   background: var(--theme-elevation-150);
 }
 
-.workflows-stepper__step[data-state="past"]:not(:last-child)::after {
+/* The line between two stages this run went through; not toward a stage it never reached. */
+.workflows-stepper__step[data-state="visited"]:has(
+    + .workflows-stepper__step:is([data-state="visited"], [data-state="current"])
+  )::after {
   background: var(--theme-elevation-800);
 }
 
@@ -217,11 +220,11 @@
   white-space: nowrap;
 }
 
-.workflows-stepper__step[data-state="past"] {
+.workflows-stepper__step[data-state="visited"] {
   color: var(--theme-elevation-800);
 }
 
-.workflows-stepper__step[data-state="past"] .workflows-stepper__marker {
+.workflows-stepper__step[data-state="visited"] .workflows-stepper__marker {
   border-color: var(--theme-elevation-800);
   background: var(--theme-elevation-800);
   color: var(--theme-elevation-0);
@@ -271,6 +274,12 @@
 
 .workflows-turn__body {
   color: var(--theme-elevation-800);
+}
+
+/* Quiet: the definition changed since this run started (a fact, not a problem). */
+.workflows-turn__changed {
+  margin: 0;
+  color: var(--theme-elevation-500);
 }
 
 .workflows-turn[data-turn="stuck"] .workflows-turn__title {
@@ -521,6 +530,10 @@
 
 .workflows-history__who {
   color: var(--theme-elevation-800);
+}
+
+.workflows-history__cause {
+  color: var(--theme-elevation-500);
 }
 
 .workflows-history__marker[data-kind="agent"] {

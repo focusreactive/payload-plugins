@@ -13,7 +13,7 @@ import { commitTransaction, createLocalReq, handleEndpoints, initTransaction } f
 import type { Access, Payload, Plugin, TypedUser } from "payload";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { aiCheck, bootWorkflowsPayload, review, timer } from "./bootWorkflowsPayload";
+import { aiCheck, bootWorkflowsPayload, historyOf, review, timer } from "./bootWorkflowsPayload";
 import type { WorkflowsTestPayload } from "./bootWorkflowsPayload";
 
 // The foundation pass: guards on create, numeric assignees, stale effect results, endpoints on the
@@ -161,7 +161,6 @@ const runRow = async (id: string) =>
     stage: string;
     status: string;
     fields: Record<string, unknown>;
-    history: { type: string; effect?: string; status?: string; stale?: boolean }[];
   };
 
 const tokens: Record<string, string> = {};
@@ -365,11 +364,14 @@ describe("an effect's `{ set }` lands only in the stage visit that queued it", (
     const row = await runRow(id);
     expect(row.stage).toBe("drafting");
     expect(row.fields.verdict).toBeUndefined();
-    expect(row.history.at(-1)).toMatchObject({
+    expect((await historyOf(payload, id)).at(-1)).toMatchObject({
       type: "effect",
       effect: "llm-check",
       status: "done",
       stale: true,
+      // Correlates with `payload-jobs`, and says what caused it.
+      job: expect.any(String),
+      cause: "effect",
     });
   });
 
@@ -382,7 +384,7 @@ describe("an effect's `{ set }` lands only in the stage visit that queued it", (
     const row = await runRow(id);
     expect(row.stage).toBe("review");
     expect(row.fields.verdict).toBeUndefined();
-    expect(row.history.at(-1)).toMatchObject({ stale: true });
+    expect((await historyOf(payload, id)).at(-1)).toMatchObject({ stale: true });
   });
 });
 
@@ -612,18 +614,21 @@ describe("the drawer's state stays small", () => {
     });
     expect(state.instances.map((run) => run.id)).toEqual([id, finished.at(-1)]);
     const [view] = state.instances;
-    const total = (await runRow(id)).history.length;
+    const stored = await historyOf(payload, id);
+    const total = stored.length;
     expect(view?.history).toHaveLength(50);
     expect(view?.olderHistory).toBe(total - 50);
     expect(view?.started).toMatchObject({ actor: { id: String(editor.id) } });
+    // The page before the first entry shown (entries are numbered 1, 2, …).
     const older = await getWorkflowHistory(payload, {
       instanceId: id,
-      before: view?.olderHistory,
+      before: (view?.olderHistory ?? 0) + 1,
       user: editor,
     });
     expect(older.older).toBe(Math.max(0, total - 100));
-    expect([...older.entries, ...(view?.history ?? [])]).toEqual(
-      (await runRow(id)).history.slice(older.older)
+    const joined = [...older.entries, ...(view?.history ?? [])];
+    expect(joined.map((entry) => [entry.seq, entry.type])).toEqual(
+      stored.slice(older.older).map((row) => [row.seq, row.type])
     );
     // Only someone who may read the run.
     expect(

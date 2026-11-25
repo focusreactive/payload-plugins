@@ -1,18 +1,24 @@
-// The runs collection: one row per run, the only place run state is stored. Two writes change it,
-// `createRun` and `mutateRun`, each queueing the run's effect jobs in the same transaction.
+// The runs collection: one row per run, holding what the engine needs to decide (stage, fields,
+// activities, visit, next event number). Two writes change it, `createRun` and `mutateRun`, each
+// inserting the step's events and queueing its effect jobs in the same transaction.
 
 import { randomUUID } from "node:crypto";
 
 import type {
-  Access,
   CollectionConfig,
   CollectionSlug,
   Endpoint,
+  Payload,
   PayloadRequest,
-  SelectType,
   Where,
 } from "payload";
-import { ValidationError, commitTransaction, initTransaction, killTransaction } from "payload";
+import {
+  ValidationError,
+  commitTransaction,
+  createLocalReq,
+  initTransaction,
+  killTransaction,
+} from "payload";
 
 import { formatAdminURL } from "payload/shared";
 
@@ -20,17 +26,19 @@ import { encodeAssignees } from "../assignees.js";
 import type { TKey } from "../components/shared/format.js";
 import {
   EFFECT_TASK,
+  EVENTS_SLUG,
   JOBS_QUEUE,
   QUEUED_JOBS,
-  READ_CACHE,
   RUNS_SLUG,
+  SCHEMA_VERSION,
   componentPath,
 } from "../constants.js";
 import { WorkflowError } from "../engine/errors.js";
 import { NAMESPACE } from "../translations.js";
 import { waitingOnOf } from "../engine/view.js";
-import type { WorkflowsSettings } from "../plugin.js";
-import type { InstanceState, Result, WorkflowDefinition } from "../types.js";
+import type { Actor, InstanceState, Result, WorkflowDefinition } from "../types.js";
+import { readWorkflows } from "./access.js";
+import { insertEvents } from "./events.js";
 import { transactionLost, transactionOf, writing } from "./transaction.js";
 
 /** A label in the admin's language, from the plugin's strings. */
@@ -41,104 +49,6 @@ const label =
 
 /** In the database and the API; not in the admin, which shows the run in the document's drawer. */
 const internal = { hidden: true } as const;
-
-/**
- * Readable ids resolved for a subject collection whose `read` access is a per-document rule. Above
- * this the collection is left out of the runs the user may read (logged once, and named in the
- * plugin's list and state answers as `hiddenCollections`): one query, and an `IN` list well under
- * SQLite's and Postgres' bound-parameter limits.
- */
-export const READABLE_IDS_CAP = 5000;
-
-const warnedOverCap = new Set<string>();
-
-/** `readRuns`' answer, kept on `req.context` so one request resolves it once per user. */
-interface ReadCache {
-  user: string;
-  result: boolean | Where;
-  /** Subject collections left out because the user may read more than the cap of them. */
-  hidden: string[];
-}
-
-/** Subject collections whose runs `readRuns` hid from this request's user (over the cap). */
-export const hiddenCollectionsOf = (req: PayloadRequest): string[] =>
-  (req.context?.[READ_CACHE] as ReadCache | undefined)?.hidden ?? [];
-
-/**
- * Who may read runs: a user of the admin user collection, and only runs on documents they may read.
- * Each subject collection's own `read` access decides for `req`: `false` leaves its runs out,
- * `true` lets them all in, a query constraint (a per-document rule) lets in the runs on the ids it
- * allows, resolved with one query as the user (latest drafts, as the plugin's own reads). A user who
- * may read every subject collection whole gets no constraint at all; one who may read none, a
- * constraint nothing matches. Resolved once per request and user (`req.context`).
- */
-const readRuns: Access = async ({ req }): Promise<boolean | Where> => {
-  const { user, payload } = req;
-  if (!user || user.collection !== payload.config.admin?.user) {
-    return false;
-  }
-  const key = `${user.collection}:${String(user.id)}`;
-  const cached = req.context?.[READ_CACHE] as ReadCache | undefined;
-  if (cached?.user === key) {
-    return cached.result;
-  }
-  const settings = payload.config.custom?.workflows as WorkflowsSettings | undefined;
-  const slugs = [...new Set(settings?.workflows.flatMap((def) => def.collections))];
-  const or: Where[] = [];
-  const hidden: string[] = [];
-  let whole = true;
-  for (const slug of slugs) {
-    const collection = payload.collections[slug as CollectionSlug];
-    const access = collection?.config.access?.read;
-    // No function: Payload's default, any logged-in user.
-    const result = collection ? (access ? await access({ req }) : true) : false;
-    if (result === true) {
-      or.push({ subjectCollection: { equals: slug } });
-      continue;
-    }
-    whole = false;
-    if (!result || typeof result !== "object") {
-      continue;
-    }
-    const found = await payload.find({
-      collection: slug as CollectionSlug,
-      select: { id: true },
-      draft: true,
-      limit: READABLE_IDS_CAP + 1,
-      pagination: false,
-      overrideAccess: false,
-      user,
-      req,
-    });
-    if (found.docs.length > READABLE_IDS_CAP) {
-      hidden.push(slug);
-      if (!warnedOverCap.has(slug)) {
-        warnedOverCap.add(slug);
-        payload.logger.warn(
-          `workflows: a user may read more than ${READABLE_IDS_CAP} "${slug}" documents under its per-document read access, so workflow runs on "${slug}" are hidden from them (runs collection, workflow lists and the dashboard widget, which say so).`
-        );
-      }
-      continue;
-    }
-    if (found.docs.length > 0) {
-      or.push({
-        and: [
-          { subjectCollection: { equals: slug } },
-          { subjectId: { in: found.docs.map((doc) => String(doc.id)) } },
-        ],
-      });
-    }
-  }
-  // Not `false`: that is a 403, and the plugin's reads would turn an empty list into `not-allowed`.
-  let result: boolean | Where = true;
-  if (!whole) {
-    result = or.length > 0 ? { or } : { id: { exists: false } };
-  }
-  if (req.context) {
-    req.context[READ_CACHE] = { user: key, result, hidden } satisfies ReadCache;
-  }
-  return result;
-};
 
 /** The columns the admin list's cells and row links read, whatever columns are shown. */
 const LIST_COLUMNS = {
@@ -151,8 +61,8 @@ const LIST_COLUMNS = {
 
 /**
  * Runs are read by users of the admin user collection, each only on documents they may read
- * (`readRuns`), and written by nobody over the API: state changes only through the plugin's
- * operations, so the history cannot be edited. In the admin it is the read-only list of
+ * (`readWorkflows`), and written by nobody over the API: state changes only through the plugin's
+ * operations. In the admin it is the read-only list of
  * workflows ("Workflows"): a row links to its document, where the drawer shows and moves the run.
  * The plugin's REST endpoints are this collection's (`/api/workflow-instances/state`, …). With
  * `components: false` (the plugin disabled) it keeps its data and API but has no admin cells.
@@ -179,13 +89,13 @@ export const runsCollection = (options: {
           path: `/collections/${String(doc.subjectCollection)}/${encodeURIComponent(String(doc.subjectId))}`,
         }),
       disableCopyToLocale: true,
-      // The list reads the shown columns (and `LIST_COLUMNS`), never the history.
+      // The list reads the shown columns (and `LIST_COLUMNS`), never the run's state.
       enableListViewSelectAPI: true,
       ...(options.components ? {} : { hidden: true }),
     },
     forceSelect: LIST_COLUMNS,
     access: {
-      read: readRuns,
+      read: readWorkflows,
       create: () => false,
       update: () => false,
       delete: () => false,
@@ -242,7 +152,18 @@ export const runsCollection = (options: {
       { name: "fields", type: "json", admin: internal },
       { name: "activities", type: "json", admin: internal },
       { name: "fired", type: "json", admin: internal },
-      { name: "history", type: "json", admin: internal },
+      // Transitions taken: which visit of its stage the run is in (an effect's result lands only
+      // in the visit that queued it).
+      { name: "visit", type: "number", required: true, defaultValue: 0, admin: internal },
+      // The stages entered so far (the stepper marks them done).
+      { name: "visited", type: "json", admin: internal },
+      // The `seq` of the run's next event (`workflow-events`): exact, because every write that
+      // adds events is a compare-and-swap on `revision`.
+      { name: "nextSeq", type: "number", required: true, defaultValue: 1, admin: internal },
+      { name: "startedBy", type: "json", admin: internal },
+      // Provenance: the plugin's stored format, and the definition version the run started from.
+      { name: "schemaVersion", type: "number", required: true, admin: internal },
+      { name: "definitionVersion", type: "text", admin: internal },
       // Denormalised from the run's `waitingOn` on every write (`|u:<id>|r:<role>|`, see
       // `assignees.ts`), so "for me" is one query. A plain column: no side table to join.
       {
@@ -272,7 +193,12 @@ export interface InstanceDoc {
   fields?: Record<string, unknown> | null;
   activities?: InstanceState["activities"] | null;
   fired?: string[] | null;
-  history?: InstanceState["history"] | null;
+  visit?: number | null;
+  visited?: string[] | null;
+  nextSeq?: number | null;
+  startedBy?: Actor | null;
+  schemaVersion: number;
+  definitionVersion?: string | null;
   /** `|u:<id>|r:<role>|`, `null` when it waits on nobody in particular (`assignees.ts`). */
   assignees?: string | null;
   revision: number;
@@ -304,7 +230,11 @@ export const toState = (doc: InstanceDoc): InstanceState => ({
   fields: doc.fields ?? {},
   activities: doc.activities ?? {},
   fired: doc.fired ?? [],
-  history: doc.history ?? [],
+  visit: doc.visit ?? 0,
+  visited: doc.visited ?? [doc.stage],
+  nextSeq: doc.nextSeq ?? 1,
+  definitionVersion: doc.definitionVersion ?? "",
+  startedBy: doc.startedBy ?? { system: true },
   startedAt: doc.createdAt,
   ...(doc.completedAt ? { completedAt: doc.completedAt } : {}),
 });
@@ -320,7 +250,12 @@ const toData = (state: InstanceState, def: WorkflowDefinition | undefined, subje
     fields: state.fields,
     activities: state.activities,
     fired: state.fired,
-    history: state.history,
+    visit: state.visit,
+    visited: state.visited,
+    nextSeq: state.nextSeq,
+    startedBy: state.startedBy,
+    schemaVersion: SCHEMA_VERSION,
+    definitionVersion: state.definitionVersion,
     assignees: encodeAssignees(waiting),
     activeKey:
       state.status === "active" ? activeKeyOf(state.workflow, subject) : `done:${randomUUID()}`,
@@ -345,14 +280,7 @@ export const loadRun = async (req: PayloadRequest, id: JobId): Promise<InstanceD
   return doc as unknown as InstanceDoc;
 };
 
-/** Everything but the audit trail: enough to evaluate guards and to decide whether a run moves. */
-export const WITHOUT_HISTORY: SelectType = { history: false };
-
-export const findRuns = async (
-  req: PayloadRequest,
-  where: Where,
-  select?: SelectType
-): Promise<InstanceDoc[]> => {
+export const findRuns = async (req: PayloadRequest, where: Where): Promise<InstanceDoc[]> => {
   const result = await req.payload.find({
     collection: RUNS_SLUG as CollectionSlug,
     where,
@@ -362,7 +290,6 @@ export const findRuns = async (
     sort: "-createdAt",
     overrideAccess: true,
     req,
-    ...(select ? { select } : {}),
   });
   return result.docs as unknown as InstanceDoc[];
 };
@@ -394,7 +321,7 @@ export interface Committed {
 }
 
 /** Runs `fn` in a transaction: its own when `req` has none, the caller's otherwise. */
-const inTransaction = async <T>(req: PayloadRequest, fn: () => Promise<T>): Promise<T> => {
+export const inTransaction = async <T>(req: PayloadRequest, fn: () => Promise<T>): Promise<T> => {
   const owns = await initTransaction(req);
   try {
     const result = await fn();
@@ -451,8 +378,21 @@ const queueEffects = async (
   return ids;
 };
 
+/** A write's events and effect jobs, after its run row: the jobs first, so events carry their ids. */
+const record = async (req: PayloadRequest, doc: InstanceDoc, result: Result): Promise<JobId[]> => {
+  const jobs = await queueEffects(req, doc.id, result.effects);
+  await insertEvents(
+    req,
+    { run: doc.id, workflow: doc.workflow, subject: subjectOf(doc) },
+    result.events,
+    jobs
+  );
+  return jobs;
+};
+
 /**
- * Inserts a new run. A second active run of the same workflow on a document is `already-running`.
+ * Inserts a new run with its first events. A second active run of the same workflow on a document
+ * is `already-running`.
  * Losing that race inside a caller's transaction ends the transaction (Payload rolls it back when
  * `create` fails): the error says so, so the caller does not commit believing its writes survived.
  */
@@ -467,12 +407,15 @@ export const createRun = async (
     return await inTransaction(req, async () => {
       const doc = (await req.payload.create({
         collection: RUNS_SLUG as CollectionSlug,
-        data: { ...toData(result.state, def, subject), revision: 1 } as never,
+        data: {
+          ...toData(result.state, def, subject),
+          revision: 1,
+        } as never,
         depth: 0,
         overrideAccess: true,
         req,
       })) as unknown as InstanceDoc;
-      return { doc, jobs: await queueEffects(req, doc.id, result.effects) };
+      return { doc, jobs: await record(req, doc, result) };
     });
   } catch (error) {
     const clash =
@@ -499,9 +442,11 @@ const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 /**
  * Compute, then write only if `revision` is still what was read: a compare-and-swap in the
  * database adapter (`db.updateOne` with a `where`, as one `UPDATE … WHERE … RETURNING` on SQL).
- * The first attempt computes on `from` when it is the run as the caller already read it (whole,
- * with its history); otherwise, and after a lost race, the run is reloaded. After the last attempt
- * it is `conflict`. `compute` returning `null` or the state it was given means "nothing to write".
+ * Only the winner goes on to insert the step's events (numbered from the `nextSeq` it read, so the
+ * numbers are exact) and queue its effects, in the same transaction; a loser has written nothing.
+ * The first attempt computes on `from` when it is the run as the caller already read it;
+ * otherwise, and after a lost race, the run is reloaded. After the last attempt it is `conflict`.
+ * `compute` returning `null` or the state it was given means "nothing to write".
  */
 export const mutateRun = async (
   req: PayloadRequest,
@@ -540,10 +485,7 @@ export const mutateRun = async (
       if (!updated) {
         return null;
       }
-      return {
-        doc: updated as unknown as InstanceDoc,
-        jobs: await queueEffects(req, doc.id, result.effects),
-      };
+      return { doc: updated as unknown as InstanceDoc, jobs: await record(req, doc, result) };
     });
     if (outcome) {
       return outcome;
@@ -553,4 +495,66 @@ export const mutateRun = async (
     "conflict",
     "The workflow run was changed by someone else at the same time. Reload and try again."
   );
+};
+
+// ---- Retention ------------------------------------------------------------------------------
+
+/** Finished runs `pruneWorkflows` deletes per transaction. */
+const PRUNE_BATCH = 200;
+
+/**
+ * Deletes finished runs (completed or stopped) that finished before `finishedBefore`, with their
+ * events, in batches of runs, each batch in a transaction of its own. Active runs are never
+ * touched. Returns how many runs and events it deleted. The plugin never calls it: run it from
+ * your own schedule, with the retention you need.
+ */
+export const pruneWorkflows = async (
+  payload: Payload,
+  { finishedBefore }: { finishedBefore: Date }
+): Promise<{ runs: number; events: number }> => {
+  const totals = { runs: 0, events: 0 };
+  for (;;) {
+    const req = await createLocalReq({}, payload);
+    const deleted = await inTransaction(req, async () => {
+      const page = await payload.find({
+        collection: RUNS_SLUG as CollectionSlug,
+        where: {
+          and: [
+            { status: { in: ["completed", "aborted"] } },
+            { completedAt: { less_than: finishedBefore.toISOString() } },
+          ],
+        },
+        select: {},
+        sort: "id",
+        limit: PRUNE_BATCH,
+        pagination: false,
+        depth: 0,
+        overrideAccess: true,
+        req,
+      });
+      const ids = page.docs.map((doc) => doc.id);
+      if (ids.length === 0) {
+        return 0;
+      }
+      const ofRuns: Where = { run: { in: ids.map(String) } };
+      const { totalDocs } = await payload.count({
+        collection: EVENTS_SLUG as CollectionSlug,
+        where: ofRuns,
+        overrideAccess: true,
+        req,
+      });
+      await writing(req, () =>
+        payload.db.deleteMany({ collection: EVENTS_SLUG, where: ofRuns, req })
+      );
+      await writing(req, () =>
+        payload.db.deleteMany({ collection: RUNS_SLUG, where: { id: { in: ids } }, req })
+      );
+      totals.events += totalDocs;
+      return ids.length;
+    });
+    totals.runs += deleted;
+    if (deleted < PRUNE_BATCH) {
+      return totals;
+    }
+  }
 };

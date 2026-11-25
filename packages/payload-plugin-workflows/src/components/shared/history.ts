@@ -1,9 +1,11 @@
 // How a run's history reads in the drawer: one row per step a person or an agent took, the
 // automatic steps it caused folded under it, automatic stretches nobody caused as rows of their
-// own, rows grouped by day. Pure (no React, no Payload), so it is unit-tested directly. The stored history is untouched.
+// own (saying what caused them), rows grouped by day. Entries of a type this version does not know
+// are shown as such, never dropped. Pure (no React, no Payload), so it is unit-tested directly.
 
-import type { Actor, HistoryEntry, InstanceView } from "../../types.js";
-import { humanize, personName, titleIn } from "./format.js";
+import type { Actor, Cause, InstanceView, WorkflowEvent } from "../../types.js";
+import { isKnownEvent } from "../../vocabulary.js";
+import { humanize, operationsText, personName, titleIn } from "./format.js";
 import type { People, T } from "./format.js";
 
 /** Who did a step: a person in the admin, a person through the API, an agent for a person, the workflow. */
@@ -19,36 +21,37 @@ export const actorKind = (actor: Actor): ActorKind => {
   return actor.via === "api" ? "api" : "person";
 };
 
-/** A step nobody chose: the engine's own (transitions, effects, completion) or an automatic action. */
-export const isAutomatic = (entry: HistoryEntry): boolean =>
-  entry.actor.id === undefined || (entry.type === "action" && entry.auto);
+/** A step nobody chose: the engine's own (transitions, effects, completion, automatic actions). */
+export const isAutomatic = (entry: WorkflowEvent): boolean => entry.actor.id === undefined;
 
 /** Rows shown before "Show older". */
 export const TIMELINE_VISIBLE = 8;
 
 export interface TimelineRow {
-  /** Stable within one history: the index of the row's first entry. */
+  /** Stable within one run: the `seq` of the row's first entry. */
   key: string;
   /** When the row's step happened (its lead's time, or the first automatic step's). */
   at: string;
   kind: ActorKind;
   actor: Actor;
+  /** What caused an automatic row (a save, the clock, an effect…), when recorded. */
+  cause?: Cause;
   /** The step a person or agent took; absent for a purely automatic row. */
-  lead?: HistoryEntry;
+  lead?: WorkflowEvent;
   /** The automatic steps folded into the row, oldest first. */
-  steps: HistoryEntry[];
+  steps: WorkflowEvent[];
   /** The stage the row's transitions ended in, when it moved the run. */
   movedTo?: string;
   completed: boolean;
   /** Effects in the row that failed: shown, never folded away. */
-  failed: HistoryEntry[];
+  failed: WorkflowEvent[];
 }
 
-type Draft = Pick<TimelineRow, "key" | "at" | "kind" | "actor" | "lead" | "steps">;
+type Draft = Pick<TimelineRow, "key" | "at" | "kind" | "actor" | "cause" | "lead" | "steps">;
 
 const summarize = (row: Draft): TimelineRow => {
-  const entries = row.lead ? [row.lead, ...row.steps] : row.steps;
-  const moves = entries.flatMap((entry) => (entry.type === "transition" ? [entry.to] : []));
+  const entries = (row.lead ? [row.lead, ...row.steps] : row.steps).filter(isKnownEvent);
+  const moves = entries.flatMap((entry) => (entry.type === "transition" ? [entry.toStage] : []));
   const movedTo = moves.at(-1);
   return {
     ...row,
@@ -59,40 +62,40 @@ const summarize = (row: Draft): TimelineRow => {
 };
 
 /**
- * Folds the history (oldest first, as stored) into rows, newest first. A step a person or agent
- * took starts a row; the automatic steps it caused join it: those recorded by the same operation
- * (same time) and its effects, with what their results moved. Automatic steps nobody caused (a
- * document save, the clock) form an "Automated" row of their own.
+ * Folds the history (oldest first) into rows, newest first. A step a person or agent took starts
+ * a row; the automatic steps it caused join it: those recorded by the same operation (same time)
+ * and its effects, with what their results moved. Automatic steps nobody caused (a document save,
+ * the clock) form an "Automated" row of their own.
  */
-export const timelineRows = (history: HistoryEntry[]): TimelineRow[] => {
+export const timelineRows = (history: WorkflowEvent[]): TimelineRow[] => {
   const rows: Draft[] = [];
   let lastAt: string | undefined;
-  history.forEach((entry, index) => {
+  for (const entry of history) {
     const current = rows.at(-1);
     const caused = entry.at === lastAt || entry.type === "effect";
     if (isAutomatic(entry) && current && caused) {
       current.steps.push(entry);
     } else if (isAutomatic(entry)) {
       rows.push({
-        key: String(index),
+        key: String(entry.seq),
         at: entry.at,
         kind: "system",
         actor: entry.actor,
+        ...(entry.cause ? { cause: entry.cause } : {}),
         steps: [entry],
       });
     } else {
-      const kind = actorKind(entry.actor);
       rows.push({
-        key: String(index),
+        key: String(entry.seq),
         at: entry.at,
-        kind,
+        kind: actorKind(entry.actor),
         actor: entry.actor,
         lead: entry,
         steps: [],
       });
     }
     lastAt = entry.at;
-  });
+  }
   return rows.map(summarize).reverse();
 };
 
@@ -134,29 +137,22 @@ export const groupByDay = (rows: TimelineRow[], now: Date): TimelineDay[] => {
   return days;
 };
 
-/** Older entries read from the server: they cover indexes `[from, from + entries.length)`. */
-export interface LoadedHistory {
-  from: number;
-  entries: HistoryEntry[];
-}
-
 /**
- * The history to show: the view's recent entries, after the older ones read so far when they
- * reach them (the history only grows, so a run's later view still continues them), and how many
- * entries are older still.
+ * The history to show: older entries read so far (oldest first), then the view's recent ones, as
+ * long as they join up (entries are numbered without gaps, so a later view still continues what
+ * was loaded); and how many entries are older still.
  */
 export const mergeHistory = (
   view: Pick<InstanceView, "history" | "olderHistory">,
-  loaded: LoadedHistory | null
-): { history: HistoryEntry[]; older: number } => {
-  const base = view.olderHistory ?? 0;
-  if (!loaded || loaded.from + loaded.entries.length < base) {
-    return { history: view.history, older: base };
+  loaded: WorkflowEvent[]
+): { history: WorkflowEvent[]; older: number } => {
+  const firstShown = view.history[0]?.seq ?? view.olderHistory + 1;
+  const last = loaded.at(-1);
+  if (!last || last.seq + 1 < firstShown) {
+    return { history: view.history, older: view.olderHistory };
   }
-  return {
-    history: [...loaded.entries.slice(0, base - loaded.from), ...view.history],
-    older: loaded.from,
-  };
+  const history = [...loaded.filter((entry) => entry.seq < firstShown), ...view.history];
+  return { history, older: (history[0]?.seq ?? 1) - 1 };
 };
 
 // ---- Words ----------------------------------------------------------------------------------
@@ -164,8 +160,12 @@ export const mergeHistory = (
 type Titles = Record<string, string> | undefined;
 
 /** One step as a sentence: "“Reset” ran on Review." Used for automatic steps and failures. */
-export const stepSentence = (entry: HistoryEntry, titles: Titles, t: T): string => {
+export const stepSentence = (entry: WorkflowEvent, titles: Titles, t: T): string => {
   const stage = (name: string) => titleIn(titles, name, name);
+  if (!isKnownEvent(entry)) {
+    // Written by a newer version of the plugin: named, not explained.
+    return t("historyUnknown", { type: humanize(entry.type) });
+  }
   switch (entry.type) {
     case "started":
       return t("historyStarted", { stage: stage(entry.stage) });
@@ -177,7 +177,7 @@ export const stepSentence = (entry: HistoryEntry, titles: Titles, t: T): string 
       });
     }
     case "transition":
-      return t("historyTransition", { from: stage(entry.from), to: stage(entry.to) });
+      return t("historyTransition", { from: stage(entry.stage), to: stage(entry.toStage) });
     case "effect": {
       const effect = humanize(entry.effect);
       if (entry.status === "failed") {
@@ -194,6 +194,8 @@ export const stepSentence = (entry: HistoryEntry, titles: Titles, t: T): string 
       return t("historyCompleted");
     case "aborted":
       return t("historyAborted");
+    case "guard-bypassed":
+      return t("historyBypassed", { operation: operationsText([entry.operation], t) });
     default:
       return "";
   }
@@ -209,17 +211,51 @@ export const rowWho = (row: TimelineRow, people: People, t: T): string => {
   return row.kind === "agent" ? t("timelineByAgent", { name }) : name;
 };
 
+/**
+ * What caused an automatic row, after "Automated": "after Ann saved the document", "on schedule",
+ * "from Notify author". Nothing for a row a person's step caused (it is folded under it).
+ */
+export const rowCause = (row: TimelineRow, people: People, t: T): string | undefined => {
+  const { cause } = row;
+  if (row.kind !== "system" || !cause) {
+    return undefined;
+  }
+  const name = (by?: { id: string }) => (by ? personName(by.id, people, t) : undefined);
+  switch (cause.kind) {
+    case "save": {
+      const who = name(cause.by);
+      return who ? t("causeSaveBy", { name: who }) : t("causeSave");
+    }
+    case "delete": {
+      const who = name(cause.by);
+      return who ? t("causeDeleteBy", { name: who }) : t("causeDelete");
+    }
+    case "tick":
+      return t("causeTick");
+    case "start":
+      return t("causeStart");
+    case "effect":
+      return t("causeEffect", { effect: humanize(cause.effect) });
+    default:
+      return undefined;
+  }
+};
+
 /** What happened, after the dot: "Approve → moved to Approved → completed". */
 export const rowWhat = (row: TimelineRow, titles: Titles, t: T): string => {
   const stage = (name: string) => titleIn(titles, name, name);
   const parts: string[] = [];
   const first = row.lead ?? row.steps[0];
-  if (first?.type === "action" && row.lead) {
-    parts.push(titleIn(titles, `${first.stage}/${first.activity}/${first.action}`, first.action));
-  } else if (first?.type === "started") {
-    parts.push(t("timelineStarted", { stage: stage(first.stage) }));
-  } else if (first?.type === "aborted") {
-    parts.push(t("timelineAborted"));
+  if (first && isKnownEvent(first)) {
+    if (first.type === "action" && row.lead) {
+      parts.push(titleIn(titles, `${first.stage}/${first.activity}/${first.action}`, first.action));
+    } else if (first.type === "started") {
+      parts.push(t("timelineStarted", { stage: stage(first.stage) }));
+    } else if (first.type === "aborted") {
+      parts.push(t("timelineAborted"));
+    } else if (first.type === "guard-bypassed") {
+      parts.push(t("timelineBypassed", { operation: operationsText([first.operation], t) }));
+    }
   }
   if (row.movedTo !== undefined) {
     parts.push(t("timelineMovedTo", { stage: stage(row.movedTo) }));
@@ -227,8 +263,8 @@ export const rowWhat = (row: TimelineRow, titles: Titles, t: T): string => {
   if (row.completed) {
     parts.push(t("timelineCompleted"));
   }
-  if (parts.length === 0 && row.steps.length === 1 && row.steps[0]) {
-    return stepSentence(row.steps[0], titles, t);
+  if (parts.length === 0) {
+    return first ? stepSentence(first, titles, t) : "";
   }
   const text = parts.join(" → ");
   return text.charAt(0).toUpperCase() + text.slice(1);
@@ -237,10 +273,13 @@ export const rowWhat = (row: TimelineRow, titles: Titles, t: T): string => {
 /** The row's inputs, kept visible under its line: an action's params, an abort's reason. */
 export const rowDetails = (row: TimelineRow, titles: Titles, t: T): string[] => {
   const entry = row.lead ?? row.steps[0];
-  if (entry?.type === "aborted") {
+  if (!entry || !isKnownEvent(entry)) {
+    return [];
+  }
+  if (entry.type === "aborted") {
     return entry.reason ? [`${t("historyReason")}: ${entry.reason}`] : [];
   }
-  if (entry?.type !== "action") {
+  if (entry.type !== "action") {
     return [];
   }
   const base = `${entry.stage}/${entry.activity}/${entry.action}`;
@@ -252,12 +291,6 @@ export const rowDetails = (row: TimelineRow, titles: Titles, t: T): string[] => 
     );
 };
 
-/** Who started the run and when, from its first entry. */
-export const startOf = (history: HistoryEntry[]): { actor: Actor; at: string } | undefined => {
-  const first = history.find((entry) => entry.type === "started");
-  return first ? { actor: first.actor, at: first.at } : undefined;
-};
-
 /**
  * The last step a person or agent took and when the run last changed: what a finished run's
  * summary names ("last step “Approve” by Bea").
@@ -266,19 +299,20 @@ export const lastStepOf = (view: InstanceView): { actor?: Actor; action?: string
   const row = timelineRows(view.history).find((entry) => entry.lead);
   const lead = row?.lead;
   const action =
-    lead?.type === "action"
+    lead && isKnownEvent(lead) && lead.type === "action"
       ? titleIn(view.titles, `${lead.stage}/${lead.activity}/${lead.action}`, lead.action)
       : undefined;
+  const at = view.history.at(-1)?.at;
   return {
     ...(lead ? { actor: lead.actor } : {}),
     ...(action ? { action } : {}),
-    ...(view.history.at(-1)?.at ? { at: view.history.at(-1)?.at } : {}),
+    ...(at ? { at } : {}),
   };
 };
 
 /**
  * Why the run is where it is, when a person's step with params sent it there ("Request changes"
- * with a reason): who, which action, and its params. From the history, for any workflow.
+ * with a reason): who, which action, and its params. From the recent history, for any workflow.
  */
 export const enteredBecause = (
   view: InstanceView,
@@ -290,7 +324,10 @@ export const enteredBecause = (
   // The latest row that moved the run is the one that brought it into this stage.
   const row = timelineRows(view.history).find((entry) => entry.movedTo !== undefined);
   const lead = row?.lead;
-  if (!row || row.movedTo !== view.stage.name || lead?.type !== "action") {
+  if (!row || row.movedTo !== view.stage.name || !lead || !isKnownEvent(lead)) {
+    return undefined;
+  }
+  if (lead.type !== "action") {
     return undefined;
   }
   const details = rowDetails(row, view.titles, t);

@@ -1,6 +1,12 @@
 // The vocabulary: a workflow is a list of stages; a stage has actions (grouped in activities when
-// it has several parallel tasks) and transitions; a document's run holds the current stage, the
-// run's fields and its history. Types only: the engine that works on them never touches Payload.
+// it has several parallel tasks) and transitions; a document's run holds the current stage and the
+// run's fields; every step it takes is an event. Types only: the engine never touches Payload.
+
+/**
+ * A title or description: a string, or one per admin language (`{ en: "Review", de: "Prüfung" }`),
+ * like Payload's static labels. Views resolve it for the request's language.
+ */
+export type Label = string | Record<string, string>;
 
 export type UserActor = { id: string; collection: string; via: "admin" | "api" | "agent" };
 /** The engine itself (cascade, hooks, tick, effects). `id` is declared so `actor.id` reads as optional. */
@@ -23,7 +29,7 @@ export interface StartContext {
 export interface FieldDef {
   name: string;
   type: FieldType;
-  title?: string;
+  title?: Label;
   /**
    * The value a run starts with, type-checked like any write. A function gets the start context,
    * e.g. `({ actor }) => actor.id` to hold whoever started the run.
@@ -44,11 +50,16 @@ export type ParamType = "string" | "text" | "number" | "boolean" | "date" | "sel
 export interface ParamDef {
   name: string;
   type: ParamType;
-  title?: string;
-  description?: string;
+  title?: Label;
+  description?: Label;
   required?: boolean;
   /** Choices of a `select` param. */
   options?: (string | { label: string; value: string })[];
+  /**
+   * Most characters a `string` or `text` param accepts (default `TEXT_MAX_LENGTH`, 5000): what a
+   * caller sends is kept in the history for good. Longer input is `invalid-params`.
+   */
+  maxLength?: number;
 }
 
 /** What every condition sees. Caller-blind on purpose: the cascade runs for nobody in particular. */
@@ -87,8 +98,8 @@ export type Patch = Record<string, unknown>;
 
 interface ActionBase {
   name: string;
-  title?: string;
-  description?: string;
+  title?: Label;
+  description?: Label;
   /** Resolves the action's activity (for a stage with plain `actions`: the stage's task). */
   status?: ResolvedStatus;
   /** Names of effect handlers registered in the plugin options. */
@@ -131,16 +142,19 @@ interface Assignment {
 /** One of several parallel tasks in a stage. */
 export interface ActivityDef extends Assignment {
   name: string;
-  title?: string;
-  description?: string;
-  /** Existence, evaluated once at stage entry; `false` => `skipped`. */
-  filter?: Condition;
+  title?: Label;
+  description?: Label;
+  /**
+   * Evaluated once, on entering the stage: `true` skips the activity for this visit (`skipped`).
+   * Not the action's `filter` (may this caller fire it, checked every time).
+   */
+  skipIf?: Condition;
   actions: ActionDef[];
 }
 
 export interface TransitionDef {
   name: string;
-  title?: string;
+  title?: Label;
   to: string;
   /** Defaults to "every activity is done or skipped". */
   when?: Condition;
@@ -150,7 +164,7 @@ export type GuardOperation = "publish" | "update" | "delete";
 
 export interface GuardDef {
   name: string;
-  title?: string;
+  title?: Label;
   operations: GuardOperation[];
   unless?: Condition;
 }
@@ -162,8 +176,8 @@ export interface GuardDef {
  */
 export interface StageDef extends Assignment {
   name: string;
-  title?: string;
-  description?: string;
+  title?: Label;
+  description?: Label;
   actions?: ActionDef[];
   activities?: ActivityDef[];
   /** None => terminal: entering the stage completes the run. */
@@ -171,17 +185,27 @@ export interface StageDef extends Assignment {
   guards?: GuardDef[];
 }
 
-export type StartMode =
-  | "manual"
-  | "onCreate"
-  | { on: "create"; when: (args: { doc: Record<string, unknown> }) => boolean };
+/**
+ * How a run starts by itself: when a document is created (and `when`, if given, holds for it).
+ * Without `start` a person (or agent) starts it.
+ */
+export interface StartOnCreate {
+  on: "create";
+  when?: (args: { doc: Record<string, unknown> }) => boolean;
+}
 
 export interface WorkflowDefinition {
   name: string;
-  title?: string;
-  description?: string;
+  title?: Label;
+  description?: Label;
+  /**
+   * Stamped on every run started from this definition. Default: a short hash of its structure
+   * (stage, activity, action, transition and field names, transition targets, field types), so a
+   * run can tell that the workflow changed since it started. `defineWorkflow` fills it in.
+   */
+  version?: string | number;
   collections: string[];
-  start?: StartMode;
+  start?: StartOnCreate;
   initialStage: string;
   fields?: FieldDef[];
   stages: StageDef[];
@@ -195,35 +219,88 @@ export interface ActivityState {
   by?: Actor;
 }
 
-export type HistoryEntry = { at: string; actor: Actor } & (
-  | { type: "started"; stage: string }
-  | {
-      type: "action";
-      stage: string;
-      activity: string;
-      action: string;
-      auto: boolean;
-      params?: Record<string, unknown>;
-    }
-  | { type: "transition"; from: string; to: string; transition: string }
-  | {
-      type: "effect";
-      effect: string;
-      status: "queued" | "done" | "failed";
-      error?: string;
-      /**
-       * The effect finished after the run had left the stage visit that queued it: the fields it
-       * reported were ignored.
-       */
-      stale?: true;
-    }
-  | { type: "completed" }
-  | { type: "aborted"; reason?: string }
-);
+/** A user as an event or a cause names them. */
+export interface UserRef {
+  id: string;
+  collection: string;
+}
+
+/**
+ * Why the system took a step (on entries whose actor is the system): a person's or agent's step in
+ * the same operation (`step`), a document save or delete (with who did it, when known), the auto
+ * start on create, the tick, or an effect reporting back (with its Payload job id).
+ */
+export type Cause =
+  | { kind: "step" }
+  | { kind: "start" }
+  | { kind: "save"; by?: UserRef }
+  | { kind: "delete"; by?: UserRef }
+  | { kind: "tick" }
+  | { kind: "effect"; effect: string; job?: string };
+
+interface EventBase {
+  /** 1, 2, 3, … per run, gap-free: the order of the run's history. */
+  seq: number;
+  at: string;
+  actor: Actor;
+  /** On entries the system made: what caused them. */
+  cause?: Cause;
+}
+
+/** The entries this version of the plugin writes. */
+export type KnownWorkflowEvent = EventBase &
+  (
+    | { type: "started"; stage: string; definitionVersion: string }
+    | {
+        type: "action";
+        stage: string;
+        activity: string;
+        action: string;
+        params?: Record<string, unknown>;
+      }
+    | { type: "transition"; stage: string; transition: string; toStage: string }
+    | {
+        type: "effect";
+        /** The stage the effect was queued in. */
+        stage: string;
+        effect: string;
+        status: "queued" | "done" | "failed";
+        error?: string;
+        /**
+         * The effect finished after the run had left the stage visit that queued it: the fields it
+         * reported were ignored.
+         */
+        stale?: true;
+        /** The Payload job (`payload-jobs`) that runs it. */
+        job?: string;
+      }
+    | { type: "completed"; stage: string }
+    | { type: "aborted"; stage: string; reason?: string }
+    | {
+        /** A write went through a holding guard with the bypass flag (`WORKFLOW_BYPASS`). */
+        type: "guard-bypassed";
+        stage: string;
+        operation: GuardOperation;
+        guards: string[];
+      }
+  );
+
+/**
+ * An entry of a type this version does not know (written by a later one). Consumers must handle
+ * it: narrow with `isKnownEvent` first, and show or skip the rest. Unknown fields are kept.
+ */
+export interface UnknownWorkflowEvent extends EventBase {
+  type: string;
+  stage?: string;
+  [key: string]: unknown;
+}
+
+/** One entry of a run's history: a row of the `workflow-events` collection. */
+export type WorkflowEvent = KnownWorkflowEvent | UnknownWorkflowEvent;
 
 export type InstanceStatus = "active" | "completed" | "aborted";
 
-/** A run: the current stage, the run's fields and its history. */
+/** A run: the current stage, the run's fields, and what the engine needs to decide. */
 export interface InstanceState {
   workflow: string;
   stage: string;
@@ -233,15 +310,25 @@ export interface InstanceState {
   activities: Record<string, ActivityState>;
   /** `activity/action` auto actions already fired this stage visit. */
   fired: string[];
-  history: HistoryEntry[];
+  /** Which visit of its stage the run is in: the transitions it has taken. */
+  visit: number;
+  /** The stages it has entered, each once, in the order first entered (the current one too). */
+  visited: string[];
+  /** The `seq` its next event gets. */
+  nextSeq: number;
+  /** The definition version it started from (`WorkflowDefinition.version`). */
+  definitionVersion: string;
+  startedBy: Actor;
   startedAt: string;
   completedAt?: string;
 }
 
-/** What conditions read besides the run: the document and the clock. */
+/** What conditions read besides the run (the document and the clock), and what caused the step. */
 export interface Env {
   doc: Record<string, unknown> | null;
   now: Date;
+  /** Stamped on the entries the system makes in this step. */
+  cause?: Cause;
 }
 
 export interface Caller {
@@ -259,10 +346,12 @@ export interface QueuedEffect {
   visit: number;
 }
 
-/** What every engine operation returns: the new state and the effects it queued. */
+/** What every engine operation returns: the new state, the effects it queued and its events. */
 export interface Result {
   state: InstanceState;
   effects: QueuedEffect[];
+  /** Numbered from the state's `nextSeq`; the new state's `nextSeq` follows the last. */
+  events: KnownWorkflowEvent[];
 }
 
 // ---- The view: what the drawer and agents render --------------------------------------------
@@ -280,8 +369,14 @@ export interface ViewAction {
    * `not-active` (run or activity no longer active), `error` (a condition threw).
    */
   reasonCode?: ViewActionReason;
-  params: ParamDef[];
+  params: ViewParam[];
 }
+
+/** A param as a view shows it: title and description in the request's language. */
+export type ViewParam = Omit<ParamDef, "title" | "description"> & {
+  title?: string;
+  description?: string;
+};
 
 export type ViewActionReason =
   | "filter"
@@ -290,6 +385,8 @@ export type ViewActionReason =
   | "agents"
   | "not-active"
   | "error";
+
+export type StageState = "current" | "visited" | "unvisited";
 
 export interface ViewActivity {
   name: string;
@@ -309,18 +406,26 @@ export interface InstanceView {
   status: InstanceStatus;
   stuck?: "unknown-stage";
   stage: { name: string; title: string; description?: string };
-  stages: { name: string; title: string; state: "past" | "current" | "upcoming" }[];
+  /**
+   * Every stage in declaration order: the `current` one, those this run has `visited`, and those
+   * it has not (`unvisited`): what happened, not a position in a line.
+   */
+  stages: { name: string; title: string; state: StageState }[];
   activities: ViewActivity[];
   guards: { name: string; title: string; operations: string[] }[];
   /** User ids and roles the run waits on. */
   waitingOn: { users: string[]; roles: string[] };
   fields: Record<string, unknown>;
   /** The most recent history entries, oldest first (at most `HISTORY_IN_VIEW`). */
-  history: HistoryEntry[];
+  history: WorkflowEvent[];
   /** How many entries are older than `history` (read them with `getWorkflowHistory`). */
   olderHistory: number;
-  /** Who started the run and when, from its first history entry. */
-  started?: { at: string; actor: Actor };
+  /** Who started the run and when. */
+  started: { at: string; actor: Actor };
+  /** The definition version the run started from. */
+  definitionVersion: string;
+  /** The workflow's definition changed (in structure) since the run started. */
+  definitionChanged: boolean;
   /**
    * The definition's titles, so the history can name what it records even after the run left the
    * stage. Keyed by `stage`, `stage/activity`, `stage/activity/action` and

@@ -14,7 +14,8 @@ const fake = (name: string) => async (_payload: unknown, args: unknown) => {
   return calls.next ?? { ok: name };
 };
 
-vi.mock("../src/server/operations.js", () => ({
+vi.mock("../src/server/operations.js", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   startWorkflow: fake("start"),
   fireWorkflowAction: fake("fire"),
   abortWorkflow: fake("abort"),

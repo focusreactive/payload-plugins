@@ -13,21 +13,36 @@ export type {
   ActivityDef,
   Actor,
   CallerCondition,
+  Cause,
   Condition,
   FieldDef,
   GuardDef,
-  HistoryEntry,
   InstanceState,
   InstanceView,
+  KnownWorkflowEvent,
+  Label,
   ParamDef,
   StageDef,
+  StartOnCreate,
   TransitionDef,
+  UnknownWorkflowEvent,
   WorkflowDefinition,
+  WorkflowEvent,
 } from "./types.js";
+export { KNOWN_EVENT_TYPES, isKnownEvent, labelText } from "./vocabulary.js";
 export { WorkflowError, isWorkflowError } from "./engine/errors.js";
 export type { WorkflowErrorCode } from "./engine/errors.js";
 export { createWorkflowSimulator } from "./engine/simulator.js";
-export { WORKFLOW_BYPASS } from "./constants.js";
+export {
+  EVENTS_SLUG,
+  RUNS_SLUG,
+  SCHEMA_VERSION,
+  TEXT_MAX_LENGTH,
+  WORKFLOW_BYPASS,
+  WORKFLOW_SKIP,
+} from "./constants.js";
+export { definitionVersionOf } from "./define.js";
+export { pruneWorkflows } from "./server/store.js";
 export {
   abortWorkflow,
   fireWorkflowAction,

@@ -17,33 +17,52 @@ import {
   holdingGuards,
   isAuto,
   mayAbort,
+  recordBypass,
   settle,
   start,
 } from "../engine/engine.js";
 import { WorkflowError } from "../engine/errors.js";
-import { view } from "../engine/view.js";
+import { HISTORY_IN_VIEW, view } from "../engine/view.js";
 import type { WorkflowAccess, WorkflowAccessArgs, WorkflowsSettings } from "../plugin.js";
 import type {
+  Actor,
   Caller,
+  Cause,
+  GuardDef,
+  GuardOperation,
   InstanceView,
+  Label,
   Patch,
   StageDef,
   UserActor,
+  UserRef,
   WorkflowDefinition,
 } from "../types.js";
-import {
-  WITHOUT_HISTORY,
-  createRun,
-  isRunning,
-  loadRun,
-  mutateRun,
-  subjectOf,
-  toState,
-} from "./store.js";
+import { labelText } from "../vocabulary.js";
+import { readEvents } from "./events.js";
+import { createRun, isRunning, loadRun, mutateRun, subjectOf, toState } from "./store.js";
 import type { Committed, InstanceDoc, JobId, Subject } from "./store.js";
 import { transactionOf } from "./transaction.js";
 
 type Via = UserActor["via"];
+
+/** The admin language of a request (`req.i18n`), for titles given per language. */
+export const languageOf = (req: PayloadRequest): string | undefined => req.i18n?.language;
+
+/** A definition's title in the request's language, else `fallback`. */
+export const titleIn = (req: PayloadRequest, label: Label | undefined, fallback: string): string =>
+  labelText(label, languageOf(req)) ?? fallback;
+
+/** How a user came in: an API key is a script; any other session is someone in the admin. */
+export const viaOf = (user: TypedUser): Via =>
+  (user as { _strategy?: string })._strategy === "api-key" ? "api" : "admin";
+
+/** A user as a cause names them. */
+export const userRefOf = (user: TypedUser | null | undefined): UserRef | undefined =>
+  user ? { id: String(user.id), collection: user.collection } : undefined;
+
+/** What caused a step a person or agent took (the system's entries in it). */
+const STEP: Cause = { kind: "step" };
 
 // ---- Settings, users and access -----------------------------------------------------------------
 
@@ -97,6 +116,12 @@ export const allowedBy = async (
     ? (await check(args)) === true
     : args.user.collection === args.req.payload.config.admin?.user;
 
+/** The run as access callbacks see it. */
+const runOf = (doc: InstanceDoc): NonNullable<WorkflowAccessArgs["run"]> => ({
+  id: String(doc.id),
+  fields: { ...(doc.fields ?? {}) },
+});
+
 /**
  * May `user` stop this run? `access.abort` decides when the host set it. Otherwise a user of the
  * admin user collection, and while a guard holds the document only one who may act in its stage
@@ -112,7 +137,15 @@ const mayStop = async (
   const { payload } = req;
   const def = definitionOrStandIn(payload, doc);
   const check = settingsOf(payload).access.abort;
-  const args = { req, user, workflow: def, ...subjectOf(doc), doc: subject };
+  const args: WorkflowAccessArgs = {
+    req,
+    user,
+    workflow: def,
+    ...subjectOf(doc),
+    doc: subject,
+    stage: doc.stage,
+    run: runOf(doc),
+  };
   if (check) {
     return allowedBy(check, args);
   }
@@ -234,6 +267,7 @@ export const runJobsInline = async (payload: Payload, jobs: JobId[]): Promise<bo
 /** Who the system is when a view is built for it (effect handlers): it may fire nothing. */
 const SYSTEM_CALLER: Caller = { actor: { id: "system", collection: "", via: "api" }, roles: [] };
 
+/** The subject document's title (its collection's `useAsTitle`), if it has one. */
 export const titleOf = (
   payload: Payload,
   collection: string,
@@ -245,9 +279,11 @@ export const titleOf = (
 };
 
 /**
- * The engine's view for `user`, plus what only the server knows: the run's id, its document and
- * whether `user` may abort it (`false` without a user). `via` is how they came in: it changes
- * nothing except for an agent, which may not take a step reserved for a person (`agents: "deny"`).
+ * The engine's view for `user`, plus what only the server knows: the run's id, its document, its
+ * most recent events (one indexed read of at most `HISTORY_IN_VIEW` rows, whatever the history's
+ * length) and whether `user` may abort it (`false` without a user). `via` is how they came in: it
+ * changes nothing except for an agent, which may not take a step reserved for a person
+ * (`agents: "deny"`). Callers have checked that `user` may read the run.
  */
 export const presentRun = async (
   req: PayloadRequest,
@@ -259,7 +295,14 @@ export const presentRun = async (
   const { payload } = req;
   const def = definitionOrStandIn(payload, doc);
   const caller = user ? callerOf(payload, user, via) : SYSTEM_CALLER;
-  const projected = view(def, toState(doc), caller, { doc: subject, now: new Date() });
+  const events = await readEvents(req, doc.id, { limit: HISTORY_IN_VIEW });
+  const projected = view(
+    def,
+    toState(doc),
+    caller,
+    { doc: subject, now: new Date() },
+    { events, language: languageOf(req) }
+  );
   const title = titleOf(payload, doc.subjectCollection, subject);
   const canAbort =
     doc.status === "active" && user ? await mayStop(req, doc, subject, user, via) : false;
@@ -326,7 +369,7 @@ export const startRun = async (
   ) {
     throw new WorkflowError(
       "not-allowed",
-      `You are not allowed to start "${def.title ?? def.name}".`
+      `You are not allowed to start "${titleIn(req, def.title, def.name)}".`
     );
   }
   if (await isRunning(req, def.name, subject)) {
@@ -337,7 +380,9 @@ export const startRun = async (
   }
   const via = args.via ?? "api";
   const actor = args.user ? callerOf(payload, args.user, via).actor : SYSTEM;
-  const result = start(def, { fields: args.fields, actor }, { doc, now: new Date() });
+  // Started by nobody in particular: the auto-start on create.
+  const cause: Cause = args.user ? STEP : { kind: "start" };
+  const result = start(def, { fields: args.fields, actor }, { doc, now: new Date(), cause });
   const committed = await createRun(req, def, result, subject);
   return answer(req, committed, doc, args.user, via);
 };
@@ -372,12 +417,19 @@ export const fireWorkflowAction = async (
   const existing = await loadRun(req, args.instanceId);
   const subject = await loadSubject(req, subjectOf(existing), user);
   const def = definitionOf(payload, existing.workflow);
+  // The activity the action is fired on: named, or the stage's only one.
+  const activities = activitiesOf(findStage(def, existing.stage));
+  const activity = args.activity ?? (activities.length === 1 ? activities[0]?.name : undefined);
   const allowed = await allowedBy(settingsOf(payload).access.fire, {
     req,
     user,
     workflow: def,
     ...subjectOf(existing),
     doc: subject,
+    stage: existing.stage,
+    ...(activity === undefined ? {} : { activity }),
+    action: args.action,
+    run: runOf(existing),
   });
   if (!allowed) {
     throw new WorkflowError("not-allowed", "You are not allowed to move this workflow.");
@@ -386,7 +438,7 @@ export const fireWorkflowAction = async (
   const input = { activity: args.activity, action: args.action, params: args.params };
   // The run as just read is the compare-and-swap's first attempt: no second read.
   const committed = await mutateRun(req, def, existing, (state) =>
-    fire(def, state, input, caller, { doc: subject, now: new Date() })
+    fire(def, state, input, caller, { doc: subject, now: new Date(), cause: STEP })
   );
   return answer(req, committed, subject, user, via);
 };
@@ -395,6 +447,7 @@ export const fireWorkflowAction = async (
 
 export interface AbortArgs {
   instanceId: string | number;
+  /** Kept in the history; at most `TEXT_MAX_LENGTH` characters (`invalid-params`). */
   reason?: string;
   /** Who aborts it. Required: a missing user is `unauthorized`. */
   user: TypedUser | null | undefined;
@@ -402,10 +455,10 @@ export interface AbortArgs {
   via?: Via;
 }
 
-/** `user: null` aborts as the system (hooks only). */
+/** `user: null` aborts as the system (hooks only), with what caused it. */
 export const abortRun = async (
   req: PayloadRequest,
-  args: Omit<AbortArgs, "user" | "req"> & { user: TypedUser | null }
+  args: Omit<AbortArgs, "user" | "req"> & { user: TypedUser | null; cause?: Cause }
 ): Promise<InstanceView> => {
   const { payload } = req;
   const via = args.via ?? "api";
@@ -421,14 +474,15 @@ export const abortRun = async (
     throw new WorkflowError(
       "not-allowed",
       guard && stage
-        ? `${holdMessage(guard.operations, guard.title)} Only someone who can act in “${stage.title ?? stage.name}” may stop the workflow now.`
+        ? `${holdMessage(guard.operations, labelText(guard.title, languageOf(req)))} Only someone who can act in “${titleIn(req, stage.title, stage.name)}” may stop the workflow now.`
         : "You are not allowed to stop this workflow."
     );
   }
   const actor = args.user ? callerOf(payload, args.user, via).actor : SYSTEM;
   const def = settingsOf(payload).workflows.find((entry) => entry.name === existing.workflow);
+  const cause = args.user ? STEP : args.cause;
   const committed = await mutateRun(req, def, existing, (state) =>
-    abort(state, { reason: args.reason, actor }, { doc: subject, now: new Date() })
+    abort(state, { reason: args.reason, actor }, { doc: subject, now: new Date(), cause })
   );
   return answer(req, committed, subject, args.user, via);
 };
@@ -442,28 +496,51 @@ export const abortWorkflow = async (payload: Payload, args: AbortArgs): Promise<
 // ---- Settle (after a save, on the tick) ---------------------------------------------------------
 
 /**
- * Settles one run as the system. Writes only when something moved; returns whether it did and the
- * effect jobs it queued. `doc` may be read without its history (`WITHOUT_HISTORY`): whether
- * anything moves is decided on it first, and only a run that moves is reloaded whole and written.
+ * Settles one run as the system, for `cause` (a save, the tick). Writes only when something moved
+ * (decided on `doc` as read, with no write); returns whether it did and the effect jobs it queued.
  */
 export const settleRun = async (
   req: PayloadRequest,
   doc: InstanceDoc,
   subject: Record<string, unknown> | null,
+  cause: Cause,
   now = new Date()
 ): Promise<{ advanced: boolean; jobs: JobId[] }> => {
   const def = settingsOf(req.payload).workflows.find((entry) => entry.name === doc.workflow);
   if (!def) {
     return { advanced: false, jobs: [] };
   }
+  const env = { doc: subject, now, cause };
   const read = toState(doc);
-  if (settle(def, read, { doc: subject, now }).state === read) {
+  if (settle(def, read, env).state === read) {
     return { advanced: false, jobs: [] };
   }
-  const committed = await mutateRun(req, def, doc.id, (state) =>
-    settle(def, state, { doc: subject, now })
-  );
+  const committed = await mutateRun(req, def, doc, (state) => settle(def, state, env));
   return { advanced: committed.doc.revision !== doc.revision, jobs: committed.jobs };
+};
+
+/**
+ * Leaves a trace on a run when a write went through its holding `guards` with the bypass flag:
+ * a `guard-bypassed` event naming the operation and who wrote (`user`, else the system). In the
+ * write's own transaction.
+ */
+export const traceBypass = async (
+  req: PayloadRequest,
+  doc: InstanceDoc,
+  input: { operation: GuardOperation; guards: GuardDef[]; user: TypedUser | null | undefined }
+): Promise<void> => {
+  const def = settingsOf(req.payload).workflows.find((entry) => entry.name === doc.workflow);
+  const actor: Actor = input.user
+    ? callerOf(req.payload, input.user, viaOf(input.user)).actor
+    : SYSTEM;
+  const guards = input.guards.map((guard) => guard.name);
+  await mutateRun(req, def, doc, (state) =>
+    recordBypass(
+      state,
+      { operation: input.operation, guards, actor },
+      { doc: null, now: new Date() }
+    )
+  );
 };
 
 /** Active runs the tick reads per page. */
@@ -552,7 +629,6 @@ export const tickWorkflows = async (
           ...(after === undefined ? [] : [{ id: { greater_than: after } }]),
         ],
       },
-      select: WITHOUT_HISTORY,
       sort: "id",
       limit: TICK_PAGE,
       pagination: false,
@@ -569,7 +645,7 @@ export const tickWorkflows = async (
       checked += 1;
       try {
         const subject = subjects?.get(`${doc.subjectCollection}:${doc.subjectId}`) ?? null;
-        const outcome = await settleRun(req, doc, subject);
+        const outcome = await settleRun(req, doc, subject, { kind: "tick" });
         advanced += outcome.advanced ? 1 : 0;
         jobs.push(...outcome.jobs);
       } catch (error) {

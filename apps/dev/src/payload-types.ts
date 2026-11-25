@@ -79,6 +79,7 @@ export interface Config {
     'comment-reads': CommentRead;
     'translator-provenance': TranslatorProvenance;
     'workflow-instances': WorkflowInstance;
+    'workflow-events': WorkflowEvent;
     'payload-mcp-api-keys': PayloadMcpApiKey;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
@@ -99,6 +100,7 @@ export interface Config {
     'comment-reads': CommentReadsSelect<false> | CommentReadsSelect<true>;
     'translator-provenance': TranslatorProvenanceSelect<false> | TranslatorProvenanceSelect<true>;
     'workflow-instances': WorkflowInstancesSelect<false> | WorkflowInstancesSelect<true>;
+    'workflow-events': WorkflowEventsSelect<false> | WorkflowEventsSelect<true>;
     'payload-mcp-api-keys': PayloadMcpApiKeysSelect<false> | PayloadMcpApiKeysSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
@@ -815,7 +817,8 @@ export interface WorkflowInstance {
     | number
     | boolean
     | null;
-  history?:
+  visit: number;
+  visited?:
     | {
         [k: string]: unknown;
       }
@@ -824,12 +827,58 @@ export interface WorkflowInstance {
     | number
     | boolean
     | null;
+  nextSeq: number;
+  startedBy?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  schemaVersion: number;
+  definitionVersion?: string | null;
   assignees?: string | null;
   revision: number;
   activeKey: string;
   completedAt?: string | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "workflow-events".
+ */
+export interface WorkflowEvent {
+  id: number;
+  run: string;
+  seq: number;
+  type: string;
+  at: string;
+  workflow: string;
+  subjectCollection: string;
+  subjectId: string;
+  stage?: string | null;
+  actorId?: string | null;
+  actorCollection?: string | null;
+  via?: string | null;
+  cause?: string | null;
+  activity?: string | null;
+  action?: string | null;
+  transition?: string | null;
+  toStage?: string | null;
+  effect?: string | null;
+  status?: string | null;
+  detail?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
 }
 /**
  * API keys control which collections, resources, tools, and prompts MCP clients can access
@@ -1049,6 +1098,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'workflow-instances';
         value: number | WorkflowInstance;
+      } | null)
+    | ({
+        relationTo: 'workflow-events';
+        value: number | WorkflowEvent;
       } | null)
     | ({
         relationTo: 'payload-mcp-api-keys';
@@ -1471,13 +1524,43 @@ export interface WorkflowInstancesSelect<T extends boolean = true> {
   fields?: T;
   activities?: T;
   fired?: T;
-  history?: T;
+  visit?: T;
+  visited?: T;
+  nextSeq?: T;
+  startedBy?: T;
+  schemaVersion?: T;
+  definitionVersion?: T;
   assignees?: T;
   revision?: T;
   activeKey?: T;
   completedAt?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "workflow-events_select".
+ */
+export interface WorkflowEventsSelect<T extends boolean = true> {
+  run?: T;
+  seq?: T;
+  type?: T;
+  at?: T;
+  workflow?: T;
+  subjectCollection?: T;
+  subjectId?: T;
+  stage?: T;
+  actorId?: T;
+  actorCollection?: T;
+  via?: T;
+  cause?: T;
+  activity?: T;
+  action?: T;
+  transition?: T;
+  toStage?: T;
+  effect?: T;
+  status?: T;
+  detail?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1692,8 +1775,8 @@ export interface TaskWorkflowsPluginEffect {
     effect: string;
     activity: string;
     action: string;
-    stage?: string | null;
-    visit?: string | null;
+    stage: string;
+    visit: string;
   };
   output?: unknown;
 }

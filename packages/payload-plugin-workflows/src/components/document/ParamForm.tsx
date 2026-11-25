@@ -12,20 +12,20 @@ import {
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
-import type { ParamDef } from "../../types.js";
+import type { ViewParam } from "../../types.js";
 import { initialInputs, optionsOf, paramLabel, readParams } from "../shared/format.js";
 import type { ParamInput } from "../shared/format.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
 
 interface Props {
-  defs: ParamDef[];
+  defs: ViewParam[];
   submitLabel: string;
   busy?: boolean;
   onSubmit: (params: Record<string, unknown>) => void;
   onCancel: () => void;
 }
 
-const pathOf = (def: ParamDef) => `workflow-param-${def.name}`;
+const pathOf = (def: ViewParam) => `workflow-param-${def.name}`;
 
 /**
  * The small form an action's `params` describe, validated before it is sent. Shown in place of the
@@ -58,7 +58,7 @@ export const ParamForm = ({ defs, submitLabel, busy = false, onSubmit, onCancel 
     }
   };
 
-  const field = (def: ParamDef): ReactNode => {
+  const field = (def: ViewParam): ReactNode => {
     const path = pathOf(def);
     const label = paramLabel(def);
     const value = inputs[def.name];

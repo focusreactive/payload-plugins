@@ -1,7 +1,7 @@
-// The reads: the runs on one document, a run's older history, the inbox, the widget's boards, the
-// configured workflows. Runs are read with the caller's access: the runs collection's own `read`
-// access (`readRuns` in store.ts) keeps out runs on documents the caller cannot read, in the
-// database query itself, so pages, counts and totals are the database's.
+// The reads: the runs on one document, a page of a run's history, the inbox, the widget's boards,
+// the configured workflows. Runs and events are read with the caller's access: the collections'
+// own `read` access (`readWorkflows` in access.ts) keeps out runs and events on documents the
+// caller cannot read, in the database query itself, so pages, counts and totals are the database's.
 
 import type {
   CollectionSlug,
@@ -18,24 +18,29 @@ import { findStage } from "../engine/engine.js";
 import { WorkflowError } from "../engine/errors.js";
 import { HISTORY_IN_VIEW } from "../engine/view.js";
 import type {
-  HistoryEntry,
   InstanceState,
   InstanceView,
   UserActor,
   WorkflowDefinition,
+  WorkflowEvent,
 } from "../types.js";
+import { labelText } from "../vocabulary.js";
+import { hiddenCollectionsOf } from "./access.js";
+import { readEvents } from "./events.js";
 import {
   allowedBy,
   assertSubjectCollection,
   definitionOrStandIn,
+  languageOf,
   loadSubject,
   presentRun,
   requestFor,
   requireUser,
   settingsOf,
+  titleIn,
   titleOf,
 } from "./operations.js";
-import { hiddenCollectionsOf, subjectWhere } from "./store.js";
+import { subjectWhere } from "./store.js";
 import type { InstanceDoc } from "./store.js";
 
 /** A refusal of the runs collection's `read` access is `not-allowed`. */
@@ -46,7 +51,7 @@ const refused = (error: unknown): never => {
   throw error;
 };
 
-/** The columns a summary needs: everything but the run's state and history. */
+/** The columns a summary needs: everything but the run's state. */
 const SUMMARY_SELECT: SelectType = {
   workflow: true,
   subjectCollection: true,
@@ -180,48 +185,55 @@ export const getWorkflowState = async (
       continue;
     }
     if (await allowedBy(settings.access.start, { req, user, workflow: def, ...subject, doc })) {
+      const description = labelText(def.description, languageOf(req));
       available.push({
         name: def.name,
-        title: def.title ?? def.name,
-        ...(def.description ? { description: def.description } : {}),
-        stages: def.stages.map((stage) => ({ name: stage.name, title: stage.title ?? stage.name })),
+        title: titleIn(req, def.title, def.name),
+        ...(description ? { description } : {}),
+        stages: def.stages.map((stage) => ({
+          name: stage.name,
+          title: titleIn(req, stage.title, stage.name),
+        })),
       });
     }
   }
   return { instances, available, ...hiddenOf(req, args.collection) };
 };
 
+/** Most entries one history page returns. */
+const HISTORY_PAGE_MAX = 200;
+
 /**
- * Older history of a run the caller may read: the `limit` entries before index `before` (oldest
- * first; `before` defaults to the end), and how many are older still. A view carries the most
- * recent entries and `olderHistory`, their count: pass that as `before` for the page before it.
+ * A page of a run's history, as the caller may read it (the events' read access): the `limit`
+ * entries before the one numbered `before` (default: the latest ones), oldest first, and how many
+ * are older still. Entries are numbered 1, 2, … per run (`seq`), so a view's `olderHistory` + 1 is
+ * the `before` of the page just older than it. One indexed read, whatever the history's length.
  */
 export const getWorkflowHistory = async (
   payload: Payload,
   args: {
     instanceId: string | number;
+    /** An entry's `seq`: return entries before it. */
     before?: number;
     limit?: number;
     user: TypedUser | null | undefined;
     req?: PayloadRequest;
   }
-): Promise<{ entries: HistoryEntry[]; older: number }> => {
+): Promise<{ entries: WorkflowEvent[]; older: number }> => {
   const user = requireUser(args.user);
   const req = await requestFor(payload, user, args.req);
-  const [run] = await readRuns(req, user, {
-    where: { id: { equals: args.instanceId } },
-    sort: "id",
-    limit: 1,
-    select: { history: true },
-  });
-  if (!run) {
+  const limit = Math.min(HISTORY_PAGE_MAX, Math.max(1, Math.floor(args.limit ?? HISTORY_IN_VIEW)));
+  const before = args.before === undefined ? undefined : Math.max(1, Math.floor(args.before));
+  if (before === 1) {
+    return { entries: [], older: 0 };
+  }
+  const entries = await readEvents(req, args.instanceId, { limit, before, user }).catch(refused);
+  const [first] = entries;
+  if (!first) {
+    // Every run has at least its `started` entry: none readable means no run the caller may read.
     throw new WorkflowError("unknown-instance", `There is no workflow run "${args.instanceId}".`);
   }
-  const history = run.history ?? [];
-  const before = Math.min(history.length, Math.max(0, Math.floor(args.before ?? history.length)));
-  const limit = Math.min(200, Math.max(1, Math.floor(args.limit ?? HISTORY_IN_VIEW)));
-  const from = Math.max(0, before - limit);
-  return { entries: history.slice(from, before), older: from };
+  return { entries, older: first.seq - 1 };
 };
 
 export interface InstanceSummary {
@@ -322,10 +334,10 @@ const summarize = async (
     return {
       id: String(doc.id),
       workflow: doc.workflow,
-      workflowTitle: def.title ?? def.name,
+      workflowTitle: titleIn(req, def.title, def.name),
       status: doc.status,
       ...(stage ? {} : { stuck: "unknown-stage" as const }),
-      stage: { name: doc.stage, title: stage?.title ?? doc.stage },
+      stage: { name: doc.stage, title: titleIn(req, stage?.title, doc.stage) },
       subject: {
         collection: doc.subjectCollection,
         id: doc.subjectId,
@@ -420,21 +432,25 @@ export interface DefinitionSummary {
   stages: { name: string; title: string; final: boolean }[];
 }
 
-/** The configured workflows, for the dashboard widget and agents. */
+/** The configured workflows, for the dashboard widget and agents; titles in `language`. */
 export const listWorkflowDefinitions = (
-  payload: Payload
+  payload: Payload,
+  language?: string
 ): { definitions: DefinitionSummary[] } => ({
-  definitions: settingsOf(payload).workflows.map((def) => ({
-    name: def.name,
-    title: def.title ?? def.name,
-    ...(def.description ? { description: def.description } : {}),
-    collections: [...def.collections],
-    stages: def.stages.map((stage) => ({
-      name: stage.name,
-      title: stage.title ?? stage.name,
-      final: (stage.transitions ?? []).length === 0,
-    })),
-  })),
+  definitions: settingsOf(payload).workflows.map((def) => {
+    const description = labelText(def.description, language);
+    return {
+      name: def.name,
+      title: labelText(def.title, language) ?? def.name,
+      ...(description ? { description } : {}),
+      collections: [...def.collections],
+      stages: def.stages.map((stage) => ({
+        name: stage.name,
+        title: labelText(stage.title, language) ?? stage.name,
+        final: (stage.transitions ?? []).length === 0,
+      })),
+    };
+  }),
 });
 
 export interface BoardColumn {
@@ -473,7 +489,7 @@ export const workflowBoards = async (
   const columns: { column: BoardColumn; docs: InstanceDoc[] }[] = [];
   const boards: Board[] = [];
   let unshown = 0;
-  for (const def of listWorkflowDefinitions(payload).definitions) {
+  for (const def of listWorkflowDefinitions(payload, languageOf(req)).definitions) {
     const ofWorkflow: Where[] = [active, { workflow: { equals: def.name } }];
     const total = await countRuns(req, user, { and: ofWorkflow });
     if (total === 0) {

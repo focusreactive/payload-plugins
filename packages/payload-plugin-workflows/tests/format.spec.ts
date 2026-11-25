@@ -11,7 +11,7 @@ import {
 } from "../src/components/shared/format.js";
 import type { T } from "../src/components/shared/format.js";
 import { en } from "../src/translations.js";
-import type { ParamDef } from "../src/types.js";
+import type { ViewParam } from "../src/types.js";
 
 /** Payload's interpolation and `_one` / `_other` plurals over the English strings. */
 const t: T = (key, vars = {}) => {
@@ -42,7 +42,7 @@ describe("waiting on", () => {
 });
 
 describe("param form", () => {
-  const defs: ParamDef[] = [
+  const defs: ViewParam[] = [
     { name: "reason", type: "text", title: "Reason", required: true },
     { name: "score", type: "number" },
     { name: "urgent", type: "boolean" },

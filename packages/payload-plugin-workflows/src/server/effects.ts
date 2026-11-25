@@ -1,6 +1,6 @@
 // Effects run as Payload jobs, queued in the same transaction as the change that caused them
 // (store.ts). This is the job: run the registered handler, record the outcome in the run's
-// history, and apply the `{ set }` it may report back.
+// history (with the job's id), and apply the `{ set }` it may report back.
 
 import type { PayloadRequest, TaskConfig } from "payload";
 
@@ -16,9 +16,9 @@ interface EffectInput {
   effect: string;
   activity: string;
   action: string;
-  /** The stage visit that queued it (absent on jobs queued before visits were recorded). */
-  stage?: string;
-  visit?: string;
+  /** The stage visit that queued it. */
+  stage: string;
+  visit: string;
 }
 
 const messageOf = (error: unknown): string =>
@@ -35,29 +35,30 @@ const RECORD_ATTEMPTS = 25;
 const record = (
   req: PayloadRequest,
   def: WorkflowDefinition | undefined,
-  input: EffectInput,
+  input: EffectInput & { job: string },
   outcome: Parameters<typeof recordEffect>[3],
   subject: Record<string, unknown> | null
-) =>
-  mutateRun(
+) => {
+  // One time for the outcome and what it moves, so the history reads them as one step.
+  const env = {
+    doc: subject,
+    now: new Date(),
+    cause: { kind: "effect" as const, effect: input.effect, job: input.job },
+  };
+  const effect = {
+    name: input.effect,
+    stage: input.stage,
+    visit: Number(input.visit),
+    job: input.job,
+  };
+  return mutateRun(
     req,
     def,
     input.instanceId,
-    (state) =>
-      recordEffect(
-        def,
-        state,
-        {
-          name: input.effect,
-          ...(input.stage === undefined ? {} : { stage: input.stage }),
-          ...(input.visit ? { visit: Number(input.visit) } : {}),
-        },
-        outcome,
-        // One time for the outcome and what it moves, so the history reads them as one step.
-        { doc: subject, now: new Date() }
-      ),
+    (state) => recordEffect(def, state, effect, outcome, env),
     RECORD_ATTEMPTS
   );
+};
 
 /**
  * One effect job: run the registered handler, then record it. A throwing handler is recorded as
@@ -65,7 +66,10 @@ const record = (
  * so it is never run again because recording its outcome failed. At least once: a retry after a
  * failure, or a crash before the job is marked done, runs the handler again.
  */
-const runEffect = async (req: PayloadRequest, input: EffectInput): Promise<void> => {
+const runEffect = async (
+  req: PayloadRequest,
+  input: EffectInput & { job: string }
+): Promise<void> => {
   const { payload } = req;
   const settings = settingsOf(payload);
   const doc = await loadRun(req, input.instanceId);
@@ -91,8 +95,8 @@ const runEffect = async (req: PayloadRequest, input: EffectInput): Promise<void>
         name: input.effect,
         activity: input.activity,
         action: input.action,
-        stage: input.stage ?? doc.stage,
-        visit: Number(input.visit ?? 0),
+        stage: input.stage,
+        visit: Number(input.visit),
       },
     });
   } catch (error) {
@@ -146,8 +150,8 @@ export const effectTask = (serialise: boolean): TaskConfig => ({
     text("effect"),
     text("activity"),
     text("action"),
-    text("stage", false),
-    text("visit", false),
+    text("stage"),
+    text("visit"),
   ],
   ...(serialise
     ? {
@@ -155,8 +159,8 @@ export const effectTask = (serialise: boolean): TaskConfig => ({
           `${EFFECT_TASK}:${(input as Partial<EffectInput> | undefined)?.instanceId ?? ""}`,
       }
     : {}),
-  handler: async ({ input, req }) => {
-    await runEffect(req, input as unknown as EffectInput);
+  handler: async ({ input, job, req }) => {
+    await runEffect(req, { ...(input as unknown as EffectInput), job: String(job.id) });
     return { output: {} };
   },
 });

@@ -5,6 +5,7 @@ import { activitiesWithPaths, defineWorkflow, definitionIssues, formatIssues } f
 import { workflowEndpoints } from "./endpoints.js";
 import { hasDrafts, withWorkflowHooks } from "./hooks.js";
 import { effectTask, tickTask } from "./server/effects.js";
+import { eventsCollection } from "./server/events.js";
 import { runsCollection } from "./server/store.js";
 import { NAMESPACE, en } from "./translations.js";
 import type { InstanceView, Patch, QueuedEffect, WorkflowDefinition } from "./types.js";
@@ -39,6 +40,14 @@ export interface WorkflowAccessArgs {
   id: string;
   /** The subject document (latest draft), read with `user`'s access. */
   doc: Record<string, unknown> | null;
+  /** The run's current stage (`fire`, `abort`). */
+  stage?: string;
+  /** The activity the action is fired on, when named or the stage's only one (`fire`). */
+  activity?: string;
+  /** The action being fired (`fire`). */
+  action?: string;
+  /** The run (`fire`, `abort`): its id and fields. */
+  run?: { id: string; fields: Record<string, unknown> };
 }
 
 export type WorkflowAccess = (args: WorkflowAccessArgs) => boolean | Promise<boolean>;
@@ -57,7 +66,8 @@ export interface WorkflowsPluginOptions {
   /**
    * Who may start a run, fire an action or abort a run. Only `true` allows. Default: a user of the
    * admin user collection (`admin.user`). The document is always read with the user's access
-   * first, so someone who cannot read it is refused before these run.
+   * first, so someone who cannot read it is refused before these run. `fire` also gets the stage,
+   * activity, action and run (`{ id, fields }`); `abort` the stage and run.
    */
   access?: { start?: WorkflowAccess; fire?: WorkflowAccess; abort?: WorkflowAccess };
   /** Default `true`: the "Workflows" dashboard widget, first on the default dashboard. */
@@ -201,8 +211,9 @@ export const withWidget = (dashboard: Dashboard | undefined): Dashboard => {
 /**
  * Adds to each collection a workflow runs on: the indicator beside Save / Publish (it opens the
  * drawer) and the hooks (guards, auto-start, settle on save, abort on delete). Adds the runs
- * collection (the "Workflows" list in the admin) with the endpoints, the effect and tick jobs, the
- * dashboard widget and the admin strings. Disabled, only the runs collection and the jobs.
+ * collection (the "Workflows" list in the admin) with the endpoints, the events collection (each
+ * run's history), the effect and tick jobs, the dashboard widget and the admin strings. Disabled,
+ * only the two collections and the jobs.
  */
 export const workflowsPlugin =
   (options: WorkflowsPluginOptions): Plugin =>
@@ -254,6 +265,7 @@ export const workflowsPlugin =
           });
         }),
         runs,
+        eventsCollection(),
       ],
       // English strings for every locale, under the host's own translations of them.
       i18n: {

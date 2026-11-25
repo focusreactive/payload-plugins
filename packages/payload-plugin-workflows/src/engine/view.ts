@@ -1,12 +1,17 @@
+import { definitionVersionOf } from "../define.js";
 import type {
   Caller,
   CallerActionDef,
   Env,
   InstanceState,
   InstanceView,
+  Label,
+  StageState,
   ViewAction,
   WorkflowDefinition,
+  WorkflowEvent,
 } from "../types.js";
+import { labelText } from "../vocabulary.js";
 import {
   activitiesOf,
   findStage,
@@ -44,11 +49,15 @@ export const waitingOnOf = (
 };
 
 /** Every declared title, keyed by `stage`, `stage/activity`, `…/action` and `…/action/param`. */
-const titlesOf = (def: WorkflowDefinition): Record<string, string> => {
+const titlesOf = (
+  def: WorkflowDefinition,
+  text: (label: Label | undefined) => string | undefined
+): Record<string, string> => {
   const titles: Record<string, string> = {};
-  const add = (key: string, title: string | undefined) => {
-    if (title) {
-      titles[key] = title;
+  const add = (key: string, title: Label | undefined) => {
+    const value = text(title);
+    if (value) {
+      titles[key] = value;
     }
   };
   for (const stage of def.stages) {
@@ -70,41 +79,54 @@ const titlesOf = (def: WorkflowDefinition): Record<string, string> => {
 /** History entries a view carries: the most recent ones; older ones are read on demand. */
 export const HISTORY_IN_VIEW = 50;
 
-/** The projection every surface renders: what is going on and what this caller may do. */
+/** What a view shows besides the run: its most recent events, and the reader's language. */
+export interface ViewInput {
+  /** The run's most recent events, oldest first (the server reads `HISTORY_IN_VIEW` of them). */
+  events: WorkflowEvent[];
+  /** The admin language titles are resolved for (per-language titles); default English. */
+  language?: string;
+}
+
+/**
+ * The projection every surface renders: what is going on and what this caller may do. Without
+ * `input` it carries no history.
+ */
 export const view = (
   def: WorkflowDefinition,
   state: InstanceState,
   caller: Caller,
-  env: Env
+  env: Env,
+  { events, language }: ViewInput = { events: [] }
 ): InstanceView => {
+  const text = (label: Label | undefined) => labelText(label, language);
   const stage = findStage(def, state.stage);
-  const [first] = state.history;
-  const currentIndex = def.stages.findIndex((entry) => entry.name === state.stage);
+  const history = events.slice(-HISTORY_IN_VIEW);
+  const first = history[0];
   return {
     workflow: def.name,
-    title: def.title ?? def.name,
+    title: text(def.title) ?? def.name,
     status: state.status,
     ...(stage ? {} : { stuck: "unknown-stage" as const }),
     stage: {
       name: state.stage,
-      title: stage?.title ?? state.stage,
-      ...(stage?.description ? { description: stage.description } : {}),
+      title: text(stage?.title) ?? state.stage,
+      ...(stage?.description ? { description: text(stage.description) } : {}),
     },
-    stages: def.stages.map((entry, index) => {
-      let position: "past" | "current" | "upcoming" = "upcoming";
-      if (index === currentIndex) {
+    stages: def.stages.map((entry) => {
+      let position: StageState = "unvisited";
+      if (entry.name === state.stage) {
         position = "current";
-      } else if (currentIndex >= 0 && index < currentIndex) {
-        position = "past";
+      } else if (state.visited.includes(entry.name)) {
+        position = "visited";
       }
-      return { name: entry.name, title: entry.title ?? entry.name, state: position };
+      return { name: entry.name, title: text(entry.title) ?? entry.name, state: position };
     }),
     activities: activitiesOf(stage).map((activity) => {
       const assignee = heldAssignee(state, activity);
       return {
         name: activity.name,
-        title: activity.title ?? activity.name,
-        ...(activity.description ? { description: activity.description } : {}),
+        title: text(activity.title) ?? activity.name,
+        ...(activity.description ? { description: text(activity.description) } : {}),
         status: statusOf(state, activity.name),
         ...(assignee ? { assignee } : {}),
         ...(activity.roles ? { roles: [...activity.roles] } : {}),
@@ -125,28 +147,35 @@ export const view = (
             }
             return {
               name: action.name,
-              title: action.title ?? action.name,
-              ...(action.description ? { description: action.description } : {}),
+              title: text(action.title) ?? action.name,
+              ...(action.description ? { description: text(action.description) } : {}),
               allowed: verdict.allowed,
               ...(verdict.allowed
                 ? {}
                 : { reason: verdict.reason, reasonCode: verdict.reasonCode }),
-              params: callable.params ?? [],
+              params: (callable.params ?? []).map(({ title, description, ...param }) => ({
+                ...param,
+                ...(title === undefined ? {} : { title: text(title) }),
+                ...(description === undefined ? {} : { description: text(description) }),
+              })),
             };
           }),
       };
     }),
     guards: holdingGuards(def, state, env).map((guard) => ({
       name: guard.name,
-      title: guard.title ?? guard.name,
+      title: text(guard.title) ?? guard.name,
       operations: [...guard.operations],
     })),
     waitingOn: waitingOnOf(def, state),
     fields: { ...state.fields },
-    history: state.history.slice(-HISTORY_IN_VIEW),
-    olderHistory: Math.max(0, state.history.length - HISTORY_IN_VIEW),
-    ...(first?.type === "started" ? { started: { at: first.at, actor: first.actor } } : {}),
-    titles: titlesOf(def),
+    history,
+    // Events are numbered 1, 2, … without gaps: everything before the first one shown is older.
+    olderHistory: first ? first.seq - 1 : Math.max(0, state.nextSeq - 1),
+    started: { at: state.startedAt, actor: state.startedBy },
+    definitionVersion: state.definitionVersion,
+    definitionChanged: state.definitionVersion !== definitionVersionOf(def),
+    titles: titlesOf(def, text),
     canAbort: false,
   };
 };

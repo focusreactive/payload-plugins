@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { defineWorkflow, definitionIssues } from "../src/define.js";
+import { defineWorkflow, definitionIssues, definitionVersionOf } from "../src/define.js";
 import type { WorkflowDefinition } from "../src/types.js";
 import { editorialReview, minimal } from "./fixtures.js";
 
@@ -258,9 +258,9 @@ describe("plain stage actions", () => {
 });
 
 describe("defineWorkflow", () => {
-  it("returns the definition when valid", () => {
+  it("returns the definition when valid, with its version filled in", () => {
     const def = minimal();
-    expect(defineWorkflow(def)).toEqual(def);
+    expect(defineWorkflow(def)).toEqual({ ...def, version: definitionVersionOf(def) });
   });
 
   it("throws one error collecting every problem, path-prefixed", () => {
@@ -284,5 +284,89 @@ describe("defineWorkflow", () => {
     expect(() => defineWorkflow(def)).toThrowError(
       'defineWorkflow("minimal") failed validation (1 issue):\n  - collections: at least one subject collection is required'
     );
+  });
+});
+
+describe("start", () => {
+  it('is left out (a person starts it) or `{ on: "create", when? }`; the string forms are gone', () => {
+    expect(issuesOf((def) => (def.start = { on: "create" }))).toEqual([]);
+    expect(issuesOf((def) => (def.start = { on: "create", when: () => true }))).toEqual([]);
+    for (const old of ["manual", "onCreate", { on: "update" }]) {
+      expect(issuesOf((def) => (def.start = old as never))).toEqual([
+        'start: start must be `{ on: "create", when? }` (started when a document is created); leave it out for a workflow people start',
+      ]);
+    }
+  });
+});
+
+describe("param maxLength", () => {
+  const withParam = (param: object) =>
+    issuesOf((def) => {
+      workA(def).actions.push({ name: "note", params: [{ name: "text", ...param } as never] });
+    });
+
+  it("is a positive integer, on string and text params only", () => {
+    expect(withParam({ type: "text", maxLength: 200 })).toEqual([]);
+    expect(withParam({ type: "string", maxLength: 0 })).toEqual([
+      'stages[0].activities[0].actions[1].params[0].maxLength: param "text" `maxLength` must be a positive integer',
+    ]);
+    expect(withParam({ type: "number", maxLength: 3 })).toEqual([
+      'stages[0].activities[0].actions[1].params[0].maxLength: `maxLength` applies to "string" and "text" params, not "number"',
+    ]);
+  });
+});
+
+describe("definition version", () => {
+  it("is the declared one, else a short hash of the structure", () => {
+    expect(definitionVersionOf({ ...minimal(), version: 3 })).toBe("3");
+    expect(definitionVersionOf({ ...minimal(), version: "2026-11" })).toBe("2026-11");
+    expect(definitionVersionOf(minimal())).toMatch(/^[0-9a-z]{1,11}$/u);
+    expect(issuesOf((def) => (def.version = ""))).toEqual([
+      "version: version must be a non-empty string or a number",
+    ]);
+  });
+
+  it("changes with names, order, transition targets and field types, not titles or functions", () => {
+    const base = definitionVersionOf(minimal());
+    const changed = (change: (def: WorkflowDefinition) => void) => {
+      const def = minimal();
+      change(def);
+      return definitionVersionOf(def);
+    };
+    // Not structure: titles, descriptions, conditions, statuses.
+    expect(
+      changed((def) => {
+        def.title = { en: "Minimal", de: "Minimal" };
+        stageA(def).title = "A";
+        stageA(def).description = "First";
+        workA(def).skipIf = () => false;
+        workA(def).actions[0]!.title = "Finish it";
+      })
+    ).toBe(base);
+    // Structure.
+    expect(changed((def) => (workA(def).actions[0]!.name = "complete"))).not.toBe(base);
+    expect(changed((def) => (stageA(def).transitions![0]!.to = "a"))).not.toBe(base);
+    expect(changed((def) => (def.fields![0]!.type = "string"))).not.toBe(base);
+    expect(changed((def) => def.stages.reverse())).not.toBe(base);
+    expect(changed((def) => (def.name = "other"))).not.toBe(base);
+  });
+
+  it("is the same for plain stage `actions` and the one activity they stand for", () => {
+    expect(definitionVersionOf(editorialReview)).toBe(editorialReview.version);
+    const raw: WorkflowDefinition = {
+      name: "x",
+      collections: ["pages"],
+      initialStage: "a",
+      stages: [
+        {
+          name: "a",
+          actions: [{ name: "go", status: "done" }],
+          transitions: [{ name: "t", to: "b" }],
+        },
+        { name: "b" },
+      ],
+    };
+    expect(defineWorkflow(raw).version).toBe(definitionVersionOf(raw));
+    expect(defineWorkflow(defineWorkflow(raw)).version).toBe(definitionVersionOf(raw));
   });
 });
