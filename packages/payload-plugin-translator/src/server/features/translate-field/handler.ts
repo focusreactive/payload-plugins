@@ -14,7 +14,8 @@ import { FieldTranslationInputSchema, MAX_FIELD_VALUE_BYTES } from "./model.js";
 import type { FieldTranslationConfig } from "./model.js";
 import { resolveFieldSubtree } from "./resolveFieldSubtree.js";
 import { reportRunOutcome } from "../_lib/index.js";
-import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
+import { fetchDocumentLocale } from "../../shared/payload/documentLocale.js";
+import { latestOf } from "../../shared/payload/worldOfCollection.js";
 import { mayInitiate } from "../../shared/access/permission.js";
 
 const byteLength = (value: unknown): number =>
@@ -84,11 +85,12 @@ export class TranslateFieldHandler {
     });
     if (!mayTranslate) return ServerResponse.forbidden();
 
-    const sourceDoc = await fetchSourceDocument({
+    const sourceDoc = await fetchDocumentLocale({
       payload: req.payload,
       collection: collection_slug,
       id: doc_id,
       locale: source_lng,
+      read: latestOf(req.payload, collection_slug),
       user: req.user,
     });
 

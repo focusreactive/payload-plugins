@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 import { AUTO_TRANSLATE_CUSTOM_KEY } from "../../../../../core/domain/auto-translate/index.js";
 import type { AutoTranslateConfig } from "../../../../../core/domain/auto-translate/index.js";
 
-import { resolveAutoTranslateSummary } from "../autoTranslateSummary.js";
+import { resolveAutoTranslateSummary } from "../autoTranslateSummary.server.js";
 
 const withConfig = (config: AutoTranslateConfig) => ({
   custom: { [AUTO_TRANSLATE_CUSTOM_KEY]: config },

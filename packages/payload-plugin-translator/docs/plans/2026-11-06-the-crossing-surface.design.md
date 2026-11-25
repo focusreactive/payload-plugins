@@ -385,14 +385,14 @@ One upward edge remains, test-only and type-only; see Accepted deviations.
    four kernel fixtures take the one type. Verifies: every kernel fixture suite green with the same
    cases, including that an embed with no name still yields no crossing; the architecture test
    asserting every `src/core/** → src/languages/**` import is type-only and under `__tests__/`.
-   · covers: R1, R3 · via /sp-task · incremental
+   · covers: R1, R3 · incremental
 2. **Rename to Payload's Lexical.** `PayloadLexical.language.ts`, `payloadLexicalLanguage`,
    `PAYLOAD_LEXICAL_ID`; the barrel updated. Verifies: a pure rename — the whole suite green with no
-   behavioural difference, `src/index.ts` unchanged. · covers: R3 · via /sp-task · incremental
+   behavioural difference, `src/index.ts` unchanged. · covers: R3 · incremental
 3. **The crossing entry carries its id.** `ContentCrossing = { languageId, open }`; `lexicalContent()`
    declares the id; the host consults it before calling `open`. Verifies: a red-first regression test
    that a host declining a format leaves the stored value untouched — without the id the entry has
-   already seated a clone of the source over it. · covers: R2 · via /sp-task · incremental
+   already seated a clone of the source over it. · covers: R2 · incremental
 4. **The declaration: type, carrier, resolution, writer.** The key and the declaration types move
    into the kernel; `FieldTranslationConfig` gains `crossing?`; `FieldLike.content` and its
    resolution inside `FieldProjection` through the existing block path; `withFieldTranslation` merges
@@ -400,17 +400,17 @@ One upward edge remains, test-only and type-only; see Accepted deviations.
    published name. Verifies: the three spellings resolve to the stated effective lists; a declared
    inline block keeps nested `localized` after a simulated sanitize; a self-referential declaration
    terminates; a crossing on a `json` field adds no admin component; the kernel-to-domain import rule.
-   · covers: R2, R5 · via /sp-task · incremental
+   · covers: R2, R5 · incremental
 5. **The host reads the declaration.** `payloadFieldsLanguage` keeps its lists as the default and
    prefers a field's resolved Map per list; `formats` filters the crossing list; the per-field
    resolver is built per boundary call. Verifies: two rich-text fields in one collection with
    different lists translate differently — the case that is inexpressible today; a field with no
-   declaration behaves exactly as today; zero Map builds per crossing. · covers: R2, R5 · via /sp-task
+   declaration behaves exactly as today; zero Map builds per crossing. · covers: R2, R5
    · incremental
 6. **Boot refusal.** One pass in `plugin.ts` after the schema map, beside the existing refusal:
    unknown format id, unresolvable embed slug, each naming collection, field path and value.
    Verifies: each case throws at config build with the path in the message; a valid config boots
-   unchanged; the sandbox app still starts. · covers: R4 · via /sp-task · incremental
+   unchanged; the sandbox app still starts. · covers: R4 · incremental
 
 Every in-scope requirement lands in at least one step. No step is big-bang: none of this is wired
 into the translation pipeline yet, and no stored data has the old shape.
@@ -483,10 +483,11 @@ into the translation pipeline yet, and no stored data has the old shape.
 
 ### Next
 
-`/sp-seam-trace` on this file — three or more seams meet here (host language ↔ format language, both
-languages ↔ the embed convention, the projection ↔ the host, the plugin boot check ↔ the schema map),
-and one of them is the seam whose earlier shape already produced a correctness hazard. Then `/sp-task`
-on build step 1.
+A scenario walk across this file's seams — three or more of them meet here (host language ↔
+format language, both languages ↔ the embed convention, the projection ↔ the host, the plugin
+boot check ↔ the schema map),
+and one of them is the seam whose earlier shape already produced a correctness hazard. Then build
+step 1.
 
 ## Withdrawal — 2026-11-08
 

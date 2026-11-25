@@ -12,8 +12,8 @@ import type {
   FieldLike,
   FieldStructure,
   LeafField,
+  TabLike,
   TabScope,
-  TabsFieldLike,
 } from "./types.js";
 
 /**
@@ -83,30 +83,19 @@ export function classifyField(field: FieldLike): FieldStructure {
 }
 
 /**
- * Flatten a `tabs` field's tabs into {@link TabScope}s, absorbing the named/unnamed +
- * `hasFields` handling that field traversals would otherwise each repeat.
- *
- * @param field - A {@link TabsFieldLike}.
- * @returns One {@link TabScope} per tab that has fields, in declaration order:
- * - a **named** tab → `{ named: true, tab }` — it opens a data boundary at `tab.name`, and
- *   the `NamedTab` is surfaced so callers can read its `name`/`fields`/config;
- * - an **unnamed** tab → `{ named: false, fields }` — its fields live in the parent's data
- *   scope, so only the `fields` are needed.
- *
- * @example
- * ```ts
- * for (const scope of tabScopes(tabsField)) {
- *   if (scope.named) descendInto(data[scope.tab.name], scope.tab.fields);
- *   else descendInto(data, scope.fields); // unnamed tab — same data scope as the parent
- * }
- * ```
- * @public
+ * One {@link TabScope} per tab, in declaration order: a named tab opens a data boundary at its
+ * `name`; an unnamed tab's fields live in the parent's data scope; a tab with no field list is
+ * dropped.
  */
-export function tabScopes(field: TabsFieldLike): TabScope[] {
-  const scopes: TabScope[] = [];
+export function tabScopes<T extends TabLike>(field: { tabs: T[] }): TabScope<T>[] {
+  const scopes: TabScope<T>[] = [];
   for (const tab of field.tabs) {
-    if (tabHasName(tab)) scopes.push({ named: true, tab });
-    else if (hasFields(tab)) scopes.push({ named: false, fields: tab.fields });
+    if (tabHasName(tab)) {
+      scopes.push({ named: true, tab });
+      continue;
+    }
+    const { fields } = tab;
+    if (Array.isArray(fields)) scopes.push({ named: false, fields });
   }
   return scopes;
 }

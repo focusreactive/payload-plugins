@@ -5,6 +5,7 @@ import type { TaskEvent } from "../server/modules/task-runner/types.js";
 import type { TranslationLifecycleCallbacks } from "../server/modules/lifecycle/types.js";
 
 import { translatorPlugin } from "../plugin.js";
+import { TranslatorConfigError } from "../core/errors/index.js";
 import { AnyAccessGuard } from "../server/shared/access/AnyAccessGuard.js";
 import type { TranslatorPluginConfig } from "../plugin.js";
 import { withAutoTranslate } from "../auto-translate-config.js";
@@ -33,6 +34,7 @@ const makeCollection = () => ({
 });
 const makeRunner = () => ({
   capabilities: { stop: true, run: true },
+  report: vi.fn(),
   create: vi.fn(),
   configure: vi.fn().mockReturnValue((c: Config) => c),
 });
@@ -68,7 +70,7 @@ describe("translatorPlugin — the listed surfaces", () => {
     expect(paths).toContain("/translate/enqueue");
     expect(paths).not.toContain(STALENESS_PATH);
     expect(paths).not.toContain(DISMISS_PATH);
-    expect(result.endpoints).toHaveLength(5);
+    expect(result.endpoints).toHaveLength(8);
   });
 
   it("registers the staleness routes once provenance is switched on", async () => {
@@ -77,13 +79,24 @@ describe("translatorPlugin — the listed surfaces", () => {
 
     expect(paths).toContain(STALENESS_PATH);
     expect(paths).toContain(DISMISS_PATH);
-    expect(result.endpoints).toHaveLength(7);
+    expect(result.endpoints).toHaveLength(10);
   });
 
   it("refuses to start when the surfaces are not listed at all", async () => {
     await expect(build({ modules: undefined, components: undefined })).rejects.toThrow(
       /`modules` and `components` are both required/u
     );
+  });
+
+  // One class for every refusal the host can cause, so a host can tell its own mistake from ours
+  // without reading the sentence.
+  it("refuses a host mistake as a configuration error, not a bare one", async () => {
+    await expect(build({ modules: undefined, components: undefined })).rejects.toThrow(
+      TranslatorConfigError
+    );
+    await expect(
+      build({ modules: [documentTranslation(), documentTranslation()] })
+    ).rejects.toThrow(TranslatorConfigError);
   });
 
   it("refuses two modules that share a name", async () => {
@@ -107,7 +120,7 @@ describe("translatorPlugin — the listed surfaces", () => {
   it("boots a chain whose modules all differ", async () => {
     const { result } = await build({ modules: [documentTranslation(), fieldTranslation()] });
 
-    expect(result.endpoints).toHaveLength(6);
+    expect(result.endpoints).toHaveLength(9);
   });
 
   it("names the replacement for each level it removed", async () => {
@@ -133,7 +146,7 @@ describe("translatorPlugin — the listed surfaces", () => {
     } as unknown as Config);
     const twice = await translatorPlugin(pluginConfig)(once);
 
-    expect(twice.endpoints).toHaveLength(5);
+    expect(twice.endpoints).toHaveLength(8);
   });
 
   it("adds the cache provider and configures the runner once", async () => {
@@ -161,32 +174,12 @@ describe("translatorPlugin — the listed surfaces", () => {
 });
 
 describe("translatorPlugin — listing the surfaces one at a time", () => {
-  it.each([
-    ["can stop work", { stop: true, run: true }, true],
-    ["cannot", { stop: false, run: false }, false],
-  ])(
-    "tells the bulk dashboard whether the runner %s, so it draws no control for a route that is not there",
-    async (_label, capabilities, expected) => {
-      const { posts } = await build({
-        runner: {
-          capabilities,
-          create: vi.fn(),
-          configure: vi.fn().mockReturnValue((c: Config) => c),
-        } as unknown as TranslatorPluginConfig["runner"],
-      });
-
-      expect(posts.admin.components.beforeListTable[0].serverProps).toMatchObject({
-        canStop: expected,
-      });
-    }
-  );
-
   it("one control only → bundle present, doc popup yes, bulk dashboard no", async () => {
     const { result, posts } = await build({
       modules: [documentTranslation()],
       components: [translateDocumentControl()],
     });
-    expect(result.endpoints).toHaveLength(5);
+    expect(result.endpoints).toHaveLength(8);
     expect(posts.admin.components.edit.beforeDocumentControls).toHaveLength(1);
     expect(posts.admin.components.beforeListTable).toBeUndefined();
   });
@@ -276,6 +269,7 @@ describe("translatorPlugin — provenance (opt-in)", () => {
         create: vi.fn(),
         configure: vi.fn().mockReturnValue((c: Config) => c),
         capabilities: { stop: true, run: true },
+        report: vi.fn(),
       },
       modules: [documentTranslation()],
       components: [translateDocumentControl(), bulkTranslationDashboard()],
@@ -305,6 +299,7 @@ describe("translatorPlugin — provenance (opt-in)", () => {
           create: vi.fn(),
           configure: vi.fn().mockReturnValue((c: Config) => c),
           capabilities: { stop: true, run: true },
+          report: vi.fn(),
         },
         modules: [documentTranslation()],
         components: [translateDocumentControl(), bulkTranslationDashboard()],
@@ -349,6 +344,7 @@ describe("translatorPlugin — provenance (opt-in)", () => {
         create: vi.fn(),
         configure: vi.fn().mockReturnValue((c: Config) => c),
         capabilities: { stop: true, run: true },
+        report: vi.fn(),
       },
       modules: [documentTranslation()],
       components: [translateDocumentControl(), bulkTranslationDashboard()],
@@ -516,6 +512,7 @@ describe("translatorPlugin — lifecycle callbacks", () => {
       let captured: TaskRunnerContext | undefined;
       const runner = {
         capabilities: { stop: true, run: true },
+        report: vi.fn(),
         create: vi.fn().mockReturnValue({
           enqueue: vi.fn().mockResolvedValue([]),
           stop: vi.fn(),

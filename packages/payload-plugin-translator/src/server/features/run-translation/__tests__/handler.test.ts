@@ -37,6 +37,7 @@ describe("RunTranslationHandler", () => {
     mockTaskRunnerFactory = {
       create: vi.fn().mockReturnValue(mockTaskRunner),
       capabilities: { stop: true, run: true },
+      report: vi.fn(),
     };
 
     runs = storeDouble({
@@ -197,7 +198,11 @@ describe("RunTranslationHandler", () => {
       const cannotRun = { enqueue: vi.fn() } as unknown as TaskRunner;
       const handler = new RunTranslationHandler(
         AVAILABLE,
-        { create: vi.fn().mockReturnValue(cannotRun), capabilities: { stop: false, run: false } },
+        {
+          create: vi.fn().mockReturnValue(cannotRun),
+          capabilities: { stop: false, run: false },
+          report: vi.fn(),
+        },
         () => runs
       );
 

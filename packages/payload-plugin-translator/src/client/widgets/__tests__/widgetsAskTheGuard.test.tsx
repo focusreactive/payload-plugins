@@ -38,7 +38,6 @@ const documentProps = (access: AccessGuard): DocumentProps =>
     user: { id: "u1" },
     payload,
     collection: { slug: "posts", fields: [] },
-    targetSelection: "single",
   }) as unknown as DocumentProps;
 
 const dashboardProps = (access: AccessGuard): DashboardProps =>
@@ -47,7 +46,6 @@ const dashboardProps = (access: AccessGuard): DashboardProps =>
     collectionSlug: "posts",
     user: { id: "u1" },
     payload,
-    targetSelection: "single",
   }) as unknown as DashboardProps;
 
 const widgets = [

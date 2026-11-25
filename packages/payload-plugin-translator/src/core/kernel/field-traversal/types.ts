@@ -156,9 +156,9 @@ export type FieldStructure =
  * @see {@link tabScopes}
  * @public
  */
-export type TabScope =
-  | { named: true; tab: TabLike & { name: string } }
-  | { named: false; fields: FieldLike[] };
+export type TabScope<T extends TabLike = TabLike> =
+  | { named: true; tab: T & { name: string } }
+  | { named: false; fields: T["fields"] };
 
 /**
  * Control signal a walker callback can return instead of descending.

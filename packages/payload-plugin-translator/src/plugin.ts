@@ -1,6 +1,7 @@
 import type { Block, CollectionConfig, Config } from "payload";
 
 import { CacheProviderExport } from "./client/app/cache/CacheProvider.export.js";
+import { collectionFacts } from "./client/app/cache/collectionFacts.js";
 import { configureAutoTranslate } from "./server/modules/auto-translate/index.js";
 import { configureProvenance } from "./server/modules/provenance/index.js";
 import { translationLanguages } from "./server/features/_lib/index.js";
@@ -19,6 +20,13 @@ import type {
   TranslationModule,
 } from "./server/modules/plugin-config/index.js";
 import { PluginConfigBuilder } from "./server/modules/plugin-config/PluginConfigBuilder.js";
+import { deriveAbilities } from "./server/modules/plugin-config/index.js";
+import { TranslatorConfigError } from "./core/errors/index.js";
+import { unsupportedWorldOf } from "./server/shared/payload/worldOfCollection.js";
+import type {
+  HostExperiments,
+  NamedCollection,
+} from "./server/shared/payload/worldOfCollection.js";
 import { resolveSettings } from "./settings.js";
 import type { TranslatorSettingsOptions } from "./settings.js";
 
@@ -131,14 +139,14 @@ export type TranslatorPluginConfig = TranslatorSettingsOptions & {
 /** Each field is required by the type, so only a plain-JavaScript caller reaches these. */
 function refuseAnUnusableConfig(pluginConfig: TranslatorPluginConfig): void {
   if (!pluginConfig.access) {
-    throw new Error(
+    throw new TranslatorConfigError(
       "payload-plugin-translator: `access` is required. Pass an access guard, or " +
         "`new AnyAccessGuard()` to leave the translation endpoints open on purpose."
     );
   }
 
   if (!pluginConfig.modules || !pluginConfig.components) {
-    throw new Error(
+    throw new TranslatorConfigError(
       "payload-plugin-translator: `modules` and `components` are both required, and `[]` is a " +
         "valid answer for either. `levels` is gone: `documentLevel()` becomes " +
         "`modules: [documentTranslation()]` plus `components: [translateDocumentControl()]`, " +
@@ -150,6 +158,21 @@ function refuseAnUnusableConfig(pluginConfig: TranslatorPluginConfig): void {
 }
 
 /**
+ * Read here rather than at boot because this is where the host's own words are still visible: a
+ * world the host wrote itself should stop the application before it serves, at the moment the
+ * configuration is read.
+ */
+function refuseAWorldWeCannotServe(
+  collections: readonly NamedCollection[],
+  experiments: HostExperiments | undefined
+): void {
+  for (const collection of collections) {
+    const unsupported = unsupportedWorldOf(collection, experiments);
+    if (unsupported) throw new TranslatorConfigError(`payload-plugin-translator: ${unsupported}`);
+  }
+}
+
+/**
  * A module's name keys its slot in the run's `moduleState`, so two modules sharing one would share
  * the slot: the second overwrites, and the first reads back a value that is not its own.
  */
@@ -157,7 +180,7 @@ function refuseDuplicateNames(chain: readonly TranslationModule[]): void {
   const seen = new Set<string>();
   for (const member of chain) {
     if (seen.has(member.name)) {
-      throw new Error(
+      throw new TranslatorConfigError(
         `payload-plugin-translator: two modules are named "${member.name}". ` +
           "Module names must differ — each one keys its own state for the duration of a run."
       );
@@ -228,6 +251,7 @@ export function translatorPlugin(
     const settings = resolveSettings(pluginConfig);
 
     refuseAnUnusableConfig(pluginConfig);
+    refuseAWorldWeCannotServe(collections, payloadConfig.experimental);
 
     const schemaMap: CollectionSchemaMap = new Map(
       collections.map((col) => [
@@ -273,6 +297,14 @@ export function translatorPlugin(
       access,
       taskRunnerFactory,
       runRecordStoreFactory: runRecord.storeFactory,
+      ...(provenanceParts
+        ? {
+            provenance: {
+              storeFactory: provenanceParts.storeFactory,
+              stalenessFactory: provenanceParts.stalenessFactory,
+            },
+          }
+        : {}),
       schemaMap,
       translationProvider,
       walk,
@@ -285,7 +317,17 @@ export function translatorPlugin(
     builder.addConfigModifier(runRecord.refuseACollidingSlug);
     builder.addConfigModifier(runRecord.addTheCollection);
     builder.addConfigModifier(runRecord.cleanUpOnDelete(collectionSlugs));
-    builder.addAdminProvider(new CacheProviderExport(settings.basePath));
+    builder.addAdminProvider(
+      ({ config, endpoints }) =>
+        new CacheProviderExport({
+          basePath: settings.basePath,
+          abilities: deriveAbilities(endpoints, settings.basePath),
+          collections: collectionFacts(
+            (config.collections ?? []).filter((collection) => collectionSlugs.has(collection.slug)),
+            config.localization ? config.localization.defaultLocale : undefined
+          ),
+        })
+    );
 
     return builder.applyTo(payloadConfig);
   };

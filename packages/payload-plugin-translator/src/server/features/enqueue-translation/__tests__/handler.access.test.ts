@@ -34,6 +34,7 @@ describe("enqueue asks about every document it was named", () => {
   const request = (body: unknown): PayloadRequest =>
     ({
       payload: {
+        collections: {},
         config: { localization: { locales: ["en", "de", "fr"] } },
         logger: { warn: vi.fn() },
       } as unknown as Payload,
@@ -63,9 +64,17 @@ describe("enqueue asks about every document it was named", () => {
       stop: vi.fn(),
       run: vi.fn(),
     };
-    factory = { create: vi.fn().mockReturnValue(runner), capabilities: { stop: true, run: true } };
+    factory = {
+      create: vi.fn().mockReturnValue(runner),
+      capabilities: { stop: true, run: true },
+      report: vi.fn(),
+    };
     handler = new EnqueueTranslationHandler(
-      { availableCollections: new Set(["posts"] as CollectionSlug[]) },
+      {
+        availableCollections: new Set(["posts"] as CollectionSlug[]),
+        canHoldText: () => true,
+        holdsText: () => true,
+      },
       factory,
       () => storeDouble()
     );
@@ -74,7 +83,7 @@ describe("enqueue asks about every document it was named", () => {
   it("does not queue a document the update rule refuses", async () => {
     refusing("theirs");
 
-    await handler.handle(request(twoDocuments));
+    await handler.handleList(request(twoDocuments));
 
     expect(queuedIds()).not.toContain("theirs");
   });
@@ -82,7 +91,7 @@ describe("enqueue asks about every document it was named", () => {
   it("still queues the documents in the same request that it allows", async () => {
     refusing("theirs");
 
-    await handler.handle(request(twoDocuments));
+    await handler.handleList(request(twoDocuments));
 
     expect(queuedIds()).toEqual(["mine"]);
   });
@@ -90,7 +99,7 @@ describe("enqueue asks about every document it was named", () => {
   it("names the refused documents in the answer", async () => {
     refusing("theirs");
 
-    const body = await (await handler.handle(request(twoDocuments))).json();
+    const body = await (await handler.handleList(request(twoDocuments))).json();
 
     expect(body).toMatchObject({ data: { refused: ["theirs"], queued: 1 } });
   });
@@ -98,7 +107,7 @@ describe("enqueue asks about every document it was named", () => {
   it("names a refused document once however many locales asked for it", async () => {
     refusing("theirs");
 
-    const body = await (await handler.handle(request(twoDocumentsTwoLocales))).json();
+    const body = await (await handler.handleList(request(twoDocumentsTwoLocales))).json();
 
     expect(body.data.refused).toEqual(["theirs"]);
   });
@@ -106,13 +115,13 @@ describe("enqueue asks about every document it was named", () => {
   it("counts the queued tasks, not the queued documents", async () => {
     refusing("theirs");
 
-    const body = await (await handler.handle(request(twoDocumentsTwoLocales))).json();
+    const body = await (await handler.handleList(request(twoDocumentsTwoLocales))).json();
 
     expect(body.data.queued).toBe(2);
   });
 
   it("asks about the ids the caller named, for this collection and this user", async () => {
-    await handler.handle(request(twoDocuments));
+    await handler.handleList(request(twoDocuments));
 
     expect(refusedTargets).toHaveBeenCalledWith(
       expect.objectContaining({ collection: "posts", ids: ["mine", "theirs"], user: ANNA })
@@ -120,14 +129,69 @@ describe("enqueue asks about every document it was named", () => {
   });
 
   it("asks nothing per document when the caller said select_all", async () => {
-    await handler.handle(request({ ...twoDocuments, select_all: true }));
+    await handler.handleList(request({ ...twoDocuments, select_all: true }));
 
     expect(refusedTargets).not.toHaveBeenCalled();
   });
 
   it("says nothing about refusals when there were none", async () => {
-    const body = await (await handler.handle(request(twoDocuments))).json();
+    const body = await (await handler.handleList(request(twoDocuments))).json();
 
     expect(body.data).not.toHaveProperty("refused");
+  });
+});
+
+describe("a document the caller may not read, where the write is live", () => {
+  const requestHolding = (holding: readonly string[], body: unknown): PayloadRequest =>
+    ({
+      payload: {
+        collections: {},
+        config: { localization: { locales: ["en", "de", "fr"] } },
+        logger: { warn: vi.fn() },
+        find: vi.fn(async ({ locale }: { locale: string }) => ({
+          docs: holding.includes(locale) ? [{ id: "mine" }] : [],
+        })),
+      } as unknown as Payload,
+      user: ANNA,
+      json: vi.fn().mockResolvedValue(body),
+    }) as unknown as PayloadRequest;
+
+  it("is reported as refused, not as a locale holding nothing", async () => {
+    (refusedTargets as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(new Set(["theirs"]));
+    const runner = {
+      enqueue: vi.fn().mockResolvedValue(undefined),
+      stop: vi.fn(),
+      run: vi.fn(),
+    } as unknown as TaskRunner;
+    const handler = new EnqueueTranslationHandler(
+      {
+        availableCollections: new Set(["posts"] as CollectionSlug[]),
+        canHoldText: () => true,
+        holdsText: () => true,
+      },
+      {
+        create: vi.fn().mockReturnValue(runner),
+        capabilities: { stop: true, run: true },
+        report: vi.fn(),
+      } as unknown as TaskRunnerFactory,
+      () => storeDouble()
+    );
+
+    const response = await handler.handleDocument(
+      requestHolding([], {
+        source_lng: "en",
+        target_lng: ["de"],
+        collection_slug: "posts",
+        collection_id: ["theirs"],
+        filters: [{ kind: "leaves", addresses: ["title"] }],
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect((await response.json()).data.refused).toEqual(["theirs"]);
+    expect(runner.enqueue, "nothing was authorised, so nothing is queued").toHaveBeenCalledWith(
+      [],
+      expect.anything()
+    );
   });
 });

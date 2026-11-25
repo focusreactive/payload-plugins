@@ -107,11 +107,7 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale:
-    | ('false' | 'none' | 'null')
-    | false
-    | null
-    | ('en' | 'de' | 'fr' | 'es')
-    | ('en' | 'de' | 'fr' | 'es')[];
+    ('false' | 'none' | 'null') | false | null | ('en' | 'de' | 'fr' | 'es') | ('en' | 'de' | 'fr' | 'es')[];
   globals: {
     header: Header;
     _abManifest: _AbManifest;
@@ -1492,36 +1488,8 @@ export interface CollectionsWidget {
  */
 export interface TaskTranslateDocument {
   input: {
-    collection_slug: string;
-    collection_id: string;
-    /**
-     * Deprecated. See docs/DEPRECATIONS.md#jobs-input-collection-field
-     */
-    collection?:
-      | ({
-          relationTo: 'pages';
-          value: number | Page;
-        } | null)
-      | ({
-          relationTo: 'articles';
-          value: number | Article;
-        } | null)
-      | ({
-          relationTo: 'playground';
-          value: number | Playground;
-        } | null);
-    source_lng: string;
+    handle: string;
     target_lng: string;
-    filters?:
-      | {
-          [k: string]: unknown;
-        }
-      | unknown[]
-      | string
-      | number
-      | boolean
-      | null;
-    publish_on_translation?: boolean | null;
   };
   output?: unknown;
 }
@@ -1556,27 +1524,8 @@ export interface TaskSchedulePublish {
  */
 export interface WorkflowTranslateDocumentLocales {
   input: {
-    collection_slug: string;
-    collection_id: string;
-    /**
-     * Deprecated. See docs/DEPRECATIONS.md#jobs-input-collection-field
-     */
-    collection?:
-      | ({
-          relationTo: 'pages';
-          value: number | Page;
-        } | null)
-      | ({
-          relationTo: 'articles';
-          value: number | Article;
-        } | null)
-      | ({
-          relationTo: 'playground';
-          value: number | Playground;
-        } | null);
-    source_lng: string;
-    publish_on_translation?: boolean | null;
-    targets:
+    handle: string;
+    locales:
       | {
           [k: string]: unknown;
         }
@@ -1585,8 +1534,6 @@ export interface WorkflowTranslateDocumentLocales {
       | number
       | boolean
       | null;
-    requester_id?: string | null;
-    requester_collection?: string | null;
   };
 }
 /**

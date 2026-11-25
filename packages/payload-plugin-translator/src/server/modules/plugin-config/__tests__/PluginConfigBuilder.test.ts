@@ -5,6 +5,7 @@ import type { RawPayloadComponentExport } from "../../../../types/PayloadCompone
 
 import { resolveSettings } from "../../../../settings.js";
 import { PluginConfigBuilder } from "../PluginConfigBuilder.js";
+import { DuplicateEndpointError } from "../errors/DuplicateEndpointError.js";
 import { AnyAccessGuard } from "../../../shared/access/AnyAccessGuard.js";
 import { storeDouble } from "../../runs/__tests__/fixtures/runRecordStore.js";
 import { translationLanguages } from "../../../features/_lib/index.js";
@@ -13,7 +14,7 @@ const deps = (collections: Array<{ slug: string }> = []) => ({
   collections: collections as unknown as CollectionConfig[],
   settings: resolveSettings({}),
   access: new AnyAccessGuard(),
-  taskRunnerFactory: { create: vi.fn(), capabilities: { stop: true, run: true } },
+  taskRunnerFactory: { create: vi.fn(), capabilities: { stop: true, run: true }, report: vi.fn() },
   runRecordStoreFactory: () => storeDouble(),
   schemaMap: new Map(),
   translationProvider: { translate: vi.fn() },
@@ -26,18 +27,21 @@ const ep = (method: string, path: string): Endpoint =>
 const component = (path: string) => ({ path }) as unknown as RawPayloadComponentExport;
 
 describe("PluginConfigBuilder", () => {
-  it("deduplicates endpoints by method + path", () => {
+  it("refuses a second contribution of the same method + path", () => {
     const builder = new PluginConfigBuilder(deps());
     builder.addEndpoints([ep("post", "/translate/enqueue"), ep("post", "/translate/run/:id")]);
-    builder.addEndpoints([ep("post", "/translate/enqueue")]); // same method+path → dropped
 
-    const config = {} as Config;
-    builder.applyTo(config);
+    expect(() => builder.addEndpoints([ep("post", "/translate/enqueue")])).toThrow(
+      DuplicateEndpointError
+    );
+  });
 
-    expect(config.endpoints?.map((e) => `${e.method} ${e.path}`)).toEqual([
-      "post /translate/enqueue",
-      "post /translate/run/:id",
-    ]);
+  it("refuses the same method + path twice within one contribution", () => {
+    const builder = new PluginConfigBuilder(deps());
+
+    expect(() =>
+      builder.addEndpoints([ep("post", "/translate/field"), ep("post", "/translate/field")])
+    ).toThrow(DuplicateEndpointError);
   });
 
   it("keeps endpoints that differ in method or path", () => {
@@ -109,12 +113,28 @@ describe("PluginConfigBuilder", () => {
   it("registers admin providers into config.admin.components.providers", () => {
     const builder = new PluginConfigBuilder(deps());
     const provider = component("cache");
-    builder.addAdminProvider(provider);
+    builder.addAdminProvider(() => provider);
 
     const config = {} as Config;
     builder.applyTo(config);
 
     expect(config.admin?.components?.providers).toEqual([provider]);
+  });
+
+  it("makes an admin provider from the config every modifier has written, and the plugin's own endpoints", () => {
+    const builder = new PluginConfigBuilder(deps());
+    const enqueue = ep("post", "/translate/enqueue");
+    builder.addEndpoints([enqueue]);
+    builder.addConfigModifier((config) => ({ ...config, custom: { written: true } }));
+    const make = vi.fn().mockReturnValue(component("cache"));
+    builder.addAdminProvider(make);
+
+    builder.applyTo({ endpoints: [ep("get", "/host/own")] } as unknown as Config);
+
+    expect(make).toHaveBeenCalledWith({
+      config: expect.objectContaining({ custom: { written: true } }),
+      endpoints: [enqueue],
+    });
   });
 
   it("applies config modifiers in registration order", () => {
@@ -150,7 +170,7 @@ describe("PluginConfigBuilder", () => {
     const builder = new PluginConfigBuilder(deps());
     const fresh = {} as Config;
     builder.addConfigModifier(() => fresh); // runner-style: returns a brand-new object
-    builder.addAdminProvider(component("cache"));
+    builder.addAdminProvider(() => component("cache"));
 
     const original = {} as Config;
     const result = builder.applyTo(original);

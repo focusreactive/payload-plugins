@@ -7,7 +7,6 @@ describe("resolveSettings", () => {
     expect(resolveSettings({})).toEqual({
       basePath: "/translate",
       failedWindowMs: DEFAULT_FAILED_WINDOW_MS,
-      targetSelection: "single",
     });
   });
 
@@ -28,8 +27,4 @@ describe("resolveSettings", () => {
       expect(() => resolveSettings({ failedWindowMs })).toThrow(/failedWindowMs/u);
     }
   );
-
-  it("passes a chosen target-selection mode through", () => {
-    expect(resolveSettings({ targetSelection: "multi" }).targetSelection).toBe("multi");
-  });
 });

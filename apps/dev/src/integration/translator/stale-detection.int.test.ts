@@ -85,7 +85,7 @@ describe("stale detection", () => {
     expect((await staleDe(ctx, String(created.id)))?.is_stale).toBe(true);
   });
 
-  // Pins `fetchSourceDocument`'s `draft: true`: a publish scoped to the target locale leaves the
+  // Pins `fetchDocumentLocale`'s latest read: a publish scoped to the target locale leaves the
   // source locale unpublished, and a published-row read of it hashes an empty document.
   it("is NOT stale when the source itself was never published", async () => {
     const created = await ctx.payload.create({

@@ -68,9 +68,12 @@ describe("every route the plugin registers is behind the guard", () => {
     expect(paths).toEqual([
       "/translate/cancel",
       "/translate/collection/:collection_slug",
+      "/translate/document-state/:collection_slug/:collection_id",
       "/translate/document/:collection_slug/:collection_id",
       "/translate/enqueue",
+      "/translate/enqueue-list",
       "/translate/field",
+      "/translate/list-state/:collection_slug",
       "/translate/run/:collection_slug/:collection_id",
       "/translate/stale/:collection_slug/:collection_id",
       "/translate/stale/dismiss",
@@ -85,9 +88,12 @@ describe("every route the plugin registers is behind the guard", () => {
       "a route with nothing behind it would answer 404 from the control that called it"
     ).toEqual([
       "/translate/collection/:collection_slug",
+      "/translate/document-state/:collection_slug/:collection_id",
       "/translate/document/:collection_slug/:collection_id",
       "/translate/enqueue",
+      "/translate/enqueue-list",
       "/translate/field",
+      "/translate/list-state/:collection_slug",
       "/translate/stale/:collection_slug/:collection_id",
       "/translate/stale/dismiss",
     ]);

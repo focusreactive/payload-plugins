@@ -22,7 +22,7 @@ describe("createCancelRoute (contract)", () => {
   it("registers DELETE at {basePath}/cancel with the default basePath", () => {
     const endpoint = createCancelRoute(
       AVAILABLE,
-      { create: vi.fn(), capabilities: { stop: true, run: true } },
+      { create: vi.fn(), capabilities: { stop: true, run: true }, report: vi.fn() },
       noRuns,
       OPEN_ON_PURPOSE
     );
@@ -33,7 +33,7 @@ describe("createCancelRoute (contract)", () => {
   it("honors a custom basePath", () => {
     const endpoint = createCancelRoute(
       AVAILABLE,
-      { create: vi.fn(), capabilities: { stop: true, run: true } },
+      { create: vi.fn(), capabilities: { stop: true, run: true }, report: vi.fn() },
       noRuns,
       OPEN_ON_PURPOSE,
       "/i18n"
@@ -45,6 +45,7 @@ describe("createCancelRoute (contract)", () => {
     const taskRunnerFactory: TaskRunnerFactory = {
       create: vi.fn(),
       capabilities: { stop: true, run: true },
+      report: vi.fn(),
     };
     const endpoint = createCancelRoute(AVAILABLE, taskRunnerFactory, noRuns, denyAccess);
 

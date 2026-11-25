@@ -75,6 +75,12 @@ export type BootOptions = {
    * have rows to read.
    */
   deleteJobOnComplete?: boolean;
+  /**
+   * Payload's own option. With it on, every internal job update goes through `payload.update` and
+   * is validated, which is how a host that registers a jobs hook runs — and is the only way to
+   * exercise a task whose work succeeds and whose bookkeeping then fails.
+   */
+  runHooks?: boolean;
   /** Payload's `enableConcurrencyControl` for this boot; defaults to `EXCLUSIVE_QUEUE=1`. */
   exclusiveQueue?: boolean;
   /**
@@ -204,6 +210,7 @@ export async function bootTestPayload(opts?: BootOptions): Promise<TestPayload> 
     jobs: {
       // Payload deletes completed jobs by default, leaving the status panels nothing to read.
       deleteJobOnComplete: opts?.deleteJobOnComplete ?? false,
+      ...(opts?.runHooks === undefined ? {} : { runHooks: opts.runHooks }),
       enableConcurrencyControl: opts?.exclusiveQueue ?? process.env.EXCLUSIVE_QUEUE === "1",
     },
     plugins: [

@@ -38,16 +38,13 @@ function setup(user: unknown) {
   return { handler, enqueue, req };
 }
 
-// The manual Translate button is the path an editor actually presses. Queueing without recording who
-// pressed it would leave every manual translation unattributed — and unattributed means the write is
-// made with access control off.
-describe("POST /enqueue — who the queued translation is attributed to", () => {
+describe("POST /enqueue — the queued run carries its caller, because an unattributed write is made with access control off", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("records the caller who pressed Translate", async () => {
     const { handler, enqueue, req } = setup({ id: "anna", collection: "users" });
 
-    await handler.handle(req);
+    await handler.handleDocument(req);
 
     const [, scope] = enqueue.mock.calls[0] as [unknown, Record<string, unknown>];
     expect(scope).toMatchObject({ requester: { userId: "anna", userCollection: "users" } });
@@ -56,7 +53,7 @@ describe("POST /enqueue — who the queued translation is attributed to", () => 
   it("records nobody when the request carried no session", async () => {
     const { handler, enqueue, req } = setup(null);
 
-    await handler.handle(req);
+    await handler.handleDocument(req);
 
     const [, scope] = enqueue.mock.calls[0] as [unknown, Record<string, unknown>];
     expect(scope.requester).toBeNull();

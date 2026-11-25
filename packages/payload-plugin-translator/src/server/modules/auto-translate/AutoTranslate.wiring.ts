@@ -2,6 +2,7 @@ import {
   AUTO_TRANSLATE_CUSTOM_KEY,
   getAutoTranslateConfig,
 } from "../../../core/domain/auto-translate/index.js";
+import { TranslatorConfigError } from "../../../core/errors/index.js";
 import { Locales } from "../../../core/domain/locales/index.js";
 import type { SourceFingerprinter } from "../../../core/domain/content-projection/sourceFingerprinter.js";
 import type { ConfigModifier } from "../../../types/ConfigModifier.js";
@@ -46,6 +47,32 @@ function warnDroppedLocales(
   }
 }
 
+const asList = (locales: readonly string[]): string =>
+  locales.length > 0 ? locales.join(", ") : "none";
+
+/**
+ * Dropping the last target leaves the collection configured and inert, and the warning that covers
+ * a single mistyped locale cannot say so — from the outside it reads the same as the case where the
+ * other targets still work.
+ *
+ * An empty list the host wrote itself is left alone: it is a valid way to keep auto-translate off,
+ * and refusing it would stop a host whose targets come from the environment.
+ */
+function refuseACollectionLeftWithNoTarget(
+  slug: string,
+  filtered: ReturnType<typeof filterPolicyToKnownLocales>,
+  knownLocales: Set<string>
+): void {
+  if (filtered.droppedTargets.length === 0 || filtered.policy.targets.length > 0) return;
+
+  throw new TranslatorConfigError(
+    `[payload-plugin-translator] auto-translate on "${slug}" has no target locale left to ` +
+      `translate into — not declared by this project: ${asList(filtered.droppedTargets)} ` +
+      `(declared: ${asList([...knownLocales])}). Give it a target the project declares, or drop ` +
+      "`withAutoTranslate` from the collection."
+  );
+}
+
 /**
  * Runs while the config is still being built, so a locale nobody configured is dropped before the
  * first hook can enqueue a translation for it — after that it would cost provider calls and leave
@@ -69,6 +96,7 @@ function dropLocalesTheProjectDoesNotHave(
     const policy = policies.get(slug);
     if (!policy) continue;
     const filtered = filterPolicyToKnownLocales(policy, knownLocales);
+    refuseACollectionLeftWithNoTarget(slug, filtered, knownLocales);
     warnDroppedLocales(slug, filtered, knownLocales);
     policies.set(slug, filtered.policy);
   }

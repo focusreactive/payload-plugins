@@ -155,7 +155,7 @@ describe("the run record store", () => {
   });
 
   describe("stamping and settling", () => {
-    it("stamps the start against the key alone, creating nothing", async () => {
+    it("stamps the start against the key alone, creating nothing, and reopens what had ended", async () => {
       const { payload, spies } = payloadWith({});
 
       await new PayloadRunRecordStore(payload, SLUG).recordStarted(theKey, {
@@ -166,7 +166,15 @@ describe("the run record store", () => {
       expect(spies.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: KEY_WHERE,
-          data: { startedAt: "2026-10-26T10:01:00.000Z", attempts: 1 },
+          data: {
+            startedAt: "2026-10-26T10:01:00.000Z",
+            attempts: 1,
+            // A retry keeps the handle it repeats, so a row left closed would keep the outcome
+            // the retry was started to replace.
+            settledAt: null,
+            outcome: null,
+            error: null,
+          },
         })
       );
       expect(
@@ -353,6 +361,27 @@ describe("the run record store", () => {
             and: [
               { collectionSlug: { equals: "posts" } },
               { outcome: { equals: "failed" } },
+              { settledAt: { greater_than: "2026-10-20T00:00:00.000Z" } },
+            ],
+          },
+        })
+      );
+    });
+
+    it("asks for the rows that settled without delivering, so an abandoned locale is not lost", async () => {
+      const { payload, spies } = payloadWith({});
+
+      await new PayloadRunRecordStore(payload, SLUG).findRecentlyUndeliveredInCollection(
+        "posts" as RunRecord["collectionSlug"],
+        new Date("2026-10-20T00:00:00.000Z")
+      );
+
+      expect(spies.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            and: [
+              { collectionSlug: { equals: "posts" } },
+              { outcome: { in: ["failed", "abandoned"] } },
               { settledAt: { greater_than: "2026-10-20T00:00:00.000Z" } },
             ],
           },

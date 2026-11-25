@@ -37,7 +37,7 @@ describe("owedOnCancel", () => {
     expect(owedOnCancel(halfDone, LOCALES)).toEqual(["fr"]);
   });
 
-  it("owes nothing once the run has given up", () => {
+  it("still owes the undelivered locales of a run that has given up", () => {
     const spent = run({
       hasError: true,
       error: { message: "provider down" },
@@ -46,7 +46,7 @@ describe("owedOnCancel", () => {
 
     expect(
       owedOnCancel(spent, LOCALES),
-      "giving up settled every locale it had not delivered; a second ending is one too many"
-    ).toEqual([]);
+      "a run that gave up may have left its locales open — the record refuses a second ending by itself, so asking the job for permission only loses the first one"
+    ).toEqual(["de", "fr"]);
   });
 });

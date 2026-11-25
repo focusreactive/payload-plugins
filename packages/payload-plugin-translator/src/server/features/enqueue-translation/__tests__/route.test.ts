@@ -10,12 +10,10 @@ import { AnyAccessGuard } from "../../../shared/access/AnyAccessGuard.js";
 import { storeDouble } from "../../../modules/runs/__tests__/fixtures/runRecordStore.js";
 
 const OPEN_ON_PURPOSE = new AnyAccessGuard();
-// Route-contract tests: pin path + method + access-guard wiring so the Phase 1
-// relocation of route registration stays behaviour-preserving. The handler
-// logic and the shared wrappers (withAccessCheck / withErrorHandler) are
-// covered by their own unit tests; here we only assert the route is wired.
 const config: EnqueueConfig = {
   availableCollections: new Set(),
+  canHoldText: () => true,
+  holdsText: () => true,
 };
 const denyAccess: AccessGuard = { check: vi.fn().mockReturnValue(false) };
 
@@ -24,7 +22,7 @@ const noRuns = () => storeDouble();
 describe("createEnqueueRoute (contract)", () => {
   it("registers POST at {basePath}/enqueue with the default basePath", () => {
     const endpoint = createEnqueueRoute(
-      { create: vi.fn(), capabilities: { stop: true, run: true } },
+      { create: vi.fn(), capabilities: { stop: true, run: true }, report: vi.fn() },
       noRuns,
       config,
       OPEN_ON_PURPOSE
@@ -35,7 +33,7 @@ describe("createEnqueueRoute (contract)", () => {
 
   it("honors a custom basePath", () => {
     const endpoint = createEnqueueRoute(
-      { create: vi.fn(), capabilities: { stop: true, run: true } },
+      { create: vi.fn(), capabilities: { stop: true, run: true }, report: vi.fn() },
       noRuns,
       config,
       OPEN_ON_PURPOSE,
@@ -48,6 +46,7 @@ describe("createEnqueueRoute (contract)", () => {
     const taskRunnerFactory: TaskRunnerFactory = {
       create: vi.fn(),
       capabilities: { stop: true, run: true },
+      report: vi.fn(),
     };
     const endpoint = createEnqueueRoute(taskRunnerFactory, noRuns, config, denyAccess);
 

@@ -19,6 +19,7 @@ import {
 } from "../AutoTranslateEnqueue.hook.js";
 import { fingerprintsOf } from "../../provenance/__tests__/fixtures/fingerprinter.js";
 import { storeDouble } from "../../runs/__tests__/fixtures/runRecordStore.js";
+import { publishedHistory } from "./publishedHistory.js";
 
 const schema: Field[] = [{ name: "title", type: "text", localized: true }];
 const schemaMap: CollectionSchemaMap = new Map([["posts" as CollectionSlug, schema]]);
@@ -53,10 +54,16 @@ function setup(
 
 // A CollectionAfterChangeHook args object with sensible defaults (published source-locale update).
 function hookArgs(over: Record<string, unknown> = {}) {
+  const doc = (over.doc as object) ?? { id: "1", title: "NEW", _status: "published" };
+  const previousDoc =
+    "previousDoc" in over ? over.previousDoc : { id: "1", title: "OLD", _status: "published" };
+  // Defaults to agreeing with `previousDoc`, so a case that does not care about the published layer
+  // reads as it always did; `history` is how a case makes the two disagree.
+  const history = ("history" in over ? over.history : [doc, previousDoc]) as unknown[];
+
   return {
-    doc: (over.doc as object) ?? { id: "1", title: "NEW", _status: "published" },
-    previousDoc:
-      "previousDoc" in over ? over.previousDoc : { id: "1", title: "OLD", _status: "published" },
+    doc,
+    previousDoc,
     collection: (over.collection as object) ?? { slug: "posts", versions: { drafts: true } },
     operation: over.operation ?? "update",
     req: {
@@ -65,6 +72,7 @@ function hookArgs(over: Record<string, unknown> = {}) {
       context: over.context ?? {},
       payload: {
         logger,
+        findVersions: publishedHistory(...history),
         config: {
           localization:
             over.localization === undefined
@@ -97,6 +105,72 @@ describe("makeAutoTranslateHook", () => {
       })
     );
     expect(enqueue).not.toHaveBeenCalled();
+  });
+
+  // The defect this read exists to fix, at the only altitude a unit test can reach it: Payload hands
+  // the hook a `previousDoc` that is the draft already holding the published text, so the two
+  // disagree and only the published layer answers truthfully.
+  it("enqueues when the text arrived in a draft, so only the previous publish shows the change", async () => {
+    const { hook, enqueue } = setup();
+    const published = { id: "1", title: "NEW", _status: "published" };
+
+    await hook(
+      hookArgs({
+        doc: published,
+        previousDoc: { id: "1", title: "NEW", _status: "draft" },
+        history: [published, { id: "1", title: "OLD", _status: "published" }],
+      })
+    );
+
+    expect(enqueue).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not enqueue when the previous publish holds the same text, whatever the draft held", async () => {
+    const { hook, enqueue } = setup();
+    const published = { id: "1", title: "SAME", _status: "published" };
+
+    await hook(
+      hookArgs({
+        doc: published,
+        previousDoc: { id: "1", title: "A SECOND THOUGHT", _status: "draft" },
+        history: [published, { id: "1", title: "SAME", _status: "published" }],
+      })
+    );
+
+    expect(enqueue).not.toHaveBeenCalled();
+  });
+
+  it("enqueues on a first publish, when there is no earlier publish to compare against", async () => {
+    const { hook, enqueue } = setup();
+    const published = { id: "1", title: "NEW", _status: "published" };
+
+    await hook(hookArgs({ doc: published, previousDoc: published, history: [published] }));
+
+    expect(enqueue).toHaveBeenCalledTimes(1);
+  });
+
+  it("asks the published layer inside the save's transaction, in the source locale, over access", async () => {
+    const { hook } = setup();
+    const args = hookArgs({ transactionID: "tx-7" });
+
+    await hook(args);
+
+    const { findVersions } = (
+      args as unknown as { req: { payload: { findVersions: ReturnType<typeof vi.fn> } } }
+    ).req.payload;
+    expect(findVersions).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: "posts",
+        locale: "en",
+        limit: 2,
+        sort: "-updatedAt",
+        overrideAccess: true,
+        req: { transactionID: "tx-7" },
+        where: {
+          and: [{ parent: { equals: "1" } }, { "version._status": { equals: "published" } }],
+        },
+      })
+    );
   });
 
   it("does not enqueue for a non-source-locale write (loop guard, R4)", async () => {
@@ -183,15 +257,20 @@ describe("makeAutoTranslateHook", () => {
     expect(draft.enqueue).not.toHaveBeenCalled();
   });
 
-  it("no-drafts collection: any published-less save enqueues", async () => {
+  it("no-drafts collection: any published-less save enqueues, and no published layer is consulted", async () => {
     const { hook, enqueue } = setup();
-    await hook(
-      hookArgs({
-        collection: { slug: "posts", versions: { drafts: false } },
-        doc: { id: "1", title: "NEW" },
-      })
-    );
+    const args = hookArgs({
+      collection: { slug: "posts", versions: { drafts: false } },
+      doc: { id: "1", title: "NEW" },
+    });
+
+    await hook(args);
+
     expect(enqueue).toHaveBeenCalledTimes(1);
+    const { findVersions } = (
+      args as unknown as { req: { payload: { findVersions: ReturnType<typeof vi.fn> } } }
+    ).req.payload;
+    expect(findVersions).not.toHaveBeenCalled();
   });
 
   it("no-ops (no enqueue, no throw, warns) when no source locale is resolvable (R2/AC14)", async () => {

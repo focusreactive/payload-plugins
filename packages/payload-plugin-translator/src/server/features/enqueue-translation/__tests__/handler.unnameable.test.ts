@@ -54,30 +54,38 @@ describe("POST /enqueue and an actor the project cannot name", () => {
       stop: vi.fn(),
       run: vi.fn(),
     } as unknown as TaskRunner;
-    factory = { create: vi.fn().mockReturnValue(runner), capabilities: { stop: true, run: true } };
+    factory = {
+      create: vi.fn().mockReturnValue(runner),
+      capabilities: { stop: true, run: true },
+      report: vi.fn(),
+    };
     handler = new EnqueueTranslationHandler(
-      { availableCollections: new Set(["posts"] as CollectionSlug[]) },
+      {
+        availableCollections: new Set(["posts"] as CollectionSlug[]),
+        canHoldText: () => true,
+        holdsText: () => true,
+      },
       factory,
       () => storeDouble()
     );
   });
 
   it("refuses, and queues nothing", async () => {
-    const response = await handler.handle(request({ id: "anna" }));
+    const response = await handler.handleDocument(request({ id: "anna" }));
 
     expect(response.status).toBe(403);
     expect(runner.enqueue).not.toHaveBeenCalled();
   });
 
   it("still queues for an actor it can name", async () => {
-    const response = await handler.handle(request({ id: "anna", collection: "editors" }));
+    const response = await handler.handleDocument(request({ id: "anna", collection: "editors" }));
 
     expect(response.status).toBe(200);
     expect(runner.enqueue).toHaveBeenCalled();
   });
 
   it("still queues when the request carried no actor at all", async () => {
-    const response = await handler.handle(request(null));
+    const response = await handler.handleDocument(request(null));
 
     expect(response.status).toBe(200);
     expect(runner.enqueue).toHaveBeenCalled();

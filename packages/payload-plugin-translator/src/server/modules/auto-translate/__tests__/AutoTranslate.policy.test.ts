@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 
+import { resolveWorld } from "../../../../core/domain/world/index.js";
+
 import {
   buildAutoTranslateTasks,
   filterPolicyToKnownLocales,
@@ -8,6 +10,10 @@ import {
   passesPublishGate,
 } from "../AutoTranslate.policy.js";
 import type { NormalizedAutoTranslatePolicy } from "../AutoTranslate.policy.js";
+
+const READS = { latest: "the latest read", published: "the published read" };
+const FLAT = resolveWorld({ drafts: false, autosave: false }, READS);
+const LAYERED = resolveWorld({ drafts: true, autosave: false }, READS);
 
 const policy = (
   over: Partial<NormalizedAutoTranslatePolicy> = {}
@@ -56,13 +62,13 @@ describe("makeCollectionPolicyResolver (v1 — doc ignored)", () => {
 
 describe("passesPublishGate (D8)", () => {
   it("no-drafts collection: any save qualifies", () => {
-    expect(passesPublishGate({}, false)).toBe(true);
-    expect(passesPublishGate({ _status: "draft" }, false)).toBe(true);
+    expect(passesPublishGate({}, FLAT)).toBe(true);
+    expect(passesPublishGate({ _status: "draft" }, FLAT)).toBe(true);
   });
   it("drafts collection: only a published doc qualifies", () => {
-    expect(passesPublishGate({ _status: "published" }, true)).toBe(true);
-    expect(passesPublishGate({ _status: "draft" }, true)).toBe(false);
-    expect(passesPublishGate({}, true)).toBe(false);
+    expect(passesPublishGate({ _status: "published" }, LAYERED)).toBe(true);
+    expect(passesPublishGate({ _status: "draft" }, LAYERED)).toBe(false);
+    expect(passesPublishGate({}, LAYERED)).toBe(false);
   });
 });
 
@@ -102,7 +108,7 @@ describe("buildAutoTranslateTasks", () => {
       documentId: "1",
       sourceLocale: "en",
       doc: { _status: "published" },
-      hasDrafts: true,
+      world: LAYERED,
       now: 0,
     });
     expect(tasks.map((t) => t.targetLng)).toEqual(["de", "fr"]);
@@ -122,7 +128,7 @@ describe("buildAutoTranslateTasks", () => {
       documentId: "1",
       sourceLocale: "en",
       doc: { _status: "published" },
-      hasDrafts: true,
+      world: LAYERED,
       now: 1000,
     });
     expect(tasks[0].waitUntil).toEqual(new Date(6000));

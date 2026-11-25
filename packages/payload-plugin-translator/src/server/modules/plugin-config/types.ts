@@ -1,4 +1,4 @@
-import type { CollectionConfig, Endpoint } from "payload";
+import type { CollectionConfig, Endpoint, Field } from "payload";
 
 import type { AccessGuard } from "../../../types/AccessGuard.js";
 import type { ConfigModifier } from "../../../types/ConfigModifier.js";
@@ -8,10 +8,16 @@ import type { TranslationProvider } from "../../../core/domain/translation-provi
 import type { LanguageTable } from "../../../traversal/index.js";
 import type { TaskRunnerFactory } from "../task-runner/index.js";
 import type { RunRecordStoreFactory } from "../runs/index.js";
+import type { DocumentStalenessFactory, ProvenanceStoreFactory } from "../provenance/index.js";
 import type { ChainMember } from "../translation-run/index.js";
 import type { TranslatorSettings } from "../../../settings.js";
 
 export type CollectionAdminSlot = "beforeDocumentControls" | "beforeListTable";
+
+export type ProvenanceAccess = {
+  readonly storeFactory: ProvenanceStoreFactory;
+  readonly stalenessFactory: DocumentStalenessFactory;
+};
 
 export type ConfigTimeContext = {
   readonly collections: CollectionConfig[];
@@ -19,6 +25,7 @@ export type ConfigTimeContext = {
   readonly access: AccessGuard;
   readonly taskRunnerFactory: TaskRunnerFactory;
   readonly runRecordStoreFactory: RunRecordStoreFactory;
+  readonly provenance?: ProvenanceAccess;
   readonly schemaMap: CollectionSchemaMap;
   readonly translationProvider: TranslationProvider;
   readonly walk: LanguageTable;
@@ -29,13 +36,17 @@ export type ConfigTimeContext = {
  * @internal
  */
 export interface ModuleContext extends ConfigTimeContext {
-  /** Deduplicated by method + path when applied. */
+  /**
+   * A method + path another of the plugin's contributions already claimed throws
+   * `DuplicateEndpointError`; one the host's own config already holds stays the host's.
+   */
   addEndpoints(endpoints: Endpoint[]): void;
   addConfigModifier(modifier: ConfigModifier): void;
 }
 
 /**
- * What an admin component may contribute: a slot on each managed collection, nothing on the server.
+ * What an admin component may contribute: a slot or a field on each managed collection, nothing on
+ * the server.
  * @internal
  */
 export interface ComponentContext extends ConfigTimeContext {
@@ -43,6 +54,11 @@ export interface ComponentContext extends ConfigTimeContext {
     slot: CollectionAdminSlot,
     make: (collection: CollectionConfig) => RawPayloadComponentExport
   ): void;
+  /**
+   * A list column is a field. Called once per collection, because Payload writes into the field
+   * configs it sanitizes. A name the collection already has throws `CollectionFieldClashError`.
+   */
+  addCollectionField(make: () => Field): void;
 }
 
 /**

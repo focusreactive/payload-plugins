@@ -5,9 +5,7 @@ import { MARKER_DOT } from "../../model/panelStatus.js";
 import styles from "./styles.module.scss";
 
 /**
- * The aggregate status dot overlaid on a translate trigger's top-right corner. Uses the SAME
- * coloured-dot vocabulary as the popup's per-locale status list ({@link MARKER_DOT}), so the panel
- * badge and the popup rows read as one system. Shared by the document and collection triggers.
+ * The aggregate status dot overlaid on the document trigger's top-right corner.
  *
  * Colour is not the sole cue: the host button carries a `title` + `aria-label` naming the exact
  * state for assistive tech (this dot is `aria-hidden`), and in-progress carries a pulse.

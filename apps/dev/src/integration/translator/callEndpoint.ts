@@ -18,8 +18,12 @@ export async function callEndpoint(
   path: string,
   opts?: {
     routeParams?: Record<string, unknown>;
+    /** The query string a GET route reads, without the leading `?`, e.g. `ids=a,b`. */
+    query?: string;
     body?: unknown;
     user?: { id: string | number; collection: string } | null;
+    /** The admin's language, which the state reads resolve a per-language field label against. */
+    language?: string;
   }
 ): Promise<{ status: number; data: unknown }> {
   const endpoint = (payload.config.endpoints ?? []).find(
@@ -32,6 +36,8 @@ export async function callEndpoint(
   const req = {
     payload,
     routeParams: opts?.routeParams ?? {},
+    searchParams: new URLSearchParams(opts?.query ?? ""),
+    i18n: { language: opts?.language ?? "en" },
     json: async () => opts?.body,
     user: opts?.user ?? null,
   } as unknown as PayloadRequest;

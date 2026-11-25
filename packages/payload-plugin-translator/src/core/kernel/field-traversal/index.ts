@@ -29,3 +29,12 @@ export type {
   WalkSignal,
 } from "./types.js";
 export { walkFields } from "./walkFields.js";
+export {
+  ARRAY_ELEMENT,
+  blockElement,
+  dataPath,
+  elementName,
+  inlineBlocks,
+  isElementToken,
+  walkSchema,
+} from "./walkSchema.js";

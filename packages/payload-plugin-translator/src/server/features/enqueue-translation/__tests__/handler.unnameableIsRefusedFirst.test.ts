@@ -52,32 +52,38 @@ describe("POST /enqueue refuses an unnameable actor before asking about anything
   beforeEach(() => {
     askedAbout.length = 0;
     handler = new EnqueueTranslationHandler(
-      { availableCollections: new Set(["posts"] as CollectionSlug[]) },
+      {
+        availableCollections: new Set(["posts"] as CollectionSlug[]),
+        canHoldText: () => true,
+        holdsText: () => true,
+      },
       {
         create: vi.fn().mockReturnValue({ enqueue: vi.fn().mockResolvedValue([]) }),
         capabilities: { stop: true, run: true },
+        report: vi.fn(),
       },
       () => storeDouble()
     );
   });
 
   it("asks the host's rule about nobody when the actor cannot be placed", async () => {
-    const response = await handler.handle(request({ id: "anna" }));
+    const response = await handler.handleDocument(request({ id: "anna" }));
 
     expect(response.status).toBe(403);
     expect(askedAbout).toEqual([]);
   });
 
   it("asks about a named actor as usual", async () => {
-    const response = await handler.handle(request({ id: "anna", collection: "editors" }));
+    const response = await handler.handleDocument(request({ id: "anna", collection: "editors" }));
 
     expect(response.status).toBe(200);
     expect(askedAbout).toHaveLength(1);
   });
 
   it("reads the whole collection only after the actor has been placed", async () => {
-    const response = await handler.handle(request({ id: "anna" }, { select_all: true }));
+    const response = await handler.handleList(request({ id: "anna" }, { select_all: true }));
 
     expect(response.status).toBe(403);
+    expect(askedAbout, "nothing was read, so no actor reached Payload").toEqual([]);
   });
 });

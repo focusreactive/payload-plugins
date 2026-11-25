@@ -13,7 +13,8 @@ import { DocumentStaleness } from "./DocumentStaleness.service.js";
 import type { DocumentStalenessIo } from "./DocumentStaleness.service.js";
 import { PayloadProvenanceStore } from "./Provenance.store.js";
 import type { ProvenanceStoreFactory } from "./Provenance.store.js";
-import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
+import { fetchDocumentLocale } from "../../shared/payload/documentLocale.js";
+import { latestOf } from "../../shared/payload/worldOfCollection.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 import type { SourceDocumentReader } from "./Provenance.shapes.js";
 import type { SourceFingerprinter } from "../../../core/domain/content-projection/sourceFingerprinter.js";
@@ -52,11 +53,12 @@ export const documentStalenessIo = (
   fingerprintOf,
   logger: payload.logger,
   readSource: ({ collection, id, locale, user }: Parameters<SourceDocumentReader>[0]) =>
-    fetchSourceDocument({
+    fetchDocumentLocale({
       payload,
       collection,
       id,
       locale,
+      read: latestOf(payload, collection),
       user,
       scope: OUTSIDE_THE_CALLERS_TRANSACTION,
     }),
@@ -75,6 +77,8 @@ export type DocumentStalenessFactory = (
 export type ProvenanceContribution = {
   module: TranslationModule;
   criteria: Criteria;
+  storeFactory: ProvenanceStoreFactory;
+  stalenessFactory: DocumentStalenessFactory;
 };
 
 export function configureProvenance(
@@ -133,5 +137,7 @@ export function configureProvenance(
       cleanUpOnDelete,
     }),
     criteria: { [DRIFT_CRITERION]: driftedLeaves(recorderFactory) },
+    storeFactory,
+    stalenessFactory,
   };
 }

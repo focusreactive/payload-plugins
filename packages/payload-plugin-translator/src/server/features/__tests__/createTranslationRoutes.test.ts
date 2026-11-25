@@ -12,9 +12,13 @@ const OPEN_ON_PURPOSE = new AnyAccessGuard();
 // the doc + collection levels (deduped), so "all endpoints, right paths/methods"
 // must not drift. Each route's own wiring is pinned by its sibling route.test.ts.
 const deps = (basePath?: string): TranslationRoutesDeps => ({
-  taskRunnerFactory: { create: vi.fn(), capabilities: { stop: true, run: true } },
+  taskRunnerFactory: { create: vi.fn(), capabilities: { stop: true, run: true }, report: vi.fn() },
   runRecordStoreFactory: () => storeDouble(),
   collectionConfig: { availableCollections: new Set() },
+  schemaMap: new Map(),
+  state: { fingerprintOf: () => null },
+  canHoldText: () => false,
+  holdsText: () => false,
   access: OPEN_ON_PURPOSE,
   settings: resolveSettings({ basePath }),
 });
@@ -25,10 +29,13 @@ describe("createTranslationRoutes (bundle contract)", () => {
 
     expect(routes.map((r) => `${r.method} ${r.path}`)).toEqual([
       "post /translate/enqueue",
+      "post /translate/enqueue-list",
       "post /translate/run/:collection_slug/:collection_id",
       "delete /translate/cancel",
       "get /translate/document/:collection_slug/:collection_id",
+      "get /translate/document-state/:collection_slug/:collection_id",
       "get /translate/collection/:collection_slug",
+      "get /translate/list-state/:collection_slug",
     ]);
   });
 

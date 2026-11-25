@@ -1,4 +1,4 @@
-import type { PayloadRequest } from "payload";
+import type { CollectionSlug, PayloadRequest } from "payload";
 
 import { ServerResponse } from "../../shared/index.js";
 import { authCollectionsOf, identityOf, scopeOf } from "../../shared/payload/identityOf.js";
@@ -11,13 +11,23 @@ import { authorisedByTheReadFilter, authorisedWork } from "../../shared/access/a
 import type { AuthorisedWork } from "../../shared/access/authorised.js";
 
 import { Locales } from "../../../core/domain/locales/index.js";
+import type { TranslationFilter } from "../../../core/domain/selection/index.js";
+import { localesHoldingContent } from "../../shared/payload/localesHoldingContent.js";
+import { worldOfRegistered } from "../../shared/payload/worldOfCollection.js";
 
-import { EnqueueInputSchema, toAssignmentOutputs } from "./model.js";
-import type { EnqueueConfig } from "./model.js";
+import {
+  EnqueueDocumentInputSchema,
+  EnqueueListInputSchema,
+  toAssignmentOutputs,
+  wholeDocumentOnly,
+} from "./model.js";
+import type { EnqueueAsk, EnqueueConfig } from "./model.js";
 
 const documentsIn = (work: readonly AuthorisedWork[]): string[] => [
   ...new Set(work.map((item) => item.collectionId)),
 ];
+
+type WhichDocuments = { kind: "named"; ids: readonly string[] } | { kind: "every" };
 
 export class EnqueueTranslationHandler {
   private readonly config: EnqueueConfig;
@@ -34,24 +44,65 @@ export class EnqueueTranslationHandler {
     this.runRecordStoreFactory = runRecordStoreFactory;
   }
 
-  async handle(req: PayloadRequest): Promise<Response> {
-    const validationResult = EnqueueInputSchema.safeParse(await req.json?.());
-    if (validationResult.error)
-      return ServerResponse.validationError(validationResult.error.issues);
+  private async localesHoldingNothing(asking: {
+    req: PayloadRequest;
+    collectionSlug: CollectionSlug;
+    ids: readonly string[];
+    targets: readonly string[];
+    asked: readonly TranslationFilter[];
+  }): Promise<string[]> {
+    const { req, collectionSlug, ids, targets, asked } = asking;
+    const namesAddresses = asked.some((filter) => filter.kind === "leaves");
+    if (!namesAddresses) return [];
 
-    const {
-      source_lng,
-      target_lng,
-      collection_slug,
-      collection_id,
-      select_all,
-      filters,
-      publish_on_translation,
-    } = validationResult.data;
+    if (!this.config.canHoldText(collectionSlug)) return [];
 
-    const asked = filters ?? [];
+    const world = worldOfRegistered(req.payload, collectionSlug);
+    const writeLandsInAnUnvalidatedDraft = world.kind === "layered";
+    if (writeLandsInAnUnvalidatedDraft) return [];
 
-    const collectionSlug = isCollectionAvailable(collection_slug, this.config.availableCollections);
+    const holding = await localesHoldingContent({
+      payload: req.payload,
+      collection: collectionSlug,
+      grantedIds: ids,
+      locales: targets,
+      holdsText: this.config.holdsText,
+      read: world.read.latest,
+    });
+    return targets.filter((locale) => ids.some((id) => holding.get(locale)?.has(id) !== true));
+  }
+
+  async handleDocument(req: PayloadRequest): Promise<Response> {
+    const parsed = EnqueueDocumentInputSchema.safeParse(await req.json?.());
+    if (parsed.error) return ServerResponse.validationError(parsed.error.issues);
+
+    const { collection_id, ...ask } = parsed.data;
+    return await this.enqueue(req, ask, { kind: "named", ids: collection_id });
+  }
+
+  async handleList(req: PayloadRequest): Promise<Response> {
+    const parsed = EnqueueListInputSchema.safeParse(await req.json?.());
+    if (parsed.error) return ServerResponse.validationError(parsed.error.issues);
+
+    const { collection_id, select_all, ...ask } = parsed.data;
+    const which: WhichDocuments = select_all
+      ? { kind: "every" }
+      : { kind: "named", ids: collection_id };
+    return await this.enqueue(req, ask, which);
+  }
+
+  private async enqueue(
+    req: PayloadRequest,
+    ask: EnqueueAsk,
+    which: WhichDocuments
+  ): Promise<Response> {
+    const { source_lng: sourceLng, publish_on_translation: publishOnTranslation } = ask;
+    const asked = ask.filters ?? [];
+
+    const collectionSlug = isCollectionAvailable(
+      ask.collection_slug,
+      this.config.availableCollections
+    );
     if (!collectionSlug) {
       return ServerResponse.badRequest(
         "Content of this collection is not available for translation"
@@ -65,15 +116,15 @@ export class EnqueueTranslationHandler {
       );
     }
 
-    if (!knownLocales.has(source_lng)) {
+    if (!knownLocales.has(sourceLng)) {
       return ServerResponse.badRequest(
-        `source_lng "${source_lng}" is not one of this project's configured locales`
+        `source_lng "${sourceLng}" is not one of this project's configured locales`
       );
     }
 
     const { targets, droppedUnknown } = Locales.resolveTargets({
-      target_lng,
-      source_lng,
+      target_lng: ask.target_lng,
+      source_lng: sourceLng,
       knownLocales,
     });
     if (droppedUnknown.length > 0) {
@@ -95,31 +146,36 @@ export class EnqueueTranslationHandler {
         targets.map((targetLng) => ({
           collectionSlug,
           collectionId: id,
-          sourceLng: source_lng,
+          sourceLng,
           targetLng,
           filters: asked,
-          publishOnTranslation: publish_on_translation,
+          publishOnTranslation,
         }))
       );
 
     const identity = identityOf(req, authCollectionsOf(req.payload), req.payload.logger);
     if (identity.kind === "unnameable") return ServerResponse.forbidden();
 
-    const runs = this.runRecordStoreFactory(req.payload);
-    const { authorised, refused } = select_all
-      ? {
-          authorised: authorisedByTheReadFilter(
-            workFor(await getAllCollectionIds(req.payload, collectionSlug, req.user))
-          ),
-          refused: [],
-        }
-      : await authorisedWork({
-          payload: req.payload,
-          user: req.user,
-          tasks: workFor(collection_id),
-        });
+    const everyDocument = which.kind === "every";
+    const ids = everyDocument
+      ? await getAllCollectionIds(req.payload, collectionSlug, req.user)
+      : which.ids;
 
-    const inFlight = select_all
+    const runs = this.runRecordStoreFactory(req.payload);
+    const { authorised, refused } = everyDocument
+      ? { authorised: authorisedByTheReadFilter(workFor(ids)), refused: [] }
+      : await authorisedWork({ payload: req.payload, user: req.user, tasks: workFor(ids) });
+
+    const unwritten = await this.localesHoldingNothing({
+      req,
+      collectionSlug,
+      ids: documentsIn(authorised),
+      targets,
+      asked,
+    });
+    if (unwritten.length > 0) return ServerResponse.badRequest(wholeDocumentOnly(unwritten));
+
+    const inFlight = everyDocument
       ? await runs.findLiveInCollection(collectionSlug)
       : await runs.findLiveForDocuments(collectionSlug, documentsIn(authorised));
     const { admitted, busyDocumentIds: busy } = admitWork({ work: authorised, inFlight });

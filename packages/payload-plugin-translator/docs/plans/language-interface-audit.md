@@ -2,7 +2,7 @@
 
 Source: language-interface-audit.source.local.md
 
-Next: sp-architect
+Next: design
 
 ## Problem Statement
 
@@ -330,7 +330,7 @@ that belongs to the design, not to this audit.
 
 ## Suggested Next Step
 
-**Ready for `/sp-architect`.** Likely vectors:
+**Ready for design.** Likely vectors:
 
 | Vector | Why |
 |---|---|

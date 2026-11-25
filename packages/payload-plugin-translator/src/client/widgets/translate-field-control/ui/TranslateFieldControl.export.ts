@@ -4,7 +4,7 @@ import { clientComponentPath } from "../../../shared/utils/componentPath.js";
 /**
  * Import-map reference to the per-field Translate control. Appended to a field's
  * `admin.components.beforeInput` by `withFieldTranslation(field)`, so it renders just above the
- * input as an icon button that opens the translate popup.
+ * input as a Translate button with a source-locale menu.
  *
  * No props: the control reads everything from client context (field value/path via `useField()`,
  * locale via `useLocale`, document via `useDocumentInfo`, available locales via `useConfig`) and

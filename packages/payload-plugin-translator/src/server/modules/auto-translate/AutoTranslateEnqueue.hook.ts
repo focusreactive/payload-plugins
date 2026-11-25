@@ -1,9 +1,9 @@
 import type { CollectionAfterChangeHook, CollectionSlug } from "payload";
-import { hasDraftsEnabled } from "payload/shared";
 
 import { authCollectionsOf, identityOf, scopeOf } from "../../shared/payload/identityOf.js";
 import { authorisedByTheSave } from "../../shared/access/authorised.js";
 import { swallowOrThrow } from "../../shared/payload/swallowOrThrow.js";
+import { worldOfCollection } from "../../shared/payload/worldOfCollection.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 
 import { hasSourceContentChanged } from "../../../core/domain/auto-translate/index.js";
@@ -13,6 +13,7 @@ import type { SourceFingerprinter } from "../../../core/domain/content-projectio
 import type { TaskRunnerFactory } from "../task-runner/index.js";
 import type { RunRecordStoreFactory } from "../runs/index.js";
 import { admitWork } from "../../../core/domain/runs/index.js";
+import { Locales } from "../../../core/domain/locales/index.js";
 
 import type {
   AutoTranslatePolicyResolver,
@@ -54,8 +55,10 @@ export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAf
         const policy = resolvePolicy(collection.slug, doc);
         if (!policy) return;
 
-        const sourceLocale =
-          policy.sourceLocale ?? (localization ? localization.defaultLocale : undefined);
+        const sourceLocale = Locales.resolveSource({
+          configured: policy.sourceLocale,
+          localization,
+        });
         if (!sourceLocale) {
           return skipBecause(
             "translator: auto-translate skipped — no source locale resolvable (set localization.defaultLocale or a per-collection sourceLocale)"
@@ -64,10 +67,21 @@ export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAf
 
         if (req.locale !== sourceLocale) return;
 
-        const hasDrafts = hasDraftsEnabled(collection);
-        if (!passesPublishGate(doc, hasDrafts)) return;
+        const world = worldOfCollection(collection);
+        if (!passesPublishGate(doc, world)) return;
 
-        if (!hasSourceContentChanged(previousDoc, doc, collection.slug, fingerprintOf)) return;
+        const baseline =
+          world.kind === "layered"
+            ? await world.previousPublished({
+                payload: req.payload,
+                collection: collection.slug,
+                id: String(doc.id),
+                locale: sourceLocale,
+                scope,
+              })
+            : previousDoc;
+
+        if (!hasSourceContentChanged(baseline, doc, collection.slug, fingerprintOf)) return;
 
         const tasks = buildAutoTranslateTasks({
           policy,
@@ -75,7 +89,7 @@ export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAf
           documentId: String(doc.id),
           sourceLocale,
           doc,
-          hasDrafts,
+          world,
           now: Date.now(),
         });
         if (tasks.length === 0) return;

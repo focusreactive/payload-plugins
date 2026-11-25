@@ -64,6 +64,7 @@ export type TaskRunnerContext = {
 export type TaskRunnerFactory = {
   create(payload: Payload): TaskRunner;
   capabilities: RunnerCapabilities;
+  report: TaskRunnerContext["report"];
 };
 
 /**

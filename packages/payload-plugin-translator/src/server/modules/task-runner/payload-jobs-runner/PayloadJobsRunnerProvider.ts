@@ -7,8 +7,15 @@ import type { StoredTaskInput } from "./store/index.js";
 import { PayloadJobsTaskRunner } from "./PayloadJobsTaskRunner.js";
 import { chain, contribute } from "../../../shared/payload/contribute.js";
 import { pointerOf, TaskInputSchema, toPayloadFields, WorkflowInputSchema } from "./store/index.js";
-import type { PayloadJob, StoredWorkflowInput, TaskStatusByLocale } from "./store/index.js";
-import { attemptsBefore, deliveredLocales, owedIfGaveUp, retryLimitOf } from "./model/index.js";
+import type { StoredWorkflowInput, TaskStatusByLocale } from "./store/index.js";
+import {
+  attemptsBefore,
+  deliveredLocales,
+  owedIfGaveUp,
+  retryLimitOf,
+  whatALocalesThrowMeans,
+  WhatOurHandlerDid,
+} from "./model/index.js";
 import type { TaskRunnerContext, TaskRunnerProvider } from "../TaskRunnerProvider.interface.js";
 import type { RunnerCapabilities } from "../RunnerCapabilities.js";
 import type { TaskEvent } from "../types.js";
@@ -26,7 +33,7 @@ function resolveAutoRun(
   return { ...defaultAutoRun, ...option };
 }
 
-type StoredJobInput = Partial<StoredWorkflowInput> & Record<string, unknown>;
+type StoredJobInput = Partial<StoredWorkflowInput>;
 
 const DEFAULT_STALE_JOB_TIMEOUT_MS = 5 * 60 * 1000;
 
@@ -46,12 +53,12 @@ const defaultValues = {
 };
 
 /**
- * What Payload hands the registered task. `job` is carried only so a throw can be stored against it
- * for the workflow to read back.
+ * What Payload hands the registered task. `job` is the row the workflow reads its marks back from,
+ * and Payload always passes it.
  */
 type TranslateLocaleTask = {
   req: { payload: Payload };
-  job?: { id?: unknown; taskStatus?: TaskStatusByLocale };
+  job: { id?: unknown; taskStatus?: TaskStatusByLocale };
   input: StoredTaskInput;
 };
 
@@ -89,21 +96,25 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
 
   configure(context: TaskRunnerContext): (config: Config) => Config {
     const { queueName, autoRun } = this.config;
-    const thrown = new WeakMap<object, unknown>();
+    const did = new WhatOurHandlerDid();
 
     return (config) => {
-      // Read before `??=` creates the bag, so an absent `jobs` is not mistaken for one that opted in.
-      const exclusivePerRun = Boolean(config.jobs?.enableConcurrencyControl);
       const jobs = (config.jobs ??= {});
+      const ourTask = this.translateOneLocale(context, did);
 
-      jobs.tasks = contribute(
-        jobs.tasks,
-        [this.translateOneLocale(context, thrown)],
-        (registered) => registered.slug
-      );
+      jobs.tasks = contribute(jobs.tasks, [ourTask], (registered) => registered.slug);
+
+      /*
+       * The workflow reads a mark only this task writes, so registering it beside somebody else's
+       * task under the same slug would leave every locale unanswered. The boot sweep hangs off the
+       * same answer, because a plugin applied twice would otherwise sweep twice.
+       */
+      const oursRuns = jobs.tasks.includes(ourTask);
+      if (!oursRuns) return config;
+
       jobs.workflows = contribute(
         jobs.workflows,
-        [this.walkTheRunsLocales(context, thrown, exclusivePerRun)],
+        [this.walkTheRunsLocales(context, did)],
         (registered) => registered.slug
       );
       if (autoRun) {
@@ -114,14 +125,13 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
         );
       }
 
-      config.onInit = chain(config.onInit, this.reclaimWithoutBlockingBoot(context));
+      config.onInit = chain(config.onInit, this.reclaimStaleJobsOnBoot(context));
 
       return config;
     };
   }
 
-  /** A throw is kept against the job so the workflow can read back which locale gave up. */
-  private translateOneLocale(context: TaskRunnerContext, thrown: WeakMap<object, unknown>) {
+  private translateOneLocale(context: TaskRunnerContext, did: WhatOurHandlerDid) {
     const { taskName, retries } = this.config;
 
     return {
@@ -129,18 +139,20 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
       inputSchema: toPayloadFields(TaskInputSchema),
       retries,
       handler: async (args: TranslateLocaleTask) => {
+        did.note(args.job, args.input.target_lng, { kind: "started" });
         try {
           await context.handler(args.req.payload, {
             handle: args.input.handle,
             targetLng: args.input.target_lng,
             previousAttempts: attemptsBefore(
-              args.job?.taskStatus?.[taskName]?.[args.input.target_lng]
+              args.job.taskStatus?.[taskName]?.[args.input.target_lng]
             ),
           });
         } catch (error) {
-          if (args.job) thrown.set(args.job, error);
+          did.note(args.job, args.input.target_lng, { kind: "failed", error });
           throw error;
         }
+        did.note(args.job, args.input.target_lng, { kind: "translated" });
         return { output: {} };
       },
     };
@@ -148,8 +160,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
 
   private walkTheRunsLocales(
     context: TaskRunnerContext,
-    thrown: WeakMap<object, unknown>,
-    exclusivePerRun: boolean
+    did: WhatOurHandlerDid
   ): WorkflowConfig<StoredJobInput> {
     const { taskName, workflowName, retries } = this.config;
     const retryLimit = retryLimitOf(retries);
@@ -159,43 +170,54 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
       slug: workflowName,
       inputSchema: toPayloadFields(WorkflowInputSchema),
       retries,
-      ...(exclusivePerRun
-        ? {
-            concurrency: {
-              key: ({ input }) => String(input.handle ?? ""),
-              exclusive: true,
-            },
-          }
-        : {}),
       handler: async ({ job, req, tasks }) => {
         const runLocale = tasks[taskName];
-        const pointer = pointerOf(job as PayloadJob);
+        const pointer = pointerOf(job);
         if (pointer === null) {
           req.payload.logger?.error?.({
-            jobId: (job as PayloadJob).id,
+            jobId: job.id,
             msg: "[translator] a queued translation names no run and was skipped; it was queued before 1.0, or its input is damaged",
           });
           return;
         }
 
-        const reportFor = (targetLng: string, event: TaskEvent) =>
-          report(req.payload, { handle: pointer.handle, targetLng }, event);
-        const deliveredBefore = deliveredLocales(job as PayloadJob);
+        const reportFor = (targetLng: string, event: TaskEvent) => {
+          return report(req.payload, { handle: pointer.handle, targetLng }, event);
+        };
+
+        const deliveredBefore = deliveredLocales(job);
+        const deliver = async (targetLng: string) => {
+          if (!deliveredBefore.has(targetLng)) await reportFor(targetLng, { state: "delivered" });
+        };
+
+        let alreadySaid = false;
+        const sayTheQueueCannotRecord = (error: unknown) => {
+          if (alreadySaid) return;
+          alreadySaid = true;
+          req.payload.logger?.warn?.(
+            `[payload-plugin-translator] the queue could not record a finished step of run ${pointer.handle} and its log will read empty; the translations themselves are done and are not repeated. The write it refused is its own: ${String(error)}`
+          );
+        };
 
         for (const target of pointer.locales) {
           try {
             await runLocale(target, { input: { handle: pointer.handle, target_lng: target } });
-            if (!deliveredBefore.has(target)) await reportFor(target, { state: "delivered" });
+            await deliver(target);
           } catch (error) {
-            const owed = thrown.has(job)
-              ? owedIfGaveUp(job as PayloadJob, taskName, target, retryLimit, pointer.locales)
-              : [];
+            const meaning = whatALocalesThrowMeans(did.forLocale(job, target), error);
+            if (meaning.kind === "the-queue-failed-before-us") throw error;
+            if (meaning.kind === "the-work-landed") {
+              sayTheQueueCannotRecord(error);
+              await deliver(target);
+              continue;
+            }
+
+            const owed = owedIfGaveUp(job, taskName, target, retryLimit, pointer.locales);
             for (const dead of owed) {
-              const ending: TaskEvent =
-                dead === target
-                  ? { state: "failed", error: thrown.get(job) }
-                  : { state: "abandoned" };
-              await reportFor(dead, ending);
+              await reportFor(
+                dead,
+                dead === target ? { state: "failed", error: meaning.error } : { state: "abandoned" }
+              );
             }
             throw error;
           }
@@ -204,9 +226,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
     };
   }
 
-  private reclaimWithoutBlockingBoot(
-    context: TaskRunnerContext
-  ): (payload: Payload) => Promise<void> {
+  private reclaimStaleJobsOnBoot(context: TaskRunnerContext): (payload: Payload) => Promise<void> {
     return async (payload) => {
       try {
         await new PayloadJobsTaskRunner(payload, this.config, context).reclaimStaleJobs();

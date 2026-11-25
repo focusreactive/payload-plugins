@@ -39,6 +39,7 @@ const makeReqWithPayload = (
     payload: {
       findByID,
       logger,
+      collections: {},
       config: { localization: { defaultLocale: "en", locales: ["en", "de"] } },
     },
   }) as unknown as PayloadRequest;

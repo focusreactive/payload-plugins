@@ -12,12 +12,7 @@ export function bulkTranslationDashboard(): TranslationComponent {
     attach(ctx) {
       ctx.addCollectionComponent(
         "beforeListTable",
-        () =>
-          new BulkDocumentTranslationDashboard(
-            ctx.access,
-            ctx.settings.targetSelection,
-            ctx.taskRunnerFactory.capabilities.stop
-          )
+        () => new BulkDocumentTranslationDashboard(ctx.access)
       );
     },
   };

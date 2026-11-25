@@ -1,5 +1,6 @@
 import type { CollectionSlug } from "payload";
 
+import type { World } from "../../../core/domain/world/index.js";
 import type { AutoTranslateConfig } from "../../../core/domain/auto-translate/index.js";
 import { Locales } from "../../../core/domain/locales/index.js";
 import type { TaskInput } from "../task-runner/types.js";
@@ -74,27 +75,16 @@ export function makeCollectionPolicyResolver(
 }
 
 /**
- * Publish-gate (#51 D8): a drafts-enabled collection auto-translates only on a **published** save;
- * autosave/draft saves are ignored. A collection without drafts has no `_status`, so every save
- * qualifies. Applies uniformly to create and update.
+ * Publish-gate (#51 D8): a layered collection auto-translates only on a published save; a
+ * single-layer one has no `_status`, so every save qualifies.
  */
-export function passesPublishGate(doc: Record<string, unknown>, hasDrafts: boolean): boolean {
-  if (!hasDrafts) return true;
+export function passesPublishGate(doc: Record<string, unknown>, world: World<unknown>): boolean {
+  if (world.kind === "single-layer") return true;
   return doc._status === "published";
 }
 
 /**
- * Whether the translation itself is published. A separate name from {@link passesPublishGate}, which
- * answers whether to translate at all: the two give the same answer only while nothing can translate
- * a still-draft source.
- */
-function resolvePublishOnTranslation(doc: Record<string, unknown>, hasDrafts: boolean): boolean {
-  return passesPublishGate(doc, hasDrafts);
-}
-
-/**
- * Build one {@link TaskInput} per configured target locale (the source locale is always excluded).
- * `waitUntil` encodes the debounce; `now` is injected so the timestamp is deterministic in tests.
+ * `now` is a parameter rather than `Date.now()`, so task timestamps are fixed under test.
  */
 export function buildAutoTranslateTasks(args: {
   policy: NormalizedAutoTranslatePolicy;
@@ -102,11 +92,11 @@ export function buildAutoTranslateTasks(args: {
   documentId: string;
   sourceLocale: string;
   doc: Record<string, unknown>;
-  hasDrafts: boolean;
+  world: World<unknown>;
   now: number;
 }): TaskInput[] {
-  const { policy, collectionSlug, documentId, sourceLocale, doc, hasDrafts, now } = args;
-  const publishOnTranslation = resolvePublishOnTranslation(doc, hasDrafts);
+  const { policy, collectionSlug, documentId, sourceLocale, doc, world, now } = args;
+  const publishOnTranslation = passesPublishGate(doc, world);
   const waitUntil = policy.debounceMs > 0 ? new Date(now + policy.debounceMs) : undefined;
   return Locales.excludeSource(policy.targets, sourceLocale).kept.map((target) => ({
     collectionSlug,

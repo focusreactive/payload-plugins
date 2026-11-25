@@ -3,11 +3,14 @@ import {
   createSyncRunner,
   createTranslationProvider,
   askOpenAI,
+  documentTranslation,
+  fieldTranslation,
 } from "@focus-reactive/payload-plugin-translator";
 import type {
   AskModel,
   TaskRunnerProvider,
   TranslationProvider,
+  TranslatorPluginConfig,
 } from "@focus-reactive/payload-plugin-translator";
 
 import { fakeAsk, failingAsk } from "./fakeAsk";
@@ -68,4 +71,8 @@ export function resolveTranslationProvider(): TranslationProvider {
   }
 
   return createTranslationProvider({ askModel: askOpenAIOnFirstUse });
+}
+
+export function resolveTranslatorModules(): Pick<TranslatorPluginConfig, "modules" | "provenance"> {
+  return { modules: [documentTranslation(), fieldTranslation()], provenance: true };
 }

@@ -4,8 +4,8 @@ import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateCon
 import type { RunTarget } from "../../modules/translation-run/index.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 import { freshReq } from "../../shared/payload/RequestScope.shapes.js";
-import { enforcedAtTheRead } from "../../shared/payload/enforcedAtTheRead.js";
-import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
+import { fetchDocumentLocale } from "../../shared/payload/documentLocale.js";
+import { latestOf } from "../../shared/payload/worldOfCollection.js";
 import { SourceUnreadable } from "./SourceUnreadable.js";
 import { TranslationRefused } from "./TranslationRefused.js";
 import {
@@ -119,24 +119,25 @@ export async function openTargetDocument(args: {
 
   return {
     async readSourceIfAllowed(): Promise<ApprovedSource> {
+      const read = latestOf(payload, collection);
       const [sourceData, currentTarget] = await Promise.all([
-        fetchSourceDocument({
+        fetchDocumentLocale({
           payload,
           collection,
           id: String(documentId),
           locale: sourceLocale,
+          read,
           user: requester,
           scope,
         }),
-        payload.findByID({
-          req: freshReq(scope),
+        fetchDocumentLocale({
+          payload,
           collection,
-          id: documentId,
+          id: String(documentId),
           locale: targetLocale,
-          fallbackLocale: false,
-          depth: 0,
-          ...enforcedAtTheRead(requester),
-          draft: true,
+          read,
+          user: requester,
+          scope,
         }),
       ]);
       if (!sourceData) throw new SourceUnreadable(collection, sourceLocale);

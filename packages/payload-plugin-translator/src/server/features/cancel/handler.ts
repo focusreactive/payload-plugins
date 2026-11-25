@@ -41,6 +41,22 @@ export class CancelHandler {
     this.runRecordStoreFactory = runRecordStoreFactory;
   }
 
+  private async endTheRunsThatAreStillOpen(
+    req: PayloadRequest,
+    live: readonly RunRecord[],
+    authorised: readonly string[]
+  ): Promise<void> {
+    const mine = new Set<string>(authorised);
+    for (const row of live) {
+      if (!mine.has(row.handle)) continue;
+      await this.taskRunnerFactory.report(
+        req.payload,
+        { handle: row.handle, targetLng: row.targetLng },
+        { state: "cancelled" }
+      );
+    }
+  }
+
   async handle(req: PayloadRequest): Promise<Response> {
     const validationResult = CancelInputSchema.safeParse(await req.json?.());
     if (validationResult.error) {
@@ -69,6 +85,7 @@ export class CancelHandler {
     });
 
     await runner.stop(authorised);
+    await this.endTheRunsThatAreStillOpen(req, live, authorised);
 
     if (refused.length === 0) return ServerResponse.noContent();
     return ServerResponse.success({ refused: documentsOf(refused, live) });

@@ -67,4 +67,30 @@ describe.skipIf(!SQLITE)("cancelling a run that is already translating", () => {
       `nothing translated failed — a machinery error is not a locale giving up (saw: ${announced.join(", ")})`
     ).toEqual([]);
   });
+
+  it("frees the document, so a new translation can be started", async () => {
+    // The cancelling hook keyed off this id; clearing it lets the next run translate normally.
+    const cancelled = documentId;
+    documentId = undefined;
+
+    const response = await callEndpoint(ctx.payload, "post", "/translate/enqueue", {
+      body: {
+        source_lng: "en",
+        target_lng: ["de"],
+        collection_slug: "docs",
+        collection_id: [cancelled],
+        publish_on_translation: false,
+      },
+    });
+
+    const queued = (response.data as { data: { queued?: number } }).data.queued;
+
+    expect(
+      { status: response.status, queued },
+      "a cancelled run must not keep the document busy, or the editor has no way back"
+    ).toStrictEqual({ status: 200, queued: 1 });
+
+    await ctx.payload.jobs.run({ queue: "translations" });
+    expect(announced).toContain("completed:de");
+  });
 });

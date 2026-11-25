@@ -87,6 +87,7 @@ const asThePluginResolvesIt = async (embeds: Block[]): Promise<readonly BlockLik
     access: new AnyAccessGuard(),
     runner: {
       capabilities: { stop: true, run: true },
+      report: vi.fn(),
       create: vi.fn(),
       configure: vi.fn().mockReturnValue((config: Config) => config),
     },

@@ -140,6 +140,8 @@ export function wireTranslateRunner({
         );
 
       const row = await runs.find(run);
+      if (row?.settledAt) return;
+
       const task = row === null ? null : taskFromRow(row);
 
       switch (event.state) {
@@ -166,6 +168,7 @@ export function wireTranslateRunner({
   const taskRunnerFactory: TaskRunnerFactory = {
     create: (payload) => runner.create(payload, runnerContext),
     capabilities: runner.capabilities,
+    report: runnerContext.report,
   };
 
   return { taskRunnerFactory, configModifier: runner.configure(runnerContext) };

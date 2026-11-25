@@ -23,11 +23,16 @@ export interface RunRecordStore {
    * about a different document, which means the handle was reused and the old row is overwritten.
    */
   recordQueued(identity: RunIdentity): Promise<void>;
-  /** A row that is not there is not created. */
+  /**
+   * A row that is not there is not created. A row that had already ended is opened again, because
+   * a run can be told to go a second time: a retry keeps the handle of the attempt it repeats, so
+   * without this its outcome would still read as the one the retry was started to replace.
+   */
   recordStarted(key: RunRecordKey, start: RunStart): Promise<void>;
   /**
-   * Close the row. A row that is not there is not created, and the later settlement wins: a locale
-   * cancelled while its work was in flight still records what the work did.
+   * Close the row. A row that is not there is not created, and an ending offered to a row that has
+   * already ended is refused — a cancelled locale whose work then breaks the queue's own write
+   * records the cancellation, not the wreckage.
    */
   recordSettled(key: RunRecordKey, settlement: RunSettlement): Promise<void>;
   find(key: RunRecordKey): Promise<RunRecord | null>;
@@ -37,6 +42,13 @@ export interface RunRecordStore {
   findLiveInCollection(collectionSlug: CollectionSlug): Promise<RunRecord[]>;
   findLiveForDocuments(collectionSlug: CollectionSlug, ids: readonly ID[]): Promise<RunRecord[]>;
   findRecentlyFailedInCollection(collectionSlug: CollectionSlug, since: Date): Promise<RunRecord[]>;
+  /**
+   * Undelivered means settled without delivering: failed, plus the siblings the run never got to.
+   */
+  findRecentlyUndeliveredInCollection(
+    collectionSlug: CollectionSlug,
+    since: Date
+  ): Promise<RunRecord[]>;
   deleteByDocument(document: RunDocument): Promise<void>;
 }
 
@@ -149,7 +161,7 @@ export class PayloadRunRecordStore implements RunRecordStore {
   }
 
   recordStarted(key: RunRecordKey, start: RunStart): Promise<void> {
-    return this.patch(key, start);
+    return this.patch(key, { ...start, settledAt: null, outcome: null, error: null });
   }
 
   recordSettled(key: RunRecordKey, settlement: RunSettlement): Promise<void> {
@@ -198,6 +210,19 @@ export class PayloadRunRecordStore implements RunRecordStore {
       and: [
         { collectionSlug: { equals: collectionSlug } },
         { outcome: { equals: "failed" } },
+        { settledAt: { greater_than: since.toISOString() } },
+      ],
+    });
+  }
+
+  findRecentlyUndeliveredInCollection(
+    collectionSlug: CollectionSlug,
+    since: Date
+  ): Promise<RunRecord[]> {
+    return this.rows({
+      and: [
+        { collectionSlug: { equals: collectionSlug } },
+        { outcome: { in: ["failed", "abandoned"] } },
         { settledAt: { greater_than: since.toISOString() } },
       ],
     });

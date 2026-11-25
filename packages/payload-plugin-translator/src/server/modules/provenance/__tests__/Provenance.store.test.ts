@@ -278,4 +278,31 @@ describe("PayloadProvenanceStore", () => {
       expect(await store.findByDocument("posts", "missing")).toEqual([]);
     });
   });
+
+  describe("findByDocuments", () => {
+    it("asks once for a whole page of documents, whatever their number", async () => {
+      setFound([]);
+
+      await store.findByDocuments("posts", ["doc-1", "doc-2", "doc-3"]);
+
+      expect(payload.find).toHaveBeenCalledTimes(1);
+      expect(payload.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          collection: SLUG,
+          where: {
+            and: [
+              { collectionSlug: { equals: "posts" } },
+              { documentId: { in: ["doc-1", "doc-2", "doc-3"] } },
+            ],
+          },
+          pagination: false,
+        })
+      );
+    });
+
+    it("asks nothing at all where no document was named", async () => {
+      expect(await store.findByDocuments("posts", [])).toEqual([]);
+      expect(payload.find).not.toHaveBeenCalled();
+    });
+  });
 });
