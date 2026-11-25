@@ -206,7 +206,17 @@ export type HistoryEntry = { at: string; actor: Actor } & (
       params?: Record<string, unknown>;
     }
   | { type: "transition"; from: string; to: string; transition: string }
-  | { type: "effect"; effect: string; status: "queued" | "done" | "failed"; error?: string }
+  | {
+      type: "effect";
+      effect: string;
+      status: "queued" | "done" | "failed";
+      error?: string;
+      /**
+       * The effect finished after the run had left the stage visit that queued it: the fields it
+       * reported were ignored.
+       */
+      stale?: true;
+    }
   | { type: "completed" }
   | { type: "aborted"; reason?: string }
 );
@@ -243,6 +253,10 @@ export interface QueuedEffect {
   name: string;
   activity: string;
   action: string;
+  /** The stage the action fired in. */
+  stage: string;
+  /** Which visit of that stage (transitions taken before it): its `{ set }` lands only there. */
+  visit: number;
 }
 
 /** What every engine operation returns: the new state and the effects it queued. */
@@ -301,7 +315,12 @@ export interface InstanceView {
   /** User ids and roles the run waits on. */
   waitingOn: { users: string[]; roles: string[] };
   fields: Record<string, unknown>;
+  /** The most recent history entries, oldest first (at most `HISTORY_IN_VIEW`). */
   history: HistoryEntry[];
+  /** How many entries are older than `history` (read them with `getWorkflowHistory`). */
+  olderHistory: number;
+  /** Who started the run and when, from its first history entry. */
+  started?: { at: string; actor: Actor };
   /**
    * The definition's titles, so the history can name what it records even after the run left the
    * stage. Keyed by `stage`, `stage/activity`, `stage/activity/action` and

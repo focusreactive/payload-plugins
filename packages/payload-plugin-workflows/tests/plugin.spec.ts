@@ -59,14 +59,24 @@ describe("workflowsPlugin", () => {
       "activities",
       "fired",
       "history",
-      "assignedUsers",
-      "assignedRoles",
+      "assignees",
       "revision",
       "activeKey",
       "completedAt",
     ]);
     expect(instances.fields.find((f) => "name" in f && f.name === "activeKey")).toMatchObject({
       unique: true,
+    });
+    // The hooks' per-save lookup has an index of its own.
+    expect(instances.indexes).toEqual([{ fields: ["subjectCollection", "subjectId", "status"] }]);
+    // Payload's list view reads only the shown columns, plus what the cells and links need.
+    expect(instances.admin?.enableListViewSelectAPI).toBe(true);
+    expect(instances.forceSelect).toEqual({
+      workflow: true,
+      subjectCollection: true,
+      subjectId: true,
+      stage: true,
+      status: true,
     });
   });
 
@@ -98,18 +108,23 @@ describe("workflowsPlugin", () => {
     expect(bySlug(result, "posts")).toEqual({ slug: "posts", fields: [] });
   });
 
-  it("registers endpoints, jobs and its config, and leaves the nav alone", () => {
+  it("registers endpoints on the runs collection, jobs and its config, and leaves the nav alone", () => {
     const result = run();
     expect(result.admin?.components).toEqual({ afterNavLinks: ["x"] });
-    expect(result.endpoints?.map((e) => `${e.method} ${e.path}`)).toEqual([
-      "get /workflows/state",
-      "post /workflows/start",
-      "post /workflows/fire",
-      "post /workflows/abort",
-    ]);
+    // No root endpoints: `/api/<first segment>` is a host collection's when a slug matches it.
+    expect(result.endpoints).toBeUndefined();
+    expect(
+      (bySlug(result, "workflow-instances").endpoints || []).map((e) => `${e.method} ${e.path}`)
+    ).toEqual(["get /state", "get /history", "post /start", "post /fire", "post /abort"]);
     const tasks = result.jobs?.tasks ?? [];
-    expect(tasks.map((t) => t.slug)).toEqual(["mine", "workflowEffect", "workflowTick"]);
+    expect(tasks.map((t) => t.slug)).toEqual([
+      "mine",
+      "workflowsPluginEffect",
+      "workflowsPluginTick",
+    ]);
     expect(tasks[1]?.retries).toBe(2);
+    // Effects of one run are serialised only when the host turned Payload's concurrency on.
+    expect(tasks[1]?.concurrency).toBeUndefined();
     // The tick is not scheduled: a host that needs it queues it itself.
     expect(tasks[2]?.schedule).toBeUndefined();
     const settings = result.custom?.workflows as WorkflowsSettings;
@@ -144,11 +159,45 @@ describe("workflowsPlugin", () => {
     expect(translations.de?.workflows?.widgetWaiting).toBe("Waiting on you");
   });
 
-  it("does nothing when disabled", () => {
-    const original = config();
-    expect(workflowsPlugin({ enabled: false, workflows: [editorialReview] })(original)).toBe(
-      original
+  it("serialises a run's effects with Payload's concurrency key when the host enables it", () => {
+    const result = workflowsPlugin({
+      workflows: [editorialReview],
+      effects: { "notify-author": notify },
+    })({
+      ...config(),
+      jobs: { ...config().jobs, enableConcurrencyControl: true },
+    } as Config) as Config;
+    const effect = result.jobs?.tasks?.find((task) => task.slug === "workflowsPluginEffect");
+    const key = effect?.concurrency as (args: { input: object; queue: string }) => string;
+    expect(key({ input: { instanceId: "42" }, queue: "workflows-plugin" })).toBe(
+      "workflowsPluginEffect:42"
     );
+  });
+
+  it("disabled, keeps the runs collection (data and schema) and the jobs, and nothing else", () => {
+    const original = config();
+    const result = workflowsPlugin({ enabled: false, workflows: [editorialReview] })(
+      original
+    ) as Config;
+    // The host's collections untouched: no hooks, no indicator.
+    expect(bySlug(result, "pages")).toBe(original.collections?.[0]);
+    const runs = bySlug(result, "workflow-instances");
+    expect(runs.fields.map((field) => ("name" in field ? field.name : null))).toEqual(
+      bySlug(run(), "workflow-instances").fields.map((field) =>
+        "name" in field ? field.name : null
+      )
+    );
+    expect(runs.endpoints).toBeUndefined();
+    expect(runs.admin?.hidden).toBe(true);
+    expect(JSON.stringify(runs.fields)).not.toContain("payload-plugin-workflows/");
+    expect(result.jobs?.tasks?.map((task) => task.slug)).toEqual([
+      "mine",
+      "workflowsPluginEffect",
+      "workflowsPluginTick",
+    ]);
+    expect(result.endpoints).toBeUndefined();
+    expect(result.admin).toEqual(original.admin);
+    expect(result.custom?.workflows).toBeDefined();
   });
 
   it("validates everything at once: definitions, unique names, collections, effect handlers", () => {
@@ -184,7 +233,7 @@ describe("the workflows list (runs collection in the admin)", () => {
       "workflow",
       "stage",
       "status",
-      "assignedUsers",
+      "assignees",
       "updatedAt",
     ]);
     const url = admin?.formatDocURL?.({
@@ -203,7 +252,7 @@ describe("the workflows list (runs collection in the admin)", () => {
     expect(field("subjectId").admin?.components?.Cell).toBe(
       "@focus-reactive/payload-plugin-workflows/client#SubjectCell"
     );
-    expect(field("assignedUsers").admin?.components?.Cell).toBe(
+    expect(field("assignees").admin?.components?.Cell).toBe(
       "@focus-reactive/payload-plugin-workflows/client#WaitingOnCell"
     );
     for (const name of ["workflow", "stage", "status"]) {
@@ -225,7 +274,7 @@ describe("dashboard widget", () => {
     expect(def?.stages[0]?.final).toBe(false);
   });
 
-  const ours = { widgetSlug: "workflows", width: "full" };
+  const ours = { widgetSlug: "workflows-plugin", width: "full" };
   const withAdmin = (admin: Record<string, unknown>) =>
     workflowsPlugin({ workflows: [editorialReview], effects: { "notify-author": notify } })({
       ...config(),
@@ -236,7 +285,7 @@ describe("dashboard widget", () => {
     const dashboard = withAdmin({
       dashboard: { widgets: [{ slug: "mine", Component: "x" }] },
     }).admin?.dashboard;
-    expect(dashboard?.widgets.map((widget) => widget.slug)).toEqual(["mine", "workflows"]);
+    expect(dashboard?.widgets.map((widget) => widget.slug)).toEqual(["mine", "workflows-plugin"]);
     expect(dashboard?.widgets[1]).toMatchObject({
       Component: "@focus-reactive/payload-plugin-workflows/rsc#WorkflowsWidget",
       minWidth: "medium",
@@ -329,15 +378,15 @@ describe("jobs runner warning at init", () => {
       await warnWithoutRunner(payload, options.workflows);
       expect(warn).toHaveBeenCalledTimes(1);
       expect(warn.mock.calls[0]?.[0]).toContain('"notify-author"');
-      expect(warn.mock.calls[0]?.[0]).toContain('autoRun: [{ queue: "workflows"');
+      expect(warn.mock.calls[0]?.[0]).toContain('autoRun: [{ queue: "workflows-plugin"');
     }
   });
 
   it("stays quiet when autoRun covers the queue, or there is nothing to run", async () => {
     for (const autoRun of [
-      [{ queue: "workflows" }],
+      [{ queue: "workflows-plugin" }],
       [{ allQueues: true }],
-      async () => [{ queue: "workflows" }],
+      async () => [{ queue: "workflows-plugin" }],
     ]) {
       const { payload, warn } = payloadWith(autoRun);
       await warnWithoutRunner(payload, options.workflows);

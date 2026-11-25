@@ -15,7 +15,7 @@ import type {
 import { APIError } from "payload";
 
 import { WORKFLOW_BYPASS } from "./constants.js";
-import { holdMessage, holdingGuards } from "./engine/engine.js";
+import { SYSTEM, holdMessage, holdingGuards, start as startState } from "./engine/engine.js";
 import {
   abortRun,
   canRunInline,
@@ -83,6 +83,41 @@ const isPublishing = (
   originalDoc: Record<string, unknown> | undefined
 ): boolean => hasDrafts(collection) && (data?._status ?? originalDoc?._status) === "published";
 
+/** Whether a workflow starts by itself on a document just created. */
+const startsOnCreate = (start: StartMode | undefined, doc: Record<string, unknown>): boolean => {
+  if (start === "onCreate") {
+    return true;
+  }
+  return typeof start === "object" && start.on === "create" && start.when({ doc });
+};
+
+/**
+ * The guards that would hold on a document created with `data`: those of the stage each workflow
+ * that auto-starts on it would start in, computed with the pure engine (nothing is written). A
+ * workflow that would fail to start holds nothing (the save logs why when it tries).
+ */
+const holdingOnCreate = (
+  req: PayloadRequest,
+  collection: string,
+  data: Record<string, unknown>
+): GuardDef[] => {
+  const now = new Date();
+  return settingsOf(req.payload).workflows.flatMap((def) => {
+    if (!def.collections.includes(collection)) {
+      return [];
+    }
+    try {
+      if (!startsOnCreate(def.start, data)) {
+        return [];
+      }
+      const { state } = startState(def, { actor: SYSTEM }, { doc: data, now });
+      return holdingGuards(def, state, { doc: data, now });
+    } catch {
+      return [];
+    }
+  });
+};
+
 const guardChange: CollectionBeforeChangeHook = async ({
   collection,
   data,
@@ -90,7 +125,24 @@ const guardChange: CollectionBeforeChangeHook = async ({
   originalDoc,
   req,
 }) => {
-  if (operation !== "update" || !originalDoc?.id || bypassed(req)) {
+  if (bypassed(req)) {
+    return data;
+  }
+  if (operation === "create") {
+    // A run that starts on create starts after the insert: its first stage's guards are checked
+    // here. Creating is neither an update nor a delete of an existing document; only creating it
+    // published can be held.
+    const incoming = (data ?? {}) as Record<string, unknown>;
+    if (isPublishing(collection, incoming, undefined)) {
+      for (const guard of holdingOnCreate(req, collection.slug, incoming)) {
+        if (holds(guard, "publish")) {
+          throw refusal(guard, "publish");
+        }
+      }
+    }
+    return data;
+  }
+  if (operation !== "update" || !originalDoc?.id) {
     return data;
   }
   const incoming = data as Record<string, unknown> | undefined;
@@ -139,13 +191,6 @@ const guardDelete: CollectionBeforeDeleteHook = async ({ collection, id, req }) 
 };
 
 // ---- Following the document -----------------------------------------------------------------
-
-const startsOnCreate = (start: StartMode | undefined, doc: Record<string, unknown>): boolean => {
-  if (start === "onCreate") {
-    return true;
-  }
-  return typeof start === "object" && start.on === "create" && start.when({ doc });
-};
 
 const logged = (req: PayloadRequest, msg: string, error: unknown) =>
   req.payload.logger.error({ err: error, msg: `workflows: ${msg}` });

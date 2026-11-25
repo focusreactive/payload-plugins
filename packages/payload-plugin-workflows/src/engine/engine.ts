@@ -97,10 +97,13 @@ const conditionContext = (
   };
 };
 
-/** The user an activity's `assignee` field holds, if any. */
+/**
+ * The user an activity's `assignee` field holds, if any, as a string. Fails closed: any non-empty
+ * stored value holds the activity (a numeric id included), so nobody else may act on it.
+ */
 export const heldAssignee = (state: InstanceState, activity: ActivityDef): string | undefined => {
   const value = activity.assignee ? state.fields[activity.assignee] : undefined;
-  return typeof value === "string" && value ? value : undefined;
+  return value === undefined || value === null || value === "" ? undefined : String(value);
 };
 
 /** Whether the caller is assigned: a held assignee shadows the role pool; neither => everyone. */
@@ -433,6 +436,14 @@ export const mayAbort = (
 
 // ---- Steps --------------------------------------------------------------------------------------
 
+/**
+ * Which visit of its stage the run is in: the number of transitions it has taken. Every stage
+ * entry after the first is a transition, and the history only grows, so the count is exact across
+ * loop-backs into the same stage.
+ */
+export const visitOf = (state: InstanceState): number =>
+  state.history.reduce((count, entry) => count + (entry.type === "transition" ? 1 : 0), 0);
+
 /** Records one action firing: fields, activity status, history and the effects it queues. */
 const applyAction = (
   def: WorkflowDefinition,
@@ -465,10 +476,13 @@ const applyAction = (
     auto,
     ...(firing.params && Object.keys(firing.params).length > 0 ? { params: firing.params } : {}),
   };
+  const visit = visitOf(state);
   const effects: QueuedEffect[] = (action.effects ?? []).map((name) => ({
     name,
     activity,
     action: action.name,
+    stage: state.stage,
+    visit,
   }));
   const queued: HistoryEntry[] = effects.map((effect) => ({
     at,
@@ -698,7 +712,7 @@ export const start = (
         `start fields: ${quoted(notInput)} cannot be supplied when starting; only fields declared with \`input: true\` can.`
       );
     }
-    fields = applyPatch(def, initial, input.fields, "start fields");
+    fields = applyPatch(def, fields, input.fields, "start fields");
   }
   const stage = findStage(def, def.initialStage);
   if (!stage) {
@@ -787,6 +801,39 @@ export const patchFields = (
   assertActive(state);
   const fields = applyPatch(def, state.fields, patch, "patchFields");
   return settleAfter(def, { state: { ...state, fields }, effects: [] }, env);
+};
+
+/**
+ * Records an effect's outcome in the history and, if it reported fields back, applies them and
+ * settles. The fields land only while the run is still in the stage visit that queued the effect
+ * (`effect.stage` / `effect.visit`); otherwise the outcome is recorded as `stale` and the fields
+ * are ignored. An effect queued before visits were recorded has no `visit` and is not checked.
+ */
+export const recordEffect = (
+  def: WorkflowDefinition | undefined,
+  state: InstanceState,
+  effect: Pick<QueuedEffect, "name"> & Partial<Pick<QueuedEffect, "stage" | "visit">>,
+  outcome: { status: "done" | "failed"; error?: string; set?: Patch },
+  env: Env
+): Result => {
+  const reported = outcome.set && Object.keys(outcome.set).length > 0 ? outcome.set : undefined;
+  const sameVisit =
+    effect.visit === undefined || (state.stage === effect.stage && visitOf(state) === effect.visit);
+  const stale = Boolean(reported) && (state.status !== "active" || !sameVisit || !def);
+  const entry: HistoryEntry = {
+    at: env.now.toISOString(),
+    actor: SYSTEM,
+    type: "effect",
+    effect: effect.name,
+    status: outcome.status,
+    ...(outcome.error ? { error: outcome.error } : {}),
+    ...(stale ? { stale: true } : {}),
+  };
+  const recorded = { ...state, history: [...state.history, entry] };
+  if (!reported || stale || !def) {
+    return { state: recorded, effects: [] };
+  }
+  return patchFields(def, recorded, reported, env);
 };
 
 /** Ends an active run. Needs no definition, so a stuck run can always be aborted. */

@@ -1,21 +1,25 @@
 "use client";
 
-import { ChevronIcon } from "@payloadcms/ui";
+import { ChevronIcon, toast } from "@payloadcms/ui";
 import { useId, useState } from "react";
+import type { ReactNode } from "react";
 
-import type { InstanceView } from "../../types.js";
+import { ENDPOINTS } from "../../constants.js";
+import type { HistoryEntry, InstanceView } from "../../types.js";
 import { formatDateTime } from "../shared/format.js";
 import type { People, T } from "../shared/format.js";
 import {
   TIMELINE_VISIBLE,
   groupByDay,
+  mergeHistory,
   rowDetails,
   rowWhat,
   rowWho,
   stepSentence,
   timelineRows,
 } from "../shared/history.js";
-import type { ActorKind, TimelineDay, TimelineRow } from "../shared/history.js";
+import type { ActorKind, LoadedHistory, TimelineDay, TimelineRow } from "../shared/history.js";
+import { useWorkflowsApi } from "../shared/useWorkflowsApi.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
 
 const KIND_LABEL: Record<ActorKind, Parameters<T>[0]> = {
@@ -116,17 +120,58 @@ const dayLabel = (day: TimelineDay, t: T, language: string): string => {
 
 /**
  * The workflow's history as a vertical timeline, newest first, grouped by day: one entry per step
- * a person or agent took, the automatic steps it caused folded under it. Without a run (nothing
- * started yet) it says what will appear here.
+ * a person or agent took, the automatic steps it caused folded under it. "Show older" first shows
+ * the rows already loaded, then reads older entries from the server, a page at a time. Without a
+ * run (nothing started yet) it says what will appear here.
  */
 export const HistoryList = ({ view, people }: { view?: InstanceView; people: People }) => {
   const { t, language } = useWorkflowsT();
+  const api = useWorkflowsApi();
   const [all, setAll] = useState(false);
+  const [loaded, setLoaded] = useState<LoadedHistory | null>(null);
+  const [loading, setLoading] = useState(false);
   const headingId = useId();
   const run = view;
-  const rows = timelineRows(run?.history ?? []);
+  const merged = run ? mergeHistory(run, loaded) : { history: [], older: 0 };
+  const rows = timelineRows(merged.history);
   const shown = all ? rows : rows.slice(0, TIMELINE_VISIBLE);
   const hidden = rows.length - shown.length;
+  const loadOlder = async () => {
+    if (!run?.id) {
+      return;
+    }
+    setLoading(true);
+    try {
+      const page = await api<{ entries: HistoryEntry[]; older: number }>(ENDPOINTS.history, {
+        query: { instanceId: run.id, before: merged.older },
+      });
+      const continued = loaded && loaded.from === merged.older ? loaded.entries : [];
+      setLoaded({ from: page.older, entries: [...page.entries, ...continued] });
+      setAll(true);
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : t("somethingWentWrong"));
+    }
+    setLoading(false);
+  };
+  let more: ReactNode = null;
+  if (hidden > 0) {
+    more = (
+      <button className="workflows-history__more" onClick={() => setAll(true)} type="button">
+        {t("timelineShowOlder", { count: hidden })}
+      </button>
+    );
+  } else if (merged.older > 0) {
+    more = (
+      <button
+        className="workflows-history__more"
+        disabled={loading}
+        onClick={() => void loadOlder()}
+        type="button"
+      >
+        {t("timelineLoadOlder", { count: merged.older })}
+      </button>
+    );
+  }
   return (
     <section aria-labelledby={headingId} className="workflows-history">
       <h3 className="workflows-section-title" id={headingId}>
@@ -147,11 +192,7 @@ export const HistoryList = ({ view, people }: { view?: InstanceView; people: Peo
             </div>
           ))
         : null}
-      {hidden > 0 ? (
-        <button className="workflows-history__more" onClick={() => setAll(true)} type="button">
-          {t("timelineShowOlder", { count: hidden })}
-        </button>
-      ) : null}
+      {more}
     </section>
   );
 };

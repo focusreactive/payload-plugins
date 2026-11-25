@@ -314,8 +314,15 @@ export const WorkflowDrawerBody = ({
     void fire(view, activity, action);
   };
 
+  const notice = state.hiddenCollections ? (
+    <Banner className="workflows-banner" type="info">
+      {t("hiddenByAccess", { collections: state.hiddenCollections.join(", ") })}
+    </Banner>
+  ) : null;
+
   const main = view ? (
     <>
+      {notice}
       {active.length > 1 ? (
         <div className="workflows-tabs">
           {active.map((entry) => (
@@ -358,7 +365,10 @@ export const WorkflowDrawerBody = ({
       ) : null}
     </>
   ) : (
-    <StartPanel available={state.available} busy={busy} start={start} />
+    <>
+      {notice}
+      <StartPanel available={state.available} busy={busy} start={start} />
+    </>
   );
 
   return (

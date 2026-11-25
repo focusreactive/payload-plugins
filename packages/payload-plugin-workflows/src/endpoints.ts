@@ -1,10 +1,10 @@
 import type { Endpoint, PayloadRequest, TypedUser } from "payload";
 
-import { ENDPOINTS } from "./constants.js";
+import { ENDPOINTS, RUNS_SLUG } from "./constants.js";
 import { isWorkflowError } from "./engine/errors.js";
 import type { WorkflowErrorCode } from "./engine/errors.js";
 import { abortWorkflow, fireWorkflowAction, startWorkflow } from "./server/operations.js";
-import { getWorkflowState } from "./server/queries.js";
+import { getWorkflowHistory, getWorkflowState } from "./server/queries.js";
 import type { UserActor } from "./types.js";
 
 const json = (body: unknown, status = 200) =>
@@ -87,9 +87,17 @@ const handle =
     }
   };
 
+/** An endpoint's path on the runs collection: `/api/workflow-instances/state` is `/state`. */
+const onRuns = (path: string): string => path.slice(`/${RUNS_SLUG}`.length);
+
+/** A non-negative integer query parameter, else `undefined`. */
+const count = (value: string | null): number | undefined =>
+  value !== null && /^\d+$/u.test(value) ? Number(value) : undefined;
+
+/** The plugin's REST endpoints, mounted on the runs collection (`ENDPOINTS`). */
 export const workflowEndpoints = (): Endpoint[] => [
   {
-    path: ENDPOINTS.state,
+    path: onRuns(ENDPOINTS.state),
     method: "get",
     handler: handle(async (req, user) => {
       const query = queryOf(req);
@@ -98,11 +106,29 @@ export const workflowEndpoints = (): Endpoint[] => [
       if (!collection || !id) {
         return missing(["collection", "id"]);
       }
-      return getWorkflowState(req.payload, { collection, id, user });
+      return getWorkflowState(req.payload, { collection, id, user, req, via: viaOf(user) });
     }),
   },
   {
-    path: ENDPOINTS.start,
+    path: onRuns(ENDPOINTS.history),
+    method: "get",
+    handler: handle(async (req, user) => {
+      const query = queryOf(req);
+      const instanceId = query.get("instanceId");
+      if (!instanceId) {
+        return missing(["instanceId"]);
+      }
+      return getWorkflowHistory(req.payload, {
+        instanceId,
+        before: count(query.get("before")),
+        limit: count(query.get("limit")),
+        user,
+        req,
+      });
+    }),
+  },
+  {
+    path: onRuns(ENDPOINTS.start),
     method: "post",
     handler: handle(async (req, user) => {
       const body = await readBody(req);
@@ -124,7 +150,7 @@ export const workflowEndpoints = (): Endpoint[] => [
     }),
   },
   {
-    path: ENDPOINTS.fire,
+    path: onRuns(ENDPOINTS.fire),
     method: "post",
     handler: handle(async (req, user) => {
       const body = await readBody(req);
@@ -145,7 +171,7 @@ export const workflowEndpoints = (): Endpoint[] => [
     }),
   },
   {
-    path: ENDPOINTS.abort,
+    path: onRuns(ENDPOINTS.abort),
     method: "post",
     handler: handle(async (req, user) => {
       const body = await readBody(req);

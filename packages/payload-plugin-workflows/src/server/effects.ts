@@ -5,8 +5,9 @@
 import type { PayloadRequest, TaskConfig } from "payload";
 
 import { EFFECT_TASK, TICK_TASK } from "../constants.js";
-import { patchFields } from "../engine/engine.js";
-import type { HistoryEntry, Patch, WorkflowDefinition } from "../types.js";
+import { recordEffect } from "../engine/engine.js";
+import { isWorkflowError } from "../engine/errors.js";
+import type { WorkflowDefinition } from "../types.js";
 import { loadSubject, presentRun, settingsOf, tickWorkflows } from "./operations.js";
 import { loadRun, mutateRun, subjectOf } from "./store.js";
 
@@ -15,47 +16,54 @@ interface EffectInput {
   effect: string;
   activity: string;
   action: string;
+  /** The stage visit that queued it (absent on jobs queued before visits were recorded). */
+  stage?: string;
+  visit?: string;
 }
 
 const messageOf = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
-/** Appends the effect's outcome to the run's history and, if it reported back, applies `set`. */
+/**
+ * Attempts at recording an outcome. Effects of one run that finish together all write that run,
+ * so recording retries on its own (with jitter) instead of failing the job: a retried job would
+ * run its handler again.
+ */
+const RECORD_ATTEMPTS = 25;
+
+/** Appends the effect's outcome to the run's history and applies its `set` (`recordEffect`). */
 const record = (
   req: PayloadRequest,
   def: WorkflowDefinition | undefined,
   input: EffectInput,
-  outcome: { status: "done" | "failed"; error?: string },
-  subject: Record<string, unknown> | null,
-  set?: Patch
+  outcome: Parameters<typeof recordEffect>[3],
+  subject: Record<string, unknown> | null
 ) =>
-  mutateRun(req, def, input.instanceId, (state) => {
-    // One time for the outcome and what it moves, so the history reads them as one step.
-    const now = new Date();
-    const entry: HistoryEntry = {
-      at: now.toISOString(),
-      actor: { system: true },
-      type: "effect",
-      effect: input.effect,
-      status: outcome.status,
-      ...(outcome.error ? { error: outcome.error } : {}),
-    };
-    const recorded = { ...state, history: [...state.history, entry] };
-    if (!set || Object.keys(set).length === 0) {
-      return { state: recorded, effects: [] };
-    }
-    if (!def || state.status !== "active") {
-      req.payload.logger.warn(
-        `workflows: effect "${input.effect}" reported fields for run ${input.instanceId}, which is no longer active; ignored`
-      );
-      return { state: recorded, effects: [] };
-    }
-    return patchFields(def, recorded, set, { doc: subject, now });
-  });
+  mutateRun(
+    req,
+    def,
+    input.instanceId,
+    (state) =>
+      recordEffect(
+        def,
+        state,
+        {
+          name: input.effect,
+          ...(input.stage === undefined ? {} : { stage: input.stage }),
+          ...(input.visit ? { visit: Number(input.visit) } : {}),
+        },
+        outcome,
+        // One time for the outcome and what it moves, so the history reads them as one step.
+        { doc: subject, now: new Date() }
+      ),
+    RECORD_ATTEMPTS
+  );
 
 /**
  * One effect job: run the registered handler, then record it. A throwing handler is recorded as
- * `failed` and rethrown so Payload retries the job. At least once: a retry runs the handler again.
+ * `failed` and rethrown so Payload retries the job. Once the handler has succeeded nothing throws,
+ * so it is never run again because recording its outcome failed. At least once: a retry after a
+ * failure, or a crash before the job is marked done, runs the handler again.
  */
 const runEffect = async (req: PayloadRequest, input: EffectInput): Promise<void> => {
   const { payload } = req;
@@ -63,6 +71,11 @@ const runEffect = async (req: PayloadRequest, input: EffectInput): Promise<void>
   const doc = await loadRun(req, input.instanceId);
   const def = settings.workflows.find((entry) => entry.name === doc.workflow);
   const subject = await loadSubject(req, subjectOf(doc), null);
+  const unrecorded = (error: unknown, what: string) =>
+    payload.logger.error({
+      err: error,
+      msg: `workflows: could not record ${what} of effect "${input.effect}" on run ${input.instanceId}`,
+    });
   let result: Awaited<ReturnType<(typeof settings.effects)[string]>>;
   try {
     const handler = settings.effects[input.effect];
@@ -74,45 +87,79 @@ const runEffect = async (req: PayloadRequest, input: EffectInput): Promise<void>
       req,
       instance: await presentRun(req, doc, subject, null),
       doc: subject,
-      effect: { name: input.effect, activity: input.activity, action: input.action },
+      effect: {
+        name: input.effect,
+        activity: input.activity,
+        action: input.action,
+        stage: input.stage ?? doc.stage,
+        visit: Number(input.visit ?? 0),
+      },
     });
   } catch (error) {
     try {
       await record(req, def, input, { status: "failed", error: messageOf(error) }, subject);
     } catch (recordError) {
       // Never hide the handler's error behind ours: it is what the job's log must show.
-      payload.logger.error({
-        err: recordError,
-        msg: `workflows: could not record the failure of effect "${input.effect}" on run ${input.instanceId}`,
-      });
+      unrecorded(recordError, "the failure");
     }
     throw error;
   }
   try {
-    await record(req, def, input, { status: "done" }, subject, result?.set);
+    await record(
+      req,
+      def,
+      input,
+      { status: "done", ...(result?.set ? { set: result.set } : {}) },
+      subject
+    );
   } catch (error) {
+    if (isWorkflowError(error) && error.code === "conflict") {
+      unrecorded(error, "the outcome");
+      return;
+    }
     // The handler did its work; a `set` the definition rejects is recorded, not retried.
     payload.logger.error({
       err: error,
       msg: `workflows: effect "${input.effect}" could not apply its result`,
     });
-    await record(req, def, input, { status: "failed", error: messageOf(error) }, subject);
+    try {
+      await record(req, def, input, { status: "failed", error: messageOf(error) }, subject);
+    } catch (recordError) {
+      unrecorded(recordError, "the failure");
+    }
   }
 };
 
-const text = (name: string) => ({ name, type: "text" as const, required: true });
+const text = (name: string, required = true) => ({ name, type: "text" as const, required });
 
-export const effectTask: TaskConfig = {
+/**
+ * The effect job. With `jobs.enableConcurrencyControl` on in the host's config, the effects of one
+ * run are serialised (Payload's concurrency key, per run): they no longer race to record.
+ */
+export const effectTask = (serialise: boolean): TaskConfig => ({
   slug: EFFECT_TASK,
   label: "Workflow effect",
   // Retries after the first failure.
   retries: 2,
-  inputSchema: [text("instanceId"), text("effect"), text("activity"), text("action")],
+  inputSchema: [
+    text("instanceId"),
+    text("effect"),
+    text("activity"),
+    text("action"),
+    text("stage", false),
+    text("visit", false),
+  ],
+  ...(serialise
+    ? {
+        concurrency: ({ input }: { input?: object }) =>
+          `${EFFECT_TASK}:${(input as Partial<EffectInput> | undefined)?.instanceId ?? ""}`,
+      }
+    : {}),
   handler: async ({ input, req }) => {
     await runEffect(req, input as unknown as EffectInput);
     return { output: {} };
   },
-};
+});
 
 /** Not scheduled by the plugin: queue it from your own schedule if a condition reads `now`. */
 export const tickTask: TaskConfig = {

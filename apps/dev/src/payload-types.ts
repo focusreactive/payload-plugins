@@ -125,15 +125,15 @@ export interface Config {
   };
   locale: 'en' | 'de' | 'fr' | 'es';
   widgets: {
-    workflows: WorkflowsWidget;
+    'workflows-plugin': WorkflowsPluginWidget;
     collections: CollectionsWidget;
   };
   user: User | PayloadMcpApiKey;
   jobs: {
     tasks: {
       translate_document: TaskTranslateDocument;
-      workflowEffect: TaskWorkflowEffect;
-      workflowTick: TaskWorkflowTick;
+      workflowsPluginEffect: TaskWorkflowsPluginEffect;
+      workflowsPluginTick: TaskWorkflowsPluginTick;
       schedulePublish: TaskSchedulePublish;
       inline: {
         input: unknown;
@@ -824,8 +824,7 @@ export interface WorkflowInstance {
     | number
     | boolean
     | null;
-  assignedUsers?: string[] | null;
-  assignedRoles?: string[] | null;
+  assignees?: string | null;
   revision: number;
   activeKey: string;
   completedAt?: string | null;
@@ -957,7 +956,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'translate_document' | 'workflowEffect' | 'workflowTick' | 'schedulePublish';
+        taskSlug: 'inline' | 'translate_document' | 'workflowsPluginEffect' | 'workflowsPluginTick' | 'schedulePublish';
         taskID: string;
         input?:
           | {
@@ -991,7 +990,9 @@ export interface PayloadJob {
       }[]
     | null;
   workflowSlug?: 'translate_document_locales' | null;
-  taskSlug?: ('inline' | 'translate_document' | 'workflowEffect' | 'workflowTick' | 'schedulePublish') | null;
+  taskSlug?:
+    | ('inline' | 'translate_document' | 'workflowsPluginEffect' | 'workflowsPluginTick' | 'schedulePublish')
+    | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -1471,8 +1472,7 @@ export interface WorkflowInstancesSelect<T extends boolean = true> {
   activities?: T;
   fired?: T;
   history?: T;
-  assignedUsers?: T;
-  assignedRoles?: T;
+  assignees?: T;
   revision?: T;
   activeKey?: T;
   completedAt?: T;
@@ -1633,9 +1633,9 @@ export interface _AbManifestSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "workflows_widget".
+ * via the `definition` "workflows-plugin_widget".
  */
-export interface WorkflowsWidget {
+export interface WorkflowsPluginWidget {
   data?: {
     [k: string]: unknown;
   };
@@ -1684,22 +1684,24 @@ export interface TaskTranslateDocument {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskWorkflowEffect".
+ * via the `definition` "TaskWorkflowsPluginEffect".
  */
-export interface TaskWorkflowEffect {
+export interface TaskWorkflowsPluginEffect {
   input: {
     instanceId: string;
     effect: string;
     activity: string;
     action: string;
+    stage?: string | null;
+    visit?: string | null;
   };
   output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskWorkflowTick".
+ * via the `definition` "TaskWorkflowsPluginTick".
  */
-export interface TaskWorkflowTick {
+export interface TaskWorkflowsPluginTick {
   input?: unknown;
   output?: unknown;
 }

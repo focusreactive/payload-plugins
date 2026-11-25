@@ -111,8 +111,8 @@ To try it: save a page, press **Workflow** next to Save, start **Editorial revie
 - **Action.** The only thing that changes a run. It may write fields (`set`, an object or a function of the context), mark the stage's task finished (`status: "done" | "skipped" | "failed"`), ask the caller for input (`params`: `string`, `text`, `number`, `boolean`, `date`, `select`), narrow who may fire it (`roles`, `filter`, `agents: "deny"` for a step only a person may take) and queue effects. An action with `when` is **automatic**: the engine fires it as soon as the condition holds, at most once per stage visit, and nobody can call it.
 - **Transition.** After every change the current stage's transitions are checked in order, and the first whose `when` holds moves the run. Without `when` a transition opens once the stage's task is done or skipped. This repeats until nothing moves (at most 50 steps, against definitions that loop).
 - **Run and fields.** The run's own state, never written to the document. Field types: `string`, `text`, `number`, `boolean`, `date`, `user`, `json`; every write is type-checked (`invalid-patch` otherwise) and `null` unsets. `initialValue` seeds a field: a value, or a function of the start (`({ actor, doc }) => value`, e.g. `actor.id` to hold who started it; unset when the system starts it); only fields with `input: true` may be passed when starting (`startWorkflow({ fields })`).
-- **Guard.** While a run is in the stage, the listed operations on the document (`publish`, `update`, `delete`) are refused with what is on hold and the guard's title ("Publishing is on hold. A reviewer must approve this page first."), unless its `unless` condition holds. It is enforced in collection hooks, so it holds for the admin, REST, GraphQL and the Local API. `publish` needs drafts on the collection (the plugin refuses the config otherwise) and covers publishing a draft and any non-draft save of a published document; moving to the trash counts as `delete`. To let one write through, for example an effect that publishes, pass `context: { [WORKFLOW_BYPASS]: true }` on that Local API call (never on a shared `req`).
-- **Effect.** A handler registered under `effects`, run as a Payload job queued in the same transaction as the change. It gets `{ payload, req, instance, doc, effect }` and may return `{ set }` to write fields and move the run. Jobs are retried, so a handler runs at least once and may run again: make it idempotent.
+- **Guard.** While a run is in the stage, the listed operations on the document (`publish`, `update`, `delete`) are refused with what is on hold and the guard's title ("Publishing is on hold. A reviewer must approve this page first."), unless its `unless` condition holds. A workflow that starts on create is checked before the insert: creating a document already published is refused when the stage it would start in holds `publish`. It is enforced in collection hooks, so it holds for the admin, REST, GraphQL and the Local API. `publish` needs drafts on the collection (the plugin refuses the config otherwise) and covers publishing a draft and any non-draft save of a published document; moving to the trash counts as `delete`. To let one write through, for example an effect that publishes, pass `context: { [WORKFLOW_BYPASS]: true }` on that Local API call (never on a shared `req`).
+- **Effect.** A handler registered under `effects`, run as a Payload job queued in the same transaction as the change. It gets `{ payload, req, instance, doc, effect }` and may return `{ set }` to write fields and move the run. The `set` lands only while the run is still in the stage visit that queued the effect (`effect.stage`, `effect.visit`); if the run has moved on, or left and come back, the outcome is recorded as finished with its result ignored. A handler that throws is retried, so it runs at least once and may run again: make it idempotent. Recording a successful outcome retries on its own and never runs the handler again. With `jobs.enableConcurrencyControl: true` in your Payload config, the effects of one run are also run one at a time.
 - **Assignment.** If the `assignee` field holds a user, only that user may act. Otherwise anyone with one of the `roles` may, or anyone at all without roles. Roles come from `user.roles` or `user.role` unless you pass `roles`.
 - **Conditions** (`when`, `unless`, `filter`) are synchronous functions of `{ fields, activities, allActivitiesDone, anyActivityFailed, doc, now, stage }`; `doc` is the latest draft. A `filter` also sees the caller (`actor`, `roles`, `assigned`). A condition that throws fails the operation and nothing is written.
 - **Start.** `start: "manual"` (default) offers a Start button; `"onCreate"` or `{ on: "create", when }` starts a run when a document is created. A document runs at most one active run of a workflow.
@@ -128,15 +128,15 @@ To try it: save a page, press **Workflow** next to Save, start **Editorial revie
 | `roles` | `user.roles` / `user.role` | `(user) => string[]`: a user's roles, for assignment |
 | `access` | a user of the admin user collection | `{ start?, fire?, abort? }`, each `({ req, user, workflow, collection, id, doc }) => boolean`. `user` is the user the operation acts for; only `true` allows. Without `abort`: while a guard holds, only someone who may act in the stage may stop the run, so stopping is never a way around a hold |
 | `dashboard` | `true` | `false` leaves the dashboard alone (no widget) |
-| `enabled` | `true` | `false` leaves the config untouched |
+| `enabled` | `true` | `false` keeps the runs collection (its data and schema) and the job tasks, so queued effects still run; it leaves out the hooks and guards, the endpoints, the admin components and the widget |
 
 ## API
 
 Every operation acts as `user`, which is required (`unauthorized` without one), and reads the document with that user's access: someone who cannot read a document can neither see nor move its workflow. `access` then decides who may start, fire and abort.
 
 ```ts
-import { abortWorkflow, fireWorkflowAction, getWorkflowState, listWorkflowInstances,
-  startWorkflow } from "@focus-reactive/payload-plugin-workflows";
+import { abortWorkflow, fireWorkflowAction, getWorkflowHistory, getWorkflowState,
+  listWorkflowInstances, startWorkflow } from "@focus-reactive/payload-plugin-workflows";
 
 const run = await startWorkflow(payload, { workflow: "editorial-review", collection: "pages", id, user });
 await fireWorkflowAction(payload, { instanceId: run.id!, action: "submit", user });
@@ -144,9 +144,10 @@ await fireWorkflowAction(payload, { instanceId: run.id!, action: "reject", param
 await abortWorkflow(payload, { instanceId: run.id!, reason: "Duplicate", user });
 const { instances, available } = await getWorkflowState(payload, { collection: "pages", id, user });
 const inbox = await listWorkflowInstances(payload, { scope: "mine", status: "active", user }); // waiting on you first, then open to anyone
+const older = await getWorkflowHistory(payload, { instanceId: run.id!, before: run.olderHistory, user }); // { entries, older }
 ```
 
-`fireWorkflowAction` takes `activity` only when the stage has several. The operations return an `InstanceView`: the stage, the stepper, the current actions with `allowed` and `reason` (from the same check `fire` runs, so an enabled button never fails for a reason the UI could have known), the guards holding, who it waits on (user ids and roles), whether the caller may stop it (`canAbort`), the fields and the history. `listWorkflowInstances` leaves out runs on documents the caller cannot read, before paginating.
+`fireWorkflowAction` takes `activity` only when the stage has several. The operations return an `InstanceView`: the stage, the stepper, the current actions with `allowed` and `reason` (from the same check `fire` runs, so an enabled button never fails for a reason the UI could have known), the guards holding, who it waits on (user ids and roles), whether the caller may stop it (`canAbort`), the fields, who started it (`started`) and the most recent 50 history entries (`history`), with the count of older ones (`olderHistory`; read them a page at a time with `getWorkflowHistory`). `getWorkflowState` returns a document's active runs and its latest finished one. `listWorkflowInstances` pages, sorts and counts in the database, with the caller's read access, so runs on documents the caller cannot read are neither listed nor counted. The reads take the caller's `req` (`{ …, req }`) so access rules that read its headers or cookies see them. When runs are hidden because a per-document read rule allows more than 5,000 documents, the answer says so in `hiddenCollections`.
 
 A refusal throws `WorkflowError` with a `code` (`isWorkflowError` narrows it): `unauthorized`, `not-allowed`, `invalid-params`, `invalid-patch`, `already-running`, `conflict`, `instance-not-active`, `activity-not-active`, `not-callable`, or `unknown-workflow` / `-instance` / `-subject` / `-stage` / `-activity` / `-action`. Concurrent changes to one run use optimistic locking: the loser re-runs on fresh state, and after three attempts it is `conflict`.
 
@@ -154,16 +155,19 @@ The same operations under your API route, for signed-in users (errors as `{ erro
 
 | | |
 |---|---|
-| `GET /workflows/state?collection=&id=` | `getWorkflowState` |
-| `POST /workflows/start` | `{ workflow, collection, id, fields? }` |
-| `POST /workflows/fire` | `{ instanceId, action, activity?, params? }` |
-| `POST /workflows/abort` | `{ instanceId, reason? }` |
+| `GET /workflow-instances/state?collection=&id=` | `getWorkflowState` |
+| `GET /workflow-instances/history?instanceId=&before=&limit=` | `getWorkflowHistory` |
+| `POST /workflow-instances/start` | `{ workflow, collection, id, fields? }` |
+| `POST /workflow-instances/fire` | `{ instanceId, action, activity?, params? }` |
+| `POST /workflow-instances/abort` | `{ instanceId, reason? }` |
 
-Runs themselves are readable over Payload's own REST and GraphQL API for the `workflow-instances` collection (admin users only). Its `read` access, like the list view, shows a caller only runs on documents they may read: each subject collection's own `read` access decides (`false`: none of its runs; `true`: all; a query constraint: the runs on the ids it allows, resolved with one query of at most 5,000 ids; above that the collection's runs are hidden from that user and a warning is logged once).
+They are endpoints of the runs collection, so a collection of your own cannot shadow them.
+
+Runs themselves are readable over Payload's own REST and GraphQL API for the `workflow-instances` collection (admin users only). Its `read` access, like the list view, shows a caller only runs on documents they may read: each subject collection's own `read` access decides (`false`: none of its runs; `true`: all; a query constraint: the runs on the ids it allows, resolved once per request with one query of at most 5,000 ids; above that the collection's runs are hidden from that user, a warning is logged once, and the plugin's lists, document state and dashboard widget say that some workflows are hidden).
 
 **Testing.** `createWorkflowSimulator(definition, { doc })` runs a definition in memory on the same engine, without Payload: `sim.fire("submit", { user: "ann" })`, `sim.fire("reject", { user: "bea", roles: ["editor"], params: { reason: "Too long" } })`, then assert on `sim.state.stage`, `sim.view(caller)`, `sim.effects`. It also has `setDoc(doc)`, `advance(date)`, `patch(fields)` and `abort()`.
 
-**Conditions that read `now`.** The plugin re-checks a document's runs on every save, but nothing re-checks them as time passes. If a condition reads `now`, call `tickWorkflows(payload)` from your own schedule, or queue the `workflowTick` task on one; it settles every active run.
+**Conditions that read `now`.** The plugin re-checks a document's runs on every save, but nothing re-checks them as time passes. If a condition reads `now`, call `tickWorkflows(payload)` from your own schedule, or queue the `workflowsPluginTick` task on one. It settles the active runs whose stage can move without a write (one with an automatic action or a transition with its own `when`), reading their documents a page at a time.
 
 ## Agents
 
@@ -207,14 +211,31 @@ Read in this order:
 7. `src/server/effects.ts`: the effect job. `src/hooks.ts`: guards and settle-on-save. `src/endpoints.ts`: REST. `src/agent.ts`: the five agent operations, once, as AI-SDK and MCP tools.
 8. `src/components/`: the indicator and drawer (`document/`), the dashboard widget (`widget/`, a server component) and the list's cells (`list/`).
 
-One action, from the button to the database: the drawer posts to `/workflows/fire` → `endpoints.ts` → `fireWorkflowAction` in `server/operations.ts` reads the run and the document as the user and checks `access.fire` → `mutateRun` in `server/store.ts` loads the run and calls `fire` in `engine/engine.ts`, which checks the verdict and params, applies the action and settles → the new state is written only if `revision` is unchanged, with its effect jobs → the operation runs the effects if it owns the commit and answers with the view.
+One action, from the button to the database: the drawer posts to `/workflow-instances/fire` → `endpoints.ts` → `fireWorkflowAction` in `server/operations.ts` reads the run and the document as the user and checks `access.fire` → `mutateRun` in `server/store.ts` calls `fire` on the run just read in `engine/engine.ts`, which checks the verdict and params, applies the action and settles → the new state is written only if `revision` is unchanged, with its effect jobs → the operation runs the effects if it owns the commit and answers with the view.
 
 ## Known limits
 
-- **Effects inline or queued.** An effect runs right after its change commits, in the same request, when that change owned its transaction or there was none. Otherwise (a Local API call given a `req` with an open transaction; a save that settles or starts a run while database transactions are on) its job waits for a jobs runner on the `workflows` queue: configure `jobs: { autoRun: [{ queue: "workflows" }] }`. The plugin warns once at startup if effects are declared and nothing covers the queue. With `jobs.runHooks: true`, Payload 3.90 fails to record a successful task, so the job can run again.
+- **Effects inline or queued.** An effect runs right after its change commits, in the same request, when that change owned its transaction or there was none. Otherwise (a Local API call given a `req` with an open transaction; a save that settles or starts a run while database transactions are on) its job waits for a jobs runner on the `workflows-plugin` queue: configure `jobs: { autoRun: [{ queue: "workflows-plugin" }] }`. The plugin warns once at startup if effects are declared and nothing covers the queue. With `jobs.runHooks: true`, Payload 3.90 fails to record a successful task, so the job can run again.
+- **Jobs runners in parallel.** Payload 3.90 claims a job by reading it and then marking it, so two runner passes over the same queue at the same moment can both run a job; the handler then runs twice. One runner per queue avoids it.
+- **"For me" matches tokens.** A role containing `|` is not supported; `%` and `_` in a role or id match like SQL wildcards, and matching is case-insensitive, so such a role may list a few runs too many (who may act is still checked exactly).
 - **Changing a definition.** Runs follow the definition in code. A run whose stage was removed is **stuck** and can only be aborted; an activity added to the current stage is active at once, one removed no longer holds it.
 - **Inside a save's transaction** the hooks' writes have no savepoint. A workflow error that does not touch the database (a condition that throws, a stuck run) is logged and the save succeeds. If a run write fails in the database (Postgres aborts the whole transaction on any statement error), or a Payload operation the hook calls throws (Payload then rolls back the request's transaction, on any adapter with transactions on), the save's changes are already lost: the save fails with a 500, "The document was not saved: its workflow could not be updated…", and the cause is logged. Likewise `startWorkflow` with your `req` that loses a race for the same document rolls back your transaction, and its `already-running` error says so. Under normal load none of this happens: concurrent writers are refused by `revision` and retried, not errored. SQLite can reuse a deleted document's id, so an old run can end up on a new document. Serialization failures under stricter isolation levels are not retried.
 - **Not in the model** (compared with Sanity Workflows, which it follows): conditions are TypeScript, not GROQ; no subworkflows, partitions or reader models.
+
+## Upgrading
+
+Changes to the runs collection need a migration on Postgres and SQLite when you do not use schema push (`payload migrate:create`, then `payload migrate`):
+
+- **Unreleased.** Who a run waits on is one indexed text column, `assignees` (`|u:<user id>|r:<role>|`), instead of the `assignedUsers` / `assignedRoles` lists (which lived in a `workflow_instances_texts` side table). There is a new index on `(subjectCollection, subjectId, status)`. In the generated migration, copy the lists over after the column is added and before the side table is dropped (Postgres; on SQLite use `group_concat`):
+
+  ```sql
+  UPDATE workflow_instances w SET assignees = '|' || t.tokens || '|'
+  FROM (SELECT parent_id, string_agg(CASE path WHEN 'assignedUsers' THEN 'u:' ELSE 'r:' END || text, '|') AS tokens
+        FROM workflow_instances_texts GROUP BY parent_id) t
+  WHERE t.parent_id = w.id;
+  ```
+
+  The endpoints moved from `/api/workflows/*` to `/api/workflow-instances/*`; the queue is now `workflows-plugin` and the tasks `workflowsPluginEffect` / `workflowsPluginTick` (jobs queued under the old names are not run); the widget slug is `workflows-plugin` (someone who saved their own dashboard layout adds the widget again from the dashboard's edit mode).
 
 ## License
 

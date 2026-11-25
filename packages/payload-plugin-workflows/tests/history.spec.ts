@@ -8,6 +8,7 @@ import {
   groupByDay,
   lastStepOf,
   isAutomatic,
+  mergeHistory,
   rowDetails,
   rowWhat,
   rowWho,
@@ -257,6 +258,11 @@ describe("how rows read", () => {
     expect(
       say({ at, actor: SYSTEM, type: "effect", effect: "notify-author", status: "done" })
     ).toBe("Notify author finished.");
+    expect(
+      say({ at, actor: SYSTEM, type: "effect", effect: "llm-check", status: "done", stale: true })
+    ).toBe(
+      "Llm check finished after the workflow had moved on from the step that started it; its result was ignored."
+    );
     expect(say({ at, actor: SYSTEM, type: "completed" })).toBe("The workflow completed.");
   });
 });
@@ -291,5 +297,34 @@ describe("startOf and lastStepOf", () => {
     expect(last.actor?.id).toBe("u-editor");
     expect(last.action).toBe("Approve");
     expect(last.at).toBe(view.history.at(-1)?.at);
+  });
+});
+
+const entry = (i: number): HistoryEntry => ({
+  at: `2026-01-01T00:00:${String(i).padStart(2, "0")}.000Z`,
+  actor: { system: true },
+  type: "completed",
+});
+
+describe("older history read on demand (mergeHistory)", () => {
+  const all = Array.from({ length: 30 }, (_, i) => entry(i));
+  const viewOf = (older: number) => ({ history: all.slice(older), olderHistory: older });
+
+  it("shows the view alone until something older is loaded", () => {
+    expect(mergeHistory(viewOf(20), null)).toEqual({ history: all.slice(20), older: 20 });
+  });
+
+  it("puts loaded entries before the view's, and keeps them as later views move on", () => {
+    const loaded = { from: 10, entries: all.slice(10, 20) };
+    expect(mergeHistory(viewOf(20), loaded)).toEqual({ history: all.slice(10), older: 10 });
+    // After an action the view starts later; what was loaded still reaches it.
+    expect(mergeHistory(viewOf(15), loaded)).toEqual({ history: all.slice(10), older: 10 });
+  });
+
+  it("drops loaded entries that no longer reach the view (a gap)", () => {
+    expect(mergeHistory(viewOf(25), { from: 10, entries: all.slice(10, 20) })).toEqual({
+      history: all.slice(25),
+      older: 25,
+    });
   });
 });

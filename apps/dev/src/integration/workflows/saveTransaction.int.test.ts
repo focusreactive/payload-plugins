@@ -305,13 +305,13 @@ describe("startWorkflow inside a caller's transaction", () => {
       req,
     });
     // Lose the race: the pre-check sees no run (as if the other start had not committed yet).
-    const find = payload.find.bind(payload);
-    payload.find = (async (args: Parameters<Payload["find"]>[0]) =>
+    const count = payload.count.bind(payload);
+    payload.count = (async (args: Parameters<Payload["count"]>[0]) =>
       args.collection === SLUG && JSON.stringify(args.where).includes("activeKey")
-        ? { docs: [], totalDocs: 0 }
-        : find(args)) as Payload["find"];
+        ? { totalDocs: 0 }
+        : count(args)) as Payload["count"];
     restore.push(() => {
-      payload.find = find as Payload["find"];
+      payload.count = count as Payload["count"];
     });
 
     const error = await startWorkflow(payload, {

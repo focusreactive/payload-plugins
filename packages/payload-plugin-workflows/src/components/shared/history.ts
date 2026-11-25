@@ -134,6 +134,31 @@ export const groupByDay = (rows: TimelineRow[], now: Date): TimelineDay[] => {
   return days;
 };
 
+/** Older entries read from the server: they cover indexes `[from, from + entries.length)`. */
+export interface LoadedHistory {
+  from: number;
+  entries: HistoryEntry[];
+}
+
+/**
+ * The history to show: the view's recent entries, after the older ones read so far when they
+ * reach them (the history only grows, so a run's later view still continues them), and how many
+ * entries are older still.
+ */
+export const mergeHistory = (
+  view: Pick<InstanceView, "history" | "olderHistory">,
+  loaded: LoadedHistory | null
+): { history: HistoryEntry[]; older: number } => {
+  const base = view.olderHistory ?? 0;
+  if (!loaded || loaded.from + loaded.entries.length < base) {
+    return { history: view.history, older: base };
+  }
+  return {
+    history: [...loaded.entries.slice(0, base - loaded.from), ...view.history],
+    older: loaded.from,
+  };
+};
+
 // ---- Words ----------------------------------------------------------------------------------
 
 type Titles = Record<string, string> | undefined;
@@ -157,6 +182,9 @@ export const stepSentence = (entry: HistoryEntry, titles: Titles, t: T): string 
       const effect = humanize(entry.effect);
       if (entry.status === "failed") {
         return t("historyEffectFailed", { effect, error: entry.error ?? "" });
+      }
+      if (entry.stale) {
+        return t("historyEffectStale", { effect });
       }
       return entry.status === "done"
         ? t("historyEffectDone", { effect })

@@ -3,17 +3,19 @@
 // result (store.ts) and answers with the run's view. Endpoints, agent tools and hooks all land here.
 // The operations come last; above them, what they share: access, inline effects, the answer.
 
-import type { CollectionSlug, Payload, PayloadRequest, TypedUser } from "payload";
+import type { CollectionSlug, Payload, PayloadRequest, TypedUser, Where } from "payload";
 import { createLocalReq } from "payload";
 
 import { JOBS_QUEUE, QUEUED_JOBS, RUNS_SLUG } from "../constants.js";
 import {
   SYSTEM,
   abort,
+  activitiesOf,
   findStage,
   fire,
   holdMessage,
   holdingGuards,
+  isAuto,
   mayAbort,
   settle,
   start,
@@ -21,7 +23,14 @@ import {
 import { WorkflowError } from "../engine/errors.js";
 import { view } from "../engine/view.js";
 import type { WorkflowAccess, WorkflowAccessArgs, WorkflowsSettings } from "../plugin.js";
-import type { Caller, InstanceView, Patch, UserActor, WorkflowDefinition } from "../types.js";
+import type {
+  Caller,
+  InstanceView,
+  Patch,
+  StageDef,
+  UserActor,
+  WorkflowDefinition,
+} from "../types.js";
 import {
   WITHOUT_HISTORY,
   createRun,
@@ -375,7 +384,8 @@ export const fireWorkflowAction = async (
   }
   const caller = callerOf(payload, user, via);
   const input = { activity: args.activity, action: args.action, params: args.params };
-  const committed = await mutateRun(req, def, existing.id, (state) =>
+  // The run as just read is the compare-and-swap's first attempt: no second read.
+  const committed = await mutateRun(req, def, existing, (state) =>
     fire(def, state, input, caller, { doc: subject, now: new Date() })
   );
   return answer(req, committed, subject, user, via);
@@ -417,7 +427,7 @@ export const abortRun = async (
   }
   const actor = args.user ? callerOf(payload, args.user, via).actor : SYSTEM;
   const def = settingsOf(payload).workflows.find((entry) => entry.name === existing.workflow);
-  const committed = await mutateRun(req, def, existing.id, (state) =>
+  const committed = await mutateRun(req, def, existing, (state) =>
     abort(state, { reason: args.reason, actor }, { doc: subject, now: new Date() })
   );
   return answer(req, committed, subject, args.user, via);
@@ -460,15 +470,75 @@ export const settleRun = async (
 const TICK_PAGE = 100;
 
 /**
- * Settles every active run with the current time: needed only for conditions that read `now`.
- * One broken run is logged and skipped, never stops the others.
+ * Whether a run in this stage can move with no write to it: only an automatic action or a
+ * transition with its own `when` can (they may read `now` or the document). A transition without
+ * `when` waits for the stage's activities, which only a write changes.
+ */
+const movesOnItsOwn = (stage: StageDef): boolean =>
+  activitiesOf(stage).some((activity) => activity.actions.some(isAuto)) ||
+  (stage.transitions ?? []).some((transition) => transition.when !== undefined);
+
+/** The active runs the tick looks at: those in a stage that can move on its own. */
+const tickable = (workflows: WorkflowDefinition[]): Where[] =>
+  workflows.flatMap((def) => {
+    const stages = def.stages.filter(movesOnItsOwn).map((stage) => stage.name);
+    return stages.length > 0
+      ? [{ and: [{ workflow: { equals: def.name } }, { stage: { in: stages } }] as Where[] }]
+      : [];
+  });
+
+/**
+ * The subject documents of `runs` (latest draft, full access), one query per collection, keyed by
+ * `collection:id`; a missing one (or a collection that is gone) is absent.
+ */
+const loadSubjects = async (
+  req: PayloadRequest,
+  runs: InstanceDoc[]
+): Promise<Map<string, Record<string, unknown>>> => {
+  const byCollection = new Map<string, string[]>();
+  for (const run of runs) {
+    byCollection.set(run.subjectCollection, [
+      ...(byCollection.get(run.subjectCollection) ?? []),
+      run.subjectId,
+    ]);
+  }
+  const subjects = new Map<string, Record<string, unknown>>();
+  for (const [collection, ids] of byCollection) {
+    if (!req.payload.collections[collection as CollectionSlug]) {
+      continue;
+    }
+    const found = await req.payload.find({
+      collection: collection as CollectionSlug,
+      where: { id: { in: [...new Set(ids)] } },
+      depth: 0,
+      draft: true,
+      limit: ids.length,
+      pagination: false,
+      overrideAccess: true,
+      req,
+    });
+    for (const doc of found.docs as Record<string, unknown>[]) {
+      subjects.set(`${collection}:${String(doc.id)}`, doc);
+    }
+  }
+  return subjects;
+};
+
+/**
+ * Settles the active runs that can move on their own (see `movesOnItsOwn`) with the current time:
+ * needed only for conditions that read `now`. Documents are read per page, one query per
+ * collection. One broken run is logged and skipped, never stops the others.
  */
 export const tickWorkflows = async (
   payload: Payload
 ): Promise<{ checked: number; advanced: number }> => {
   const req = await requestFor(payload, null);
+  const candidates = tickable(settingsOf(payload).workflows);
   let checked = 0;
   let advanced = 0;
+  if (candidates.length === 0) {
+    return { checked, advanced };
+  }
   const jobs: JobId[] = [];
   // Keyset pages by id: a run that completes drops out of `active` without shifting later pages.
   let after: string | number | undefined;
@@ -478,6 +548,7 @@ export const tickWorkflows = async (
       where: {
         and: [
           { status: { equals: "active" } },
+          { or: candidates },
           ...(after === undefined ? [] : [{ id: { greater_than: after } }]),
         ],
       },
@@ -490,10 +561,14 @@ export const tickWorkflows = async (
       req,
     });
     const active = page.docs as unknown as InstanceDoc[];
-    for (const doc of active) {
+    const subjects = await loadSubjects(req, active).catch((error: unknown) => {
+      payload.logger.error({ err: error, msg: "workflows: tick could not read the documents" });
+      return null;
+    });
+    for (const doc of subjects ? active : []) {
       checked += 1;
       try {
-        const subject = await loadSubject(req, subjectOf(doc), null);
+        const subject = subjects?.get(`${doc.subjectCollection}:${doc.subjectId}`) ?? null;
         const outcome = await settleRun(req, doc, subject);
         advanced += outcome.advanced ? 1 : 0;
         jobs.push(...outcome.jobs);

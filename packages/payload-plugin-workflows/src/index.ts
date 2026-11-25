@@ -34,5 +34,5 @@ export {
   startWorkflow,
   tickWorkflows,
 } from "./server/operations.js";
-export { getWorkflowState, listWorkflowInstances } from "./server/queries.js";
-export type { InstanceSummary } from "./server/queries.js";
+export { getWorkflowHistory, getWorkflowState, listWorkflowInstances } from "./server/queries.js";
+export type { InstanceList, InstanceSummary, WorkflowState } from "./server/queries.js";

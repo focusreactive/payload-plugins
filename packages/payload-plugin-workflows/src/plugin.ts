@@ -44,7 +44,11 @@ export interface WorkflowAccessArgs {
 export type WorkflowAccess = (args: WorkflowAccessArgs) => boolean | Promise<boolean>;
 
 export interface WorkflowsPluginOptions {
-  /** Default `true`. */
+  /**
+   * Default `true`. `false` keeps the runs collection (its data and schema) and the job tasks (so
+   * queued effects still run), and leaves out everything else: hooks, guards, endpoints, admin
+   * components and the dashboard widget.
+   */
   enabled?: boolean;
   workflows: WorkflowDefinition[];
   effects?: Record<string, EffectHandler>;
@@ -197,18 +201,18 @@ export const withWidget = (dashboard: Dashboard | undefined): Dashboard => {
 /**
  * Adds to each collection a workflow runs on: the indicator beside Save / Publish (it opens the
  * drawer) and the hooks (guards, auto-start, settle on save, abort on delete). Adds the runs
- * collection (the "Workflows" list in the admin), the endpoints, the effect and tick jobs, the
- * dashboard widget and the admin strings.
+ * collection (the "Workflows" list in the admin) with the endpoints, the effect and tick jobs, the
+ * dashboard widget and the admin strings. Disabled, only the runs collection and the jobs.
  */
 export const workflowsPlugin =
   (options: WorkflowsPluginOptions): Plugin =>
   (config: Config): Config => {
-    if (options.enabled === false) {
-      return config;
-    }
-    const issues = optionIssues(options, config);
-    if (issues.length > 0) {
-      throw new Error(formatIssues("workflowsPlugin()", issues));
+    const enabled = options.enabled !== false;
+    if (enabled) {
+      const issues = optionIssues(options, config);
+      if (issues.length > 0) {
+        throw new Error(formatIssues("workflowsPlugin()", issues));
+      }
     }
     const settings: WorkflowsSettings = {
       workflows: options.workflows.map(defineWorkflow),
@@ -216,11 +220,14 @@ export const workflowsPlugin =
       roles: options.roles ?? defaultRoles,
       access: options.access ?? {},
     };
-    const subjects = new Set(settings.workflows.flatMap((def) => def.collections));
+    const subjects = new Set(enabled ? settings.workflows.flatMap((def) => def.collections) : []);
     const translations = (config.i18n?.translations ?? {}) as Record<
       string,
       Record<string, unknown>
     >;
+    const runs = enabled
+      ? runsCollection({ components: true, endpoints: workflowEndpoints() })
+      : runsCollection({ components: false });
     return {
       ...config,
       collections: [
@@ -246,9 +253,8 @@ export const workflowsPlugin =
             },
           });
         }),
-        runsCollection,
+        runs,
       ],
-      endpoints: [...(config.endpoints ?? []), ...workflowEndpoints()],
       // English strings for every locale, under the host's own translations of them.
       i18n: {
         ...config.i18n,
@@ -260,14 +266,23 @@ export const workflowsPlugin =
           })
         ) as NonNullable<Config["i18n"]>["translations"],
       },
-      jobs: { ...config.jobs, tasks: [...(config.jobs?.tasks ?? []), effectTask, tickTask] },
-      ...(options.dashboard === false
+      jobs: {
+        ...config.jobs,
+        tasks: [
+          ...(config.jobs?.tasks ?? []),
+          effectTask(config.jobs?.enableConcurrencyControl === true),
+          tickTask,
+        ],
+      },
+      ...(options.dashboard === false || !enabled
         ? {}
         : { admin: { ...config.admin, dashboard: withWidget(config.admin?.dashboard) } }),
       custom: { ...config.custom, workflows: settings },
       onInit: async (payload) => {
         await config.onInit?.(payload);
-        await warnWithoutRunner(payload, settings.workflows);
+        if (enabled) {
+          await warnWithoutRunner(payload, settings.workflows);
+        }
       },
     };
   };

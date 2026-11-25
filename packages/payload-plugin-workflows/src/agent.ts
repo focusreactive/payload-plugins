@@ -64,16 +64,17 @@ export const workflowTools = {
       page: z.number().int().min(1).optional(),
       limit: z.number().int().min(1).max(100).optional(),
     }),
-    (input, { payload, user }) => listWorkflowInstances(payload, { ...input, user })
+    (input, { payload, user, req }) => listWorkflowInstances(payload, { ...input, user, req })
   ),
   workflows_get_state: define(
     "Get the workflow runs on one document: current stage, activities, the actions you may fire (with reasons when you may not and the params they take), holding guards and history. Also lists workflows that can be started on it.",
     z.object({ collectionSlug: z.string(), documentId: z.string() }),
-    (input, { payload, user }) =>
+    (input, { payload, user, req }) =>
       getWorkflowState(payload, {
         collection: input.collectionSlug,
         id: input.documentId,
         user,
+        req,
         via: "agent",
       })
   ),

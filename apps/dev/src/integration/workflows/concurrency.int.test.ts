@@ -4,6 +4,7 @@ import {
   fireWorkflowAction,
   startWorkflow,
 } from "@focus-reactive/payload-plugin-workflows";
+import { commitTransaction, createLocalReq, initTransaction } from "payload";
 import type { Payload, TypedUser } from "payload";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
@@ -104,6 +105,25 @@ const follow = defineWorkflow({
   ],
 });
 
+/** One action queuing many effects on one run: their outcomes all write that run. */
+const FANOUT = 20;
+const fanout = defineWorkflow({
+  name: "fanout",
+  collections: ["pages"],
+  initialStage: "open",
+  stages: [
+    {
+      name: "open",
+      actions: [
+        { name: "go", effects: Array.from({ length: FANOUT }, () => "notify-author") },
+        { name: "end", status: "done" },
+      ],
+      transitions: [{ name: "ended", to: "closed" }],
+    },
+    { name: "closed" },
+  ],
+});
+
 interface RunRow {
   revision: number;
   status: string;
@@ -146,7 +166,7 @@ const startOn = async (workflow: string) => {
 const effectJobs = async (instanceId: string) => {
   const jobs = await payload.find({
     collection: "payload-jobs",
-    where: { taskSlug: { equals: "workflowEffect" } },
+    where: { taskSlug: { equals: "workflowsPluginEffect" } },
     limit: 0,
     pagination: false,
     depth: 0,
@@ -197,7 +217,7 @@ describe.skipIf(!ON_POSTGRES)(
   () => {
     beforeAll(async () => {
       booted = await bootWorkflowsPayload({
-        workflows: [race, decide, follow],
+        workflows: [race, decide, follow, fanout],
         jobs: { deleteJobOnComplete: false },
       });
       ({ payload } = booted);
@@ -409,6 +429,42 @@ describe.skipIf(!ON_POSTGRES)(
         expect(await effectJobs(id)).toHaveLength(1);
       }
       report(`fire vs save x${ROUNDS}:`, orders);
+    });
+
+    it(`${FANOUT} effects of one run on concurrent runners: each handler once, every outcome recorded`, async () => {
+      const { doc, id } = await startOn("fanout");
+      // Queued inside a caller's transaction, so they wait for the runners.
+      const req = await createLocalReq({ user }, payload);
+      await initTransaction(req);
+      await fireWorkflowAction(payload, { instanceId: id, action: "go", user, req });
+      await commitTransaction(req);
+      const jobIds = (await effectJobs(id)).map((job) => job.id);
+      expect(jobIds).toHaveLength(FANOUT);
+      const before = booted.notified.filter((subject) => subject === String(doc.id)).length;
+      // Four runner passes at once, each over its own share of the jobs. (Not four passes over
+      // the whole queue: Payload 3.90's job claim is a read then a write, so two passes can claim
+      // the same job and run it twice, whatever the job does.)
+      const shares = [0, 1, 2, 3].map((share) => jobIds.filter((_, index) => index % 4 === share));
+      await Promise.all(
+        shares.map((share) =>
+          payload.jobs.run({
+            queue: "workflows-plugin",
+            where: { id: { in: share } },
+            limit: share.length,
+          })
+        )
+      );
+      const handled = booted.notified.filter((subject) => subject === String(doc.id)).length;
+      expect(handled - before).toBe(FANOUT);
+      const jobs = await effectJobs(id);
+      expect(jobs.filter((job) => job.completedAt)).toHaveLength(FANOUT);
+      // No job failed: a lost race to record is retried by the recording, not by the job.
+      expect(jobs.filter((job) => job.hasError || (job.totalTried ?? 0) > 1)).toEqual([]);
+      const after = await run(id);
+      const outcomes = effectsIn(after);
+      expect(outcomes.filter((entry) => entry === "notify-author:queued")).toHaveLength(FANOUT);
+      expect(outcomes.filter((entry) => entry === "notify-author:done")).toHaveLength(FANOUT);
+      report(`${FANOUT} effects, 4 runners:`, new Map([["cas lost", refused.cas]]));
     });
   }
 );

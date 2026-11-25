@@ -7,8 +7,9 @@ import type { ReactNode } from "react";
 
 import { RUNS_SLUG } from "../../constants.js";
 import { isWorkflowError } from "../../engine/errors.js";
-import { listWorkflowDefinitions, listWorkflowInstances } from "../../server/queries.js";
-import type { DefinitionSummary, InstanceSummary } from "../../server/queries.js";
+import { settingsOf } from "../../server/operations.js";
+import { listWorkflowInstances, workflowBoards } from "../../server/queries.js";
+import type { Board as BoardData, InstanceSummary } from "../../server/queries.js";
 import { NAMESPACE } from "../../translations.js";
 import { formatDateTime, formatRelative, waitingOnText } from "../shared/format.js";
 import type { People, T } from "../shared/format.js";
@@ -20,8 +21,6 @@ const WAITING_ROWS = 5;
 const COLUMN_CARDS = 3;
 /** Boards, one per workflow with open documents. */
 const BOARDS = 3;
-/** Open runs read for the boards (the most recently changed). */
-const BOARD_RUNS = 100;
 
 /** Display names for user ids, read with the viewer's access; unreadable ones stay ids. */
 const peopleOf = async (payload: Payload, user: TypedUser, ids: string[]): Promise<People> => {
@@ -61,57 +60,42 @@ const cardMeta = (run: InstanceSummary, people: People, t: T): string => {
 
 /** One column per stage that holds open documents (final stages never do), with a count. */
 const Board = ({
-  def,
+  board,
   heading,
-  runs,
   card,
   t,
 }: {
-  def: DefinitionSummary;
+  board: BoardData;
   heading: string;
-  runs: InstanceSummary[];
   card: (run: InstanceSummary) => ReactNode;
   t: T;
-}) => {
-  const columns = def.stages
-    .filter((stage) => !stage.final)
-    .map((stage) => ({
-      key: stage.name,
-      title: stage.title,
-      runs: runs.filter((run) => !run.stuck && run.stage.name === stage.name),
-    }));
-  const stuck = runs.filter((run) => run.stuck);
-  if (stuck.length > 0) {
-    columns.push({ key: "__stuck", title: t("widgetStuck"), runs: stuck });
-  }
-  return (
-    <section aria-label={heading} className="workflows-widget__section">
-      <h3 className="workflows-widget__heading">{heading}</h3>
-      <div className="workflows-widget__board">
-        {columns.map((column) => (
-          <div className="workflows-widget__column" key={column.key}>
-            <h4 className="workflows-widget__column-title">
-              {column.title}
-              <span className="workflows-widget__column-count">{column.runs.length}</span>
-            </h4>
-            {column.runs.length === 0 ? (
-              <p className="workflows-widget__column-empty">{t("widgetColumnEmpty")}</p>
-            ) : (
-              <ul className="workflows-widget__cards">
-                {column.runs.slice(0, COLUMN_CARDS).map(card)}
-                {column.runs.length > COLUMN_CARDS ? (
-                  <li className="workflows-widget__column-more">
-                    {t("widgetMore", { count: column.runs.length - COLUMN_CARDS })}
-                  </li>
-                ) : null}
-              </ul>
-            )}
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-};
+}) => (
+  <section aria-label={heading} className="workflows-widget__section">
+    <h3 className="workflows-widget__heading">{heading}</h3>
+    <div className="workflows-widget__board">
+      {board.columns.map((column) => (
+        <div className="workflows-widget__column" key={column.key}>
+          <h4 className="workflows-widget__column-title">
+            {column.title}
+            <span className="workflows-widget__column-count">{column.count}</span>
+          </h4>
+          {column.count === 0 ? (
+            <p className="workflows-widget__column-empty">{t("widgetColumnEmpty")}</p>
+          ) : (
+            <ul className="workflows-widget__cards">
+              {column.runs.map(card)}
+              {column.count > column.runs.length ? (
+                <li className="workflows-widget__column-more">
+                  {t("widgetMore", { count: column.count - column.runs.length })}
+                </li>
+              ) : null}
+            </ul>
+          )}
+        </div>
+      ))}
+    </div>
+  </section>
+);
 
 /**
  * The "Workflows" dashboard widget: what waits on the viewer, then a board per workflow of the
@@ -128,30 +112,37 @@ export const WorkflowsWidget = async ({ req, user }: WidgetServerProps) => {
   const now = new Date();
 
   let waiting: Awaited<ReturnType<typeof listWorkflowInstances>>;
-  let open: Awaited<ReturnType<typeof listWorkflowInstances>>;
+  let open: Awaited<ReturnType<typeof workflowBoards>>;
   try {
-    [waiting, open] = await Promise.all([
-      listWorkflowInstances(payload, {
-        scope: "mine",
-        status: "active",
-        limit: WAITING_ROWS,
-        user,
-      }),
-      listWorkflowInstances(payload, { scope: "all", status: "active", limit: BOARD_RUNS, user }),
-    ]);
+    // One after the other on the viewer's request: the runs' read access is resolved once.
+    waiting = await listWorkflowInstances(payload, {
+      scope: "mine",
+      status: "active",
+      limit: WAITING_ROWS,
+      user,
+      req,
+    });
+    open = await workflowBoards(payload, {
+      user,
+      req,
+      boards: BOARDS,
+      cards: COLUMN_CARDS,
+      stuckTitle: t("widgetStuck"),
+    });
   } catch (error) {
     if (isWorkflowError(error) && error.code === "not-allowed") {
       return null;
     }
     throw error;
   }
-  const { definitions } = listWorkflowDefinitions(payload);
-  const several = definitions.length > 1;
+  const several = settingsOf(payload).workflows.length > 1;
+  const cards = open.boards.flatMap((board) => board.columns.flatMap((column) => column.runs));
   const people = await peopleOf(
     payload,
     user,
-    open.docs.flatMap((run) => run.waitingOn.users)
+    cards.flatMap((run) => run.waitingOn.users)
   );
+  const hidden = waiting.hiddenCollections ?? open.hiddenCollections;
 
   const listURL = `${formatAdminURL({ adminRoute, path: `/collections/${RUNS_SLUG}` })}?where[status][equals]=active`;
   const documentURL = (run: InstanceSummary) =>
@@ -173,13 +164,6 @@ export const WorkflowsWidget = async ({ req, user }: WidgetServerProps) => {
       </Link>
     ) : null;
 
-  // One board per workflow with open documents, in the order they are configured.
-  const boards = definitions
-    .map((def) => ({ def, runs: open.docs.filter((run) => run.workflow === def.name) }))
-    .filter((board) => board.runs.length > 0);
-  const shown = boards.slice(0, BOARDS);
-  const unshown = open.totalDocs - shown.reduce((sum, board) => sum + board.runs.length, 0);
-
   return (
     <div className="workflows-widget">
       <header className="workflows-widget__header">
@@ -188,6 +172,12 @@ export const WorkflowsWidget = async ({ req, user }: WidgetServerProps) => {
           {t("widgetViewAll")}
         </Link>
       </header>
+
+      {hidden ? (
+        <p className="workflows-widget__notice">
+          {t("hiddenByAccess", { collections: hidden.join(", ") })}
+        </p>
+      ) : null}
 
       <section aria-labelledby="workflows-widget-waiting" className="workflows-widget__section">
         <h3 className="workflows-widget__heading" id="workflows-widget-waiting">
@@ -229,17 +219,17 @@ export const WorkflowsWidget = async ({ req, user }: WidgetServerProps) => {
         {more(waiting.totalDocs - waiting.docs.length)}
       </section>
 
-      {boards.length === 0 ? (
+      {open.boards.length === 0 ? (
         <section className="workflows-widget__section">
           <h3 className="workflows-widget__heading">{t("statusRunning")}</h3>
           <p className="workflows-widget__empty">{t("widgetNoneOpen")}</p>
         </section>
       ) : (
-        shown.map(({ def, runs }) => (
+        open.boards.map((board) => (
           <Board
-            def={def}
-            heading={several ? def.title : t("statusRunning")}
-            key={def.name}
+            board={board}
+            heading={several ? board.workflow.title : t("statusRunning")}
+            key={board.workflow.name}
             card={(run) => (
               <li className="workflows-widget__card" key={run.id}>
                 <Link className="workflows-widget__link" href={documentURL(run)} prefetch={false}>
@@ -252,12 +242,11 @@ export const WorkflowsWidget = async ({ req, user }: WidgetServerProps) => {
                 </span>
               </li>
             )}
-            runs={runs}
             t={t}
           />
         ))
       )}
-      {more(boards.length > 0 ? unshown : 0)}
+      {more(open.unshown)}
     </div>
   );
 };

@@ -7,6 +7,7 @@ import { ENDPOINTS } from "../../constants.js";
 import type { WorkflowState } from "../../server/queries.js";
 import type { InstanceView, ViewAction, ViewActivity } from "../../types.js";
 import { actionToast } from "../shared/format.js";
+import { stateAfter } from "../shared/indicator.js";
 import { useWorkflowsApi } from "../shared/useWorkflowsApi.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
 
@@ -16,9 +17,9 @@ const find = (next: WorkflowState | null, view: InstanceView) =>
 
 /**
  * The document's workflow state as the server reports it. Refetches when `refreshKey` changes
- * (the document was saved) and after every operation, whether it worked or not: no optimistic UI.
- * Every operation ends in a toast: what happened (from the refetched state), or the server's error,
- * and resolves to whether it worked.
+ * (the document was saved), and after an operation unless its answer already is the new state
+ * (`stateAfter`): no optimistic UI. Every operation ends in a toast: what happened, or the
+ * server's error, and resolves to whether it worked.
  */
 export const useWorkflowState = (collection: string, id: string, refreshKey: unknown) => {
   const api = useWorkflowsApi();
@@ -27,6 +28,8 @@ export const useWorkflowState = (collection: string, id: string, refreshKey: unk
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const latest = useRef<AbortController | null>(null);
+  const current = useRef<WorkflowState | null>(null);
+  current.current = state;
 
   const load = useCallback(async (): Promise<WorkflowState | null> => {
     latest.current?.abort();
@@ -58,19 +61,27 @@ export const useWorkflowState = (collection: string, id: string, refreshKey: unk
 
   const run = useCallback(
     async (
-      path: string,
+      kind: "start" | "fire" | "abort",
       body: Record<string, unknown>,
       done: (next: WorkflowState | null) => string
     ): Promise<boolean> => {
       setBusy(true);
+      let answer: InstanceView | undefined;
       let failed = false;
       try {
-        await api(path, { body });
+        answer = await api<InstanceView>(ENDPOINTS[kind], { body });
       } catch (caught) {
         failed = true;
         toast.error(caught instanceof Error ? caught.message : t("somethingWentWrong"));
       }
-      const next = await load();
+      const known = failed ? null : stateAfter(current.current, kind, answer);
+      if (known) {
+        // A save's refetch still in flight would overwrite this with older news.
+        latest.current?.abort();
+        setState(known);
+        setError(null);
+      }
+      const next = known ?? (await load());
       if (!failed) {
         toast.success(done(next));
       }
@@ -86,7 +97,7 @@ export const useWorkflowState = (collection: string, id: string, refreshKey: unk
     busy,
     reload: load,
     start: (workflow: { name: string; title: string }) =>
-      run(ENDPOINTS.start, { workflow: workflow.name, collection, id }, (next) => {
+      run("start", { workflow: workflow.name, collection, id }, (next) => {
         const started = next?.instances.find(
           (entry) => entry.workflow === workflow.name && entry.status === "active"
         );
@@ -99,7 +110,7 @@ export const useWorkflowState = (collection: string, id: string, refreshKey: unk
       params?: Record<string, unknown>
     ) =>
       run(
-        ENDPOINTS.fire,
+        "fire",
         {
           instanceId: view.id,
           activity: activity.name,
@@ -109,7 +120,7 @@ export const useWorkflowState = (collection: string, id: string, refreshKey: unk
         (next) => actionToast(action.title, view, find(next, view), t)
       ),
     abort: (view: InstanceView, reason?: string) =>
-      run(ENDPOINTS.abort, { instanceId: view.id, ...(reason ? { reason } : {}) }, () =>
+      run("abort", { instanceId: view.id, ...(reason ? { reason } : {}) }, () =>
         t("toastAborted", { title: view.title })
       ),
   };

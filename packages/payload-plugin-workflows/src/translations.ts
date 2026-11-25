@@ -135,6 +135,8 @@ export const en = {
   timelineSteps_other: "{{count}} automatic steps",
   timelineShowOlder_one: "Show {{count}} older entry",
   timelineShowOlder_other: "Show {{count}} older entries",
+  timelineLoadOlder_one: "Load {{count}} older step",
+  timelineLoadOlder_other: "Load {{count}} older steps",
 
   // History sentences (the automatic steps folded under a timeline row)
   actorYou: "You",
@@ -143,6 +145,8 @@ export const en = {
   historyTransition: "Moved from {{from}} to {{to}}.",
   historyEffectQueued: "Queued {{effect}}.",
   historyEffectDone: "{{effect}} finished.",
+  historyEffectStale:
+    "{{effect}} finished after the workflow had moved on from the step that started it; its result was ignored.",
   historyEffectFailed: "{{effect}} failed: {{error}}",
   historyCompleted: "The workflow completed.",
   historyAborted: "Stopped the workflow.",
@@ -159,6 +163,8 @@ export const en = {
     "No document is in a workflow. Start one from the Workflow button next to Save on a document.",
   widgetColumnEmpty: "None",
   widgetStuck: "Stuck",
+  hiddenByAccess:
+    "Some workflows are not shown: you may read too many {{collections}} documents for the plugin to check them one by one.",
   untitled: "Untitled ({{id}})",
   anyone: "Anyone",
 

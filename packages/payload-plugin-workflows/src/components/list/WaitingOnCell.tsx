@@ -4,11 +4,9 @@ import { useAuth, useConfig, useListRelationships } from "@payloadcms/ui";
 import type { DefaultCellComponentProps } from "payload";
 import { useEffect } from "react";
 
+import { decodeAssignees } from "../../assignees.js";
 import { waitingOnText } from "../shared/format.js";
 import { useWorkflowsT } from "../shared/useWorkflowsT.js";
-
-const strings = (value: unknown): string[] =>
-  Array.isArray(value) ? value.map(String).filter(Boolean) : [];
 
 /**
  * The workflows list's "Waiting on" cell: the users by name ("You" for the viewer) and the roles;
@@ -21,8 +19,7 @@ export const WaitingOnCell = ({ cellData, rowData }: DefaultCellComponentProps) 
   const { config, getEntityConfig } = useConfig();
   const { documents, getRelationships } = useListRelationships();
   const slug = config.admin.user;
-  const users = strings(cellData);
-  const roles = strings(rowData.assignedRoles);
+  const { users, roles } = decodeAssignees(cellData);
   const wanted = users.join(",");
 
   useEffect(() => {

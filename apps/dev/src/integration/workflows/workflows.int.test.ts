@@ -59,8 +59,7 @@ const instanceDoc = async (id: string) =>
     status: string;
     stage: string;
     activeKey: string;
-    assignedUsers: string[];
-    assignedRoles: string[];
+    assignees: string | null;
     history: { type: string; effect?: string; status?: string; reason?: string }[];
   };
 
@@ -148,8 +147,7 @@ describe("workflows against a real Payload", () => {
       user: editor,
     });
     const claimed = await instanceDoc(id);
-    expect(claimed.assignedUsers).toEqual([String(editor.id)]);
-    expect(claimed.assignedRoles).toEqual([]);
+    expect(claimed.assignees).toBe(`|u:${String(editor.id)}|`);
     expect(
       (await listWorkflowInstances(payload, { scope: "mine", user: editor })).docs.map((d) => d.id)
     ).toContain(id);

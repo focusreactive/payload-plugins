@@ -473,7 +473,7 @@ describe("effects and transactions", () => {
     expect(run?.history.filter((h) => h.type === "effect").map((h) => h.status)).toEqual([
       "queued",
     ]);
-    await payload.jobs.run({ queue: "workflows", sequential: true });
+    await payload.jobs.run({ queue: "workflows-plugin", sequential: true });
     expect((await runsOf(page.id, "ai-check"))[0]?.status).toBe("completed");
   });
 
@@ -489,7 +489,7 @@ describe("effects and transactions", () => {
       overrideAccess: true,
     });
     expect((await runsOf(saved.id, "on-save"))[0]?.status).toBe("active");
-    await payload.jobs.run({ queue: "workflows", sequential: true });
+    await payload.jobs.run({ queue: "workflows-plugin", sequential: true });
     expect((await runsOf(created.id, "on-save"))[0]?.status).toBe("completed");
     expect((await runsOf(saved.id, "on-save"))[0]?.status).toBe("completed");
   });

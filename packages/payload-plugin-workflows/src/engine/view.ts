@@ -67,6 +67,9 @@ const titlesOf = (def: WorkflowDefinition): Record<string, string> => {
   return titles;
 };
 
+/** History entries a view carries: the most recent ones; older ones are read on demand. */
+export const HISTORY_IN_VIEW = 50;
+
 /** The projection every surface renders: what is going on and what this caller may do. */
 export const view = (
   def: WorkflowDefinition,
@@ -75,6 +78,7 @@ export const view = (
   env: Env
 ): InstanceView => {
   const stage = findStage(def, state.stage);
+  const [first] = state.history;
   const currentIndex = def.stages.findIndex((entry) => entry.name === state.stage);
   return {
     workflow: def.name,
@@ -139,7 +143,9 @@ export const view = (
     })),
     waitingOn: waitingOnOf(def, state),
     fields: { ...state.fields },
-    history: [...state.history],
+    history: state.history.slice(-HISTORY_IN_VIEW),
+    olderHistory: Math.max(0, state.history.length - HISTORY_IN_VIEW),
+    ...(first?.type === "started" ? { started: { at: first.at, actor: first.actor } } : {}),
     titles: titlesOf(def),
     canAbort: false,
   };

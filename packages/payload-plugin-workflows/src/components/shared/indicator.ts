@@ -182,3 +182,32 @@ export const primaryActionOf = (view: InstanceView): string | undefined =>
         .map((action) => `${activity.name}/${action.name}`)
     )
     .at(0);
+
+/**
+ * The state after an operation, from its answer alone when that answer is all that changed: a run
+ * that is still active after a fire (same run, nothing to start or stop), or a run just started
+ * (it leads the list; its workflow is no longer startable). `null`: refetch.
+ */
+export const stateAfter = (
+  state: WorkflowState | null,
+  kind: "start" | "fire" | "abort",
+  answer: InstanceView | undefined
+): WorkflowState | null => {
+  if (!state || !answer?.id || answer.status !== "active") {
+    return null;
+  }
+  if (kind === "fire" && state.instances.some((entry) => entry.id === answer.id)) {
+    return {
+      ...state,
+      instances: state.instances.map((entry) => (entry.id === answer.id ? answer : entry)),
+    };
+  }
+  if (kind === "start") {
+    return {
+      ...state,
+      instances: [answer, ...state.instances],
+      available: state.available.filter((entry) => entry.name !== answer.workflow),
+    };
+  }
+  return null;
+};

@@ -26,7 +26,7 @@ const LABEL: Record<RunTone, Parameters<T>[0]> = {
 export const RunFacts = ({ view, people }: { view?: InstanceView; people: People }) => {
   const { t, language } = useWorkflowsT();
   const tone = view ? toneOf(view, people.me) : undefined;
-  const started = view ? startOf(view.history) : undefined;
+  const started = view ? (view.started ?? startOf(view.history)) : undefined;
   const changed = view?.history.at(-1)?.at;
   const assignees = [
     ...new Set(

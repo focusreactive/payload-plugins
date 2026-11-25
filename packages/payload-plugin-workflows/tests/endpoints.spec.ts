@@ -21,6 +21,7 @@ vi.mock("../src/server/operations.js", () => ({
 }));
 vi.mock("../src/server/queries.js", () => ({
   getWorkflowState: fake("state"),
+  getWorkflowHistory: fake("history"),
 }));
 
 const { statusOf, workflowEndpoints } = await import("../src/endpoints.js");
@@ -29,16 +30,14 @@ const logger = { error: vi.fn() };
 
 const req = (over: { url?: string; body?: unknown; user?: unknown } = {}) =>
   ({
-    url: over.url ?? "http://localhost/api/workflows/x",
+    url: over.url ?? "http://localhost/api/workflow-instances/x",
     user: over.user === undefined ? { id: 7, collection: "users" } : over.user,
     json: async () => over.body ?? {},
     payload: { logger },
   }) as unknown as PayloadRequest;
 
 const endpoint = (method: string, path: string): Endpoint => {
-  const found = workflowEndpoints().find(
-    (e) => e.method === method && e.path === `/workflows/${path}`
-  );
+  const found = workflowEndpoints().find((e) => e.method === method && e.path === `/${path}`);
   if (!found) {
     throw new Error(`no ${method} ${path}`);
   }
@@ -113,9 +112,30 @@ describe("workflow endpoints", () => {
     expect((await call("post", "fire", req({ body: {} }))).status).toBe(400);
     expect((await call("post", "abort", req({ body: {} }))).status).toBe(400);
     expect(
-      (await call("get", "state", req({ url: "http://x/api/workflows/state?collection=pages" })))
-        .status
+      (
+        await call(
+          "get",
+          "state",
+          req({ url: "http://x/api/workflow-instances/state?collection=pages" })
+        )
+      ).status
     ).toBe(400);
+    expect((await call("get", "history", req({ url: "http://x/?before=3" }))).status).toBe(400);
+  });
+
+  it("reads state and older history with the caller's request", async () => {
+    const request = req({ url: "http://x/?collection=pages&id=1" });
+    await call("get", "state", request);
+    expect(calls.args[0]).toMatchObject({
+      name: "state",
+      args: { collection: "pages", id: "1", req: request },
+    });
+    const older = req({ url: "http://x/?instanceId=9&before=50&limit=x" });
+    await call("get", "history", older);
+    expect(calls.args[1]).toMatchObject({
+      name: "history",
+      args: { instanceId: "9", before: 50, limit: undefined, req: older },
+    });
   });
 
   it.each<[WorkflowErrorCode, number]>([

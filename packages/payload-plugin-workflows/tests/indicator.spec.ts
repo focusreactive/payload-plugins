@@ -6,6 +6,7 @@ import {
   primaryActionOf,
   runsOf,
   shownActions,
+  stateAfter,
   summaryToneOf,
   toneOf,
   turnOf,
@@ -197,5 +198,32 @@ describe("turnOf, shownActions and primaryActionOf", () => {
     expect(turnOf(stuck, editor.user)).toEqual({ kind: "stuck" });
     const aborted: InstanceView = { ...inReview().view(editor), status: "aborted" };
     expect(turnOf(aborted, editor.user)).toEqual({ kind: "aborted" });
+  });
+});
+
+describe("the drawer's state after an operation (stateAfter)", () => {
+  const active = withId(inReview().view(), "1");
+  const finished = withId({ ...inReview().view(), status: "completed" }, "0");
+  const state: WorkflowState = { instances: [active, finished], available };
+
+  it("takes a fire's answer as the new state while the run stays active", () => {
+    const moved = withId({ ...active, stage: { name: "x", title: "X" } }, "1");
+    expect(stateAfter(state, "fire", moved)).toEqual({ ...state, instances: [moved, finished] });
+  });
+
+  it("puts a started run first and its workflow out of `available`", () => {
+    const started = withId(inReview().view(), "2");
+    expect(stateAfter({ instances: [finished], available }, "start", started)).toEqual({
+      instances: [started, finished],
+      available: [],
+    });
+  });
+
+  it("refetches when the run finished, was stopped, is unknown, or nothing is loaded", () => {
+    expect(stateAfter(state, "fire", { ...active, status: "completed" })).toBeNull();
+    expect(stateAfter(state, "abort", { ...active, status: "aborted" })).toBeNull();
+    expect(stateAfter(state, "fire", withId(active, "9"))).toBeNull();
+    expect(stateAfter(null, "fire", active)).toBeNull();
+    expect(stateAfter(state, "fire", undefined)).toBeNull();
   });
 });

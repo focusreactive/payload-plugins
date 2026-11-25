@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { defineWorkflow } from "../src/define.js";
 import { WorkflowError } from "../src/engine/errors.js";
 import {
   CASCADE_LIMIT,
@@ -8,12 +9,13 @@ import {
   holdMessage,
   mayAbort,
   patchFields,
+  recordEffect,
   settle,
   start,
   validateParams,
 } from "../src/engine/engine.js";
 import { createWorkflowSimulator } from "../src/engine/simulator.js";
-import { view } from "../src/engine/view.js";
+import { HISTORY_IN_VIEW, view } from "../src/engine/view.js";
 import type {
   ActivityDef,
   Caller,
@@ -143,7 +145,10 @@ describe("editorial review end to end", () => {
     expect(sim.state.status).toBe("completed");
     expect(sim.state.stage).toBe("approved");
     expect(sim.state.completedAt).toBe(NOW.toISOString());
-    expect(sim.effects).toEqual([{ name: "notify-author", activity: "review", action: "approve" }]);
+    // Queued in the third visit of a stage (three transitions before it): `review`, the second time.
+    expect(sim.effects).toEqual([
+      { name: "notify-author", activity: "review", action: "approve", stage: "review", visit: 3 },
+    ]);
     expect(historyTypes(sim.state)).toEqual([
       "started",
       "action:drafting/submit",
@@ -1316,5 +1321,156 @@ describe("holdMessage", () => {
     expect(holdMessage(["publish", "update", "delete"])).toBe(
       "Publishing, saving and deleting are on hold until this stage is done."
     );
+  });
+});
+
+const approve = (sim: ReturnType<typeof createWorkflowSimulator>, user: string) =>
+  sim.view({ user, roles: ["editor"] }).activities[0]?.actions[0]?.allowed;
+
+describe("a numeric user id holds an assignment (fails closed)", () => {
+  // The probe: the reviewer comes from the document's numeric owner id, and a caller-supplied
+  // start field must not throw that normalised value away.
+  const owned: WorkflowDefinition = defineWorkflow({
+    name: "owned",
+    collections: ["pages"],
+    initialStage: "review",
+    fields: [
+      { name: "reviewer", type: "user", initialValue: ({ doc }) => doc?.owner },
+      { name: "note", type: "string", input: true },
+    ],
+    stages: [
+      {
+        name: "review",
+        assignee: "reviewer",
+        roles: ["editor"],
+        actions: [{ name: "approve", status: "done" }],
+        transitions: [{ name: "t", to: "done" }],
+      },
+      { name: "done" },
+    ],
+  });
+
+  it("keeps the normalised initial value when start fields are passed too", () => {
+    const plain = createWorkflowSimulator(owned, { doc: { owner: 7 } });
+    const withInput = createWorkflowSimulator(owned, { doc: { owner: 7 }, fields: { note: "x" } });
+    for (const sim of [plain, withInput]) {
+      expect(sim.state.fields.reviewer).toBe("7");
+      expect(approve(sim, "999")).toBe(false);
+      expect(approve(sim, "7")).toBe(true);
+      expect(sim.view().waitingOn).toEqual({ users: ["7"], roles: [] });
+    }
+    expect(withInput.state.fields.note).toBe("x");
+  });
+
+  it("treats any non-empty stored value as held, compared as a string", () => {
+    const sim = createWorkflowSimulator(owned);
+    // As if stored before ids were normalised: a raw number in the run's fields.
+    const state: InstanceState = { ...sim.state, fields: { reviewer: 7 } };
+    const allowed = (id: string) =>
+      view(owned, state, caller(id, ["editor"]), env()).activities[0]?.actions[0]?.allowed;
+    expect(allowed("7")).toBe(true);
+    expect(allowed("999")).toBe(false);
+    expect(
+      codeOf(() => fire(owned, state, { action: "approve" }, caller("999", ["editor"]), env()))
+    ).toBe("not-allowed");
+    // Unset (or empty) holds nothing: the role pool decides.
+    const open: InstanceState = { ...sim.state, fields: { reviewer: "" } };
+    expect(
+      view(owned, open, caller("999", ["editor"]), env()).activities[0]?.actions[0]?.allowed
+    ).toBe(true);
+  });
+});
+
+describe("an effect's outcome (recordEffect)", () => {
+  // `check` queues `verify` in `review`; its `{ set }` decides the review.
+  const checked: WorkflowDefinition = defineWorkflow({
+    name: "checked",
+    collections: ["pages"],
+    initialStage: "drafting",
+    fields: [{ name: "verdict", type: "string" }],
+    stages: [
+      {
+        name: "drafting",
+        actions: [{ name: "submit", status: "done" }],
+        transitions: [{ name: "to-review", to: "review" }],
+      },
+      {
+        name: "review",
+        actions: [
+          { name: "check", effects: ["verify"] },
+          { name: "reject", status: "done" },
+        ],
+        transitions: [
+          { name: "pass", to: "passed", when: ({ fields }) => fields.verdict === "pass" },
+          { name: "back", to: "drafting" },
+        ],
+      },
+      { name: "passed" },
+    ],
+  });
+  const sys = caller("u1");
+  const inReview = () => {
+    const started = start(checked, { actor: { system: true } }, env()).state;
+    return fire(checked, started, { action: "submit" }, sys, env()).state;
+  };
+  const pass = { status: "done" as const, set: { verdict: "pass" } };
+
+  it("applies `set` while the run is still in the visit that queued it", () => {
+    const queued = fire(checked, inReview(), { action: "check" }, sys, env());
+    const [effect] = queued.effects;
+    expect(effect).toMatchObject({ name: "verify", stage: "review", visit: 1 });
+    const { state } = recordEffect(checked, queued.state, effect!, pass, env());
+    expect(state.stage).toBe("passed");
+    expect(
+      state.history.find((entry) => entry.type === "effect" && entry.status === "done")
+    ).not.toHaveProperty("stale");
+  });
+
+  it("ignores `set` once the run was sent back before the effect ran, and says so", () => {
+    const queued = fire(checked, inReview(), { action: "check" }, sys, env());
+    const back = fire(checked, queued.state, { action: "reject" }, sys, env()).state;
+    expect(back.stage).toBe("drafting");
+    const { state } = recordEffect(checked, back, queued.effects[0]!, pass, env());
+    expect(state.stage).toBe("drafting");
+    expect(state.fields.verdict).toBeUndefined();
+    expect(state.history.at(-1)).toMatchObject({ type: "effect", status: "done", stale: true });
+  });
+
+  it("ignores `set` from an earlier visit of the same stage (a loop back)", () => {
+    const queued = fire(checked, inReview(), { action: "check" }, sys, env());
+    const back = fire(checked, queued.state, { action: "reject" }, sys, env()).state;
+    const again = fire(checked, back, { action: "submit" }, sys, env()).state;
+    expect(again.stage).toBe("review");
+    const { state } = recordEffect(checked, again, queued.effects[0]!, pass, env());
+    expect(state.stage).toBe("review");
+    expect(state.fields.verdict).toBeUndefined();
+    expect(state.history.at(-1)).toMatchObject({ stale: true });
+  });
+
+  it("records an outcome without `set` plainly, and applies one queued before visits existed", () => {
+    const queued = fire(checked, inReview(), { action: "check" }, sys, env());
+    const back = fire(checked, queued.state, { action: "reject" }, sys, env()).state;
+    const done = recordEffect(checked, back, queued.effects[0]!, { status: "done" }, env()).state;
+    expect(done.history.at(-1)).not.toHaveProperty("stale");
+    const legacy = recordEffect(checked, queued.state, { name: "verify" }, pass, env()).state;
+    expect(legacy.stage).toBe("passed");
+  });
+});
+
+describe("the view's history", () => {
+  it("carries the most recent entries, how many are older, and who started the run", () => {
+    const sim = createWorkflowSimulator(editorialReview);
+    sim.fire("submit", author);
+    sim.fire("claim", editor);
+    for (let round = 0; round < 15; round += 1) {
+      sim.fire("reject", { ...editor, params: { reason: "again" } });
+      sim.fire("submit", author);
+    }
+    const total = sim.state.history.length;
+    expect(total).toBeGreaterThan(HISTORY_IN_VIEW);
+    const projected = sim.view();
+    expect(projected.history).toEqual(sim.state.history.slice(-HISTORY_IN_VIEW));
+    expect(projected.olderHistory).toBe(total - HISTORY_IN_VIEW);
+    expect(projected.started).toEqual({ at: sim.state.startedAt, actor: { system: true } });
   });
 });
