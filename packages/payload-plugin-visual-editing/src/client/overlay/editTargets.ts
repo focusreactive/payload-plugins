@@ -10,6 +10,7 @@ import { DATA_VE_LAYER_ATTR, LABEL_CLASS } from "./constants.js";
 import { isDrawnText } from "./drawnText.js";
 import { createEditBadge } from "./editBadge.js";
 import { createFrameLayer } from "./frameLayer.js";
+import { rectOf, shownRectsOfTexts } from "./targetArea.js";
 import { createHoverController } from "./hoverController.js";
 import { groupNodesByPath, readMarkerFromAttrs } from "./markerExtractor.js";
 import { createTargetRegistry } from "./targetRegistry.js";
@@ -100,6 +101,11 @@ const drawsAt = (control: Element, point: Point): boolean =>
   mediaOf(control).some((media) => holds(media.getBoundingClientRect(), point)) ||
   drawsTextAt(control, point);
 
+const TEXT_HIT_MARGIN_PX = 4;
+
+const grownBy = (margin: number, { height, left, top, width }: DOMRect): DOMRect =>
+  new DOMRect(left - margin, top - margin, width + margin * 2, height + margin * 2);
+
 const elementOf = (event: MouseEvent): Element | null =>
   event.target instanceof Element ? event.target : null;
 
@@ -139,16 +145,31 @@ export function createEditTargets(
     const texts = textsOfTargets.get(target);
     return texts === undefined || texts.some((text) => isDrawnText(text, target, main));
   };
+  const textHitAreaOf = (target: HTMLElement): DOMRect[] =>
+    shownRectsOfTexts(target, textsOfTargets.get(target) ?? []).map((rect) =>
+      grownBy(TEXT_HIT_MARGIN_PX, rect)
+    );
+  const hitAreaOf = (target: HTMLElement): readonly DOMRect[] => {
+    const textArea = textHitAreaOf(target);
+    return textArea.length > 0 ? textArea : [rectOf(target)];
+  };
+  const isShownInThisFrame = shownOncePerFrame(isShown);
+  const targetsAtPoint = createTargetsAtPoint(registry.targets, isShownInThisFrame, hitAreaOf);
+  const pointedTarget = (target: HTMLElement, point: Point): HTMLElement => {
+    const textArea = textHitAreaOf(target);
+    if (textArea.length === 0 || textArea.some((rect) => holds(rect, point))) return target;
+    const beneath = targetsAtPoint.innermostAt(point);
+    return beneath && !beneath.contains(target) ? beneath : target;
+  };
   const hover = createHoverController(
     badge,
     registry,
     (target) => getCtx().actionOf?.(target) ?? null,
-    isShown
+    isShown,
+    pointedTarget
   );
-  const isShownInThisFrame = shownOncePerFrame(isShown);
   const frames = getCtx().mode === "always" ? createFrameLayer(main, isShownInThisFrame) : null;
   const wrapperTargets = new Set<HTMLElement>();
-  const targetsAtPoint = createTargetsAtPoint(registry.targets, isShownInThisFrame);
 
   const targetBeneath = (element: Element, point: Point): HTMLElement | null => {
     if (element.closest(INTERACTIVE)) return null;
@@ -159,12 +180,14 @@ export function createEditTargets(
   const targetUnder = (event: MouseEvent): HTMLElement | null => {
     const element = elementOf(event);
     if (!element || isOfTheOverlay(element)) return null;
-    return findTargetAncestor(element, isShown) ?? targetBeneath(element, pointOf(event));
+    const point = pointOf(event);
+    const ancestor = findTargetAncestor(element, isShown);
+    return ancestor ? pointedTarget(ancestor, point) : targetBeneath(element, point);
   };
 
   const hoveredTarget = (element: Element, point: Point): HTMLElement | null => {
     const ancestor = findTargetAncestor(element, isShown);
-    if (ancestor) return ancestor;
+    if (ancestor) return pointedTarget(ancestor, point);
     const control = element.closest(INTERACTIVE);
     if (!control) return targetBeneath(element, point);
     return drawsAt(control, point) ? null : targetsAtPoint.innermostAt(point);

@@ -1,12 +1,12 @@
 import type { IsShown } from "./targetSelector.js";
 
-import { rectOf } from "./targetArea.js";
-
 export type Point = { x: number; y: number };
 
 export const pointOf = (event: MouseEvent): Point => ({ x: event.clientX, y: event.clientY });
 
-type Measured = readonly [HTMLElement, DOMRect];
+type Measured = readonly [HTMLElement, readonly DOMRect[]];
+
+export type HitAreaOf = (target: HTMLElement) => readonly DOMRect[];
 
 export interface TargetsAtPoint {
   innermostAt(point: Point): HTMLElement | null;
@@ -103,7 +103,8 @@ const topmostOf = (hits: readonly HTMLElement[], point: Point): HTMLElement | nu
 
 export function createTargetsAtPoint(
   targets: () => HTMLElement[],
-  isShown: IsShown
+  isShown: IsShown,
+  hitAreaOf: HitAreaOf
 ): TargetsAtPoint {
   let measured: Measured[] | null = null;
   let frameRequest = 0;
@@ -115,15 +116,15 @@ export function createTargetsAtPoint(
 
   const measure = (): Measured[] => {
     if (measured) return measured;
-    measured = targets().map((target) => [target, rectOf(target)] as const);
+    measured = targets().map((target) => [target, hitAreaOf(target)] as const);
     frameRequest = requestAnimationFrame(forget);
     return measured;
   };
 
   return {
     innermostAt(point) {
-      const hits = measure().flatMap(([target, rect]) =>
-        holds(rect, point) && isShown(target) ? [target] : []
+      const hits = measure().flatMap(([target, area]) =>
+        area.some((rect) => holds(rect, point)) && isShown(target) ? [target] : []
       );
       return topmostOf(
         hits.filter((hit) => !hits.some((other) => other !== hit && hit.contains(other))),

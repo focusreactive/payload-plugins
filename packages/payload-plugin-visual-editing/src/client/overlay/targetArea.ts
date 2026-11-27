@@ -36,6 +36,8 @@ export const areaOf = (target: HTMLElement): HTMLElement => {
 
 const isDrawn = ({ height, width }: DOMRect): boolean => width > 0 || height > 0;
 
+const isShownRect = ({ height, width }: DOMRect): boolean => width > 0 && height > 0;
+
 const CLIPPING_OVERFLOWS: ReadonlySet<string> = new Set(["auto", "clip", "hidden", "scroll"]);
 
 const holdsText = (target: HTMLElement): boolean => {
@@ -92,9 +94,19 @@ const textRectsOf = (target: HTMLElement, box: DOMRect): DOMRect[] => {
   if (rects.every((rect) => isWithin(rect, box))) return [];
   const clip = clipOf(target);
   if (!clip) return rects;
-  return rects
-    .map((rect) => clippedTo(clip, rect))
-    .filter(({ height, width }) => width > 0 && height > 0);
+  return rects.map((rect) => clippedTo(clip, rect)).filter(isShownRect);
+};
+
+export const shownRectsOfTexts = (target: HTMLElement, texts: readonly Text[]): DOMRect[] => {
+  const range = rangeIn(target.ownerDocument);
+  if (typeof range.getClientRects !== "function") return [];
+  const rects = texts.flatMap((text) => {
+    if (!text.isConnected) return [];
+    range.selectNodeContents(text);
+    return [...range.getClientRects()].filter(isShownRect);
+  });
+  const clip = clipOf(target);
+  return clip ? rects.map((rect) => clippedTo(clip, rect)).filter(isShownRect) : rects;
 };
 
 const unionOf = ([first, ...rest]: readonly DOMRect[]): DOMRect => {

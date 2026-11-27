@@ -651,6 +651,103 @@ describe("a target beneath a layer that takes the pointer", () => {
     });
   });
 
+  describe("in a card whose title spans an image beneath it with a short line of letters", () => {
+    let title: HTMLElement;
+    let image: HTMLElement;
+
+    const ON_THE_LETTERS = { clientX: 40, clientY: 15 };
+    const BESIDE_THE_LETTERS = { clientX: 300, clientY: 60 };
+    const BELOW_THE_IMAGE = { clientX: 300, clientY: 400 };
+
+    beforeEach(() => {
+      const card = document.createElement("article");
+      image = marked("img", "card.image");
+      title = document.createElement("h3");
+      title.textContent = markedText("Card", {
+        collectionSlug: "page",
+        docId: "1",
+        kind: "collection",
+        path: "card.title",
+      });
+      card.append(image, title);
+      main.append(card);
+      drawnAt(image, new DOMRect(0, 0, 400, 300));
+      drawnAt(title, new DOMRect(0, 0, 400, 500));
+      Object.defineProperty(Range.prototype, "getClientRects", {
+        configurable: true,
+        value(this: Range) {
+          return title.contains(this.startContainer) ? [new DOMRect(0, 0, 80, 30)] : [];
+        },
+      });
+      paintedFromTheTop(title, image);
+      start();
+    });
+
+    afterEach(() => {
+      Reflect.deleteProperty(Range.prototype, "getClientRects");
+      Reflect.deleteProperty(document, "elementsFromPoint");
+    });
+
+    it("frames the image where the pointer is over the title beside its letters", () => {
+      pointerMovesOver(title, BESIDE_THE_LETTERS);
+
+      expect(badgeIsFor()).toBe("card.image");
+      expect(actionButton().textContent).toBe("Replace image");
+    });
+
+    it("frames the title where the pointer is over its letters or a few pixels off them", () => {
+      pointerMovesOver(title, ON_THE_LETTERS);
+
+      expect(badgeIsFor()).toBe("card.title");
+
+      pointerMovesOver(title, { clientX: 83, clientY: 32 });
+
+      expect(badgeIsFor()).toBe("card.title");
+    });
+
+    it("keeps the image when the pointer enters the title beside its letters", () => {
+      pointerMovesOver(title, BESIDE_THE_LETTERS);
+
+      title.dispatchEvent(new MouseEvent("mouseenter", BESIDE_THE_LETTERS));
+
+      expect(badgeIsFor()).toBe("card.image");
+    });
+
+    it("keeps the image when the pointer leaves it for the title beside its letters", () => {
+      pointerMovesOver(image, { clientX: 300, clientY: 20 });
+
+      image.dispatchEvent(
+        new MouseEvent("mouseleave", { ...BESIDE_THE_LETTERS, relatedTarget: title })
+      );
+
+      expect(badgeIsFor()).toBe("card.image");
+    });
+
+    it("opens the image on a click on the title beside its letters, and the title on its letters", () => {
+      removeEditTargets();
+      tracker.dispose();
+      tracker = createFieldTracker(main);
+      removeEditTargets = createEditTargets(main, tracker, () => ({
+        ...overlayCtx({ buildAdminEditUrl: ({ path }) => `/admin/edit?path=${path}` }),
+        mode: "hover",
+      }));
+
+      click(title, BESIDE_THE_LETTERS);
+      click(title, ON_THE_LETTERS);
+
+      expect(open.mock.calls.map(([url]) => String(url).split("?")[1])).toEqual([
+        "path=card.image",
+        "path=card.title",
+      ]);
+    });
+
+    it("frames the title beside its letters where nothing is drawn beneath it", () => {
+      pointerMovesOver(title, BELOW_THE_IMAGE);
+
+      expect(badgeIsFor()).toBe("card.title");
+    });
+  });
+
   describe("in a card that cuts off the text of its title", () => {
     let card: HTMLElement;
 

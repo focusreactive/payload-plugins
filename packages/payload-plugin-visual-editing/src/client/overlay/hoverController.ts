@@ -7,6 +7,8 @@ import { areaOf, isWithin, rectOf } from "./targetArea.js";
 import { findTargetAncestor } from "./targetSelector.js";
 import { pointOf } from "./targetsAtPoint.js";
 
+export type PointedTarget = (target: HTMLElement, at: Point) => HTMLElement;
+
 export interface HoverController {
   attach(target: HTMLElement): void;
   detach(target: HTMLElement): void;
@@ -78,7 +80,8 @@ export function createHoverController(
   badge: EditBadge,
   registry: TargetRegistry,
   actionOf: ActionOf,
-  isShown: IsShown
+  isShown: IsShown,
+  pointedTarget: PointedTarget
 ): HoverController {
   const badgeElements: HTMLElement[] = [badge.labelElement, badge.actionElement];
   const isOfBadge = (element: Element): boolean =>
@@ -154,7 +157,7 @@ export function createHoverController(
     if (related && areaOf(activeTarget).contains(related)) return;
     if (related && isOfBadge(related)) return;
     const nextTarget = related ? findTargetAncestor(related, isShown) : null;
-    if (nextTarget) setActive(nextTarget);
+    if (nextTarget) setActive(pointedTarget(nextTarget, pointOf(event)));
     else scheduleClear();
   };
   const onBadgeEnter = () => cancelPendingSwitch();
@@ -179,13 +182,16 @@ export function createHoverController(
     attach(target) {
       if (targetListeners.has(target)) return;
       const enter = (event: MouseEvent) => {
-        if (isShown(target)) request(target, pointOf(event));
+        const at = pointOf(event);
+        if (isShown(target)) request(pointedTarget(target, at), at);
       };
       const leave = (event: MouseEvent) => {
         if (activeTarget !== target) return;
         const related = event.relatedTarget as Element | null;
         if (related && isOfBadge(related)) return;
-        request(related ? findTargetAncestor(related, isShown) : null, pointOf(event));
+        const at = pointOf(event);
+        const next = related ? findTargetAncestor(related, isShown) : null;
+        request(next && pointedTarget(next, at), at);
       };
       const area = areaOf(target);
       area.addEventListener("mouseenter", enter);
