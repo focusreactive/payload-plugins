@@ -215,15 +215,20 @@ const positionOf = (host: HTMLElement, edited: DOMRect, win: Window): Position =
     within(left, VIEWPORT_MARGIN_PX, win.innerWidth - size.width - VIEWPORT_MARGIN_PX);
   const topWithin = (top: number) =>
     within(top, VIEWPORT_MARGIN_PX, win.innerHeight - size.height - VIEWPORT_MARGIN_PX);
-  const above = {
+  const topAbove = edited.top - size.height - GAP_PX;
+  const isBelow =
+    topAbove < VIEWPORT_MARGIN_PX &&
+    edited.bottom + GAP_PX + size.height <= win.innerHeight - VIEWPORT_MARGIN_PX;
+  const placed = {
     left: leftWithin(edited.left),
-    top: topWithin(edited.top - size.height - GAP_PX),
+    top: topWithin(isBelow ? edited.bottom + GAP_PX : topAbove),
   };
   const toggle = toggleRectIn(win.document);
-  if (!toggle || !covers(above, size, toggle)) return above;
-  const beside = { ...above, left: leftWithin(toggle.left - size.width - GAP_PX) };
+  if (!toggle || !covers(placed, size, toggle)) return placed;
+  const beside = { ...placed, left: leftWithin(toggle.left - size.width - GAP_PX) };
   if (!covers(beside, size, toggle)) return beside;
-  return { ...above, top: topWithin(Math.max(edited.top, toggle.bottom) + GAP_PX) };
+  const edge = isBelow ? edited.bottom : edited.top;
+  return { ...placed, top: topWithin(Math.max(edge, toggle.bottom) + GAP_PX) };
 };
 
 const isInView = (edited: DOMRect, win: Window): boolean =>
