@@ -50,6 +50,7 @@ export interface FieldTracker {
   whitespaceAround(match: FieldMatch): WhitespaceAround;
   showText(node: Text, text: string): void;
   showTextInHolder(match: FieldMatch, text: string): boolean;
+  joinSplitText(holder: Element, mayJoin: (match: FieldMatch) => boolean): FieldMatch | null;
   beginEdit(match: FieldMatch, edit: FieldEdit): HTMLElement | null;
   endEdit(match: FieldMatch, text: string): void;
   isIdentifiedByThePage(element: Element): boolean;
@@ -173,6 +174,10 @@ const isTheOnlyTextOf = (element: Element, textNode: Text): boolean =>
     (child) => child === textNode || child instanceof Element || isBlankText(child)
   );
 
+const WHITESPACE_RUN = /\s+/gu;
+
+const comparableText = (text: string): string => text.replaceAll(WHITESPACE_RUN, " ").trim();
+
 const NO_WHITESPACE_AROUND: WhitespaceAround = { after: "", before: "" };
 
 const TRAILING_WHITESPACE = /\s*$/u;
@@ -200,6 +205,29 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     editedElement.childElementCount === 0
       ? NO_WHITESPACE_AROUND
       : whitespaceAroundTheValue(textNode.data, texts.get(textNode)?.original ?? textNode.data);
+
+  const isSplitIntoPlainElements = (holder: Element, text: string): boolean => {
+    if (holder.childElementCount === 0 || holder.querySelector(MARKED) !== null) return false;
+    const pieces = [...visibleTextNodesIn(holder)];
+    if (pieces.some((piece) => texts.has(piece) || hasMarker(piece.data))) return false;
+    return comparableText(holder.textContent ?? "") === comparableText(text);
+  };
+
+  const showFieldInHolder = (holder: Element, held: HeldField, text: string): FieldMatch => {
+    const { holder: _holder, textNode: _textNode, ...field } = held.match;
+    const textNode = document.createTextNode(text);
+    const shown = { ...field, holder, textNode };
+    showOnlyText(holder, textNode);
+    texts.set(textNode, {
+      match: shown,
+      nodeMarker: null,
+      original: held.original,
+      ownWritesToObserve: 0,
+    });
+    holders.set(holder, { match: shown, original: held.original });
+    for (const listener of listeners) listener.onFields(holder, [shown]);
+    return shown;
+  };
 
   const writeIdentityAttr = (element: Element, attr: string, value: string | null) => {
     if (element.getAttribute(attr) === value) return;
@@ -389,12 +417,34 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     return true;
   };
 
+  const showEditedTextInsteadOfTheSplit = (
+    textNode: Text,
+    tracked: TrackedText,
+    edit: TextEdit
+  ): boolean => {
+    const { editedElement } = edit;
+    if (tracked.match?.holder !== editedElement || sharedHolders.has(editedElement)) return false;
+    const shown = `${edit.before}${edit.shownText()}${edit.after}`;
+    if (!main.contains(editedElement) || !isSplitIntoPlainElements(editedElement, shown)) {
+      return false;
+    }
+    showOnlyText(editedElement, textNode);
+    showEditedTextAgain(textNode, tracked, edit, tracked.original);
+    return true;
+  };
+
   const releaseDetachedNodes = () => {
     const released: FieldMatch[] = [];
     for (const [textNode, tracked] of texts) {
       if (main.contains(textNode)) continue;
       const edit = edits.get(textNode);
-      if (edit && showEditedTextInsteadOfTheRender(textNode, tracked, edit)) continue;
+      if (
+        edit &&
+        (showEditedTextInsteadOfTheRender(textNode, tracked, edit) ||
+          showEditedTextInsteadOfTheSplit(textNode, tracked, edit))
+      ) {
+        continue;
+      }
       textNode.data = tracked.original;
       texts.delete(textNode);
       if (tracked.match) released.push(tracked.match);
@@ -461,23 +511,21 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       node.data = text;
     },
     showTextInHolder(match, text) {
-      const { holder, textNode: _textNode, ...field } = match;
+      const { holder } = match;
       const held = holder && holders.get(holder);
       if (!holder || !held || held.match !== match || edits.has(match.textNode)) return false;
       if (sharedHolders.has(holder)) return false;
       if (main.contains(match.textNode) || !main.contains(holder)) return false;
-      const textNode = document.createTextNode(text);
-      const shown = { ...field, holder, textNode };
-      showOnlyText(holder, textNode);
-      texts.set(textNode, {
-        match: shown,
-        nodeMarker: null,
-        original: held.original,
-        ownWritesToObserve: 0,
-      });
-      holders.set(holder, { match: shown, original: held.original });
-      for (const listener of listeners) listener.onFields(holder, [shown]);
+      showFieldInHolder(holder, held, text);
       return true;
+    },
+    joinSplitText(holder, mayJoin) {
+      const held = holders.get(holder);
+      if (!held || sharedHolders.has(holder) || edits.has(held.match.textNode)) return null;
+      if (main.contains(held.match.textNode) || !main.contains(holder)) return null;
+      const text = withoutMarker(held.original);
+      if (!isSplitIntoPlainElements(holder, text) || !mayJoin(held.match)) return null;
+      return showFieldInHolder(holder, held, text);
     },
     beginEdit(match, edit) {
       const { holder, textNode } = match;

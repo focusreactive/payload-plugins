@@ -183,3 +183,154 @@ describe("a text of rich text", () => {
     overlay.dispose();
   });
 });
+
+const splitIntoLetters = (element: HTMLElement) => {
+  const words = (element.textContent ?? "").split(" ").map((word) => {
+    const wordElement = document.createElement("div");
+    for (const letter of word) {
+      const letterElement = document.createElement("div");
+      letterElement.textContent = letter;
+      wordElement.append(letterElement);
+    }
+    return wordElement;
+  });
+  element.replaceChildren(...words.flatMap((word, index) => (index === 0 ? [word] : [" ", word])));
+  return [...element.querySelectorAll("div > div")].map((letter) => letter.firstChild as Text);
+};
+
+const clickedAt = (letter: Text) =>
+  Object.defineProperty(document, "caretRangeFromPoint", {
+    configurable: true,
+    value: () => {
+      const range = document.createRange();
+      range.setStart(letter, 0);
+      return range;
+    },
+  });
+
+const caret = () => {
+  const selection = document.getSelection() as Selection;
+  return [selection.focusNode, selection.focusOffset];
+};
+
+describe("a heading a site script splits into an element per letter, edited on the page", () => {
+  let main: HTMLElement;
+  let heading: HTMLHeadingElement;
+  let overlay: Overlay;
+  let open: MockInstance<typeof window.open>;
+  let fetchEndpoint: ReturnType<typeof vi.fn>;
+
+  const sentToEndpoint = () =>
+    fetchEndpoint.mock.calls.map(([, init]) => JSON.parse((init as RequestInit).body as string));
+
+  beforeEach(async () => {
+    document.body.innerHTML = "";
+    main = document.createElement("main");
+    heading = document.createElement("h2");
+    heading.textContent = marked("How We Deliver", "title");
+    main.append(heading);
+    document.body.append(main);
+    fetchEndpoint = vi.fn(() =>
+      Promise.resolve({ json: () => Promise.resolve({ saved: true }), ok: true } as Response)
+    );
+    vi.stubGlobal("fetch", fetchEndpoint);
+    open = vi.spyOn(window, "open").mockImplementation(() => null);
+    overlay = createOverlay(main, () =>
+      overlayCtx({
+        inlineEditing: true,
+        instantPreview: true,
+        mode: "hover",
+        payloadApi: "https://cms.example.com/api",
+      })
+    );
+  });
+
+  afterEach(() => {
+    overlay.dispose();
+    open.mockRestore();
+    vi.unstubAllGlobals();
+    Reflect.deleteProperty(document, "caretRangeFromPoint");
+    document.getSelection()?.removeAllRanges();
+  });
+
+  it("edits the heading as one text, with the caret at the letter clicked", async () => {
+    const letters = splitIntoLetters(heading);
+    await flushMutations();
+    const letterW = letters[3];
+    clickedAt(letterW as Text);
+
+    const event = click(letterW?.parentElement as Element);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(open).not.toHaveBeenCalled();
+    expect(heading.getAttribute("contenteditable")).toBe("true");
+    expect(Array.from(heading.childNodes)).toEqual([heading.firstChild]);
+    expect(heading.textContent).toBe("How We Deliver");
+    expect(caret()).toEqual([heading.firstChild, "How ".length]);
+  });
+
+  it("saves the whole heading with the text typed where the letter was clicked", async () => {
+    const letters = splitIntoLetters(heading);
+    await flushMutations();
+    clickedAt(letters[3] as Text);
+    click(letters[3]?.parentElement as Element);
+
+    (heading.firstChild as Text).insertData("How ".length, "X");
+    document.getSelection()?.collapse(heading.firstChild, "How X".length);
+    heading.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText" }));
+    heading.dispatchEvent(
+      new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Enter" })
+    );
+    await flushMutations();
+
+    expect(sentToEndpoint().map(({ base, value }) => [base, value])).toEqual([
+      ["How We Deliver", "How XWe Deliver"],
+    ]);
+    expect(heading.textContent).toBe("How XWe Deliver");
+  });
+
+  it("keeps the typed text and the caret when the script splits the heading again while it is edited", async () => {
+    const letters = splitIntoLetters(heading);
+    await flushMutations();
+    clickedAt(letters[3] as Text);
+    click(letters[3]?.parentElement as Element);
+    const edited = heading.firstChild as Text;
+    edited.insertData("How ".length, "X");
+    document.getSelection()?.collapse(edited, "How X".length);
+    heading.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText" }));
+
+    splitIntoLetters(heading);
+    await flushMutations();
+
+    expect(Array.from(heading.childNodes)).toEqual([edited]);
+    expect(edited.data).toBe("How XWe Deliver");
+    expect(caret()).toEqual([edited, "How X".length]);
+  });
+
+  it("keeps the text and the caret of an edit that began before the script split the heading", async () => {
+    click(heading);
+    const edited = heading.firstChild as Text;
+    document.getSelection()?.collapse(edited, "How We".length);
+    document.dispatchEvent(new Event("selectionchange"));
+
+    splitIntoLetters(heading);
+    await flushMutations();
+
+    expect(Array.from(heading.childNodes)).toEqual([edited]);
+    expect(edited.data).toBe("How We Deliver");
+    expect(caret()).toEqual([edited, "How We".length]);
+    expect(heading.getAttribute("contenteditable")).toBe("true");
+  });
+
+  it("opens the field in the admin when the split text is not the text of the field", async () => {
+    splitIntoLetters(heading);
+    heading.append(" now");
+    await flushMutations();
+
+    click(heading.querySelector("div > div") as Element);
+
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(heading.hasAttribute("contenteditable")).toBe(false);
+    expect(heading.querySelectorAll("div > div")).toHaveLength("HowWeDeliver".length);
+  });
+});

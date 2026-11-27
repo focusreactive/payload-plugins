@@ -15,7 +15,7 @@ export type TextEditingDeps = {
 };
 
 export interface TextEditing {
-  begin(match: FieldMatch, field: VeEditedField, point: Point): boolean;
+  begin(match: FieldMatch, field: VeEditedField, point: Point, caret?: number): boolean;
   isEditing(holder: Element): boolean;
   commit(): void;
   endIfRemoved(): void;
@@ -683,7 +683,7 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
   };
 
   return {
-    begin(match, field, point) {
+    begin(match, field, point, caret) {
       if (editing?.match === match) return true;
       commit();
 
@@ -736,7 +736,8 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
       edit.hideFrame = showEditingFrame(editedElement);
       editing = edit;
       editedElement.focus();
-      placeCaretAtPoint(editedElement, point, textsOf(edit));
+      if (caret === undefined) placeCaretAtPoint(editedElement, point, textsOf(edit));
+      else placeCaret(editedElement, caret, textsOf(edit));
       followCaret(edit);
       edit.history = [{ caret: edit.caret, text }];
       return true;

@@ -18,6 +18,7 @@ import { createImageReplacement } from "./imageReplacement.js";
 import { createPageFields, isPageField } from "./pageFields.js";
 import { createRichTextEditing } from "./richTextEditing.js";
 import { createSaveStatus } from "./saveStatus.js";
+import { offsetOfTheSameText, textNodesIn, textPositionAtPoint } from "./caret.js";
 import { createTextEditing } from "./textEditing.js";
 
 export type InlineEditingCtx = {
@@ -147,9 +148,42 @@ export function createInlineEditing(
     richTextEditing.commit();
   };
 
-  const editTextInPlace = (match: FieldMatch, field: VeEditedField, event: MouseEvent): boolean => {
+  const editTextInPlace = (
+    match: FieldMatch,
+    field: VeEditedField,
+    event: MouseEvent,
+    caret?: number
+  ): boolean => {
     richTextEditing.commit();
-    return textEditing.begin(match, field, { x: event.clientX, y: event.clientY });
+    return textEditing.begin(match, field, { x: event.clientX, y: event.clientY }, caret);
+  };
+
+  const textBeforeTheClick = (target: HTMLElement, event: MouseEvent): string | null => {
+    const pieces = textNodesIn(target);
+    const clicked = textPositionAtPoint(document, pieces, { x: event.clientX, y: event.clientY });
+    return (
+      clicked &&
+      pieces
+        .map(({ data }) => data)
+        .join("")
+        .slice(0, clicked.offset)
+    );
+  };
+
+  const editSplitTextInPlace = (target: HTMLElement, event: MouseEvent): boolean | null => {
+    const click: { textBefore?: string | null } = {};
+    const joined = tracker.joinSplitText(target, (held) => {
+      if (textFieldEditedHereOf(held) === null) return false;
+      click.textBefore = textBeforeTheClick(target, event);
+      return true;
+    });
+    const field = textFieldEditedHereOf(joined ?? undefined);
+    if (!joined || !field) return null;
+    const caret =
+      typeof click.textBefore === "string"
+        ? offsetOfTheSameText(click.textBefore, joined.textNode.data)
+        : undefined;
+    return editTextInPlace(joined, field, event, caret);
   };
 
   return {
@@ -183,6 +217,10 @@ export function createInlineEditing(
       if (match && field && isBesideTheTextOfAControl(match, event)) return CLICK_LEFT_TO_THE_PAGE;
       if (textEditing.isEditing(target)) return true;
       if (match && field) return editTextInPlace(match, field, event);
+      if (!match) {
+        const editedSplitText = editSplitTextInPlace(target, event);
+        if (editedSplitText !== null) return editedSplitText;
+      }
       return richTextEditing.editInPlace(target, event, openField);
     },
     sync() {

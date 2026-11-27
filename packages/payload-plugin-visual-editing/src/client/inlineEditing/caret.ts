@@ -121,6 +121,20 @@ export const textPositionAtPoint = (
   return positionIn(texts, textNode, isBeforeTheText ? 0 : textNode.length);
 };
 
+const WHITESPACE = /\s/u;
+
+export const offsetOfTheSameText = (textBefore: string, text: string): number => {
+  let letters = [...textBefore].filter((character) => !WHITESPACE.test(character)).length;
+  let offset = 0;
+  while (letters > 0 && offset < text.length) {
+    if (!WHITESPACE.test(text.charAt(offset))) letters -= 1;
+    offset += 1;
+  }
+  if (!WHITESPACE.test(textBefore.at(-1) ?? "")) return offset;
+  while (offset < text.length && WHITESPACE.test(text.charAt(offset))) offset += 1;
+  return offset;
+};
+
 export const placeCaretAtPoint = (
   element: Element,
   point: Point,
