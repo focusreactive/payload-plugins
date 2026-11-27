@@ -2,6 +2,7 @@ import type { VisualEditingMode } from "./visualEditingMode.js";
 import type { BuildAdminEditUrl } from "../shared/buildAdminEditUrl.js";
 import type { RichTextEditorLoader } from "./inlineEditing/richTextEditor.js";
 import type { KeepsShape } from "./instantPreview/liveFields.js";
+import type { ImageSrc } from "./inlineEditing/shownImage.js";
 
 import { createEditTargets } from "./overlay/editTargets.js";
 import { createFieldTracker } from "./overlay/fieldTracker.js";
@@ -21,6 +22,7 @@ export type OverlayCtx = {
   keepsRichTextShape?: KeepsShape;
   onEdited?: () => void;
   richTextEditor?: RichTextEditorLoader;
+  imageSrc?: ImageSrc;
 };
 
 export interface Overlay {
@@ -37,13 +39,22 @@ export function createOverlay(main: HTMLElement, getCtx: () => OverlayCtx): Over
     () => {
       const {
         adminOrigin,
+        imageSrc,
         inlineEditing: isOn = false,
         locale,
         onEdited,
         payloadApi = "",
         richTextEditor,
       } = getCtx();
-      return { adminOrigin, inlineEditing: isOn, locale, onEdited, payloadApi, richTextEditor };
+      return {
+        adminOrigin,
+        imageSrc,
+        inlineEditing: isOn,
+        locale,
+        onEdited,
+        payloadApi,
+        richTextEditor,
+      };
     },
     instantPreview
   );

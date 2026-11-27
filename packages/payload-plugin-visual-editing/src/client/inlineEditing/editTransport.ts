@@ -9,7 +9,7 @@ import type {
   VePickMediaMessage,
   VeRichTextEditEndedMessage,
   VeRichTextEditMessage,
-  VeShownMedia,
+  VePickedMedia,
 } from "../../shared/protocol.js";
 import type { AdminEditChannel, DocumentNews } from "./adminEditChannel.js";
 import type { EditRoutes } from "./editRoutes.js";
@@ -49,7 +49,7 @@ export interface FieldEdit<Value extends EditValue> {
 
 export type ShownImage = {
   shownMediaId: string | null;
-  show(media: VeShownMedia): (() => void) | null;
+  show(media: VePickedMedia): (() => void) | null;
   openField(): void;
 };
 

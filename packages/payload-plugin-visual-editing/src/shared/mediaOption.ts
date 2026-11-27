@@ -1,5 +1,11 @@
 import type { PlainObject } from "./plainObject.js";
-import type { VeEditedField, VeMediaOption, VeMediaOptions, VeShownMedia } from "./protocol.js";
+import type {
+  VeEditedField,
+  VeMediaOption,
+  VeMediaOptions,
+  VePickedMedia,
+  VeShownMedia,
+} from "./protocol.js";
 
 import { readEditedField } from "./fieldEdit.js";
 import { isPlainObject } from "./plainObject.js";
@@ -15,6 +21,23 @@ export const shownMediaOf = (media: unknown): VeShownMedia | null => {
     url: media.url,
     ...(width !== undefined && { width }),
     ...(height !== undefined && { height }),
+  };
+};
+
+const textOf = (value: unknown): string | undefined =>
+  typeof value === "string" ? value : undefined;
+
+export const pickedMediaOf = (media: unknown): VePickedMedia | null => {
+  const shown = shownMediaOf(media);
+  if (!shown || !isPlainObject(media)) return null;
+  const id = idOf(media.id);
+  const filename = textOf(media.filename);
+  const alt = textOf(media.alt);
+  return {
+    ...shown,
+    ...(id !== null && { id }),
+    ...(filename !== undefined && { filename }),
+    ...(alt !== undefined && { alt }),
   };
 };
 
@@ -49,8 +72,8 @@ export const readMediaOptions = (answer: unknown): VeMediaOptions | null => {
   };
 };
 
-export const readPickedMedia = (data: unknown): (VeEditedField & VeShownMedia) | null => {
+export const readPickedMedia = (data: unknown): (VeEditedField & VePickedMedia) | null => {
   const field = readEditedField(data);
-  const shown = shownMediaOf(data);
-  return field && shown ? { ...field, ...shown } : null;
+  const picked = pickedMediaOf(data);
+  return field && picked ? { ...field, ...picked } : null;
 };

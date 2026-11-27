@@ -1,5 +1,6 @@
 import type { Overlay } from "./createOverlay.js";
 import type { RichTextEditorLoader } from "./inlineEditing/richTextEditor.js";
+import type { ImageSrc } from "./inlineEditing/shownImage.js";
 import type { MarkerCleaner } from "./overlay/markerCleaner.js";
 import type { OverlayScope, ScopedOverlayCtx } from "./overlayScope.js";
 import type { Session } from "./session.js";
@@ -22,6 +23,7 @@ type RunningOverlay = { overlay: Overlay; hasInstantPreview: boolean };
 export type PageEditing = {
   onEdited?: () => void;
   richTextEditor?: RichTextEditorLoader;
+  imageSrc?: ImageSrc;
 };
 
 const overlayCtxOf = (session: Session, pageEditing: PageEditing): ScopedOverlayCtx => ({

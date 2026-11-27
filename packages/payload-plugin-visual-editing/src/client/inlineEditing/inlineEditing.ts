@@ -7,6 +7,7 @@ import type { EditStatus } from "./editTransport.js";
 import type { OpenForms } from "./pageFields.js";
 import type { RichTextEditorLoader } from "./richTextEditor.js";
 import type { SaveStatus } from "./saveStatus.js";
+import type { ImageSrc } from "./shownImage.js";
 
 import { CLICK_LEFT_TO_THE_PAGE } from "../overlay/editTargets.js";
 import { createAdminEditChannel } from "./adminEditChannel.js";
@@ -25,6 +26,7 @@ export type InlineEditingCtx = {
   inlineEditing: boolean;
   onEdited?: () => void;
   richTextEditor?: RichTextEditorLoader;
+  imageSrc?: ImageSrc;
 };
 
 const PAGE_LEFT_EVENT = "pagehide";

@@ -185,6 +185,12 @@ export type VeShownMedia = {
   height?: number;
 };
 
+export type VePickedMedia = VeShownMedia & {
+  id?: number | string;
+  filename?: string;
+  alt?: string;
+};
+
 export type VeMediaOption = VeShownMedia & {
   id: number | string;
   filename: string;
@@ -214,7 +220,7 @@ export type VeMediaPickCancelledMessage = VeEditedField & {
 export const VE_MEDIA_PICKED_TYPE = "ve:media-picked";
 
 export type VeMediaPickedMessage = VeEditedField &
-  VeShownMedia & {
+  VePickedMedia & {
     type: typeof VE_MEDIA_PICKED_TYPE;
   };
 

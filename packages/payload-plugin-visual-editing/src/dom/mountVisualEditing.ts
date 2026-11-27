@@ -1,5 +1,6 @@
 import type { AccentOptions } from "../client/accent.js";
 import type { RichTextEditorLoader } from "../client/inlineEditing/richTextEditor.js";
+import type { ImageSrc } from "../client/inlineEditing/shownImage.js";
 import type { OverlayScope } from "../client/overlayScope.js";
 import type { SessionOptions } from "../client/session.js";
 import type { RenderRichTextHtml, RenderRichTextValue } from "./liveRichTextElements.js";
@@ -25,6 +26,7 @@ export type MountVisualEditingOptions = SessionOptions &
     onSave?: () => void;
     onEdited?: () => void;
     richTextEditor?: RichTextEditorLoader;
+    imageSrc?: ImageSrc;
   };
 
 export interface VisualEditing {
@@ -63,6 +65,7 @@ export function mountVisualEditing({
   onSave,
   onEdited,
   richTextEditor,
+  imageSrc,
   accentColor,
   accentTextColor,
   ...sessionOptions
@@ -108,7 +111,7 @@ export function mountVisualEditing({
     () => listenToSaves(adminOrigin, () => onSave?.())
   );
 
-  const pageEditing = { onEdited, richTextEditor };
+  const pageEditing = { imageSrc, onEdited, richTextEditor };
   const overlay = startSessionOverlay(
     root,
     () => scope,

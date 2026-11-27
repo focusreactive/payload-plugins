@@ -45,6 +45,7 @@ const PAGE = { collectionSlug: "page", docId: "1", kind: "collection" } as const
 const IMAGE_FIELD = { ...PAGE, key: "image", locale: "en" };
 
 const LIGHTHOUSE = {
+  alt: "A lighthouse",
   filename: "lighthouse.jpg",
   id: 9,
   thumbnailUrl: "/api/media/file/lighthouse-small.jpg",
@@ -234,7 +235,7 @@ describe("replacing an image on the page", () => {
 
     it("offers to replace an image whose description names its upload field, and saves from the media it showed", async () => {
       image.remove();
-      image = await render(renderImage("/_vercel/image?url=%2Fmedia%2Fharbour.jpg&w=1080&q=75"));
+      image = await render(renderImage("/images/harbour.jpg?width=1080"));
       image.setAttribute("alt", stega("A harbour", "image", { valueId: "3" }));
       await flushMutations();
 
@@ -247,6 +248,37 @@ describe("replacing an image on the page", () => {
       expect(requestsTo("/visual-editing/field-edit")).toEqual([
         { ...IMAGE_FIELD, base: "3", value: "9" },
       ]);
+    });
+
+    describe("whose description names its upload field", () => {
+      beforeEach(async () => {
+        image.remove();
+        image = await render(renderImage());
+        image.setAttribute("alt", stega("A harbour", "image", { valueId: "3" }));
+        await flushMutations();
+      });
+
+      it("shows the description of the picked media", async () => {
+        await useLighthouse();
+
+        expect(image.getAttribute("alt")).toBe("A lighthouse");
+      });
+
+      it("shows its own description again when the save is refused", async () => {
+        isSaved = false;
+
+        await useLighthouse();
+
+        expect(image.getAttribute("alt")).toBe("A harbour");
+      });
+    });
+
+    it("leaves the description of an image the page marked itself", async () => {
+      image.setAttribute("alt", "Old harbour");
+
+      await useLighthouse();
+
+      expect(image.getAttribute("alt")).toBe("Old harbour");
     });
 
     it("offers it for an element the page marked around one image whose description names the field too", async () => {
@@ -306,6 +338,18 @@ describe("replacing an image on the page", () => {
       expect(image.hasAttribute("srcset")).toBe(false);
       expect(requestsTo("/visual-editing/field-edit")).toEqual([{ ...IMAGE_FIELD, value: "9" }]);
       expect(statusLabel()).toBe("Saved");
+    });
+
+    it("shows the picked media at the address the site gives for it", async () => {
+      const imageSrc = vi.fn(
+        ({ filename }: { filename?: string }) => `/images/${filename}?width=1080`
+      );
+      ctx = { ...ctx, imageSrc };
+
+      await useLighthouse();
+
+      expect(image.getAttribute("src")).toBe("/images/lighthouse.jpg?width=1080");
+      expect(imageSrc).toHaveBeenCalledWith(expect.objectContaining(LIGHTHOUSE));
     });
 
     it("names the media the page shows as the one the save began from", async () => {
@@ -502,6 +546,25 @@ describe("replacing an image on the page", () => {
       expect(image.getAttribute("src")).toBe(`${CMS}/api/media/file/lighthouse.jpg`);
       expect(image.hasAttribute("srcset")).toBe(false);
       expect(statusLabel()).toBe("In the admin form, not saved yet");
+    });
+
+    it("shows the media the admin picked at the address the site gives for it", () => {
+      const imageSrc = vi.fn(({ filename }: { filename?: string }) => `/images/${filename}`);
+      ctx = { ...ctx, imageSrc };
+      formOfThePage();
+      ask();
+
+      postFromAdmin(picked({ alt: "A lighthouse", filename: "lighthouse.jpg", id: 9 }));
+
+      expect(image.getAttribute("src")).toBe("/images/lighthouse.jpg");
+      expect(imageSrc).toHaveBeenCalledWith({
+        alt: "A lighthouse",
+        filename: "lighthouse.jpg",
+        height: 600,
+        id: 9,
+        url: "/api/media/file/lighthouse.jpg",
+        width: 800,
+      });
     });
 
     it("asks a new admin window again, whatever the window that was asked first never answered", () => {

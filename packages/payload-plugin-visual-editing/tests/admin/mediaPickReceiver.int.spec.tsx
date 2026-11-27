@@ -106,7 +106,14 @@ const FIELD = {
 
 const REQUEST = { ...FIELD, type: VE_PICK_MEDIA_TYPE };
 
-const LIGHTHOUSE = { height: 600, id: 9, url: "/api/media/file/lighthouse.png", width: 800 };
+const LIGHTHOUSE = {
+  alt: "A lighthouse",
+  filename: "lighthouse.png",
+  height: 600,
+  id: 9,
+  url: "/api/media/file/lighthouse.png",
+  width: 800,
+};
 
 const postRequest = ({
   data = REQUEST as object,
@@ -176,7 +183,7 @@ describe("MediaPickReceiver", () => {
     expect(admin.closeDrawer).toHaveBeenCalled();
   });
 
-  it("tells the preview page what to show for the selected document", async () => {
+  it("tells the preview page what to show for the selected document, and what it is", async () => {
     postRequest();
 
     await select({ id: 9 });
@@ -187,7 +194,10 @@ describe("MediaPickReceiver", () => {
     expect(admin.postToPreview).toHaveBeenCalledWith(
       {
         ...FIELD,
+        alt: "A lighthouse",
+        filename: "lighthouse.png",
         height: 600,
+        id: 9,
         type: VE_MEDIA_PICKED_TYPE,
         url: "/api/media/file/lighthouse.png",
         width: 800,
@@ -224,7 +234,7 @@ describe("MediaPickReceiver", () => {
     await select({ id: 9, url: "/from-the-list.png" });
 
     expect(admin.postToPreview).toHaveBeenCalledWith(
-      { ...FIELD, type: VE_MEDIA_PICKED_TYPE, url: "/from-the-list.png" },
+      { ...FIELD, id: 9, type: VE_MEDIA_PICKED_TYPE, url: "/from-the-list.png" },
       PREVIEW_ORIGIN
     );
   });

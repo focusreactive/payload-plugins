@@ -1,4 +1,6 @@
-import type { VeShownMedia } from "../../shared/protocol.js";
+import type { VePickedMedia, VeShownMedia } from "../../shared/protocol.js";
+
+export type ImageSrc = (media: VePickedMedia) => string;
 
 const SOURCE_ATTR = "src";
 const VARIANTS_ATTR = "srcset";
@@ -6,6 +8,7 @@ const VARIANT_SIZES_ATTR = "sizes";
 const SOURCES_OF_PICTURE = "source";
 const PICTURE = "picture";
 const WIDTH_ATTR = "width";
+const DESCRIPTION_ATTR = "alt";
 const HEIGHT_ATTR = "height";
 
 export const absoluteUrlOf = (url: string, payloadApi: string, win: Window = window): string => {
@@ -49,11 +52,16 @@ const rememberedAttrsOf = (element: Element, attrs: readonly string[]): (() => v
 
 export const showMedia = (
   image: HTMLImageElement,
-  media: VeShownMedia,
-  url: string
+  media: VePickedMedia,
+  url: string,
+  isDescribedByTheField = false
 ): (() => void) => {
+  const description = isDescribedByTheField ? media.alt : undefined;
   const putBack = [
-    rememberedAttrsOf(image, SHOWN_BY_IMAGE),
+    rememberedAttrsOf(image, [
+      ...SHOWN_BY_IMAGE,
+      ...(description === undefined ? [] : [DESCRIPTION_ATTR]),
+    ]),
     ...sourcesAround(image).map((source) => rememberedAttrsOf(source, SHOWN_BY_SOURCE)),
   ];
   for (const source of sourcesAround(image)) {
@@ -63,6 +71,7 @@ export const showMedia = (
   image.removeAttribute(VARIANTS_ATTR);
   image.removeAttribute(VARIANT_SIZES_ATTR);
   image.setAttribute(SOURCE_ATTR, url);
+  if (description !== undefined) image.setAttribute(DESCRIPTION_ATTR, description);
   keepWidthWithProportionsOf(image, media);
   return () => {
     for (const putBackOne of putBack) putBackOne();

@@ -1,8 +1,9 @@
-import type { VeEditedField } from "../../shared/protocol.js";
+import type { VeEditedField, VePickedMedia } from "../../shared/protocol.js";
 import type { BadgeAction } from "../overlay/editBadge.js";
 import type { FieldTracker } from "../overlay/fieldTracker.js";
 import type { ImageEdit, ShownImage } from "./editTransport.js";
 import type { PageFields } from "./pageFields.js";
+import type { ImageSrc } from "./shownImage.js";
 
 import { DATA_VE_LIVE_RICH_TEXT_ATTR, DATA_VE_VALUE_ID_ATTR } from "../../shared/protocol.js";
 
@@ -15,6 +16,7 @@ import { absoluteUrlOf, showMedia } from "./shownImage.js";
 export type ImageReplacementCtx = {
   payloadApi: string;
   inlineEditing: boolean;
+  imageSrc?: ImageSrc;
 };
 
 export type ImageReplacementOptions = {
@@ -36,6 +38,7 @@ type ReplaceableImage = {
   field: VeEditedField;
   image: HTMLImageElement;
   shownMediaId: string | null;
+  isDescribedByTheField: boolean;
 };
 
 const IMAGES = "img";
@@ -77,21 +80,29 @@ export function createImageReplacement({
     const marker = readMarkerFromAttrs(target);
     const answer = marker && pageFields.editableFieldOf(marker, "image");
     if (!answer || !isPageField(answer)) return null;
-    if (!tracker.isIdentifiedByThePage(target) && !tracker.namesUploadOf(target)) return null;
+    const isDescribedByTheField = tracker.namesUploadOf(target);
+    if (!tracker.isIdentifiedByThePage(target) && !isDescribedByTheField) return null;
     if (target.hasAttribute(DATA_VE_LIVE_RICH_TEXT_ATTR) || isInsideRichText(target)) return null;
     const image = onlyImageOf(target);
     if (!image || showsTrackedText(target)) return null;
     return {
       field: answer.field,
       image,
+      isDescribedByTheField,
       shownMediaId: target.getAttribute(DATA_VE_VALUE_ID_ATTR),
     };
   };
 
-  const replace = ({ field, image, shownMediaId }: ReplaceableImage, openField: () => void) => {
+  const srcOf = (media: VePickedMedia) => getCtx().imageSrc?.(media) ?? urlOf(media.url);
+
+  const replace = (
+    { field, image, isDescribedByTheField, shownMediaId }: ReplaceableImage,
+    openField: () => void
+  ) => {
     const edit = beginImageEdit(field, {
       openField,
-      show: (media) => (image.isConnected ? showMedia(image, media, urlOf(media.url)) : null),
+      show: (media) =>
+        image.isConnected ? showMedia(image, media, srcOf(media), isDescribedByTheField) : null,
       shownMediaId,
     });
     if (!edit.pickInTheDrawer()) picker.open(field, edit.use, openField);

@@ -8,7 +8,7 @@ import type { MediaPick } from "./mediaPick.js";
 import type { OpenDocumentForm } from "./useOpenDocumentForm.js";
 
 import { NOT_EDITABLE, SAVE_FAILED } from "../../shared/fieldEdit.js";
-import { shownMediaOf } from "../../shared/mediaOption.js";
+import { pickedMediaOf } from "../../shared/mediaOption.js";
 import { VE_MEDIA_PICK_CANCELLED_TYPE, VE_MEDIA_PICKED_TYPE } from "../../shared/protocol.js";
 import { idOf } from "../../shared/veDocument.js";
 import { chosenMediaOf, fetchPickedMedia, mediaPickOf, pickOfDocument } from "./mediaPick.js";
@@ -75,7 +75,7 @@ export function MediaPickReceiver({ excludeFieldNames }: { excludeFieldNames?: s
   ) => {
     if (!form.isOpen()) return;
     form.write({ path, value: mediaId });
-    const shown = shownMediaOf(media);
+    const shown = pickedMediaOf(media);
     if (!shown) {
       tellPickCancelled(form, field);
       return;

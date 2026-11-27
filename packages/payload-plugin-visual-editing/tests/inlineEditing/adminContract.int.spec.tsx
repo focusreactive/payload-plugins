@@ -304,6 +304,7 @@ describe("the page and the admin, wired through their windows", () => {
     expect(admin.dispatchFields).toHaveBeenCalledWith({ path: "image", type: "UPDATE", value: 9 });
     expect(image.show).toHaveBeenCalledWith({
       height: 600,
+      id: 9,
       url: LIGHTHOUSE.url,
       width: 800,
     });

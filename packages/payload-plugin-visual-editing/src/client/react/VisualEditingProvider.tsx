@@ -13,6 +13,7 @@ import {
 import type { BuildAdminEditUrl } from "../../shared/buildAdminEditUrl.js";
 import type { AccentOptions } from "../accent.js";
 import type { RichTextEditorLoader } from "../inlineEditing/richTextEditor.js";
+import type { ImageSrc } from "../inlineEditing/shownImage.js";
 import type { RenderSources } from "../instantPreview/unsavedRender/renderSources.js";
 import type { Session } from "../session.js";
 import type { VisualEditingMode } from "../visualEditingMode.js";
@@ -36,6 +37,7 @@ type VisualEditingContextType = Session & {
   toggleEnabled: () => void;
   onEdited?: () => void;
   richTextEditor?: RichTextEditorLoader;
+  imageSrc?: ImageSrc;
 };
 
 const noop = (): void => undefined;
@@ -65,6 +67,7 @@ export function VisualEditingProvider({
   accentTextColor,
   onEdited,
   richTextEditor,
+  imageSrc,
   children,
 }: AccentOptions & {
   available?: boolean;
@@ -77,6 +80,7 @@ export function VisualEditingProvider({
   payloadApi?: string;
   onEdited?: () => void;
   richTextEditor?: RichTextEditorLoader;
+  imageSrc?: ImageSrc;
   children: React.ReactNode;
 }) {
   const [pageStore] = useState(createPageStore);
@@ -89,11 +93,14 @@ export function VisualEditingProvider({
 
   const latestOnEdited = useRef(onEdited);
   const latestRichTextEditor = useRef(richTextEditor);
+  const latestImageSrc = useRef(imageSrc);
+  const hasImageSrc = imageSrc !== undefined;
   const hasRichTextEditor = richTextEditor !== undefined;
 
   useIsomorphicLayoutEffect(() => {
     latestOnEdited.current = onEdited;
     latestRichTextEditor.current = richTextEditor;
+    latestImageSrc.current = imageSrc;
   });
 
   const value = useMemo((): VisualEditingContextType => {
@@ -112,6 +119,7 @@ export function VisualEditingProvider({
     );
     return {
       ...session,
+      imageSrc: hasImageSrc ? (media) => latestImageSrc.current?.(media) ?? media.url : undefined,
       onEdited: () => latestOnEdited.current?.(),
       richTextEditor: hasRichTextEditor
         ? () => latestRichTextEditor.current?.() ?? Promise.reject(new Error(NO_EDITOR))
@@ -127,6 +135,7 @@ export function VisualEditingProvider({
     framedOnly,
     inlineEditing,
     instantPreview,
+    hasImageSrc,
     hasRichTextEditor,
     namedPayloadApi,
     page,

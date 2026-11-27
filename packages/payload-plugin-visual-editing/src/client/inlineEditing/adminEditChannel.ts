@@ -8,13 +8,13 @@ import type {
   VeRichTextEditEndedMessage,
   VeRichTextEditMessage,
   VeRichTextStateRequestMessage,
-  VeShownMedia,
+  VePickedMedia,
 } from "../../shared/protocol.js";
 import type { VeRichTextFormats } from "../../shared/richText/formats.js";
 import type { SavedDocument } from "../saveEvents.js";
 
 import { readEditedField, readRichTextEdit, readSaveRefusal } from "../../shared/fieldEdit.js";
-import { shownMediaOf } from "../../shared/mediaOption.js";
+import { pickedMediaOf } from "../../shared/mediaOption.js";
 import {
   VE_DOCUMENT_SAVED_TYPE,
   VE_FIELD_EDIT_REFUSED_TYPE,
@@ -57,7 +57,7 @@ export interface AdminRequests<Request extends VeEditedField, Answer> {
 export type DocumentNews = { document: SavedDocument; isSave: boolean };
 
 export interface AdminEditChannel {
-  mediaPicks: AdminRequests<VePickMediaMessage, VeShownMedia>;
+  mediaPicks: AdminRequests<VePickMediaMessage, VePickedMedia>;
   richTextStates: AdminRequests<VeRichTextStateRequestMessage, AnsweredRichText>;
   tell(adminWindow: Window, message: VeToldOfAnEdit): void;
   onRefusedEdit(listener: (field: VeEditedField, refusal: SaveRefusal) => void): () => void;
@@ -87,10 +87,10 @@ const NEWS_OF_A_DOCUMENT: ReadonlySet<unknown> = new Set([
   VE_DOCUMENT_SAVED_TYPE,
 ]);
 
-const MEDIA_PICK: Answering<VeShownMedia> = {
+const MEDIA_PICK: Answering<VePickedMedia> = {
   answerType: VE_MEDIA_PICKED_TYPE,
   cancelType: VE_MEDIA_PICK_CANCELLED_TYPE,
-  read: shownMediaOf,
+  read: pickedMediaOf,
   refusalType: VE_FIELD_EDIT_REFUSED_TYPE,
   takesLateAnswers: true,
   timeLimitMs: MEDIA_PICK_TIME_LIMIT_MS,
@@ -177,7 +177,7 @@ export function createAdminEditChannel(win: Window, adminOrigin: () => string): 
     adminWindow.postMessage(message, adminOriginOf(adminOrigin(), win));
   };
 
-  const mediaPicks = createRequests<VePickMediaMessage, VeShownMedia>(MEDIA_PICK, tell);
+  const mediaPicks = createRequests<VePickMediaMessage, VePickedMedia>(MEDIA_PICK, tell);
   const richTextStates = createRequests<VeRichTextStateRequestMessage, AnsweredRichText>(
     RICH_TEXT_STATE,
     tell
