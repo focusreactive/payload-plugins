@@ -35,6 +35,14 @@ const pointerMovesOver = (element: Element, at: MouseEventInit = AT) =>
 const drawnAt = (element: Element, rect: DOMRect) =>
   vi.spyOn(element, "getBoundingClientRect").mockReturnValue(rect);
 
+const textOfLinksDrawnAt = (rect: DOMRect) =>
+  Object.defineProperty(Range.prototype, "getClientRects", {
+    configurable: true,
+    value(this: Range) {
+      return this.startContainer.parentElement?.closest("a") ? [rect] : [];
+    },
+  });
+
 const paintedFromTheTop = (...elements: HTMLElement[]) =>
   Object.defineProperty(document, "elementsFromPoint", {
     configurable: true,
@@ -220,6 +228,11 @@ describe("a target beneath a layer that takes the pointer", () => {
         link.href = "#project";
         link.textContent = "Read the case";
         control(link);
+        textOfLinksDrawnAt(new DOMRect(0, 280, 100, 20));
+      });
+
+      afterEach(() => {
+        Reflect.deleteProperty(Range.prototype, "getClientRects");
       });
 
       it("offers the action of the image while the pointer is over the link", () => {
@@ -236,6 +249,49 @@ describe("a target beneath a layer that takes the pointer", () => {
 
         expect(open).not.toHaveBeenCalled();
         expect(event.defaultPrevented).toBe(false);
+      });
+    });
+
+    it("offers the action of the image while the pointer is over an empty link stretched over the card", () => {
+      const link = document.createElement("a");
+      link.href = "#project";
+
+      pointerMovesOver(control(link));
+
+      expect(isBadgeShown()).toBe(true);
+      expect(badgeIsFor()).toBe("hero.image");
+    });
+
+    describe("such as a link of a header over the image", () => {
+      let link: HTMLAnchorElement;
+
+      beforeEach(() => {
+        link = document.createElement("a");
+        link.href = "#home";
+        control(link);
+      });
+
+      afterEach(() => {
+        Reflect.deleteProperty(Range.prototype, "getClientRects");
+      });
+
+      it("shows nothing while the pointer is over the text of the link", () => {
+        link.textContent = "Home";
+        textOfLinksDrawnAt(new DOMRect(0, 0, 100, 60));
+
+        pointerMovesOver(link);
+
+        expect(isBadgeShown()).toBe(false);
+      });
+
+      it("shows nothing while the pointer is over the logo in the link", () => {
+        const logo = document.createElement("img");
+        link.append(logo);
+        drawnAt(logo, new DOMRect(0, 0, 100, 60));
+
+        pointerMovesOver(logo);
+
+        expect(isBadgeShown()).toBe(false);
       });
     });
   });

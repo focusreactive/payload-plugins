@@ -12,7 +12,7 @@ import { createHoverController } from "./hoverController.js";
 import { groupNodesByPath, readMarkerFromAttrs } from "./markerExtractor.js";
 import { createTargetRegistry } from "./targetRegistry.js";
 import { findTargetAncestor, pickTargetForGroup } from "./targetSelector.js";
-import { createTargetsAtPoint } from "./targetsAtPoint.js";
+import { createTargetsAtPoint, holds } from "./targetsAtPoint.js";
 
 export const CLICK_LEFT_TO_THE_PAGE = "page";
 
@@ -56,6 +56,27 @@ const isPassedThrough = (element: Element, target: HTMLElement): boolean =>
   element.contains(target) || !holdsContent(element);
 
 const pointOf = (event: MouseEvent) => ({ x: event.clientX, y: event.clientY });
+
+type Point = ReturnType<typeof pointOf>;
+
+const mediaOf = (control: Element): Element[] =>
+  control.matches(MEDIA) ? [control] : Array.from(control.querySelectorAll(MEDIA));
+
+const drawsTextAt = (control: Element, point: Point): boolean => {
+  const doc = control.ownerDocument;
+  const texts = doc.createTreeWalker(control, NodeFilter.SHOW_TEXT);
+  const range = doc.createRange();
+  if (typeof range.getClientRects !== "function") return false;
+  while (texts.nextNode()) {
+    range.selectNodeContents(texts.currentNode);
+    if ([...range.getClientRects()].some((rect) => holds(rect, point))) return true;
+  }
+  return false;
+};
+
+const drawsAt = (control: Element, point: Point): boolean =>
+  mediaOf(control).some((media) => holds(media.getBoundingClientRect(), point)) ||
+  drawsTextAt(control, point);
 
 const elementOf = (event: MouseEvent): Element | null =>
   event.target instanceof Element ? event.target : null;
@@ -112,11 +133,10 @@ export function createEditTargets(
   const hoverTargetBeneath = (event: MouseEvent) => {
     const element = elementOf(event);
     if (!element || findTargetAncestor(element)) return;
-    hover.point(
-      element.closest(INTERACTIVE)
-        ? targetsAtPoint.innermostAt(pointOf(event))
-        : targetBeneath(element, event)
-    );
+    const control = element.closest(INTERACTIVE);
+    const point = pointOf(event);
+    if (!control) hover.point(targetBeneath(element, event));
+    else hover.point(drawsAt(control, point) ? null : targetsAtPoint.innermostAt(point));
   };
 
   const registerTarget = (target: HTMLElement, marker: Marker) => {

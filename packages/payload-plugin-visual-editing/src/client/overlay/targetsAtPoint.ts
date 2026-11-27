@@ -9,7 +9,7 @@ export interface TargetsAtPoint {
   dispose(): void;
 }
 
-const holds = ({ bottom, height, left, right, top, width }: DOMRect, { x, y }: Point) =>
+export const holds = ({ bottom, height, left, right, top, width }: DOMRect, { x, y }: Point) =>
   width > 0 && height > 0 && x >= left && x <= right && y >= top && y <= bottom;
 
 const isAfter = (one: HTMLElement, other: HTMLElement): boolean =>
