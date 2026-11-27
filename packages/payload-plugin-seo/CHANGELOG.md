@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-seo [3.1.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@3.0.0...@focus-reactive/payload-plugin-seo@3.1.0) (2026-11-27)
+
+
+### Features
+
+* **seo:** let the app give the search-result preview the real document URL ([94dcf7c](https://github.com/focusreactive/payload-plugins/commit/94dcf7c6604457916bf05143a1ec8eb9ff5172b0))
+
 # @focus-reactive/payload-plugin-seo [3.0.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@2.0.0...@focus-reactive/payload-plugin-seo@3.0.0) (2026-11-17)
 
 
