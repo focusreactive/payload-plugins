@@ -378,6 +378,56 @@ describe("a heading a site script splits into an element per letter, edited on t
     expect(heading.getAttribute("contenteditable")).toBe("true");
   });
 
+  describe("whose script styles the elements of the split while the heading is edited", () => {
+    let word: HTMLElement;
+
+    const escape = () =>
+      heading.dispatchEvent(
+        new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Escape" })
+      );
+
+    beforeEach(async () => {
+      const letters = splitIntoLetters(heading);
+      word = heading.firstElementChild as HTMLElement;
+      word.setAttribute("style", "display: inline-block; color: red");
+      await flushMutations();
+      clickedAt(letters[0] as Text);
+      click(letters[0]?.parentElement as Element);
+    });
+
+    it("gives the elements back the style they had, word for word, when the script left them alone", async () => {
+      escape();
+      await flushMutations();
+
+      expect(word.getAttribute("style")).toBe("display: inline-block; color: red");
+    });
+
+    it("keeps what the script styled during the edit when the edit ends", async () => {
+      word.style.transform = "translateY(10px)";
+      await flushMutations();
+
+      escape();
+      await flushMutations();
+
+      expect(word.style.transform).toBe("translateY(10px)");
+      expect(word.style.display).toBe("inline-block");
+      expect(word.style.color).toBe("red");
+    });
+
+    it("keeps the elements hidden while the script rewrites their whole style", async () => {
+      word.style.cssText = "opacity: 0.5";
+      await flushMutations();
+
+      expect(word.style.display).toBe("none");
+
+      escape();
+      await flushMutations();
+
+      expect(word.style.opacity).toBe("0.5");
+      expect(word.style.display).toBe("");
+    });
+  });
+
   it("gives the split back as it was when the overlay is disposed during the edit", async () => {
     const letters = splitIntoLetters(heading);
     const splitNodes = Array.from(heading.childNodes);

@@ -70,11 +70,65 @@ type TrackedText = {
 
 type HeldField = { match: FieldMatch; original: string };
 
-type SetAside = { shown: Text; styles: Map<HTMLElement | SVGElement, string | null> };
+type Styled = HTMLElement | SVGElement;
+
+type HiddenStyle = {
+  attribute: string | null;
+  display: string;
+  priority: string;
+  leftByHiding: string | null;
+};
+
+type SetAside = { shown: Text; styles: Map<Styled, HiddenStyle> };
 
 const STYLE_ATTR = "style";
 
+const DISPLAY = "display";
+
 const HIDDEN_DISPLAY = "none";
+
+const IMPORTANT = "important";
+
+const isHidden = ({ style }: Styled): boolean =>
+  style.getPropertyValue(DISPLAY) === HIDDEN_DISPLAY &&
+  style.getPropertyPriority(DISPLAY) === IMPORTANT;
+
+const styleBeforeHiding = (element: Styled): HiddenStyle => ({
+  attribute: element.getAttribute(STYLE_ATTR),
+  display: element.style.getPropertyValue(DISPLAY),
+  leftByHiding: null,
+  priority: element.style.getPropertyPriority(DISPLAY),
+});
+
+const hide = (element: Styled, hidden: HiddenStyle): void => {
+  if (isHidden(element)) return;
+  element.style.setProperty(DISPLAY, HIDDEN_DISPLAY, IMPORTANT);
+  hidden.leftByHiding = element.getAttribute(STYLE_ATTR);
+};
+
+const keepHidden = (element: Styled, hidden: HiddenStyle): void => {
+  if (isHidden(element)) return;
+  hidden.display = element.style.getPropertyValue(DISPLAY);
+  hidden.priority = element.style.getPropertyPriority(DISPLAY);
+  hidden.leftByHiding = null;
+  element.style.setProperty(DISPLAY, HIDDEN_DISPLAY, IMPORTANT);
+};
+
+const showAgain = (
+  element: Styled,
+  { attribute, display, leftByHiding, priority }: HiddenStyle
+): void => {
+  if (leftByHiding !== null && element.getAttribute(STYLE_ATTR) === leftByHiding) {
+    if (attribute === null) element.removeAttribute(STYLE_ATTR);
+    else element.setAttribute(STYLE_ATTR, attribute);
+    return;
+  }
+  if (display === "") element.style.removeProperty(DISPLAY);
+  else element.style.setProperty(DISPLAY, display, priority);
+  if (attribute === null && element.getAttribute(STYLE_ATTR) === "") {
+    element.removeAttribute(STYLE_ATTR);
+  }
+};
 
 const CLICKABLE = "a, button";
 
@@ -217,6 +271,23 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
   const edits = new Map<Text, TextEdit>();
   const setAsideIn = new Map<Element, SetAside>();
 
+  const keepSetAsideHidden = () => {
+    for (const { styles } of setAsideIn.values()) {
+      for (const [element, hidden] of styles) keepHidden(element, hidden);
+    }
+  };
+
+  const restyles = new MutationObserver(keepSetAsideHidden);
+
+  const watchWhatIsSetAside = () => {
+    restyles.disconnect();
+    for (const { styles } of setAsideIn.values()) {
+      for (const element of styles.keys()) {
+        restyles.observe(element, { attributeFilter: [STYLE_ATTR] });
+      }
+    }
+  };
+
   const whitespaceAround = (textNode: Text, editedElement: Element): WhitespaceAround => {
     if (editedElement.childElementCount === 0) return NO_WHITESPACE_AROUND;
     const tracked = texts.get(textNode);
@@ -248,10 +319,12 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     holder.insertBefore(textNode, nodes[0] ?? null);
     for (const node of nodes) {
       if (!(node instanceof HTMLElement || node instanceof SVGElement)) continue;
-      if (!aside.styles.has(node)) aside.styles.set(node, node.getAttribute(STYLE_ATTR));
-      node.style.setProperty("display", HIDDEN_DISPLAY, "important");
+      const hidden = aside.styles.get(node) ?? styleBeforeHiding(node);
+      aside.styles.set(node, hidden);
+      hide(node, hidden);
     }
     setAsideIn.set(holder, aside);
+    watchWhatIsSetAside();
     return nodes;
   };
 
@@ -259,10 +332,8 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     const aside = setAsideIn.get(holder);
     if (!aside) return false;
     setAsideIn.delete(holder);
-    for (const [element, style] of aside.styles) {
-      if (style === null) element.removeAttribute(STYLE_ATTR);
-      else element.setAttribute(STYLE_ATTR, style);
-    }
+    for (const [element, hidden] of aside.styles) showAgain(element, hidden);
+    watchWhatIsSetAside();
     return true;
   };
 
@@ -643,6 +714,7 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     namesUploadOf: (element) => attrOriginals.get(element)?.get(DATA_VE_VALUE_ID_ATTR) === null,
     dispose() {
       pipeline.dispose();
+      restyles.disconnect();
       listeners.clear();
       edits.clear();
       for (const [holder, { shown }] of setAsideIn) {
