@@ -19,10 +19,16 @@ const MARKED_TITLE = markedText("Hello", { ...PAGE, path: "title" });
 const SITE_ORIGIN = "https://site.example";
 const FRAMED: PageState = {
   isFramed: true,
+  isTurnedOffByFrame: false,
   chosenMode: "off",
   pageOrigin: SITE_ORIGIN,
 };
 const STANDALONE: PageState = { ...FRAMED, isFramed: false };
+const TURNED_OFF_BY_FRAME: PageState = {
+  ...FRAMED,
+  chosenMode: "always",
+  isTurnedOffByFrame: true,
+};
 const DRAFT: SessionOptions = { adminOrigin: ADMIN_ORIGIN, available: true };
 
 describe("the session of a page, followed", () => {
@@ -203,6 +209,30 @@ describe("the session of a page, followed", () => {
       });
     });
 
+    it("draws nothing and announces nothing in a frame that turns visual editing off", async () => {
+      page = TURNED_OFF_BY_FRAME;
+
+      start();
+      await flushMutations();
+
+      expect(targets()).toHaveLength(0);
+      expect(heading.textContent).toBe("Hello");
+      expect(announcedFields()).toHaveLength(0);
+    });
+
+    it("tears the overlay down when the frame turns visual editing off later", async () => {
+      page = { ...FRAMED, chosenMode: "always" };
+      const overlay = start();
+      await flushMutations();
+
+      page = TURNED_OFF_BY_FRAME;
+      overlay.sync();
+      await flushMutations();
+
+      expect(targets()).toHaveLength(0);
+      expect(heading.textContent).toBe("Hello");
+    });
+
     it("leaves a page read without drafts alone", () => {
       options = { adminOrigin: ADMIN_ORIGIN, available: false };
 
@@ -245,6 +275,19 @@ describe("the session of a page, followed", () => {
       expect(document.querySelectorAll(`[${DATA_VE_TOGGLE_ATTR}]`)).toHaveLength(1);
     });
 
+    it("stays in view while the editor hovers editable text", async () => {
+      page = { ...FRAMED, chosenMode: "always" };
+      start();
+      startSessionOverlay(main, () => scope, session);
+      await flushMutations();
+
+      heading.dispatchEvent(new MouseEvent("mouseenter"));
+      await flushMutations();
+
+      expect(host()?.isConnected).toBe(true);
+      expect(host()?.getAttributeNames()).not.toContain("data-hidden");
+    });
+
     it("reports the mode the editor picks", () => {
       start();
 
@@ -267,6 +310,16 @@ describe("the session of a page, followed", () => {
 
       page = STANDALONE;
       toggle.sync();
+      expect(host()).toBeNull();
+    });
+
+    it("leaves as soon as the frame turns visual editing off", () => {
+      const toggle = start();
+      expect(host()).not.toBeNull();
+
+      page = TURNED_OFF_BY_FRAME;
+      toggle.sync();
+
       expect(host()).toBeNull();
     });
 

@@ -82,10 +82,6 @@ export function VisualEditingProvider({
   const [pageStore] = useState(createPageStore);
   const page = useSyncExternalStore(pageStore.subscribe, pageStore.read, readDetachedPage);
 
-  useEffect(() => {
-    pageStore.attach(window);
-  }, [pageStore]);
-
   useEffect(
     () => applyAccent(document, { accentColor, accentTextColor }),
     [accentColor, accentTextColor]
@@ -145,6 +141,8 @@ export function VisualEditingProvider({
   useIsomorphicLayoutEffect(() => {
     latestAdminOrigin.current = value.adminOrigin;
   });
+
+  useEffect(() => pageStore.attach(window, () => latestAdminOrigin.current), [pageStore]);
 
   useIsomorphicLayoutEffect(() => {
     if (!isInstantPreviewOn || !payloadApi) return;

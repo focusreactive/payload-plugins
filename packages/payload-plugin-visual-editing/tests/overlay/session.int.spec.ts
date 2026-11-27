@@ -8,8 +8,24 @@ import {
   toggledMode,
 } from "../../src/client/session";
 import { STORAGE_KEY } from "../../src/client/visualEditingMode";
+import {
+  LIVE_PREVIEW_FRAME_ID,
+  VE_FRAME_HELLO_TYPE,
+  VE_FRAME_SETTINGS_TYPE,
+} from "../../src/shared/protocol";
+import {
+  ADMIN_ORIGIN,
+  frameTurnedOff,
+  postFromAdmin,
+  restorePreviewWindow,
+  stubAdminWindow,
+  stubFrameElement,
+  stubOpenerWindow,
+} from "../support/previewWindow";
 
 const originalTop = window.top;
+
+const adminOfThePageOrigin = () => "";
 
 const setFramed = (framed: boolean) =>
   Object.defineProperty(window, "top", {
@@ -28,6 +44,7 @@ const pageWithBlockedStorage = (): Window =>
 afterEach(() => {
   Object.defineProperty(window, "top", { configurable: true, value: originalTop });
   localStorage.clear();
+  restorePreviewWindow();
 });
 
 describe("page store", () => {
@@ -42,10 +59,11 @@ describe("page store", () => {
     localStorage.setItem(STORAGE_KEY, "hover");
     const store = createPageStore();
 
-    store.attach(window);
+    store.attach(window, adminOfThePageOrigin);
 
     expect(store.read()).toEqual({
       isFramed: true,
+      isTurnedOffByFrame: false,
       chosenMode: "hover",
       pageOrigin: window.location.origin,
     });
@@ -56,7 +74,7 @@ describe("page store", () => {
     Object.defineProperty(window, "opener", { configurable: true, value: { closed: false } });
     const store = createPageStore();
 
-    store.attach(window);
+    store.attach(window, adminOfThePageOrigin);
     Object.defineProperty(window, "opener", { configurable: true, value: null });
 
     expect(store.read().isFramed).toBe(true);
@@ -70,7 +88,7 @@ describe("page store", () => {
     if (stored !== null) localStorage.setItem(STORAGE_KEY, stored);
     const store = createPageStore();
 
-    store.attach(window);
+    store.attach(window, adminOfThePageOrigin);
 
     expect(store.read().chosenMode).toBe(mode);
   });
@@ -79,7 +97,7 @@ describe("page store", () => {
     const store = createPageStore();
     const listener = vi.fn();
     store.subscribe(listener);
-    store.attach(window);
+    store.attach(window, adminOfThePageOrigin);
 
     store.setMode("hover");
 
@@ -91,14 +109,14 @@ describe("page store", () => {
   it("reads no chosen mode on a page whose storage is blocked", () => {
     const store = createPageStore();
 
-    expect(() => store.attach(pageWithBlockedStorage())).not.toThrow();
+    expect(() => store.attach(pageWithBlockedStorage(), adminOfThePageOrigin)).not.toThrow();
 
     expect(store.read().chosenMode).toBeNull();
   });
 
   it("keeps a chosen mode for the page when its storage is blocked", () => {
     const store = createPageStore();
-    store.attach(pageWithBlockedStorage());
+    store.attach(pageWithBlockedStorage(), adminOfThePageOrigin);
 
     expect(() => store.setMode("always")).not.toThrow();
 
@@ -107,7 +125,7 @@ describe("page store", () => {
 
   it("keeps a chosen mode for the page when its storage is full", () => {
     const store = createPageStore();
-    store.attach(window);
+    store.attach(window, adminOfThePageOrigin);
     const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new DOMException("full", "QuotaExceededError");
     });
@@ -123,9 +141,98 @@ describe("page store", () => {
     const listener = vi.fn();
     store.subscribe(listener)();
 
-    store.attach(window);
+    store.attach(window, adminOfThePageOrigin);
 
     expect(listener).not.toHaveBeenCalled();
+  });
+});
+
+describe("page store in a frame that turns visual editing off", () => {
+  const stops: (() => void)[] = [];
+
+  const attached = () => {
+    const store = createPageStore();
+    stops.push(store.attach(window, () => ADMIN_ORIGIN));
+    return store;
+  };
+
+  const settings = (visualEditing: string) => ({ type: VE_FRAME_SETTINGS_TYPE, visualEditing });
+
+  afterEach(() => {
+    for (const stop of stops.splice(0)) stop();
+  });
+
+  it("reads the attribute of a frame of its own origin as soon as it is attached", () => {
+    stubFrameElement(frameTurnedOff());
+
+    expect(attached().read().isTurnedOffByFrame).toBe(true);
+  });
+
+  it("reads the Live Preview frame of its own origin as one that leaves it on", () => {
+    const frame = document.createElement("iframe");
+    frame.id = LIVE_PREVIEW_FRAME_ID;
+    stubFrameElement(frame);
+
+    expect(attached().read().isTurnedOffByFrame).toBe(false);
+  });
+
+  it("reads any other frame of its own origin without the attribute as one that turns it off", () => {
+    stubFrameElement(document.createElement("iframe"));
+
+    expect(attached().read().isTurnedOffByFrame).toBe(true);
+  });
+
+  it("stays on in a frame of another origin until the admin answers", () => {
+    stubFrameElement(null);
+
+    expect(attached().read().isTurnedOffByFrame).toBe(false);
+  });
+
+  it("asks the admin about its frame and follows the answer", () => {
+    const postToAdmin = vi.fn();
+    stubAdminWindow({ postMessage: postToAdmin });
+    const store = attached();
+    const listener = vi.fn();
+    store.subscribe(listener);
+
+    expect(postToAdmin).toHaveBeenCalledWith({ type: VE_FRAME_HELLO_TYPE }, ADMIN_ORIGIN);
+    expect(store.read().isTurnedOffByFrame).toBe(false);
+
+    postFromAdmin(settings("off"));
+    expect(store.read().isTurnedOffByFrame).toBe(true);
+    expect(listener).toHaveBeenCalledOnce();
+
+    postFromAdmin(settings("on"));
+    expect(store.read().isTurnedOffByFrame).toBe(false);
+  });
+
+  it("ignores frame settings from another origin or another window", () => {
+    stubAdminWindow({ postMessage: vi.fn() });
+    const store = attached();
+
+    postFromAdmin(settings("off"), { origin: "https://elsewhere.example" });
+    postFromAdmin(settings("off"), { source: {} });
+
+    expect(store.read().isTurnedOffByFrame).toBe(false);
+  });
+
+  it("stops hearing the admin once it is detached", () => {
+    stubAdminWindow({ postMessage: vi.fn() });
+    const store = createPageStore();
+    store.attach(window, () => ADMIN_ORIGIN)();
+
+    postFromAdmin(settings("off"));
+
+    expect(store.read().isTurnedOffByFrame).toBe(false);
+  });
+
+  it("asks nothing in a window of its own", () => {
+    const postToOpener = vi.fn();
+    stubOpenerWindow({ closed: false, postMessage: postToOpener });
+
+    attached();
+
+    expect(postToOpener).not.toHaveBeenCalled();
   });
 });
 
@@ -134,6 +241,7 @@ const NO_ORIGINS = ["cms.example.com", "localhost:3000", "//cms.example.com", "f
 describe("session", () => {
   const framedPage = {
     isFramed: true,
+    isTurnedOffByFrame: false,
     chosenMode: "always" as const,
     pageOrigin: "https://site.example",
   };
@@ -141,6 +249,17 @@ describe("session", () => {
   it("is available only when the site makes it available", () => {
     expect(sessionOf({}, framedPage).available).toBe(false);
     expect(sessionOf({ available: true }, framedPage).available).toBe(true);
+  });
+
+  it("is not available in a frame that turns it off, with nothing to preview or edit", () => {
+    const turnedOff = { ...framedPage, isTurnedOffByFrame: true };
+
+    expect(sessionOf({ available: true, inlineEditing: true }, turnedOff)).toMatchObject({
+      available: false,
+      enabled: false,
+      inlineEditing: false,
+      isInstantPreviewOn: false,
+    });
   });
 
   it("is not available outside a frame when it is framed only", () => {
@@ -227,6 +346,7 @@ describe("session", () => {
 describe("editing on the page", () => {
   const page = {
     isFramed: false,
+    isTurnedOffByFrame: false,
     chosenMode: "hover" as const,
     pageOrigin: "https://site.example",
   };
@@ -246,7 +366,7 @@ describe("editing on the page", () => {
     localStorage.setItem("visual-editing-inline", "false");
     const store = createPageStore();
 
-    store.attach(window);
+    store.attach(window, adminOfThePageOrigin);
 
     expect(
       sessionOf({ available: true, inlineEditing: true }, store.read()).isInlineEditingOn
@@ -256,7 +376,7 @@ describe("editing on the page", () => {
   it("starts on Hover where the site offers it and the editor chose no mode yet", () => {
     const store = createPageStore();
 
-    store.attach(window);
+    store.attach(window, adminOfThePageOrigin);
 
     expect(sessionOf({ available: true, inlineEditing: true }, store.read())).toMatchObject({
       isInlineEditingOn: true,
@@ -267,7 +387,7 @@ describe("editing on the page", () => {
   it("starts on Off where the site does not offer it and the editor chose no mode yet", () => {
     const store = createPageStore();
 
-    store.attach(window);
+    store.attach(window, adminOfThePageOrigin);
 
     expect(sessionOf({ available: true }, store.read())).toMatchObject({
       enabled: false,
@@ -279,7 +399,7 @@ describe("editing on the page", () => {
     localStorage.setItem(STORAGE_KEY, "off");
     const store = createPageStore();
 
-    store.attach(window);
+    store.attach(window, adminOfThePageOrigin);
 
     expect(sessionOf({ available: true, inlineEditing: true }, store.read())).toMatchObject({
       isInlineEditingOn: false,

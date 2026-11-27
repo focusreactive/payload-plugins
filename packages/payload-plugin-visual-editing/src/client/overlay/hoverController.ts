@@ -1,7 +1,6 @@
 import type { ActionOf, EditBadge } from "./editBadge.js";
 import type { TargetRegistry } from "./targetRegistry.js";
 
-import { DATA_VE_HOVERING_ATTR } from "./constants.js";
 import { areaOf } from "./targetArea.js";
 import { findTargetAncestor } from "./targetSelector.js";
 
@@ -11,13 +10,6 @@ export interface HoverController {
   refresh(target: HTMLElement): void;
   dispose(): void;
 }
-
-const setHoverFlag = (on: boolean): void => {
-  const body = typeof document === "undefined" ? null : document.body;
-  if (!body) return;
-  if (on) body.setAttribute(DATA_VE_HOVERING_ATTR, "true");
-  else body.removeAttribute(DATA_VE_HOVERING_ATTR);
-};
 
 const CLEAR_GRACE_MS = 250;
 
@@ -53,7 +45,6 @@ export function createHoverController(
       if (config) badge.show(next, config, actionOf(next));
     }
     activeTarget = next;
-    setHoverFlag(next !== null);
   };
 
   const scheduleClear = (): void => {
@@ -118,7 +109,6 @@ export function createHoverController(
         cancelPendingClear();
         badge.hide();
         activeTarget = null;
-        setHoverFlag(false);
       }
     },
     refresh(target) {
@@ -144,7 +134,6 @@ export function createHoverController(
         badge.hide();
         activeTarget = null;
       }
-      setHoverFlag(false);
     },
   };
 }

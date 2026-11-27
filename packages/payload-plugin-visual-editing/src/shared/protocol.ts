@@ -87,6 +87,25 @@ export type VeRenderedMessage<Type extends VeRenderedType> = {
   rendered: VeRenderedFields[];
 };
 
+export const DATA_VISUAL_EDITING_ATTR = "data-visual-editing";
+
+export const LIVE_PREVIEW_FRAME_ID = "live-preview-iframe";
+
+export type FrameVisualEditing = "off" | "on";
+
+export const VE_FRAME_HELLO_TYPE = "ve:frame-hello";
+
+export type VeFrameHelloMessage = {
+  type: typeof VE_FRAME_HELLO_TYPE;
+};
+
+export const VE_FRAME_SETTINGS_TYPE = "ve:frame-settings";
+
+export type VeFrameSettingsMessage = {
+  type: typeof VE_FRAME_SETTINGS_TYPE;
+  visualEditing: FrameVisualEditing;
+};
+
 export const VE_ANNOUNCE_REQUEST_TYPE = "ve:announce-request";
 
 export type VeAnnounceRequestMessage = {

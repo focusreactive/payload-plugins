@@ -1,12 +1,21 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   useVisualEditing,
   VisualEditingProvider,
 } from "../../src/client/react/VisualEditingProvider";
+import { VE_FRAME_SETTINGS_TYPE } from "../../src/shared/protocol";
+import {
+  ADMIN_ORIGIN,
+  frameTurnedOff,
+  postFromAdmin,
+  restorePreviewWindow,
+  stubAdminWindow,
+  stubFrameElement,
+} from "../support/previewWindow";
 
 let container: HTMLDivElement;
 let root: Root;
@@ -20,6 +29,7 @@ function Probe() {
 function renderProvider(props: {
   available?: boolean;
   framedOnly?: boolean;
+  adminOrigin?: string;
   accentColor?: string;
   accentTextColor?: string;
 }) {
@@ -52,6 +62,7 @@ afterEach(() => {
   container.remove();
   Object.defineProperty(window, "top", { configurable: true, value: originalTop });
   localStorage.clear();
+  restorePreviewWindow();
 });
 
 describe("VisualEditingProvider — framedOnly", () => {
@@ -77,6 +88,38 @@ describe("VisualEditingProvider — framedOnly", () => {
     setFramed(true);
     renderProvider({ available: false, framedOnly: true });
     expect(availableText()).toBe("false");
+  });
+});
+
+describe("VisualEditingProvider — a frame that turns visual editing off", () => {
+  it("is never available in a frame of its own origin with the attribute", () => {
+    setFramed(true);
+    stubFrameElement(frameTurnedOff());
+
+    renderProvider({ available: true, framedOnly: true });
+
+    expect(availableText()).toBe("false");
+  });
+
+  it("turns off when the admin answers that its frame turns it off", () => {
+    setFramed(true);
+    stubAdminWindow({ postMessage: vi.fn() });
+    renderProvider({ adminOrigin: ADMIN_ORIGIN, available: true, framedOnly: true });
+    expect(availableText()).toBe("true");
+
+    act(() => postFromAdmin({ type: VE_FRAME_SETTINGS_TYPE, visualEditing: "off" }));
+
+    expect(availableText()).toBe("false");
+  });
+
+  it("stays available when the admin answers on", () => {
+    setFramed(true);
+    stubAdminWindow({ postMessage: vi.fn() });
+    renderProvider({ adminOrigin: ADMIN_ORIGIN, available: true, framedOnly: true });
+
+    act(() => postFromAdmin({ type: VE_FRAME_SETTINGS_TYPE, visualEditing: "on" }));
+
+    expect(availableText()).toBe("true");
   });
 });
 

@@ -12,14 +12,17 @@ import {
   VE_PREVIEW_GRANT_TYPE,
   VE_FIELD_PATCH_TYPE,
   VE_FIELD_SNAPSHOT_TYPE,
+  VE_FRAME_SETTINGS_TYPE,
   VE_RICH_TEXT_STRUCTURE_TYPE,
 } from "../../src/shared/protocol";
 import { markedText } from "../support/markedData";
 import {
   ADMIN_ORIGIN,
+  frameTurnedOff,
   postFromAdmin,
   restorePreviewWindow,
   stubAdminWindow,
+  stubFrameElement,
 } from "../support/previewWindow";
 import { flushMutations, settleStructure } from "../support/time";
 
@@ -125,6 +128,44 @@ describe("mountVisualEditing", () => {
 
     expect(targets()).toHaveLength(0);
     expect(document.querySelector("[data-ve-toggle]")).toBeNull();
+  });
+
+  describe("in a frame that turns visual editing off", () => {
+    beforeEach(() => {
+      localStorage.setItem(STORAGE_KEY, "always");
+    });
+
+    it("mounts nothing in a frame of its own origin with the attribute", async () => {
+      stubFrameElement(frameTurnedOff());
+
+      mount();
+      await flushMutations();
+
+      expect(targets()).toHaveLength(0);
+      expect(document.querySelector("[data-ve-toggle]")).toBeNull();
+      expect(heading.textContent).toBe("Hello");
+    });
+
+    it("takes the toggle and the outlines away when the admin answers off", async () => {
+      mount();
+      await flushMutations();
+      expect(document.querySelector("[data-ve-toggle]")).not.toBeNull();
+
+      postFromAdmin({ type: VE_FRAME_SETTINGS_TYPE, visualEditing: "off" });
+      await flushMutations();
+
+      expect(targets()).toHaveLength(0);
+      expect(document.querySelector("[data-ve-toggle]")).toBeNull();
+    });
+
+    it("keeps the toggle and the outlines when the admin does not answer or answers on", async () => {
+      mount();
+      postFromAdmin({ type: VE_FRAME_SETTINGS_TYPE, visualEditing: "on" });
+      await flushMutations();
+
+      expect(targets()).toHaveLength(1);
+      expect(document.querySelector("[data-ve-toggle]")).not.toBeNull();
+    });
   });
 
   describe("without an overlay", () => {

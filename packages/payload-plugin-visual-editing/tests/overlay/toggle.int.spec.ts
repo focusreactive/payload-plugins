@@ -2,13 +2,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Toggle } from "../../src/client/toggle";
 
-import { DATA_VE_HOVERING_ATTR } from "../../src/client/overlay/constants";
 import {
   createToggle,
   DATA_VE_TOGGLE_ATTR,
   TOGGLE_POSITION_STORAGE_KEY,
 } from "../../src/client/toggle";
-import { flushMutations } from "../support/time";
 import { zoomEveryElement, zoomNoElement } from "../support/zoom";
 
 const PAGE_ZOOM = 1.25;
@@ -28,7 +26,6 @@ describe("toggle", () => {
   afterEach(() => {
     toggle?.remove();
     toggle = null;
-    document.body.removeAttribute(DATA_VE_HOVERING_ATTR);
   });
 
   it("offers every mode and marks the one it shows", () => {
@@ -54,18 +51,6 @@ describe("toggle", () => {
 
     expect(document.querySelector("style, button")).toBeNull();
     expect(host()?.shadowRoot?.querySelector("style")).not.toBeNull();
-  });
-
-  it("steps aside while the editor hovers editable text", async () => {
-    toggle = createToggle(document, vi.fn());
-
-    document.body.setAttribute(DATA_VE_HOVERING_ATTR, "true");
-    await flushMutations();
-    expect(host()?.hasAttribute("data-hidden")).toBe(true);
-
-    document.body.removeAttribute(DATA_VE_HOVERING_ATTR);
-    await flushMutations();
-    expect(host()?.hasAttribute("data-hidden")).toBe(false);
   });
 
   describe("as a radio group on the keyboard", () => {

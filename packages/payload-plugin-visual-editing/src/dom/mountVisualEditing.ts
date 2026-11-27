@@ -51,13 +51,13 @@ export function mountVisualEditing({
     payloadApi: namedPayloadApi,
   });
   const pageStore = createPageStore();
-  pageStore.attach(window);
   const session = () =>
     sessionOf(
       { available: true, ...sessionOptions, payloadApi: namedPayloadApi },
       pageStore.read()
     );
   const adminOrigin = () => session().adminOrigin;
+  const stopHearingTheFrame = pageStore.attach(window, adminOrigin);
   const scope: OverlayScope = { locale, savedShapes: savedShapesWithin(null) };
 
   const renderSources = session().isInstantPreviewOn
@@ -91,6 +91,7 @@ export function mountVisualEditing({
     destroy() {
       removeAccent();
       stopFollowing();
+      stopHearingTheFrame();
       stopListeningToSaves?.();
       stopLiveRichTexts?.();
       renderSources?.stop();

@@ -6,7 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PreviewPagesContext } from "../../src/admin/previewPages";
 import type { PreviewPage } from "../../src/admin/previewPages";
 import { VisualEditingBridgeProvider } from "../../src/admin/VisualEditingBridgeProvider";
-import { VE_MESSAGE_TYPE } from "../../src/shared/protocol";
+import {
+  LIVE_PREVIEW_FRAME_ID,
+  VE_FRAME_HELLO_TYPE,
+  VE_FRAME_SETTINGS_TYPE,
+  VE_MESSAGE_TYPE,
+} from "../../src/shared/protocol";
 import type { VeOpenFieldMessage } from "../../src/shared/protocol";
 
 vi.mock("@payloadcms/ui", () => ({
@@ -114,5 +119,96 @@ describe("VisualEditingBridgeProvider — preview pages on another origin", () =
     post(SITE_ORIGIN, frame);
 
     expect(openSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("VisualEditingBridgeProvider — frames asking whether to edit visually", () => {
+  const frameInTheAdmin = ({ id, visualEditing }: { id?: string; visualEditing?: string } = {}) => {
+    const frame = document.createElement("iframe");
+    if (id) frame.id = id;
+    if (visualEditing) frame.setAttribute("data-visual-editing", visualEditing);
+    document.body.append(frame);
+    const postToFrame = vi.spyOn(frame.contentWindow!, "postMessage");
+    return { frame, postToFrame };
+  };
+
+  const helloFrom = (frame: HTMLIFrameElement, origin: string) =>
+    act(() => {
+      window.dispatchEvent(
+        new MessageEvent("message", {
+          data: { type: VE_FRAME_HELLO_TYPE },
+          origin,
+          source: frame.contentWindow,
+        })
+      );
+    });
+
+  const settings = (visualEditing: string) => ({ type: VE_FRAME_SETTINGS_TYPE, visualEditing });
+
+  it("keeps visual editing on in the Live Preview frame", () => {
+    mountBridgeWith({ getWindow: previewWindow, origin: SITE_ORIGIN });
+    const { frame, postToFrame } = frameInTheAdmin({ id: LIVE_PREVIEW_FRAME_ID });
+
+    helloFrom(frame, SITE_ORIGIN);
+
+    expect(postToFrame).toHaveBeenCalledWith(settings("on"), SITE_ORIGIN);
+  });
+
+  it("turns visual editing off in any other frame of the admin, such as a card in a field", () => {
+    mountBridgeWith({ getWindow: previewWindow, origin: SITE_ORIGIN });
+    const { frame, postToFrame } = frameInTheAdmin();
+
+    helloFrom(frame, SITE_ORIGIN);
+
+    expect(postToFrame).toHaveBeenCalledWith(settings("off"), SITE_ORIGIN);
+  });
+
+  it("answers a frame of an origin it has no Live Preview for", () => {
+    mountBridgeWith(null);
+    const { frame, postToFrame } = frameInTheAdmin();
+
+    helloFrom(frame, OTHER_ORIGIN);
+
+    expect(postToFrame).toHaveBeenCalledWith(settings("off"), OTHER_ORIGIN);
+  });
+
+  it("follows the attribute of the frame over its place", () => {
+    mountBridgeWith({ getWindow: previewWindow, origin: SITE_ORIGIN });
+    const card = frameInTheAdmin({ visualEditing: "on" });
+    const preview = frameInTheAdmin({ id: LIVE_PREVIEW_FRAME_ID, visualEditing: "off" });
+
+    helloFrom(card.frame, SITE_ORIGIN);
+    helloFrom(preview.frame, SITE_ORIGIN);
+
+    expect(card.postToFrame).toHaveBeenCalledWith(settings("on"), SITE_ORIGIN);
+    expect(preview.postToFrame).toHaveBeenCalledWith(settings("off"), SITE_ORIGIN);
+  });
+
+  it("answers only the frame that asked", () => {
+    mountBridgeWith({ getWindow: previewWindow, origin: SITE_ORIGIN });
+    const asking = frameInTheAdmin();
+    const other = frameInTheAdmin();
+
+    helloFrom(asking.frame, SITE_ORIGIN);
+
+    expect(asking.postToFrame).toHaveBeenCalledOnce();
+    expect(other.postToFrame).not.toHaveBeenCalled();
+  });
+
+  it("answers no window that is not a frame of the admin", () => {
+    mountBridgeWith({ getWindow: previewWindow, origin: SITE_ORIGIN });
+    const { postToFrame } = frameInTheAdmin();
+
+    act(() => {
+      window.dispatchEvent(
+        new MessageEvent("message", {
+          data: { type: VE_FRAME_HELLO_TYPE },
+          origin: SITE_ORIGIN,
+          source: previewWindow(),
+        })
+      );
+    });
+
+    expect(postToFrame).not.toHaveBeenCalled();
   });
 });

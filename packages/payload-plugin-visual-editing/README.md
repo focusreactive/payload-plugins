@@ -201,7 +201,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
 }
 ```
 
-- `VisualEditing.Toggle` is the floating Off / Hover / Always control. It starts on **Off**: a page shows no outlines until the editor picks **Hover** or **Always**. With [editing on the page](#editing-on-the-page) it starts on **Hover** instead. A mode the editor picked, **Off** too, is used from then on. The chosen mode is kept in `localStorage` under the key `visual-editing`, per origin of the page. It starts in the top right corner and can be dragged anywhere in the window; the place it was dropped is kept in `localStorage` under `visual-editing-toggle-position`.
+- `VisualEditing.Toggle` is the floating Off / Hover / Always control. It starts on **Off**: a page shows no outlines until the editor picks **Hover** or **Always**. With [editing on the page](#editing-on-the-page) it starts on **Hover** instead. A mode the editor picked, **Off** too, is used from then on. The chosen mode is kept in `localStorage` under the key `visual-editing`, per origin of the page. It starts in the top right corner and can be dragged anywhere in the window; the place it was dropped is kept in `localStorage` under `visual-editing-toggle-position`. It stays in view all the time, also while the editor hovers editable text.
 - `VisualEditing.Overlay` scans its children for markers. Content outside it is not touched.
 
 ### 7. Mark rich text, uploads and relationships
@@ -228,7 +228,15 @@ Frames and the badge are drawn above the whole page, so they would also cross a 
 
 The cover hides nothing of its own content: a field rendered inside it keeps its whole frame.
 
-On a draft page where the overlay does not run (the toggle is **Off** and the page passes `instantPreview={false}`, or `framedOnly` outside the Live Preview), the markers are still removed from the text, every attribute, the title and the meta tags of `<head>`, also from content rendered later. There are no outlines and no instant preview there.
+Inside the admin, visual editing runs only in the Live Preview iframe. A page shown in any other iframe of the admin, such as a card that previews the document in a custom field, shows no toggle, no outlines, no instant preview and no editing on the page. The `data-visual-editing` attribute of the iframe decides instead, when it is there: `"on"` turns visual editing on in another iframe, `"off"` turns it off in the Live Preview:
+
+```tsx
+<iframe src={previewUrl} data-visual-editing="on" />
+```
+
+A page of the admin's origin reads its iframe before it shows anything. A page of another origin asks the admin when it loads and turns off when the answer comes.
+
+On a draft page where the overlay does not run (the toggle is **Off** and the page passes `instantPreview={false}`, `framedOnly` outside the Live Preview, or an iframe of the admin other than the Live Preview), the markers are still removed from the text, every attribute, the title and the meta tags of `<head>`, also from content rendered later. There are no outlines and no instant preview there.
 
 ### Handing the field to another admin component
 
