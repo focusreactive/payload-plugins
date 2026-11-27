@@ -1,21 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { MediaLibrary } from "../../src/client/inlineEditing/mediaLibrary";
+import type { MediaApi, MediaLibrary } from "../../src/client/inlineEditing/mediaLibrary";
 
 import {
   createMediaLibrary,
   FIELD_REFUSED,
+  payloadMediaApi,
   UPLOAD_REFUSED,
 } from "../../src/client/inlineEditing/mediaLibrary";
 
 const PAYLOAD_API = "https://cms.example.com/api";
 
-const REQUEST = {
+const FIELD = {
   collectionSlug: "page",
   docId: "1",
   key: "image",
   kind: "collection",
   locale: "en",
+} as const;
+
+const REQUEST = {
+  ...FIELD,
   page: 2,
   search: "light",
 } as const;
@@ -39,7 +44,8 @@ describe("the media library of a page of its own", () => {
 
   beforeEach(() => {
     fetchApi = vi.fn();
-    library = createMediaLibrary(() => PAYLOAD_API, { fetch: fetchApi } as unknown as Window);
+    const api = payloadMediaApi(() => PAYLOAD_API, { fetch: fetchApi } as unknown as Window);
+    library = createMediaLibrary(() => api);
   });
 
   describe("listing", () => {
@@ -118,7 +124,7 @@ describe("the media library of a page of its own", () => {
     it("posts the file to the collection with the session of the editor", async () => {
       fetchApi.mockReturnValue(answerOf({ doc: LIGHTHOUSE }));
 
-      await library.upload("media", "alt", file);
+      await library.upload(FIELD, "media", "alt", file);
 
       const [url, init] = fetchApi.mock.calls[0] as [string, RequestInit];
       expect(url).toBe(`${PAYLOAD_API}/media?depth=0`);
@@ -131,15 +137,15 @@ describe("the media library of a page of its own", () => {
       const { thumbnailUrl, ...created } = LIGHTHOUSE;
       fetchApi.mockReturnValue(answerOf({ doc: { ...created, thumbnailURL: thumbnailUrl } }));
 
-      expect(await library.upload("media", "alt", file)).toEqual({ media: LIGHTHOUSE });
+      expect(await library.upload(FIELD, "media", "alt", file)).toEqual({ media: LIGHTHOUSE });
     });
 
     it("answers the description of the created document from the field that describes the files", async () => {
       const { alt, ...created } = LIGHTHOUSE;
       fetchApi.mockReturnValue(answerOf({ doc: { ...created, caption: alt } }));
 
-      expect(await library.upload("media", "caption", file)).toEqual({ media: LIGHTHOUSE });
-      expect(await library.upload("media", null, file)).toEqual({ media: created });
+      expect(await library.upload(FIELD, "media", "caption", file)).toEqual({ media: LIGHTHOUSE });
+      expect(await library.upload(FIELD, "media", null, file)).toEqual({ media: created });
     });
 
     it("answers the message of the server when it refuses the file", async () => {
@@ -147,17 +153,67 @@ describe("the media library of a page of its own", () => {
         answerOf({ errors: [{ message: "The following field is invalid: alt" }] }, false)
       );
 
-      expect(await library.upload("media", "alt", file)).toEqual({
+      expect(await library.upload(FIELD, "media", "alt", file)).toEqual({
         error: "The following field is invalid: alt",
       });
     });
 
     it("answers a message of its own when the server gives none or cannot be reached", async () => {
       fetchApi.mockReturnValueOnce(answerOf(null, false));
-      expect(await library.upload("media", "alt", file)).toEqual({ error: UPLOAD_REFUSED });
+      expect(await library.upload(FIELD, "media", "alt", file)).toEqual({ error: UPLOAD_REFUSED });
 
       fetchApi.mockRejectedValueOnce(new Error("offline"));
-      expect(await library.upload("media", "alt", file)).toEqual({ error: UPLOAD_REFUSED });
+      expect(await library.upload(FIELD, "media", "alt", file)).toEqual({ error: UPLOAD_REFUSED });
     });
+  });
+});
+
+describe("the media library of a page that asks another API, such as the admin's", () => {
+  const file = new File(["pixels"], "lighthouse.jpg", { type: "image/jpeg" });
+  const NO_ANSWER = { answer: null, ok: false };
+  let api: { list: ReturnType<typeof vi.fn>; upload: ReturnType<typeof vi.fn> };
+  let apiOf: ReturnType<typeof vi.fn>;
+  let library: MediaLibrary;
+
+  beforeEach(() => {
+    api = { list: vi.fn(), upload: vi.fn() };
+    apiOf = vi.fn(() => api as unknown as MediaApi);
+    library = createMediaLibrary(apiOf);
+  });
+
+  it("asks the API of the field it lists or uploads for", async () => {
+    api.list.mockResolvedValue({ answer: { collection: "media", documents: [] }, ok: true });
+    api.upload.mockResolvedValue({ answer: { doc: LIGHTHOUSE }, ok: true });
+
+    await library.list(REQUEST);
+    await library.upload(FIELD, "media", "alt", file);
+
+    expect(apiOf.mock.calls).toEqual([[REQUEST], [FIELD]]);
+    expect(api.list).toHaveBeenCalledWith(REQUEST);
+    expect(api.upload).toHaveBeenCalledWith(FIELD, "media", file);
+  });
+
+  it("says the field is refused when the API refuses it, and answers nothing without an answer", async () => {
+    api.list.mockResolvedValueOnce({ answer: { reason: "not-editable" }, ok: false });
+    expect(await library.list(REQUEST)).toBe(FIELD_REFUSED);
+
+    api.list.mockResolvedValueOnce(NO_ANSWER);
+    expect(await library.list(REQUEST)).toBeNull();
+  });
+
+  it("answers the message of the server the API passes on, or its own without one", async () => {
+    api.upload.mockResolvedValueOnce({
+      answer: { errors: [{ message: "The file is too large" }] },
+      ok: false,
+    });
+    expect(await library.upload(FIELD, "media", "alt", file)).toEqual({
+      error: "The file is too large",
+    });
+
+    api.upload.mockResolvedValueOnce(NO_ANSWER);
+    expect(await library.upload(FIELD, "media", "alt", file)).toEqual({ error: UPLOAD_REFUSED });
+
+    api.upload.mockResolvedValueOnce({ answer: { reason: "not-editable" }, ok: false });
+    expect(await library.upload(FIELD, "media", "alt", file)).toEqual({ error: UPLOAD_REFUSED });
   });
 });

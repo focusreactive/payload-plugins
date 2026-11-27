@@ -9,8 +9,10 @@ import type {
   VeEditedField,
   VeFieldEditRefusedMessage,
   VeLiveDocument,
+  VeMediaOptionsAnswerMessage,
   VeMediaPickCancelledMessage,
   VeMediaPickedMessage,
+  VeMediaUploadAnswerMessage,
   VeRichTextStateMessage,
   VeRichTextStateRefusedMessage,
 } from "../../shared/protocol.js";
@@ -24,8 +26,10 @@ import { openDocumentOf } from "../openField/openDocument.js";
 
 export type VeToldToThePage =
   | VeFieldEditRefusedMessage
+  | VeMediaOptionsAnswerMessage
   | VeMediaPickCancelledMessage
   | VeMediaPickedMessage
+  | VeMediaUploadAnswerMessage
   | VeRichTextStateMessage
   | VeRichTextStateRefusedMessage;
 

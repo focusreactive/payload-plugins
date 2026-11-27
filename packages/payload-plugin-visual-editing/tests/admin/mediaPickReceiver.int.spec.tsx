@@ -1,5 +1,4 @@
 import type { Root } from "react-dom/client";
-import type { MockInstance } from "vitest";
 
 import { act } from "react";
 import { createRoot } from "react-dom/client";
@@ -8,8 +7,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MediaPickReceiver } from "../../src/admin/inlineEditing/MediaPickReceiver";
 import {
   VE_FIELD_EDIT_REFUSED_TYPE,
+  VE_MEDIA_OPTIONS_ANSWER_TYPE,
+  VE_MEDIA_OPTIONS_REQUEST_TYPE,
   VE_MEDIA_PICK_CANCELLED_TYPE,
   VE_MEDIA_PICKED_TYPE,
+  VE_MEDIA_UPLOAD_ANSWER_TYPE,
+  VE_MEDIA_UPLOAD_TYPE,
   VE_PICK_MEDIA_TYPE,
 } from "../../src/shared/protocol";
 
@@ -144,10 +147,8 @@ describe("MediaPickReceiver", () => {
   let root: Root;
   let container: HTMLElement;
   let fetchMedia: ReturnType<typeof vi.fn>;
-  let focus: MockInstance<typeof window.focus>;
 
   beforeEach(() => {
-    focus = vi.spyOn(window, "focus").mockImplementation(() => undefined);
     fetchMedia = vi.fn(() =>
       Promise.resolve({ json: () => Promise.resolve(LIGHTHOUSE), ok: true } as Response)
     );
@@ -165,7 +166,6 @@ describe("MediaPickReceiver", () => {
     admin.drawer = null;
     vi.unstubAllGlobals();
     vi.clearAllMocks();
-    focus.mockRestore();
   });
 
   it("opens no drawer until the preview page asks for one", () => {
@@ -182,22 +182,6 @@ describe("MediaPickReceiver", () => {
     });
     expect(admin.openDrawer).toHaveBeenCalledTimes(1);
     expect(admin.drawer?.allowCreate).toBe(true);
-  });
-
-  it("brings the admin window to the front when it opens the drawer, as a pop-up of the preview may cover it", () => {
-    postRequest();
-
-    expect(focus).toHaveBeenCalledTimes(1);
-    expect(focus.mock.invocationCallOrder[0]).toBeLessThan(
-      admin.openDrawer.mock.invocationCallOrder[0] as number
-    );
-  });
-
-  it("does not bring the admin window to the front for media chosen on the page", async () => {
-    postRequest({ data: { ...REQUEST, mediaId: 9 } });
-    await act(() => flushMutations());
-
-    expect(focus).not.toHaveBeenCalled();
   });
 
   it("writes the selected document into the form and marks the form as changed", async () => {
@@ -444,5 +428,138 @@ describe("MediaPickReceiver", () => {
     postRequest();
 
     expect(admin.openDrawer).not.toHaveBeenCalled();
+  });
+});
+
+describe("MediaPickReceiver, for the list of media of a page in a pop-up", () => {
+  const API = "https://cms.example.com/api";
+  const LISTED = { collection: "media", documents: [LIGHTHOUSE], hasNextPage: false };
+  const LISTING = {
+    ...FIELD,
+    page: 1,
+    requestId: "1",
+    search: "light",
+    type: VE_MEDIA_OPTIONS_REQUEST_TYPE,
+  };
+  const REFUSED = { answer: { reason: "not-editable" }, ok: false };
+  const file = new File(["pixels"], "lighthouse.png", { type: "image/png" });
+  const UPLOAD = {
+    ...FIELD,
+    collection: "media",
+    file,
+    requestId: "2",
+    type: VE_MEDIA_UPLOAD_TYPE,
+  };
+  let root: Root;
+  let container: HTMLElement;
+  let fetchApi: ReturnType<typeof vi.fn>;
+
+  const answered = (body: unknown, ok = true) =>
+    fetchApi.mockResolvedValue({ json: () => Promise.resolve(body), ok } as Response);
+
+  const ask = async (data: object) => {
+    postRequest({ data });
+    await act(() => flushMutations());
+  };
+
+  const toldThePage = () => admin.postToPreview.mock.calls;
+
+  beforeEach(() => {
+    fetchApi = vi.fn();
+    vi.stubGlobal("fetch", fetchApi);
+    container = document.createElement("div");
+    document.body.append(container);
+    root = createRoot(container);
+    act(() => root.render(<MediaPickReceiver />));
+  });
+
+  afterEach(() => {
+    act(() => root.unmount());
+    admin.permissions = EVERY_FIELD;
+    container.remove();
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
+  });
+
+  it("lists the media of the field through its endpoint, with the session of the editor", async () => {
+    answered(LISTED);
+
+    await ask(LISTING);
+
+    const [url, init] = fetchApi.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(`${API}/visual-editing/media-options`);
+    expect(init).toMatchObject({ credentials: "include", method: "POST" });
+    expect(JSON.parse(init.body as string)).toEqual({ ...FIELD, page: 1, search: "light" });
+    expect(toldThePage()).toEqual([
+      [
+        { answer: LISTED, ok: true, requestId: "1", type: VE_MEDIA_OPTIONS_ANSWER_TYPE },
+        PREVIEW_ORIGIN,
+      ],
+    ]);
+  });
+
+  it("uploads a file to the collection of the field and passes on what the server answers", async () => {
+    const refused = { errors: [{ message: "The file is too large" }] };
+    answered(refused, false);
+
+    await ask(UPLOAD);
+
+    const [url, init] = fetchApi.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(`${API}/media?depth=0`);
+    expect(init).toMatchObject({ credentials: "include", method: "POST" });
+    expect((init.body as FormData).get("file")).toBeInstanceOf(File);
+    expect(toldThePage()).toEqual([
+      [
+        { answer: refused, ok: false, requestId: "2", type: VE_MEDIA_UPLOAD_ANSWER_TYPE },
+        PREVIEW_ORIGIN,
+      ],
+    ]);
+  });
+
+  it("refuses a field the user may read and not update, and asks the API nothing", async () => {
+    admin.permissions = IMAGE_READ_ONLY;
+    act(() => root.render(<MediaPickReceiver />));
+
+    await ask(LISTING);
+    await ask(UPLOAD);
+
+    expect(fetchApi).not.toHaveBeenCalled();
+    expect(toldThePage()).toEqual([
+      [{ ...REFUSED, requestId: "1", type: VE_MEDIA_OPTIONS_ANSWER_TYPE }, PREVIEW_ORIGIN],
+      [{ ...REFUSED, requestId: "2", type: VE_MEDIA_UPLOAD_ANSWER_TYPE }, PREVIEW_ORIGIN],
+    ]);
+  });
+
+  it("refuses a field that takes no upload and an upload to another collection", async () => {
+    await ask({ ...LISTING, key: "title" });
+    await ask({ ...UPLOAD, collection: "users" });
+
+    expect(fetchApi).not.toHaveBeenCalled();
+    expect(toldThePage()).toEqual([
+      [{ ...REFUSED, requestId: "1", type: VE_MEDIA_OPTIONS_ANSWER_TYPE }, PREVIEW_ORIGIN],
+      [{ ...REFUSED, requestId: "2", type: VE_MEDIA_UPLOAD_ANSWER_TYPE }, PREVIEW_ORIGIN],
+    ]);
+  });
+
+  it("answers no answer when the API cannot be reached", async () => {
+    fetchApi.mockRejectedValue(new Error("offline"));
+
+    await ask(LISTING);
+
+    expect(toldThePage()).toEqual([
+      [
+        { answer: null, ok: false, requestId: "1", type: VE_MEDIA_OPTIONS_ANSWER_TYPE },
+        PREVIEW_ORIGIN,
+      ],
+    ]);
+  });
+
+  it("says nothing to a request from another origin or window, or of another document", async () => {
+    postRequest({ data: LISTING, origin: "https://evil.example.com" });
+    postRequest({ data: LISTING, source: window });
+    await ask({ ...LISTING, docId: "8" });
+
+    expect(fetchApi).not.toHaveBeenCalled();
+    expect(admin.postToPreview).not.toHaveBeenCalled();
   });
 });

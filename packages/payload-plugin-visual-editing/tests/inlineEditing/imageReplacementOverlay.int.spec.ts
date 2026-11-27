@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Overlay, OverlayCtx } from "../../src/client/createOverlay";
 
 import { createOverlay } from "../../src/client/createOverlay";
-import { MEDIA_PICK_TIME_LIMIT_MS } from "../../src/client/inlineEditing/adminEditChannel";
+import { MEDIA_API_TIME_LIMIT_MS } from "../../src/client/inlineEditing/adminEditChannel";
 import { DATA_VE_MEDIA_PICKER_ATTR } from "../../src/client/inlineEditing/mediaPicker";
 import { DATA_VE_SAVE_STATUS_ATTR } from "../../src/client/inlineEditing/saveStatus";
 import { DATA_VE_ACTION_ATTR } from "../../src/client/overlay/constants";
@@ -21,6 +21,8 @@ import {
   VE_FIELD_EDIT_REFUSED_TYPE,
   VE_FIELD_EDIT_TYPE,
   VE_FIELD_SNAPSHOT_TYPE,
+  VE_MEDIA_OPTIONS_ANSWER_TYPE,
+  VE_MEDIA_OPTIONS_REQUEST_TYPE,
   VE_MEDIA_PICK_CANCELLED_TYPE,
   VE_MEDIA_PICKED_TYPE,
   VE_MESSAGE_TYPE,
@@ -710,11 +712,19 @@ describe("replacing an image on the page", () => {
 
     const fromOpener = (data: unknown) => postFromAdmin(data, { source: window.opener });
 
-    const picks = () => messagesOfType(postToOpener, VE_PICK_MEDIA_TYPE);
+    const sentOfType = <Sent>(type: string) => messagesOfType(postToOpener, type) as Sent[];
 
-    const ask = () => {
+    const optionsRequests = () => sentOfType<{ requestId: string }>(VE_MEDIA_OPTIONS_REQUEST_TYPE);
+
+    const answerTheList = (answer: unknown, ok = true) => {
+      const [request] = optionsRequests().slice(-1);
+      fromOpener({ answer, ok, requestId: request?.requestId, type: VE_MEDIA_OPTIONS_ANSWER_TYPE });
+    };
+
+    const ask = async () => {
       offersReplacement(image);
       click(actionButton());
+      await flushMutations();
     };
 
     beforeEach(() => {
@@ -729,68 +739,71 @@ describe("replacing an image on the page", () => {
       });
     });
 
-    it("asks the admin to pick media for the field and asks the API of the admin nothing itself", async () => {
-      ask();
-      await flushMutations();
+    it("opens the list of media in the pop-up and asks the admin for it, not the API of Payload", async () => {
+      await ask();
 
-      expect(picks()).toEqual([{ ...IMAGE_FIELD, type: VE_PICK_MEDIA_TYPE }]);
-      expect(picker()).toBeNull();
+      expect(picker()).not.toBeNull();
+      expect(optionsRequests()).toEqual([
+        {
+          ...IMAGE_FIELD,
+          page: 1,
+          requestId: expect.any(String),
+          search: "",
+          type: VE_MEDIA_OPTIONS_REQUEST_TYPE,
+        },
+      ]);
+      expect(sentOfType(VE_PICK_MEDIA_TYPE)).toEqual([]);
       expect(fetchApi).not.toHaveBeenCalled();
     });
 
-    it("shows the media the admin picked and says the form holds unsaved changes", () => {
-      ask();
+    it("writes the media picked in the pop-up into the form of the admin", async () => {
+      await ask();
+      answerTheList({ collection: "media", documents: [LIGHTHOUSE], hasNextPage: false });
+      await flushMutations();
+
+      picker()?.querySelector<HTMLButtonElement>(".grid button")?.click();
+      picker()?.querySelector<HTMLButtonElement>('[data-action="use"]')?.click();
+      await flushMutations();
+
+      expect(picker()).toBeNull();
+      expect(sentOfType(VE_PICK_MEDIA_TYPE)).toEqual([
+        { ...IMAGE_FIELD, mediaId: 9, type: VE_PICK_MEDIA_TYPE },
+      ]);
+      expect(statusLabel()).toBe("In the admin form, not saved yet");
 
       fromOpener({
         ...IMAGE_FIELD,
-        height: 600,
         type: VE_MEDIA_PICKED_TYPE,
         url: "/api/media/file/lighthouse.jpg",
-        width: 800,
       });
 
       expect(image.getAttribute("src")).toBe(`${CMS}/api/media/file/lighthouse.jpg`);
-      expect(statusLabel()).toBe("In the admin form, not saved yet");
+      expect(fetchApi).not.toHaveBeenCalled();
     });
 
-    it("opens the field when the form refuses the pick", () => {
-      ask();
+    it("closes the list and opens the field when the admin refuses the field", async () => {
+      await ask();
 
-      fromOpener({ ...IMAGE_FIELD, type: VE_FIELD_EDIT_REFUSED_TYPE });
+      answerTheList({ reason: "not-editable" }, false);
+      await flushMutations();
 
-      expect(image.getAttribute("src")).toBe("/old.jpg");
-      expect(messagesOfType(postToOpener, VE_MESSAGE_TYPE)).toMatchObject([{ path: "image" }]);
+      expect(picker()).toBeNull();
+      expect(sentOfType(VE_MESSAGE_TYPE)).toMatchObject([{ path: "image" }]);
     });
 
-    it("asks the editor to pick the image in the admin window, which the pop-up may cover", () => {
-      ask();
-
-      expect(statusLabel()).toBe("Pick the image in the admin window");
-    });
-
-    it("says nothing more once the editor cancelled the pick in the admin", () => {
-      ask();
-
-      fromOpener({ ...IMAGE_FIELD, type: VE_MEDIA_PICK_CANCELLED_TYPE });
-
-      expect(statusLabel()).toBeUndefined();
-    });
-
-    it("says nothing more once the form refused the pick", () => {
-      ask();
-
-      fromOpener({ ...IMAGE_FIELD, type: VE_FIELD_EDIT_REFUSED_TYPE });
-
-      expect(statusLabel()).toBeUndefined();
-    });
-
-    it("says nothing more once the admin did not answer in time", () => {
+    it("says the media could not be loaded when the admin does not answer in time", async () => {
       vi.useFakeTimers();
-      ask();
+      offersReplacement(image);
+      click(actionButton());
 
-      vi.advanceTimersByTime(MEDIA_PICK_TIME_LIMIT_MS);
+      const alert = () => picker()?.querySelector('[role="alert"]')?.textContent;
+      await vi.advanceTimersByTimeAsync(MEDIA_API_TIME_LIMIT_MS - 1);
 
-      expect(statusLabel()).toBeUndefined();
+      expect(alert()).toBe("");
+
+      await vi.advanceTimersByTimeAsync(1);
+
+      expect(alert()).toBe("The media could not be loaded");
     });
   });
 });

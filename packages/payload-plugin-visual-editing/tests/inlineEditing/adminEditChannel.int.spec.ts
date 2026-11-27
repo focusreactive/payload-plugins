@@ -12,6 +12,7 @@ import type {
 
 import {
   createAdminEditChannel,
+  MEDIA_API_TIME_LIMIT_MS,
   MEDIA_PICK_TIME_LIMIT_MS,
   RICH_TEXT_STATE_TIME_LIMIT_MS,
 } from "../../src/client/inlineEditing/adminEditChannel";
@@ -20,8 +21,12 @@ import {
   VE_FIELD_EDIT_REFUSED_TYPE,
   VE_FIELD_EDIT_TYPE,
   VE_FIELD_PATCH_TYPE,
+  VE_MEDIA_OPTIONS_ANSWER_TYPE,
+  VE_MEDIA_OPTIONS_REQUEST_TYPE,
   VE_MEDIA_PICK_CANCELLED_TYPE,
   VE_MEDIA_PICKED_TYPE,
+  VE_MEDIA_UPLOAD_ANSWER_TYPE,
+  VE_MEDIA_UPLOAD_TYPE,
   VE_PICK_MEDIA_TYPE,
   VE_RICH_TEXT_STATE_REFUSED_TYPE,
   VE_RICH_TEXT_STATE_REQUEST_TYPE,
@@ -263,5 +268,115 @@ describe("the channel of the page to the admin for edits", () => {
       ],
       [{ document: null, isSave: false }],
     ]);
+  });
+
+  describe("the media API of the admin", () => {
+    const LISTING = { ...IMAGE, page: 1, search: "light" };
+    const LISTED = { collection: "media", documents: [], hasNextPage: false };
+    const file = new File(["pixels"], "lighthouse.jpg", { type: "image/jpeg" });
+
+    const sent = () => admin.postMessage.mock.calls.map(([message]) => message);
+
+    const requestIdOf = (index: number) =>
+      (sent()[index] as { requestId: string } | undefined)?.requestId;
+
+    it("asks the admin for the media of a field and takes the answer to that request", async () => {
+      const listing = channel.mediaApiOf(adminWindow()).list(LISTING);
+
+      expect(sent()).toEqual([
+        { ...LISTING, requestId: expect.any(String), type: VE_MEDIA_OPTIONS_REQUEST_TYPE },
+      ]);
+      expect(admin.postMessage).toHaveBeenCalledWith(expect.anything(), ADMIN_ORIGIN);
+
+      postFromAdmin({
+        answer: LISTED,
+        ok: true,
+        requestId: requestIdOf(0),
+        type: VE_MEDIA_OPTIONS_ANSWER_TYPE,
+      });
+
+      await expect(listing).resolves.toEqual({ answer: LISTED, ok: true });
+    });
+
+    it("matches each answer to its own request", async () => {
+      const api = channel.mediaApiOf(adminWindow());
+      const first = api.list(LISTING);
+      const second = api.list({ ...LISTING, page: 2 });
+
+      postFromAdmin({
+        answer: "second",
+        ok: true,
+        requestId: requestIdOf(1),
+        type: VE_MEDIA_OPTIONS_ANSWER_TYPE,
+      });
+      postFromAdmin({
+        answer: "first",
+        ok: true,
+        requestId: requestIdOf(0),
+        type: VE_MEDIA_OPTIONS_ANSWER_TYPE,
+      });
+
+      await expect(first).resolves.toEqual({ answer: "first", ok: true });
+      await expect(second).resolves.toEqual({ answer: "second", ok: true });
+    });
+
+    it("takes no answer of another kind, from another origin or to a request it already took", async () => {
+      const listing = channel.mediaApiOf(adminWindow()).list(LISTING);
+      const requestId = requestIdOf(0);
+
+      postFromAdmin({ answer: "upload", ok: true, requestId, type: VE_MEDIA_UPLOAD_ANSWER_TYPE });
+      postFromAdmin(
+        { answer: "elsewhere", ok: true, requestId, type: VE_MEDIA_OPTIONS_ANSWER_TYPE },
+        { origin: "https://evil.example.com" }
+      );
+      postFromAdmin({ answer: "taken", ok: true, requestId, type: VE_MEDIA_OPTIONS_ANSWER_TYPE });
+      postFromAdmin({ answer: "late", ok: true, requestId, type: VE_MEDIA_OPTIONS_ANSWER_TYPE });
+
+      await expect(listing).resolves.toEqual({ answer: "taken", ok: true });
+    });
+
+    it("answers no answer once the admin did not answer in time, and takes none after", async () => {
+      const listing = channel.mediaApiOf(adminWindow()).list(LISTING);
+      const answered = vi.fn();
+      void listing.then(answered);
+
+      await vi.advanceTimersByTimeAsync(MEDIA_API_TIME_LIMIT_MS - 1);
+
+      expect(answered).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(1);
+      postFromAdmin({
+        answer: LISTED,
+        ok: true,
+        requestId: requestIdOf(0),
+        type: VE_MEDIA_OPTIONS_ANSWER_TYPE,
+      });
+
+      await expect(listing).resolves.toEqual({ answer: null, ok: false });
+    });
+
+    it("sends a file to upload with the field it is for and takes the answer of the admin", async () => {
+      const upload = channel.mediaApiOf(adminWindow()).upload(IMAGE, "media", file);
+
+      expect(sent()).toEqual([
+        {
+          ...IMAGE,
+          collection: "media",
+          file,
+          requestId: expect.any(String),
+          type: VE_MEDIA_UPLOAD_TYPE,
+        },
+      ]);
+
+      const refused = { errors: [{ message: "The file is too large" }] };
+      postFromAdmin({
+        answer: refused,
+        ok: false,
+        requestId: requestIdOf(0),
+        type: VE_MEDIA_UPLOAD_ANSWER_TYPE,
+      });
+
+      await expect(upload).resolves.toEqual({ answer: refused, ok: false });
+    });
   });
 });

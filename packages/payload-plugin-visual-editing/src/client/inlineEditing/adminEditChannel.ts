@@ -4,6 +4,9 @@ import type {
   VeEditedField,
   VeEditorState,
   VeFieldEditMessage,
+  VeMediaApiAnswer,
+  VeMediaOptionsRequestMessage,
+  VeMediaUploadMessage,
   VePickMediaMessage,
   VeRichTextEditEndedMessage,
   VeRichTextEditMessage,
@@ -12,6 +15,7 @@ import type {
 } from "../../shared/protocol.js";
 import type { VeRichTextFormats } from "../../shared/richText/formats.js";
 import type { SavedDocument } from "../saveEvents.js";
+import type { MediaApi } from "./mediaLibrary.js";
 
 import { readEditedField, readRichTextEdit, readSaveRefusal } from "../../shared/fieldEdit.js";
 import { readPickedMediaAnswer } from "../../shared/mediaOption.js";
@@ -20,8 +24,12 @@ import {
   VE_FIELD_EDIT_REFUSED_TYPE,
   VE_FIELD_PATCH_TYPE,
   VE_FIELD_SNAPSHOT_TYPE,
+  VE_MEDIA_OPTIONS_ANSWER_TYPE,
+  VE_MEDIA_OPTIONS_REQUEST_TYPE,
   VE_MEDIA_PICK_CANCELLED_TYPE,
   VE_MEDIA_PICKED_TYPE,
+  VE_MEDIA_UPLOAD_ANSWER_TYPE,
+  VE_MEDIA_UPLOAD_TYPE,
   VE_RICH_TEXT_STATE_REFUSED_TYPE,
   VE_RICH_TEXT_STATE_TYPE,
   VE_RICH_TEXT_STRUCTURE_TYPE,
@@ -34,6 +42,8 @@ import { savedDocumentOf } from "../saveEvents.js";
 export const MEDIA_PICK_TIME_LIMIT_MS = 60_000;
 
 export const RICH_TEXT_STATE_TIME_LIMIT_MS = 4000;
+
+export const MEDIA_API_TIME_LIMIT_MS = 60_000;
 
 export type VeToldOfAnEdit =
   | VeFieldEditMessage
@@ -59,6 +69,7 @@ export type DocumentNews = { document: SavedDocument; isSave: boolean };
 export interface AdminEditChannel {
   mediaPicks: AdminRequests<VePickMediaMessage, VePickedMedia>;
   richTextStates: AdminRequests<VeRichTextStateRequestMessage, AnsweredRichText>;
+  mediaApiOf(adminWindow: Window): MediaApi;
   tell(adminWindow: Window, message: VeToldOfAnEdit): void;
   onRefusedEdit(listener: (field: VeEditedField, refusal: SaveRefusal) => void): () => void;
   onDocumentNews(listener: (news: DocumentNews) => void): () => void;
@@ -79,6 +90,23 @@ type Asked<Answer> = { adminWindow: Window; askedAt: number; answers: AdminAnswe
 type Requests<Request extends VeEditedField, Answer> = AdminRequests<Request, Answer> & {
   hear(message: PlainObject): void;
 };
+
+type MediaApiRequest =
+  | Omit<VeMediaOptionsRequestMessage, "requestId">
+  | Omit<VeMediaUploadMessage, "requestId">;
+
+type AskedOfTheMediaApi = {
+  answerType: string;
+  timer: ReturnType<typeof setTimeout>;
+  resolve(answer: VeMediaApiAnswer): void;
+};
+
+const ANSWER_TYPE_OF: Record<MediaApiRequest["type"], string> = {
+  [VE_MEDIA_OPTIONS_REQUEST_TYPE]: VE_MEDIA_OPTIONS_ANSWER_TYPE,
+  [VE_MEDIA_UPLOAD_TYPE]: VE_MEDIA_UPLOAD_ANSWER_TYPE,
+};
+
+const NO_ANSWER: VeMediaApiAnswer = { answer: null, ok: false };
 
 const NEWS_OF_A_DOCUMENT: ReadonlySet<unknown> = new Set([
   VE_RICH_TEXT_STRUCTURE_TYPE,
@@ -183,6 +211,48 @@ export function createAdminEditChannel(win: Window, adminOrigin: () => string): 
     tell
   );
 
+  const askedOfTheMediaApi = new Map<string, AskedOfTheMediaApi>();
+  let mediaApiRequests = 0;
+
+  const settleMediaApiRequest = (requestId: string, answer: VeMediaApiAnswer) => {
+    const asked = askedOfTheMediaApi.get(requestId);
+    if (!asked) return;
+    clearTimeout(asked.timer);
+    askedOfTheMediaApi.delete(requestId);
+    asked.resolve(answer);
+  };
+
+  const askTheMediaApi = (adminWindow: Window, request: MediaApiRequest) =>
+    new Promise<VeMediaApiAnswer>((resolve) => {
+      mediaApiRequests += 1;
+      const requestId = String(mediaApiRequests);
+      const timer = setTimeout(
+        settleMediaApiRequest,
+        MEDIA_API_TIME_LIMIT_MS,
+        requestId,
+        NO_ANSWER
+      );
+      askedOfTheMediaApi.set(requestId, {
+        answerType: ANSWER_TYPE_OF[request.type],
+        resolve,
+        timer,
+      });
+      tell(adminWindow, { ...request, requestId });
+    });
+
+  const hearMediaApiAnswer = ({ answer, ok, requestId, type }: PlainObject) => {
+    if (typeof requestId !== "string") return;
+    if (askedOfTheMediaApi.get(requestId)?.answerType !== type) return;
+    settleMediaApiRequest(requestId, { answer, ok: ok === true });
+  };
+
+  const mediaApiOf = (adminWindow: Window): MediaApi => ({
+    list: (request) =>
+      askTheMediaApi(adminWindow, { ...request, type: VE_MEDIA_OPTIONS_REQUEST_TYPE }),
+    upload: (field, collection, file) =>
+      askTheMediaApi(adminWindow, { ...field, collection, file, type: VE_MEDIA_UPLOAD_TYPE }),
+  });
+
   const hearRefusedEdit = (message: PlainObject) => {
     const refused = readEditedField(message);
     if (!refused) return;
@@ -192,6 +262,7 @@ export function createAdminEditChannel(win: Window, adminOrigin: () => string): 
   const stopHearing = hearTheAdmin(win, adminOrigin, (message) => {
     mediaPicks.hear(message);
     richTextStates.hear(message);
+    hearMediaApiAnswer(message);
     if (message.type === VE_FIELD_EDIT_REFUSED_TYPE) hearRefusedEdit(message);
     if (!NEWS_OF_A_DOCUMENT.has(message.type)) return;
     const news = {
@@ -207,6 +278,7 @@ export function createAdminEditChannel(win: Window, adminOrigin: () => string): 
       refusedEditListeners.clear();
       newsListeners.clear();
     },
+    mediaApiOf,
     mediaPicks,
     onDocumentNews: (listener) => listen(newsListeners, listener),
     onRefusedEdit: (listener) => listen(refusedEditListeners, listener),

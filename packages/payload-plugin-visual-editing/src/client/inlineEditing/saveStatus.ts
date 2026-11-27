@@ -13,12 +13,9 @@ export const DATA_VE_SAVE_STATUS_ATTR = "data-ve-save-status";
 
 export const SAVED_SHOWN_MS = 2000;
 
-type ShownStatus = Exclude<EditStatus, "idle">;
-
-const LABELS: Record<ShownStatus, string> = {
+const LABELS: Record<EditStatus, string> = {
   failed: "Not saved",
   "in-form": "In the admin form, not saved yet",
-  picking: "Pick the image in the admin window",
   saved: "Saved",
   saving: "Saving…",
   unsaved: "Unsaved changes",
@@ -38,7 +35,7 @@ const RETRY_LABEL = "Retry";
 
 const RELOAD_LABEL = "Reload";
 
-const labelOf = (status: ShownStatus, refusal: SaveRefusal): string =>
+const labelOf = (status: EditStatus, refusal: SaveRefusal): string =>
   status === "failed" ? REFUSAL_LABELS[refusal] : LABELS[status];
 
 const asksToReload = (status: EditStatus, refusal: SaveRefusal): boolean =>
@@ -137,10 +134,6 @@ export function createSaveStatus(
   return {
     remove,
     show(status, refusal = SAVE_FAILED) {
-      if (status === "idle") {
-        remove();
-        return;
-      }
       stopHiding();
       host ??= mount();
       const shadow = host.shadowRoot;

@@ -2,6 +2,7 @@ import type { VeEditedField, VePickedMedia } from "../../shared/protocol.js";
 import type { BadgeAction } from "../overlay/editBadge.js";
 import type { FieldTracker } from "../overlay/fieldTracker.js";
 import type { ImageEdit, ShownImage } from "./editTransport.js";
+import type { MediaApiOf } from "./mediaLibrary.js";
 import type { PageFields } from "./pageFields.js";
 import type { BuildImageUrl } from "./shownImage.js";
 
@@ -24,6 +25,7 @@ export type ImageReplacementOptions = {
   getCtx: () => ImageReplacementCtx;
   pageFields: PageFields;
   isInsideRichText: (target: Element) => boolean;
+  mediaApiOf: MediaApiOf;
   beginImageEdit(field: VeEditedField, image: ShownImage): ImageEdit;
 };
 
@@ -53,16 +55,13 @@ export function createImageReplacement({
   beginImageEdit,
   getCtx,
   isInsideRichText,
+  mediaApiOf,
   pageFields,
   tracker,
 }: ImageReplacementOptions): ImageReplacement {
   const trackedTexts = new Set<Text>();
   const urlOf = (url: string) => absoluteUrlOf(url, getCtx().payloadApi);
-  const picker = createMediaPicker(
-    document,
-    createMediaLibrary(() => getCtx().payloadApi),
-    urlOf
-  );
+  const picker = createMediaPicker(document, createMediaLibrary(mediaApiOf), urlOf);
 
   const stopTracking = tracker.subscribe({
     onFields: (_root, matches) => {

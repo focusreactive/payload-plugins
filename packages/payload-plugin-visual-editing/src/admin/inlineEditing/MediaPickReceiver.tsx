@@ -15,6 +15,7 @@ import {
 } from "../../shared/mediaOption.js";
 import { VE_MEDIA_PICK_CANCELLED_TYPE, VE_MEDIA_PICKED_TYPE } from "../../shared/protocol.js";
 import { idOf } from "../../shared/veDocument.js";
+import { MediaLibraryReceiver } from "./MediaLibraryReceiver.js";
 import { chosenMediaOf, fetchPickedMedia, mediaPickOf, pickOfDocument } from "./mediaPick.js";
 import { useOpenDocumentForm } from "./useOpenDocumentForm.js";
 
@@ -42,7 +43,6 @@ function MediaDrawer({ collection, onClosed, onDismissed, onPicked }: MediaDrawe
       if (!hasPicked.current) onDismissed();
       onClosed();
     } else {
-      window.focus();
       openDrawer();
     }
   }, [isDrawerOpen, onClosed, onDismissed, openDrawer]);
@@ -141,14 +141,18 @@ export function MediaPickReceiver({
 
   useEffect(() => () => cancelOpenPick.current?.(), []);
 
-  if (!asked) return null;
   return (
-    <MediaDrawer
-      collection={asked.collection}
-      key={asked.request}
-      onClosed={forgetPick}
-      onDismissed={() => tellPickCancelled(form, asked.field)}
-      onPicked={(media) => void takePicked(form, asked, media)}
-    />
+    <>
+      <MediaLibraryReceiver excludeFieldNames={excludeFieldNames} />
+      {asked && (
+        <MediaDrawer
+          collection={asked.collection}
+          key={asked.request}
+          onClosed={forgetPick}
+          onDismissed={() => tellPickCancelled(form, asked.field)}
+          onPicked={(media) => void takePicked(form, asked, media)}
+        />
+      )}
+    </>
   );
 }

@@ -405,7 +405,7 @@ describe("the media picker of a page of its own", () => {
       chooseFile(file);
       await flushMutations();
 
-      expect(upload).toHaveBeenCalledWith("media", "alt", file);
+      expect(upload).toHaveBeenCalledWith(FIELD, "media", "alt", file);
       expect(names()).toEqual(["pier.jpg", "harbour.jpg", "lighthouse.jpg"]);
       expect(options()[0]!.getAttribute("aria-pressed")).toBe("true");
 

@@ -14,6 +14,7 @@ import { createAdminEditChannel } from "./adminEditChannel.js";
 import { createEditRoutes } from "./editRoutes.js";
 import { createEditTransport } from "./editTransport.js";
 import { createImageReplacement } from "./imageReplacement.js";
+import { payloadMediaApi } from "./mediaLibrary.js";
 import { createPageFields, isPageField } from "./pageFields.js";
 import { createRichTextEditing } from "./richTextEditing.js";
 import { createSaveStatus } from "./saveStatus.js";
@@ -95,10 +96,15 @@ export function createInlineEditing(
     pageFields,
     tracker,
   });
+  const mediaApiOfThePage = payloadMediaApi(() => getCtx().payloadApi);
   const imageReplacement = createImageReplacement({
     beginImageEdit: transport.beginImageEdit,
     getCtx,
     isInsideRichText: richTextEditing.isInsideRichText,
+    mediaApiOf: (field) => {
+      const adminWindow = routes.adminOf(field);
+      return adminWindow ? channel.mediaApiOf(adminWindow) : mediaApiOfThePage;
+    },
     pageFields,
     tracker,
   });

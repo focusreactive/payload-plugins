@@ -225,6 +225,38 @@ export type VeMediaPickedMessage = VeEditedField &
     type: typeof VE_MEDIA_PICKED_TYPE;
   };
 
+export type VeMediaApiAnswer = { ok: boolean; answer: unknown };
+
+export const VE_MEDIA_OPTIONS_REQUEST_TYPE = "ve:media-options-request";
+
+export type VeMediaOptionsRequestMessage = VeMediaOptionsRequest & {
+  type: typeof VE_MEDIA_OPTIONS_REQUEST_TYPE;
+  requestId: string;
+};
+
+export const VE_MEDIA_OPTIONS_ANSWER_TYPE = "ve:media-options-answer";
+
+export type VeMediaOptionsAnswerMessage = VeMediaApiAnswer & {
+  type: typeof VE_MEDIA_OPTIONS_ANSWER_TYPE;
+  requestId: string;
+};
+
+export const VE_MEDIA_UPLOAD_TYPE = "ve:media-upload";
+
+export type VeMediaUploadMessage = VeEditedField & {
+  type: typeof VE_MEDIA_UPLOAD_TYPE;
+  requestId: string;
+  collection: string;
+  file: File;
+};
+
+export const VE_MEDIA_UPLOAD_ANSWER_TYPE = "ve:media-upload-answer";
+
+export type VeMediaUploadAnswerMessage = VeMediaApiAnswer & {
+  type: typeof VE_MEDIA_UPLOAD_ANSWER_TYPE;
+  requestId: string;
+};
+
 export const VE_RICH_TEXT_STRUCTURE_TYPE = "ve:rich-text-structure";
 
 export type VeEditorState = Record<string, unknown>;

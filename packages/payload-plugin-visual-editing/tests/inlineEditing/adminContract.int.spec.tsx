@@ -15,7 +15,9 @@ import { RichTextEditReceiver } from "../../src/admin/inlineEditing/RichTextEdit
 import { createAdminEditChannel } from "../../src/client/inlineEditing/adminEditChannel";
 import { createEditRoutes } from "../../src/client/inlineEditing/editRoutes";
 import { createEditTransport } from "../../src/client/inlineEditing/editTransport";
+import { createMediaLibrary, FIELD_REFUSED } from "../../src/client/inlineEditing/mediaLibrary";
 import {
+  VE_MEDIA_OPTIONS_PATH,
   VE_RICH_TEXT_STATE_REQUEST_TYPE,
   VE_RICH_TEXT_VALUE_PATH,
 } from "../../src/shared/protocol";
@@ -137,6 +139,9 @@ const answersOfTheAdmin = (url: string) => {
   if (url === `${API}${VE_RICH_TEXT_VALUE_PATH}`)
     return answerOf({ formats: FORMATS, value: null });
   if (url.startsWith(`${API}/media/9`)) return answerOf(LIGHTHOUSE);
+  if (url === `${API}${VE_MEDIA_OPTIONS_PATH}`) {
+    return answerOf({ collection: "media", documents: [LIGHTHOUSE], hasNextPage: false });
+  }
   return answerOf({});
 };
 
@@ -191,7 +196,6 @@ describe("the page and the admin, wired through their windows", () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.spyOn(window, "focus").mockImplementation(() => undefined);
     statuses = [];
     admin.fields = {
       body: { value: BODY_STATE },
@@ -216,7 +220,6 @@ describe("the page and the admin, wired through their windows", () => {
     admin.permissions = EVERY_FIELD;
     vi.unstubAllGlobals();
     vi.clearAllMocks();
-    vi.mocked(window.focus).mockRestore();
     vi.useRealTimers();
   });
 
@@ -339,6 +342,32 @@ describe("the page and the admin, wired through their windows", () => {
     expect(channel.mediaPicks.isAsked(IMAGE)).toBe(false);
     expect(image.show).not.toHaveBeenCalled();
     expect(image.openField).not.toHaveBeenCalled();
+  });
+
+  it("lists the media of a page in a pop-up through the admin, which refuses a field it may not update", async () => {
+    open({ isPopup: true });
+    const library = createMediaLibrary(() => channel.mediaApiOf(pair.admin));
+    const request = { ...IMAGE, page: 1, search: "" };
+
+    const listing = library.list(request);
+    await delivered();
+    await delivered();
+
+    expect(await listing).toEqual({
+      collection: "media",
+      descriptionField: null,
+      documents: [{ ...LIGHTHOUSE, filename: "", thumbnailUrl: LIGHTHOUSE.url }],
+      hasNextPage: false,
+    });
+    expect(fetchOfThePage).not.toHaveBeenCalled();
+
+    admin.permissions = { fields: { image: { read: true } }, read: true, update: true };
+    act(() => root.render(<MediaPickReceiver />));
+    const refused = library.list(request);
+    await delivered();
+    await delivered();
+
+    expect(await refused).toBe(FIELD_REFUSED);
   });
 
   it("asks nothing more of an admin closed while it was asked, and saves the next pick itself", async () => {

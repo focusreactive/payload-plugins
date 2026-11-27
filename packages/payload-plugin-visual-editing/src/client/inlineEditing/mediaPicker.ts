@@ -379,7 +379,7 @@ export function createMediaPicker(
     open.parts.file.value = "";
     if (!file || collection === null) return;
     open.parts.upload.disabled = true;
-    const answer = await library.upload(collection, descriptionField, file);
+    const answer = await library.upload(open.field, collection, descriptionField, file);
     if (pick !== open) return;
     open.parts.upload.disabled = false;
     open.parts.alert.textContent = "error" in answer ? answer.error : "";
