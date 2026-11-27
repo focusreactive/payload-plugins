@@ -71,6 +71,7 @@ vi.mock("@payloadcms/ui", async () => {
       }),
     }),
     useDocumentInfo: () => ({ collectionSlug: "page", docPermissions: admin.permissions, id: 7 }),
+    useFormModified: () => false,
     useForm: () => ({
       dispatchFields: admin.dispatchFields,
       getFields: () => admin.fields,

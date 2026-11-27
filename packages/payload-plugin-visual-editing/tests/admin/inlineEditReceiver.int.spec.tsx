@@ -21,6 +21,7 @@ const admin = vi.hoisted(() => {
     postToPreview: postMessage,
     dispatchFields: vi.fn(),
     isFormDisabled: false,
+    isModified: false,
     fields: { title: { value: "Title" } } as Record<string, { value: unknown }>,
     frame,
     iframeRef: { current: frame },
@@ -34,6 +35,7 @@ vi.mock("@payloadcms/ui", () => ({
     getEntityConfig: () => ({ fields: [{ name: "title", type: "text" }] }),
   }),
   useDocumentInfo: () => ({ collectionSlug: "page", docPermissions: admin.permissions, id: 7 }),
+  useFormModified: () => admin.isModified,
   useForm: () => ({
     disabled: admin.isFormDisabled,
     dispatchFields: admin.dispatchFields,
@@ -88,6 +90,8 @@ describe("InlineEditReceiver", () => {
     act(() => root.unmount());
     container.remove();
     admin.permissions = EVERY_FIELD;
+    admin.isModified = false;
+    admin.fields = { title: { value: "Title" } };
     vi.clearAllMocks();
   });
 
@@ -100,6 +104,43 @@ describe("InlineEditReceiver", () => {
       value: "New title",
     });
     expect(admin.setModified).toHaveBeenCalledWith(true);
+  });
+
+  describe("when an edit brings the form back to what it held before the edits", () => {
+    const editTo = (value: string) => {
+      postEdit({ data: { ...EDIT, value } });
+      admin.fields = { ...admin.fields, title: { value } };
+      admin.isModified = true;
+      act(() => root.render(<InlineEditReceiver />));
+    };
+
+    it("marks the form as unchanged again", () => {
+      editTo("New title");
+
+      editTo("Title");
+
+      expect(admin.setModified.mock.calls.map(([isModified]) => isModified)).toEqual([true, false]);
+    });
+
+    it("keeps the form changed when it held other unsaved changes before the edits", () => {
+      admin.isModified = true;
+      act(() => root.render(<InlineEditReceiver />));
+
+      editTo("New title");
+      editTo("Title");
+
+      expect(admin.setModified.mock.calls.map(([isModified]) => isModified)).toEqual([true, true]);
+    });
+
+    it("keeps the form changed when another field changed after the edits began", () => {
+      admin.fields = { ...admin.fields, lead: { value: "Lead" } };
+      editTo("New title");
+      admin.fields = { ...admin.fields, lead: { value: "Lead changed" } };
+
+      editTo("Title");
+
+      expect(admin.setModified.mock.calls.map(([isModified]) => isModified)).toEqual([true, true]);
+    });
   });
 
   it("ignores an edit from another origin", () => {

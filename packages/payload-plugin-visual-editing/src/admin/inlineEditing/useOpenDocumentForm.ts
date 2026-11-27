@@ -1,6 +1,6 @@
 import type { FormState, SanitizedDocumentPermissions } from "payload";
 
-import { useDocumentInfo, useForm, useLocale } from "@payloadcms/ui";
+import { useDocumentInfo, useForm, useFormModified, useLocale } from "@payloadcms/ui";
 import { useEffect, useRef, useState } from "react";
 
 import type { EditableSchema } from "../../shared/editableSchema/editableSchema.js";
@@ -20,6 +20,7 @@ import type { PreviewWindow } from "../instantPreview/usePreviewWindow.js";
 import type { OpenForm } from "./formEdit.js";
 
 import { VE_FIELD_EDIT_REFUSED_TYPE } from "../../shared/protocol.js";
+import { isSameValue } from "../../shared/sameValue.js";
 import { useEditableSchema } from "../instantPreview/useEditableSchema.js";
 import { usePreviewWindow } from "../instantPreview/usePreviewWindow.js";
 import { openDocumentOf } from "../openField/openDocument.js";
@@ -63,11 +64,18 @@ type OfTheLatestRender = {
   hear: HearPreviewPage;
 };
 
+type FormValues = Record<string, unknown>;
+
+const valuesOf = (fields: FormState): FormValues =>
+  Object.fromEntries(Object.entries(fields).map(([path, { value }]) => [path, value]));
+
 export function useOpenDocumentForm(
   excludeFieldNames: string[] | undefined,
   hear: HearPreviewPage
 ): OpenDocument {
   const { disabled: isFormDisabled, dispatchFields, getFields, setModified } = useForm();
+  const isModified = useFormModified();
+  const valuesBeforeTheEdits = useRef<FormValues | null>(null);
   const { id, collectionSlug, docPermissions, globalSlug } = useDocumentInfo();
   const editableSchema = useEditableSchema({ collectionSlug, globalSlug }, excludeFieldNames);
   const { code: locale } = useLocale();
@@ -88,13 +96,16 @@ export function useOpenDocumentForm(
       permissions: docPermissions,
       previewWindow,
       write: ({ initialValue, path, value }) => {
+        const values = valuesOf(getFields());
+        if (!isModified) valuesBeforeTheEdits.current = values;
         dispatchFields({
           path,
           type: "UPDATE",
           value,
           ...(initialValue !== undefined && { initialValue }),
         });
-        setModified(true);
+        const before = valuesBeforeTheEdits.current;
+        setModified(before === null || !isSameValue({ ...values, [path]: value }, before));
       },
     };
   });

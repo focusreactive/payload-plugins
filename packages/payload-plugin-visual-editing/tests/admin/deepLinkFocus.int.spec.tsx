@@ -21,6 +21,7 @@ const admin = vi.hoisted(() => ({
 vi.mock("@payloadcms/ui", () => ({
   useConfig: () => ({ getEntityConfig: admin.getEntityConfig }),
   useDocumentInfo: () => admin.documentInfo,
+  useFormModified: () => false,
   useForm: () => ({ getFields: () => ({}) as FormState }),
 }));
 
