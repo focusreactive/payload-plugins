@@ -47,6 +47,9 @@ const whatIsNotPrivate = failsToReadADocumentFor(LIBRARIAN.email, () => ({
   alt: { not_equals: PRIVATE_ALT },
 }));
 
+const ONE_PIXEL_PNG =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+
 describe("replacing an image through the endpoints", () => {
   let payload: Payload;
   let editor: Headers;
@@ -84,11 +87,24 @@ describe("replacing an image through the endpoints", () => {
   const options = (body: object, headers = editor): Promise<Answered<VeMediaOptions>> =>
     post<VeMediaOptions>(VE_MEDIA_OPTIONS_PATH, { page: 1, search: "", ...body }, headers);
 
-  const upload = async (collection: "documents" | "media", name: string, alt: string) => {
+  const contentOf = (mimetype: string, name: string): Buffer =>
+    mimetype === "image/png" ? Buffer.from(ONE_PIXEL_PNG, "base64") : Buffer.from(name);
+
+  const upload = async (
+    collection: "documents" | "media",
+    name: string,
+    alt: string,
+    mimetype = "image/png"
+  ) => {
     const created = await payload.create({
       collection,
       data: { alt },
-      file: { data: Buffer.from(name), mimetype: "text/plain", name, size: name.length },
+      file: {
+        data: contentOf(mimetype, name),
+        mimetype,
+        name,
+        size: contentOf(mimetype, name).length,
+      },
     });
     return String(created.id);
   };
@@ -328,10 +344,24 @@ describe("replacing an image through the endpoints", () => {
       expect(body.documents).toContainEqual({
         alt: "A harbour",
         filename: "harbour.txt",
+        height: 1,
         id: Number(harbour),
         thumbnailUrl: "/api/media/file/harbour.txt",
         url: "/api/media/file/harbour.txt",
+        width: 1,
       });
+    });
+
+    it("lists only images, since it offers the media to replace an image with", async () => {
+      await upload("media", "notes.json", "Notes", "application/json");
+      await upload("media", "terms.pdf", "Terms", "application/pdf");
+
+      const { body } = await options({ ...page(docId), key: "image" });
+
+      const listed = body.documents.map(({ filename }) => filename);
+      expect(listed).toContain("harbour.txt");
+      expect(listed).not.toContain("notes.json");
+      expect(listed).not.toContain("terms.pdf");
     });
 
     it("lists the collection of the field, not another upload collection", async () => {

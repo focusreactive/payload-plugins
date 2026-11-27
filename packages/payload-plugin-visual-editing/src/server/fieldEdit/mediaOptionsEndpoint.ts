@@ -43,8 +43,12 @@ const readRequest = (body: unknown): VeMediaOptionsRequest | null => {
 const orderOf = (payload: Payload, collection: string): string[] =>
   payload.collections[collection]?.config.timestamps === false ? [LATEST_ID_FIRST] : NEWEST_FIRST;
 
-const filesNamedLike = (search: string): Where | undefined =>
-  search === "" ? undefined : { filename: { contains: search } };
+const IMAGE_TYPES = "image/";
+
+const IMAGES: Where = { mimeType: { contains: IMAGE_TYPES } };
+
+const imagesNamedLike = (search: string): Where =>
+  search === "" ? IMAGES : { and: [IMAGES, { filename: { contains: search } }] };
 
 const mayUpdate = async (req: PayloadRequest, document: DocumentToRead): Promise<boolean> => {
   if (document.kind === "collection") {
@@ -73,7 +77,7 @@ const listMedia = async (
     page,
     sort: orderOf(payload, collection),
     user,
-    where: filesNamedLike(search),
+    where: imagesNamedLike(search),
   });
   const shownDescription = descriptionFieldOf(
     payload.collections[collection]?.config.flattenedFields ?? [],
