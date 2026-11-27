@@ -54,7 +54,7 @@ const rangeIn = (doc: Document): Range => {
   return range;
 };
 
-const isWithin = (rect: DOMRect, box: DOMRect): boolean =>
+export const isWithin = (rect: DOMRect, box: DOMRect): boolean =>
   rect.left >= box.left &&
   rect.right <= box.right &&
   rect.top >= box.top &&

@@ -181,7 +181,7 @@ describe("the badge of a target on a page whose overlay root is the body", () =>
   it("moves to another target the pointer enters away from the label", () => {
     movePointer(photo, { x: 390, y: 110 });
 
-    movePointer(caption, { x: 320, y: 60 });
+    movePointer(caption, { x: 320, y: 90 });
 
     expect(badgeIsFor()).toBe("caption");
   });
@@ -294,6 +294,15 @@ describe("the badge of a target on a page whose overlay root is the body", () =>
       expect(badgeIsFor()).toBe("line");
 
       vi.advanceTimersByTime(CLEAR_GRACE_MS);
+
+      expect(badgeIsFor()).toBe("heading");
+    });
+
+    it("moves to the heading the pointer enters well off the way to the label at the far end of a very wide line", () => {
+      layOut(2400);
+      movePointer(line, { x: 110, y: LINE_TOP + 12 });
+
+      movePointer(heading, { x: 1200, y: LINE_TOP - 58 });
 
       expect(badgeIsFor()).toBe("heading");
     });

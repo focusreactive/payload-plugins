@@ -3,7 +3,7 @@ import type { TargetRegistry } from "./targetRegistry.js";
 import type { IsShown } from "./targetSelector.js";
 import type { Point } from "./targetsAtPoint.js";
 
-import { areaOf } from "./targetArea.js";
+import { areaOf, isWithin, rectOf } from "./targetArea.js";
 import { findTargetAncestor } from "./targetSelector.js";
 import { pointOf } from "./targetsAtPoint.js";
 
@@ -19,6 +19,8 @@ export interface HoverController {
 const CLEAR_GRACE_MS = 250;
 
 const WAY_MARGIN_MIN_PX = 24;
+
+const WAY_MARGIN_MAX_PX = 48;
 
 const WAY_MARGIN_PER_DISTANCE = 0.06;
 
@@ -58,7 +60,10 @@ const isOnTheWay = (from: Point, rect: DOMRect, at: Point): boolean => {
   const center = centerOf(rect);
   const distance = distanceBetween(from, center);
   if (distanceBetween(at, center) >= distance) return false;
-  const margin = Math.max(WAY_MARGIN_MIN_PX, distance * WAY_MARGIN_PER_DISTANCE);
+  const margin = Math.min(
+    Math.max(WAY_MARGIN_MIN_PX, distance * WAY_MARGIN_PER_DISTANCE),
+    WAY_MARGIN_MAX_PX
+  );
   const corners = cornersOf(rect);
   return corners.some(
     (corner, index) =>
@@ -116,15 +121,17 @@ export function createHoverController(
 
   const scheduleClear = (): void => switchAfterGrace(null);
 
-  const shownBadgeRects = (): DOMRect[] =>
-    badgeElements
+  const badgeRectsOutside = (target: HTMLElement): DOMRect[] => {
+    const area = rectOf(target);
+    return badgeElements
       .map((part) => part.getBoundingClientRect())
-      .filter(({ height, width }) => width > 0 && height > 0);
+      .filter((rect) => rect.width > 0 && rect.height > 0 && !isWithin(rect, area));
+  };
 
-  const isOnTheWayToBadge = (at: Point | null): boolean => {
+  const isOnTheWayToBadge = (target: HTMLElement, at: Point | null): boolean => {
     const from = lastPointOnTarget;
     if (!from || !at || isSamePoint(from, at)) return false;
-    return shownBadgeRects().some((rect) => isOnTheWay(from, rect, at));
+    return badgeRectsOutside(target).some((rect) => isOnTheWay(from, rect, at));
   };
 
   const request = (next: HTMLElement | null, at: Point | null): void => {
@@ -132,7 +139,7 @@ export function createHoverController(
       setActive(next);
       return;
     }
-    if (activeTarget && isOnTheWayToBadge(at)) {
+    if (activeTarget && isOnTheWayToBadge(activeTarget, at)) {
       cancelPendingSwitch();
       switchAfterGrace(next);
       return;
