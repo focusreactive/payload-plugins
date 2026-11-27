@@ -36,11 +36,60 @@ export const areaOf = (target: HTMLElement): HTMLElement => {
 
 const isDrawn = ({ height, width }: DOMRect): boolean => width > 0 || height > 0;
 
-const textRectsOf = (target: HTMLElement): DOMRect[] => {
-  const range = target.ownerDocument.createRange();
+const CLIPPING_OVERFLOWS: ReadonlySet<string> = new Set(["auto", "clip", "hidden", "scroll"]);
+
+const holdsText = (target: HTMLElement): boolean =>
+  [...target.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && !isBlank(node));
+
+const rangesOfDocuments = new WeakMap<Document, Range>();
+
+const rangeIn = (doc: Document): Range => {
+  const range = rangesOfDocuments.get(doc) ?? doc.createRange();
+  rangesOfDocuments.set(doc, range);
+  return range;
+};
+
+const isWithin = (rect: DOMRect, box: DOMRect): boolean =>
+  rect.left >= box.left &&
+  rect.right <= box.right &&
+  rect.top >= box.top &&
+  rect.bottom <= box.bottom;
+
+const clipsItsContent = (element: Element): boolean => {
+  const style = element.ownerDocument.defaultView?.getComputedStyle(element);
+  return (
+    style !== undefined &&
+    (CLIPPING_OVERFLOWS.has(style.overflowX) || CLIPPING_OVERFLOWS.has(style.overflowY))
+  );
+};
+
+const clipOf = (target: HTMLElement): DOMRect | null => {
+  for (let element: Element | null = target; element; element = element.parentElement) {
+    if (clipsItsContent(element)) return element.getBoundingClientRect();
+  }
+  return null;
+};
+
+const clippedTo = (clip: DOMRect, rect: DOMRect): DOMRect => {
+  const left = Math.max(rect.left, clip.left);
+  const top = Math.max(rect.top, clip.top);
+  const right = Math.min(rect.right, clip.right);
+  const bottom = Math.min(rect.bottom, clip.bottom);
+  return new DOMRect(left, top, Math.max(0, right - left), Math.max(0, bottom - top));
+};
+
+const textRectsOf = (target: HTMLElement, box: DOMRect): DOMRect[] => {
+  if (!holdsText(target)) return [];
+  const range = rangeIn(target.ownerDocument);
   range.selectNodeContents(target);
   if (typeof range.getClientRects !== "function") return [];
-  return [...range.getClientRects()].filter(isDrawn);
+  const rects = [...range.getClientRects()].filter(isDrawn);
+  if (rects.every((rect) => isWithin(rect, box))) return [];
+  const clip = clipOf(target);
+  if (!clip) return rects;
+  return rects
+    .map((rect) => clippedTo(clip, rect))
+    .filter(({ height, width }) => width > 0 && height > 0);
 };
 
 const unionOf = ([first, ...rest]: readonly DOMRect[]): DOMRect => {
@@ -56,7 +105,7 @@ const unionOf = ([first, ...rest]: readonly DOMRect[]): DOMRect => {
 
 export const rectOf = (target: HTMLElement): DOMRect => {
   const box = areaOf(target).getBoundingClientRect();
-  const drawn = [box, ...textRectsOf(target)].filter(isDrawn);
+  const drawn = [box, ...textRectsOf(target, box)].filter(isDrawn);
   return drawn.length === 0 ? box : unionOf(drawn);
 };
 

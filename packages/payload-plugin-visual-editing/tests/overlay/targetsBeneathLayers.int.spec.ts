@@ -157,4 +157,44 @@ describe("a target beneath a layer that takes the pointer", () => {
       expect(actionButton().textContent).toBe("Replace image");
     });
   });
+
+  describe("in a card that cuts off the text of its title", () => {
+    let card: HTMLElement;
+
+    beforeEach(() => {
+      card = document.createElement("article");
+      card.style.overflowX = "hidden";
+      const title = marked("h3", "card.title");
+      title.textContent = "A title much longer than the card";
+      card.append(title);
+      main.append(card);
+      drawnAt(card, new DOMRect(0, 0, 200, 100));
+      drawnAt(title, new DOMRect(0, 0, 200, 20));
+      Object.defineProperty(Range.prototype, "getClientRects", {
+        configurable: true,
+        value: () => [new DOMRect(0, 0, 900, 20)],
+      });
+      start();
+    });
+
+    afterEach(() => {
+      Reflect.deleteProperty(Range.prototype, "getClientRects");
+    });
+
+    it("opens the title on a click on its letters", () => {
+      click(card, { clientX: 150, clientY: 10 });
+
+      expect(open).toHaveBeenCalledTimes(1);
+    });
+
+    it("leaves a click beside the card, where the cut off text would be, to the page", () => {
+      const beside = document.createElement("div");
+      main.append(beside);
+
+      const event = click(beside, { clientX: 500, clientY: 10 });
+
+      expect(open).not.toHaveBeenCalled();
+      expect(event.defaultPrevented).toBe(false);
+    });
+  });
 });

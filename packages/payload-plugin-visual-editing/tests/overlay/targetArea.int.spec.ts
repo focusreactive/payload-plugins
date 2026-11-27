@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DATA_VE_TARGET_ATTR } from "../../src/client/overlay/constants";
-import { areaOf, targetWithArea } from "../../src/client/overlay/targetArea";
+import { areaOf, rectOf, targetWithArea } from "../../src/client/overlay/targetArea";
 import { findTargetAncestor } from "../../src/client/overlay/targetSelector";
 
 describe("the area of an edit target", () => {
@@ -55,5 +55,74 @@ describe("the area of an edit target", () => {
     expect(targetWithArea(heading)).toBe(target);
     expect(findTargetAncestor(heading)).toBe(target);
     expect(findTargetAncestor(main.querySelector("div"))).toBeNull();
+  });
+});
+
+const textDrawnAt = (...rects: DOMRect[]) =>
+  Object.defineProperty(Range.prototype, "getClientRects", {
+    configurable: true,
+    value: () => rects,
+  });
+
+const boxOf = ({ height, left, top, width }: DOMRect) => [left, top, width, height];
+
+describe("the rect of an edit target", () => {
+  let main: HTMLElement;
+  let title: HTMLElement;
+
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    main = document.createElement("main");
+    title = document.createElement("h3");
+    title.setAttribute(DATA_VE_TARGET_ATTR, "title");
+    title.textContent = "A title longer than its card";
+    main.append(title);
+    document.body.append(main);
+    vi.spyOn(title, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 200, 20));
+  });
+
+  afterEach(() => {
+    Reflect.deleteProperty(Range.prototype, "getClientRects");
+    vi.restoreAllMocks();
+  });
+
+  it("holds the letters of a text drawn past its box", () => {
+    textDrawnAt(new DOMRect(0, -5, 180, 30));
+
+    expect(boxOf(rectOf(title))).toEqual([0, -5, 200, 30]);
+  });
+
+  it("leaves out the text that the target cuts off with an ellipsis", () => {
+    title.style.overflowX = "hidden";
+    textDrawnAt(new DOMRect(0, 0, 600, 20));
+
+    expect(boxOf(rectOf(title))).toEqual([0, 0, 200, 20]);
+  });
+
+  it("leaves out the lines that a card around the target cuts off", () => {
+    const card = document.createElement("article");
+    card.style.overflowY = "hidden";
+    title.replaceWith(card);
+    card.append(title);
+    vi.spyOn(card, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 300, 40));
+    textDrawnAt(
+      new DOMRect(0, 0, 200, 20),
+      new DOMRect(0, 20, 200, 20),
+      new DOMRect(0, 40, 200, 20)
+    );
+
+    expect(boxOf(rectOf(title))).toEqual([0, 0, 200, 40]);
+  });
+
+  it("measures no text of a target that holds none of its own", () => {
+    const getClientRects = vi.fn(() => [new DOMRect(0, 0, 900, 900)]);
+    Object.defineProperty(Range.prototype, "getClientRects", {
+      configurable: true,
+      value: getClientRects,
+    });
+    title.replaceChildren(document.createElement("img"));
+
+    expect(boxOf(rectOf(title))).toEqual([0, 0, 200, 20]);
+    expect(getClientRects).not.toHaveBeenCalled();
   });
 });
