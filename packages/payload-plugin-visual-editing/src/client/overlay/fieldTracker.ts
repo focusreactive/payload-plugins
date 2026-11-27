@@ -315,6 +315,11 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
   const setAside = (holder: Element, textNode: Text): ChildNode[] => {
     const aside = setAsideIn.get(holder) ?? { shown: textNode, styles: new Map() };
     aside.shown = textNode;
+    for (const [element, hidden] of aside.styles) {
+      if (element.parentNode === holder) continue;
+      showAgain(element, hidden);
+      aside.styles.delete(element);
+    }
     const nodes = Array.from(holder.childNodes).filter((node) => node !== textNode);
     holder.insertBefore(textNode, nodes[0] ?? null);
     for (const node of nodes) {

@@ -363,6 +363,20 @@ describe("a heading a site script splits into an element per letter, edited on t
     ).toBe(true);
   });
 
+  it("lets go of the elements of a split its owner replaced during the edit, and shows them as they were", async () => {
+    const letters = splitIntoLetters(heading);
+    const firstSplit = Array.from(heading.children) as HTMLElement[];
+    await flushMutations();
+    clickedAt(letters[0] as Text);
+    click(letters[0]?.parentElement as Element);
+
+    heading.replaceChildren("How We Deliver");
+    splitIntoLetters(heading);
+    await flushMutations();
+
+    expect(firstSplit.map((word) => word.hasAttribute("style"))).toEqual([false, false, false]);
+  });
+
   it("keeps the text and the caret of an edit that began before the script split the heading", async () => {
     click(heading);
     const edited = heading.firstChild as Text;
