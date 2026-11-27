@@ -823,6 +823,47 @@ describe("editing text on the page", () => {
             expect(Array.from(line.childNodes)).toEqual([textIn(line), tag]);
           });
 
+          it("types text the editor types in the whitespace before the value at the start of the value", () => {
+            putCaretAt(0);
+            const typed: number[] = [];
+            Object.assign(document, {
+              execCommand: vi.fn(() => {
+                typed.push(document.getSelection()?.anchorOffset ?? -1);
+                return true;
+              }),
+            });
+            const event = new InputEvent("beforeinput", {
+              bubbles: true,
+              cancelable: true,
+              data: "Very ",
+              inputType: "insertText",
+            });
+            Object.defineProperty(event, "getTargetRanges", { value: () => [] });
+
+            line.dispatchEvent(event);
+
+            expect(event.defaultPrevented).toBe(true);
+            expect(typed).toEqual([startOfTheText()]);
+          });
+
+          it("keeps the whitespace before the value out of it when a selection starts there", async () => {
+            const lineText = textIn(line);
+            click(line);
+            document.getSelection()?.setBaseAndExtent(lineText, 0, lineText, startOfTheText() + 3);
+            const event = new InputEvent("beforeinput", {
+              bubbles: true,
+              cancelable: true,
+              data: "THE",
+              inputType: "insertText",
+            });
+            Object.defineProperty(event, "getTargetRanges", { value: () => [] });
+
+            line.dispatchEvent(event);
+
+            expect(event.defaultPrevented).toBe(true);
+            expect(changed).toEqual([["insertText", "THE", "OUR"]]);
+          });
+
           it("takes an undo and a redo itself, so the browser undoes nothing it did not do", () => {
             selectBeyondTheText();
 
@@ -880,7 +921,7 @@ describe("editing text on the page", () => {
         expect(document.getSelection()?.toString()).toBe(" FIRST RELEASE");
       });
 
-      it("brings a caret put beside the elements of the line back into its text", () => {
+      it("brings a caret put beside the elements of the line back to the end of its value", () => {
         click(line);
         document.getSelection()?.collapse(line, 2);
 
@@ -889,9 +930,25 @@ describe("editing text on the page", () => {
         const selection = document.getSelection() as Selection;
         expect([selection.focusNode, selection.focusOffset]).toEqual([
           textIn(line),
-          textIn(line).length,
+          "\n  OUR FIRST RELEASE".length,
         ]);
       });
+
+      it.each([
+        ["start", 0, "\n  ".length],
+        ["end", "\n  OUR FIRST RELEASE ".length, "\n  OUR FIRST RELEASE".length],
+      ])(
+        "brings a caret put into the whitespace the page puts at the %s of the line to the edge of its value",
+        (_, offset, edge) => {
+          click(line);
+          document.getSelection()?.collapse(textIn(line), offset);
+
+          document.dispatchEvent(new Event("selectionchange"));
+
+          const selection = document.getSelection() as Selection;
+          expect([selection.focusNode, selection.focusOffset]).toEqual([textIn(line), edge]);
+        }
+      );
     });
 
     it("keeps the lines of the text as the page broke them until the editor types", () => {

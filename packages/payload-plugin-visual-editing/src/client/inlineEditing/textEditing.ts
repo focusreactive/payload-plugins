@@ -240,6 +240,10 @@ const textRangeOf = (edit: EditedText): Range | null => {
   return rangeOfText(edit, texts, edit.before.length, lengthOf(texts) - edit.after.length);
 };
 
+const isInside = (text: Range, range: Range): boolean =>
+  range.compareBoundaryPoints(Range.START_TO_START, text) >= 0 &&
+  range.compareBoundaryPoints(Range.END_TO_END, text) <= 0;
+
 const clampedTo = (text: Range, range: AbstractRange): Range => {
   const clamped = text.cloneRange();
   const startsAt = text.comparePoint(range.startContainer, range.startOffset);
@@ -363,7 +367,9 @@ const keepInputInTheText = (edit: EditedText, event: InputEvent): void => {
   }
   const changed = target ?? selectedRangeOf(edit);
   const text = textRangeOf(edit);
-  if (!changed || !text || !reachesBeyondTheText(edit, changed)) return;
+  if (!changed || !text) return;
+  const isInTheValue = isInside(text, rangeOf(edit.editedElement.ownerDocument, changed));
+  if (isInTheValue && !reachesBeyondTheText(edit, changed)) return;
   event.preventDefault();
   if (!REPLACING_INPUTS.has(event.inputType)) return;
   select(edit, clampedTo(text, changed));
@@ -377,10 +383,6 @@ const isInTheText = (edit: EditedText, texts: readonly Text[], range: Range): bo
   texts.includes(range.endContainer as Text) &&
   !reachesBeyondTheText(edit, range);
 
-const isInside = (text: Range, range: Range): boolean =>
-  range.compareBoundaryPoints(Range.START_TO_START, text) >= 0 &&
-  range.compareBoundaryPoints(Range.END_TO_END, text) <= 0;
-
 const keepSelectionInTheText = (edit: EditedText): void => {
   const selection = edit.editedElement.ownerDocument.getSelection();
   if (!selection || selection.rangeCount === 0) return;
@@ -389,13 +391,19 @@ const keepSelectionInTheText = (edit: EditedText): void => {
   const [first] = texts;
   const last = texts.at(-1);
   if (!first || !last || !edit.editedElement.contains(range.commonAncestorContainer)) return;
-  if (range.collapsed) {
-    if (isInTheText(edit, texts, range)) return;
+  const text = textRangeOf(edit);
+  if (range.collapsed && !isInTheText(edit, texts, range)) {
     if (range.comparePoint(first, 0) === POINT_AFTER_THE_RANGE) selection.collapse(first, 0);
     else selection.collapse(last, last.length);
+    keepSelectionInTheText(edit);
     return;
   }
-  const text = textRangeOf(edit);
+  if (range.collapsed) {
+    if (!text || isInside(text, range)) return;
+    const edge = clampedTo(text, range);
+    selection.collapse(edge.startContainer, edge.startOffset);
+    return;
+  }
   if (!text || (isInTheText(edit, texts, range) && isInside(text, range))) return;
   const narrowed = clampedTo(text, range);
   selection.setBaseAndExtent(
@@ -646,6 +654,7 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
 
   const pastePlainText = (edit: Edit, event: ClipboardEvent) => {
     event.preventDefault();
+    if (sharesItsElement(edit)) keepSelectionInTheText(edit);
     insertText(
       edit.editedElement.ownerDocument,
       typedTextOf(edit.match)(event.clipboardData?.getData(PLAIN_TEXT_FORMAT) ?? "")
