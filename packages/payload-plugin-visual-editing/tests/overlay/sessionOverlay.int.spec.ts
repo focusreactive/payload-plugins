@@ -11,6 +11,7 @@ import { startSessionOverlay, startSessionToggle } from "../../src/client/sessio
 import { DATA_VE_TOGGLE_ATTR } from "../../src/client/toggle";
 import { VE_FIELDS_RENDERED_TYPE } from "../../src/shared/protocol";
 import { markedText } from "../support/markedData";
+import { click } from "../support/overlay";
 import { ADMIN_ORIGIN, restorePreviewWindow, stubAdminWindow } from "../support/previewWindow";
 import { flushMutations } from "../support/time";
 
@@ -231,6 +232,26 @@ describe("the session of a page, followed", () => {
 
       expect(targets()).toHaveLength(0);
       expect(heading.textContent).toBe("Hello");
+    });
+
+    it("leaves a click on a link stretched over a target to the page once the frame turns visual editing off", async () => {
+      vi.spyOn(heading, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 60));
+      const link = document.createElement("a");
+      link.href = "#case";
+      main.append(link);
+      const clickTheLink = () => click(link, { clientX: 50, clientY: 30 });
+      page = { ...FRAMED, chosenMode: "always" };
+      const overlay = start();
+      await flushMutations();
+      const whileOn = clickTheLink();
+
+      page = TURNED_OFF_BY_FRAME;
+      overlay.sync();
+      await flushMutations();
+      const whenTurnedOff = clickTheLink();
+
+      expect(whileOn.defaultPrevented).toBe(true);
+      expect(whenTurnedOff.defaultPrevented).toBe(false);
     });
 
     it("leaves a page read without drafts alone", () => {
