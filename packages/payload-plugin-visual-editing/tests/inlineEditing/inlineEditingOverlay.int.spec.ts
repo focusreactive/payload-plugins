@@ -181,6 +181,77 @@ describe("editing text on the page", () => {
       expect(label.getAttribute("contenteditable")).toBe("true");
     });
 
+    describe("beside an icon the editor cannot change", () => {
+      let line: HTMLElement;
+      let icon: SVGSVGElement;
+
+      const showLine = (text: string, marker: object = {}) => {
+        line = document.createElement("h2");
+        icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        icon.setAttribute("contenteditable", "false");
+        line.append(icon, stega(text, "line", marker));
+        main.append(line);
+        overlay.dispose();
+        start();
+        click(line);
+      };
+
+      const deleteBack = (inputType: string, from: number, to: number) => {
+        const lineText = textIn(line);
+        document.getSelection()?.collapse(lineText, to);
+        const reach = document.createRange();
+        reach.setStart(lineText, from);
+        reach.setEnd(lineText, to);
+        const event = new InputEvent("beforeinput", {
+          bubbles: true,
+          cancelable: true,
+          inputType,
+        });
+        Object.defineProperty(event, "getTargetRanges", { value: () => [reach] });
+        line.dispatchEvent(event);
+        return event;
+      };
+
+      it("leaves deleting a word inside the text to the browser", () => {
+        showLine("Hero foo.bar here");
+        const lineText = textIn(line);
+        const end = lineText.data.indexOf("bar") + "bar".length;
+
+        const event = deleteBack("deleteWordBackward", end - "bar".length, end);
+
+        expect(event.defaultPrevented).toBe(false);
+        expect(lineText.data).toContain("Hero foo.bar here");
+      });
+
+      it.each(["deleteWordBackward", "deleteSoftLineBackward"])(
+        "keeps the icon when %s reaches the start of the text",
+        async (inputType) => {
+          showLine("Hero title");
+          const lineText = textIn(line);
+          const hero = lineText.data.indexOf("Hero");
+
+          const event = deleteBack(inputType, hero, hero + "Hero ".length);
+          press(line, "Enter");
+          await flushMutations();
+
+          expect(event.defaultPrevented).toBe(true);
+          expect(Array.from(line.childNodes)).toEqual([icon, lineText]);
+          expect(sentToEndpoint().map(({ value }) => value)).toEqual(["title"]);
+        }
+      );
+
+      it("stops deleting a line at the line break of a text of several lines", () => {
+        showLine("First line\nSecond line", { multiline: true });
+        const lineText = textIn(line);
+        const second = lineText.data.indexOf("Second");
+
+        const event = deleteBack("deleteHardLineBackward", second, second + "Second".length);
+
+        expect(event.defaultPrevented).toBe(false);
+        expect(press(line, "Backspace", { metaKey: true }).defaultPrevented).toBe(false);
+      });
+    });
+
     describe("in a line that holds other elements", () => {
       let line: HTMLElement;
       let tag: HTMLElement;
@@ -366,23 +437,26 @@ describe("editing text on the page", () => {
           });
 
           it("deletes the text alone when the selection reaches into the elements beside it", () => {
+            const lineText = textIn(line);
             selectBeyondTheText();
 
-            expect(press(line, "Backspace").defaultPrevented).toBe(true);
-            expect(changed).toEqual([["delete", undefined, "OUR FIRST RELEASE"]]);
+            expect(withoutTargetRanges("deleteContentBackward").defaultPrevented).toBe(true);
+            expect(changed).toEqual([]);
+            expect(Array.from(line.childNodes)).toEqual([lineText, tag]);
+            expect(lineText.data).toBe("\n   ");
           });
 
           it.each([
-            ["Option and Backspace", "Backspace", { altKey: true }, "REL"],
-            ["Control and Backspace", "Backspace", { ctrlKey: true }, "REL"],
-            ["Command and Backspace", "Backspace", { metaKey: true }, "OUR FIRST REL"],
-            ["Option and Delete", "Delete", { altKey: true }, "EASE"],
-            ["Command and Delete", "Delete", { metaKey: true }, "EASE"],
-          ])("deletes with %s up to the edge of the text at most", (_, key, modifiers, deleted) => {
+            ["Option and Backspace", "Backspace", { altKey: true }],
+            ["Control and Backspace", "Backspace", { ctrlKey: true }],
+            ["Command and Backspace", "Backspace", { metaKey: true }],
+            ["Option and Delete", "Delete", { altKey: true }],
+            ["Command and Delete", "Delete", { metaKey: true }],
+          ])("leaves %s inside the text to the browser", (_, key, modifiers) => {
             putCaretAt(startOfTheText() + "OUR FIRST REL".length);
 
-            expect(press(line, key, modifiers).defaultPrevented).toBe(true);
-            expect(changed).toEqual([["delete", undefined, deleted]]);
+            expect(press(line, key, modifiers).defaultPrevented).toBe(false);
+            expect(changed).toEqual([]);
           });
 
           it("deletes nothing with Option and Backspace at the start of the text", () => {
@@ -407,7 +481,9 @@ describe("editing text on the page", () => {
             line.dispatchEvent(event);
 
             expect(event.defaultPrevented).toBe(true);
-            expect(changed).toEqual([["delete", undefined, "EASE"]]);
+            expect(changed).toEqual([]);
+            expect(textIn(line).data).toBe("\n  OUR FIRST REL ");
+            expect(Array.from(line.childNodes)).toEqual([textIn(line), tag]);
           });
 
           it("lets an undo and a redo happen", () => {
