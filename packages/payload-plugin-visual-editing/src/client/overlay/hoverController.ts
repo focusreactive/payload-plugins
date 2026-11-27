@@ -90,6 +90,12 @@ export function createHoverController(
   let pendingSwitch: ReturnType<typeof setTimeout> | null = null;
   let nextAfterGrace: HTMLElement | null = null;
   let lastPointOnTarget: Point | null = null;
+  const resizes =
+    typeof ResizeObserver === "undefined"
+      ? null
+      : new ResizeObserver(() => {
+          if (activeTarget?.isConnected) badge.reposition(activeTarget);
+        });
   const targetListeners = new Map<
     HTMLElement,
     { area: HTMLElement; enter: (event: MouseEvent) => void; leave: (event: MouseEvent) => void }
@@ -105,10 +111,14 @@ export function createHoverController(
     cancelPendingSwitch();
     if (next === activeTarget) return;
     lastPointOnTarget = null;
-    if (activeTarget) badge.hide();
+    if (activeTarget) {
+      badge.hide();
+      resizes?.unobserve(areaOf(activeTarget));
+    }
     if (next) {
       const config = registry.get(next);
       if (config) badge.show(next, config, actionOf(next));
+      resizes?.observe(areaOf(next));
     }
     activeTarget = next;
   };
@@ -207,6 +217,7 @@ export function createHoverController(
       if (activeTarget === target) {
         cancelPendingSwitch();
         badge.hide();
+        resizes?.unobserve(listeners.area);
         activeTarget = null;
       }
     },
@@ -224,6 +235,7 @@ export function createHoverController(
     },
     dispose() {
       cancelPendingSwitch();
+      resizes?.disconnect();
       window.removeEventListener("scroll", repositionIfActive, true);
       window.removeEventListener("resize", repositionIfActive);
       window.removeEventListener("input", repositionIfActive, true);

@@ -748,6 +748,43 @@ describe("a target beneath a layer that takes the pointer", () => {
     });
   });
 
+  describe("whose size changes while its frame shows", () => {
+    let title: HTMLElement;
+    let drawn: ReturnType<typeof drawnAt>;
+    let resized: (() => void)[];
+
+    beforeEach(() => {
+      resized = [];
+      vi.stubGlobal(
+        "ResizeObserver",
+        class {
+          constructor(onResize: () => void) {
+            resized.push(onResize);
+          }
+          observe = vi.fn();
+          unobserve = vi.fn();
+          disconnect = vi.fn();
+        }
+      );
+      title = marked("h1", "hero.title");
+      title.textContent = "Hero";
+      main.append(title);
+      drawn = drawnAt(title, new DOMRect(0, 0, 400, 100));
+      start();
+    });
+
+    afterEach(() => vi.unstubAllGlobals());
+
+    it("measures the frame again", () => {
+      pointerMovesOver(title);
+      drawn.mockReturnValue(new DOMRect(0, 0, 400, 40));
+
+      for (const onResize of resized) onResize();
+
+      expect(editLabel().parentElement?.style.height).toBe(`${40 + 2 * 2}px`);
+    });
+  });
+
   describe("in a card that cuts off the text of its title", () => {
     let card: HTMLElement;
 
