@@ -145,7 +145,7 @@ export function createEditTargets(
     (target) => getCtx().actionOf?.(target) ?? null,
     isShown
   );
-  const frames = getCtx().mode === "always" ? createFrameLayer(isShown) : null;
+  const frames = getCtx().mode === "always" ? createFrameLayer(main, isShown) : null;
   const wrapperTargets = new Set<HTMLElement>();
   const targetsAtPoint = createTargetsAtPoint(registry.targets, isShown);
 

@@ -38,7 +38,7 @@ export interface FrameLayer {
  * The resting frames of "always" mode: one dashed rectangle per edit target, kept in place on
  * scroll, resize and layout changes. Frames never take pointer events.
  */
-export function createFrameLayer(isShown: IsShown): FrameLayer {
+export function createFrameLayer(root: Element, isShown: IsShown): FrameLayer {
   const layer = document.createElement("div");
   layer.dataset.veLayer = "frames";
   Object.assign(layer.style, {
@@ -81,6 +81,12 @@ export function createFrameLayer(isShown: IsShown): FrameLayer {
   resizes?.observe(document.documentElement);
   window.addEventListener("scroll", schedule, { capture: true, passive: true });
   window.addEventListener("resize", schedule, { passive: true });
+  window.addEventListener("transitionend", schedule, { capture: true, passive: true });
+  window.addEventListener("animationend", schedule, { capture: true, passive: true });
+  const restyles = new MutationObserver((records) => {
+    if (records.some(({ target }) => !layer.contains(target))) schedule();
+  });
+  restyles.observe(root, { attributeFilter: ["class", "style"], subtree: true });
 
   return {
     add(target) {
@@ -111,8 +117,11 @@ export function createFrameLayer(isShown: IsShown): FrameLayer {
     dispose() {
       if (frameRequest !== 0) cancelAnimationFrame(frameRequest);
       resizes?.disconnect();
+      restyles.disconnect();
       window.removeEventListener("scroll", schedule, true);
       window.removeEventListener("resize", schedule);
+      window.removeEventListener("transitionend", schedule, true);
+      window.removeEventListener("animationend", schedule, true);
       frames.clear();
       layer.remove();
     },

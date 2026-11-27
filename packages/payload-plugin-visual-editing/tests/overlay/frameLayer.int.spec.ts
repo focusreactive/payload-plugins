@@ -89,6 +89,59 @@ describe("resting frames", () => {
     vi.restoreAllMocks();
   });
 
+  describe("when the page reveals its text later without changing its size", () => {
+    const nextFrame = () => vi.advanceTimersByTimeAsync(20);
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.spyOn(main.querySelector("h1") as HTMLElement, "getBoundingClientRect").mockReturnValue(
+        new DOMRect(0, 0, 400, 40)
+      );
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.restoreAllMocks();
+    });
+
+    it("shows the frame once a class or a style reveals the text", async () => {
+      const heading = main.querySelector("h1") as HTMLElement;
+      heading.style.opacity = "0";
+      const overlay = createOverlay(main, () => overlayCtx({ mode: "always" }));
+      const frame = framesOnPage()[0] as HTMLElement;
+      const hiddenFirst = frame.style.display;
+
+      heading.style.opacity = "1";
+      await nextFrame();
+
+      expect([hiddenFirst, frame.style.display]).toEqual(["none", "block"]);
+      overlay.dispose();
+    });
+
+    it("hides the frame once a transition or an animation of the page ends", async () => {
+      const overlay = createOverlay(main, () => overlayCtx({ mode: "always" }));
+      const frame = framesOnPage()[0] as HTMLElement;
+      const shownFirst = frame.style.display;
+      const hiding = document.createElement("style");
+      hiding.textContent = "h1 { visibility: hidden; }";
+      document.head.append(hiding);
+
+      main.querySelector("h1")?.dispatchEvent(new Event("transitionend", { bubbles: true }));
+      await nextFrame();
+      const afterTransition = frame.style.display;
+      hiding.remove();
+      main.querySelector("h1")?.dispatchEvent(new Event("animationend", { bubbles: true }));
+      await nextFrame();
+
+      expect([shownFirst, afterTransition, frame.style.display]).toEqual([
+        "block",
+        "none",
+        "block",
+      ]);
+      overlay.dispose();
+    });
+  });
+
   it("draws no resting frames in hover mode", () => {
     const overlay = createOverlay(main, () => overlayCtx({ mode: "hover" }));
 
