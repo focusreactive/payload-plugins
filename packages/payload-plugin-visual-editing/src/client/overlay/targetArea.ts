@@ -38,8 +38,13 @@ const isDrawn = ({ height, width }: DOMRect): boolean => width > 0 || height > 0
 
 const CLIPPING_OVERFLOWS: ReadonlySet<string> = new Set(["auto", "clip", "hidden", "scroll"]);
 
-const holdsText = (target: HTMLElement): boolean =>
-  [...target.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && !isBlank(node));
+const holdsText = (target: HTMLElement): boolean => {
+  const texts = target.ownerDocument.createTreeWalker(target, NodeFilter.SHOW_TEXT);
+  while (texts.nextNode()) {
+    if (!isBlank(texts.currentNode)) return true;
+  }
+  return false;
+};
 
 const rangesOfDocuments = new WeakMap<Document, Range>();
 

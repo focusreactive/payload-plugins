@@ -114,6 +114,15 @@ describe("the rect of an edit target", () => {
     expect(boxOf(rectOf(title))).toEqual([0, 0, 200, 40]);
   });
 
+  it("holds the letters of a text that an element inside the target draws past its box", () => {
+    const words = document.createElement("span");
+    words.textContent = "A title longer than its card";
+    title.replaceChildren("\n  ", words, "\n");
+    textDrawnAt(new DOMRect(0, -5, 180, 30));
+
+    expect(boxOf(rectOf(title))).toEqual([0, -5, 200, 30]);
+  });
+
   it("measures no text of a target that holds none of its own", () => {
     const getClientRects = vi.fn(() => [new DOMRect(0, 0, 900, 900)]);
     Object.defineProperty(Range.prototype, "getClientRects", {
