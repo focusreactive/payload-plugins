@@ -416,6 +416,15 @@ describe("the transport of an edit", () => {
         expect(statuses).toEqual(["in-form", "saved"]);
       });
 
+      it("picked while text waits to be posted leaves the status unsaved", () => {
+        beginEdit(TITLE, "Shown").change("Hello");
+        transport.beginImageEdit(IMAGE, pageImage()).pickInTheDrawer();
+
+        postFromAdmin({ ...IMAGE, type: VE_MEDIA_PICKED_TYPE, url: LIGHTHOUSE.url, width: 640 });
+
+        expect(statuses).toEqual(["unsaved", "unsaved"]);
+      });
+
       it("refused by the drawer opens the field and holds no failure", () => {
         const image = pageImage();
         transport.beginImageEdit(IMAGE, image).pickInTheDrawer();

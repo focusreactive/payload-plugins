@@ -384,7 +384,7 @@ export function createEditTransport(
   const holdInForm = (field: VeEditedField) => {
     failed.delete(editedFieldAddressOf(field));
     unsavedInForm.set(editedFieldAddressOf(field), field);
-    report("in-form");
+    report(statusAfterASave());
   };
 
   const refuse = (field: VeEditedField, refusal: SaveRefusal) => {
