@@ -140,21 +140,29 @@ export const shownRichTextOf = (
 const holdsNoRowsYet = ({ steps, value }: Walked): boolean =>
   steps.length > 0 && (Array.isArray(value) || value === undefined || value === null);
 
-export const isRowNotSavedYet = (
+export const missingRowOf = (
   document: unknown,
   schema: EditableSchema,
   key: string
-): boolean => {
+): string | null => {
+  const segments = key.split(FIELD_PATH_SEPARATOR);
   let walked = startOf(document);
-  for (const segment of key.split(FIELD_PATH_SEPARATOR)) {
+  for (const [index, segment] of segments.entries()) {
     const next = Array.isArray(walked.value)
       ? intoRow(walked, segment)
       : intoField(walked, segment);
-    if (!next) return holdsNoRowsYet(walked) && holdsFieldsAt(schema, walked.steps);
+    if (!next) {
+      return holdsNoRowsYet(walked) && holdsFieldsAt(schema, walked.steps)
+        ? segments.slice(0, index + 1).join(FIELD_PATH_SEPARATOR)
+        : null;
+    }
     walked = next;
   }
-  return false;
+  return null;
 };
+
+export const holdsRowAt = (document: unknown, rowKey: string): boolean =>
+  walkTo(document, rowKey) !== null;
 
 export type RichTextEdit = {
   key: string;

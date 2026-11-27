@@ -201,6 +201,12 @@ export async function startRealPayload({
   const guardedBody: Field[] = canReadGuardedBody
     ? [
         { access: { read: canReadGuardedBody }, name: "guardedBody", type: "richText" },
+        {
+          access: { read: canReadGuardedBody },
+          fields: [{ name: "note", type: "richText" }],
+          name: "guardedGroup",
+          type: "group",
+        },
         { admin: { readOnly: true }, name: "lockedBody", type: "richText" },
         { hidden: true, name: "hiddenBody", type: "richText" },
         {

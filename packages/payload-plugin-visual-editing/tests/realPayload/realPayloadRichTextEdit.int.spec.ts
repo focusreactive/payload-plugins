@@ -240,6 +240,24 @@ describe("editing rich text through the endpoints", () => {
       }
     );
 
+    it("is not answered for a row another editor removed from the draft", async () => {
+      const docId = await create({ list: [{ label: "Row", note: richText("Note") }] });
+      const [row] = (await read(docId)).list as Row[];
+      await payload.update({ collection: "pages", data: { list: [] }, draft: true, id: docId });
+
+      const answer = await valueOf({ ...page(docId), key: `list.${row!.id}.note` });
+
+      expect(answer).toEqual({ reason: "not-editable", status: 422, value: null });
+    });
+
+    it("is not answered for a field of a group the user may not read", async () => {
+      const docId = await create({ guardedGroup: { note: richText("Guarded") } });
+
+      const answer = await valueOf({ ...page(docId), key: "guardedGroup.note" }, writer);
+
+      expect(answer).toEqual({ reason: "not-editable", status: 422, value: null });
+    });
+
     it("leaves out the fields of a block the user may not read", async () => {
       const docId = await create({ story: story() });
 
