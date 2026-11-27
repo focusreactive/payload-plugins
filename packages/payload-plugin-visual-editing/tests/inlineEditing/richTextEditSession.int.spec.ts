@@ -34,6 +34,7 @@ import {
   DATA_VE_OPAQUE_SELECTED_ATTR,
 } from "../../src/client/inlineEditing/richText/opaqueNode";
 import { DATA_VE_RICH_TEXT_TOOLBAR_ATTR } from "../../src/client/inlineEditing/richText/toolbar";
+import { DATA_VE_RENDERED_EMPTY_ATTR } from "../../src/client/inlineEditing/richTextTwin";
 import { DATA_VE_TOGGLE_ATTR } from "../../src/client/toggle";
 
 import { measureSelectionsAsEmpty } from "../support/selectionRects";
@@ -669,6 +670,15 @@ describe("one edit of rich text", () => {
 
       expect(lineOf("h2")).not.toBeNull();
       expect(isShown(lineOf("h2"))).toBe(false);
+    });
+
+    it("sends nothing to the form when it hides the line of a block the site renders empty", () => {
+      start(WITH_AN_EMPTY_HEADING, EVERY_FORMAT, {
+        rendered: renderedBy("<p>Before</p><h2></h2><p>After</p>"),
+      });
+
+      expect(twin.querySelector("h2")?.hasAttribute(DATA_VE_RENDERED_EMPTY_ATTR)).toBe(true);
+      expect(changes).toEqual([]);
     });
 
     it("keeps the line of a block the site renders with one", () => {
