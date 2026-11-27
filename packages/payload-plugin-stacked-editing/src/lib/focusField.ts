@@ -30,11 +30,16 @@ const fieldInTopPanel = (ownerId: string, path: string, depth: number): HTMLElem
 const focusableIn = (field: HTMLElement): HTMLElement | null =>
   field.matches(FOCUSABLE) ? field : field.querySelector<HTMLElement>(FOCUSABLE);
 
-// The preview iframe that was clicked can take focus back once its click finishes.
-const refocusIfPreviewTookFocus = (focusable: HTMLElement) =>
+const isFocusTakenFrom = (focusable: HTMLElement, active: Element | null) =>
+  active !== null &&
+  active !== focusable &&
+  (active === document.body ||
+    active.tagName === "IFRAME" ||
+    active.closest(`.${PANEL_BODY_CLASS}`) !== null);
+
+const refocusIfTakenAway = (focusable: HTMLElement) =>
   window.setTimeout(() => {
-    const active = document.activeElement;
-    if (active !== focusable && (active === document.body || active?.tagName === "IFRAME")) {
+    if (isFocusTakenFrom(focusable, document.activeElement)) {
       focusable.focus({ preventScroll: true });
     }
   }, REFOCUS_MS);
@@ -44,7 +49,7 @@ const revealAndFlash = (field: HTMLElement): number => {
   const focusable = focusableIn(field);
   if (focusable) {
     focusable.focus({ preventScroll: true });
-    refocusIfPreviewTookFocus(focusable);
+    refocusIfTakenAway(focusable);
   }
   restartAnimation(field, FLASH_CLASS);
   return window.setTimeout(() => field.classList.remove(FLASH_CLASS), FLASH_MS);
