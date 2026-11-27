@@ -214,6 +214,8 @@ export function createAdminEditChannel(win: Window, adminOrigin: () => string): 
   );
 
   const askedOfTheMediaApi = new Map<string, AskedOfTheMediaApi>();
+  const requestIdPrefix = Math.random().toString(36).slice(2);
+  let requestCount = 0;
 
   const settleMediaApiRequest = (requestId: string, answer: VeMediaApiAnswer) => {
     const asked = askedOfTheMediaApi.get(requestId);
@@ -229,7 +231,8 @@ export function createAdminEditChannel(win: Window, adminOrigin: () => string): 
         resolve(NO_ANSWER);
         return;
       }
-      const requestId = crypto.randomUUID();
+      requestCount += 1;
+      const requestId = `${requestIdPrefix}-${requestCount}`;
       const askedAt = Date.now();
       const watch = setInterval(() => {
         const isOverdue = Date.now() - askedAt >= MEDIA_API_TIME_LIMIT_MS;
@@ -278,8 +281,9 @@ export function createAdminEditChannel(win: Window, adminOrigin: () => string): 
   return {
     dispose() {
       stopHearing();
-      for (const { watch } of askedOfTheMediaApi.values()) clearInterval(watch);
-      askedOfTheMediaApi.clear();
+      for (const requestId of askedOfTheMediaApi.keys()) {
+        settleMediaApiRequest(requestId, NO_ANSWER);
+      }
       refusedEditListeners.clear();
       newsListeners.clear();
     },
