@@ -689,6 +689,7 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       edits.delete(textNode);
       if (edit && putBackWhatWasSetAside(edit.editedElement)) {
         textNode.remove();
+        if (texts.delete(textNode)) release([match]);
         return;
       }
       if (!edit || !holder || !held || !main.contains(edit.editedElement)) return;

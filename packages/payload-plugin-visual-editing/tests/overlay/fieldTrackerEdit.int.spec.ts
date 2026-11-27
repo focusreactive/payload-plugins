@@ -358,3 +358,38 @@ describe("a field the editor types into", () => {
     });
   });
 });
+
+describe("a heading split into elements and edited as one text", () => {
+  it("lets go of the text it edited as soon as the edit ends, ready to join the split again", async () => {
+    document.body.innerHTML = "";
+    const main = document.createElement("main");
+    const heading = document.createElement("h2");
+    heading.textContent = stega("How We");
+    main.append(heading);
+    document.body.append(main);
+    const tracker = createFieldTracker(main);
+    const onNodesReleased = vi.fn();
+    tracker.subscribe({ onFields: vi.fn(), onNodesReleased });
+    const words = ["How", "We"].map((word) => {
+      const element = document.createElement("span");
+      element.textContent = word;
+      return element;
+    });
+    heading.replaceChildren(words[0] as Node, " ", words[1] as Node);
+    await flushMutations();
+    onNodesReleased.mockClear();
+    const joined = tracker.joinSplitText(heading) as FieldMatch;
+    tracker.beginEdit(joined, {
+      onSetAside: vi.fn(),
+      onShownAgain: vi.fn(),
+      shownText: () => "How We",
+    });
+
+    tracker.endEdit(joined, "How We");
+
+    expect(onNodesReleased).toHaveBeenCalledWith([joined]);
+    expect(joined.textNode.isConnected).toBe(false);
+    expect(tracker.splitFieldOf(heading)).toBe(joined);
+    tracker.dispose();
+  });
+});
