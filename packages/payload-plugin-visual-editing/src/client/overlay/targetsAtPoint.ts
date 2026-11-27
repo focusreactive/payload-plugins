@@ -1,3 +1,5 @@
+import type { IsShown } from "./targetSelector.js";
+
 import { rectOf } from "./targetArea.js";
 
 type Point = { x: number; y: number };
@@ -32,7 +34,10 @@ const topmostOf = (hits: readonly HTMLElement[], point: Point): HTMLElement | nu
   });
 };
 
-export function createTargetsAtPoint(targets: () => HTMLElement[]): TargetsAtPoint {
+export function createTargetsAtPoint(
+  targets: () => HTMLElement[],
+  isShown: IsShown
+): TargetsAtPoint {
   let measured: Measured[] | null = null;
   let frameRequest = 0;
 
@@ -50,7 +55,9 @@ export function createTargetsAtPoint(targets: () => HTMLElement[]): TargetsAtPoi
 
   return {
     innermostAt(point) {
-      const hits = measure().flatMap(([target, rect]) => (holds(rect, point) ? [target] : []));
+      const hits = measure().flatMap(([target, rect]) =>
+        holds(rect, point) && isShown(target) ? [target] : []
+      );
       return topmostOf(
         hits.filter((hit) => !hits.some((other) => other !== hit && hit.contains(other))),
         point

@@ -110,15 +110,20 @@ export function createEditTargets(
 
   const registry = createTargetRegistry();
   const badge = createEditBadge();
+  const textsOfTargets = new WeakMap<HTMLElement, readonly Text[]>();
+  const isShown = (target: HTMLElement): boolean => {
+    const texts = textsOfTargets.get(target);
+    return texts === undefined || texts.some((text) => isDrawnText(text, target, main));
+  };
   const hover = createHoverController(
     badge,
     registry,
-    (target) => getCtx().actionOf?.(target) ?? null
+    (target) => getCtx().actionOf?.(target) ?? null,
+    isShown
   );
-  const frames = getCtx().mode === "always" ? createFrameLayer() : null;
+  const frames = getCtx().mode === "always" ? createFrameLayer(isShown) : null;
   const wrapperTargets = new Set<HTMLElement>();
-  const undrawnTexts = new WeakSet<HTMLElement>();
-  const targetsAtPoint = createTargetsAtPoint(registry.targets);
+  const targetsAtPoint = createTargetsAtPoint(registry.targets, isShown);
 
   const targetBeneath = (element: Element, event: MouseEvent): HTMLElement | null => {
     if (element.closest(INTERACTIVE)) return null;
@@ -129,12 +134,12 @@ export function createEditTargets(
   const targetUnder = (event: MouseEvent): HTMLElement | null => {
     const element = elementOf(event);
     if (!element) return null;
-    return findTargetAncestor(element) ?? targetBeneath(element, event);
+    return findTargetAncestor(element, isShown) ?? targetBeneath(element, event);
   };
 
   const hoverTargetBeneath = (event: MouseEvent) => {
     const element = elementOf(event);
-    if (!element || findTargetAncestor(element)) return;
+    if (!element || findTargetAncestor(element, isShown)) return;
     const control = element.closest(INTERACTIVE);
     const point = pointOf(event);
     if (!control) hover.point(targetBeneath(element, event));
@@ -173,17 +178,13 @@ export function createEditTargets(
     for (const { nodes, ctx: marker } of groupNodesByPath(fieldMatches)) {
       const target = pickTargetForGroup(nodes, main);
       if (!(target instanceof HTMLElement)) continue;
-      if (nodes.some((node) => isDrawnText(node, target, main))) {
-        undrawnTexts.delete(target);
-        registerTarget(target, marker);
-      } else {
-        undrawnTexts.add(target);
-      }
+      textsOfTargets.set(target, nodes);
+      registerTarget(target, marker);
     }
 
     for (const wrapper of pathWrappersIn(root)) {
       const marker = readMarkerFromAttrs(wrapper);
-      if (!marker || undrawnTexts.has(wrapper)) continue;
+      if (!marker) continue;
       registerTarget(wrapper, marker);
       wrapperTargets.add(wrapper);
     }

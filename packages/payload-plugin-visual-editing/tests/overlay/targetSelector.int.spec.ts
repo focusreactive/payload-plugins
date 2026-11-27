@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { findTargetAncestor, pickTargetForGroup } from "../../src/client/overlay/targetSelector";
 
+const isShown = () => true;
+
 describe("pickTargetForGroup", () => {
   let boundary: HTMLElement;
 
@@ -59,13 +61,13 @@ describe("findTargetAncestor", () => {
   it("returns null when no ancestor has the target attribute", () => {
     const el = document.createElement("span");
     document.body.append(el);
-    expect(findTargetAncestor(el)).toBeNull();
+    expect(findTargetAncestor(el, isShown)).toBeNull();
   });
 
   it("returns the nearest ancestor carrying data-ve-target", () => {
     document.body.innerHTML = `<section data-ve-target="body"><div><span id="leaf">x</span></div></section>`;
     const leaf = document.querySelector("#leaf")!;
     const section = document.querySelector("section")!;
-    expect(findTargetAncestor(leaf)).toBe(section);
+    expect(findTargetAncestor(leaf, isShown)).toBe(section);
   });
 });

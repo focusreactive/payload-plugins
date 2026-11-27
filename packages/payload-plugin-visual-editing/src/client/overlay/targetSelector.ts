@@ -16,10 +16,16 @@ function walkAncestors<T>(
   return null;
 }
 
-export function findTargetAncestor(el: Element | null): HTMLElement | null {
-  return walkAncestors(el, (cur) =>
-    cur instanceof HTMLElement && cur.hasAttribute(DATA_VE_TARGET_ATTR) ? cur : targetWithArea(cur)
-  );
+export type IsShown = (target: HTMLElement) => boolean;
+
+export function findTargetAncestor(el: Element | null, isShown: IsShown): HTMLElement | null {
+  return walkAncestors(el, (cur) => {
+    const target =
+      cur instanceof HTMLElement && cur.hasAttribute(DATA_VE_TARGET_ATTR)
+        ? cur
+        : targetWithArea(cur);
+    return target && isShown(target) ? target : null;
+  });
 }
 
 function findButtonOrAnchor(start: Element | null, boundary: Element): Element | null {

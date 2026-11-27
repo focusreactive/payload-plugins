@@ -1,3 +1,5 @@
+import type { IsShown } from "./targetSelector.js";
+
 import {
   DATA_VE_FRAME_ATTR,
   FRAME_IDLE_BORDER,
@@ -36,7 +38,7 @@ export interface FrameLayer {
  * The resting frames of "always" mode: one dashed rectangle per edit target, kept in place on
  * scroll, resize and layout changes. Frames never take pointer events.
  */
-export function createFrameLayer(): FrameLayer {
+export function createFrameLayer(isShown: IsShown): FrameLayer {
   const layer = document.createElement("div");
   layer.dataset.veLayer = "frames";
   Object.assign(layer.style, {
@@ -53,11 +55,20 @@ export function createFrameLayer(): FrameLayer {
   const frames = new Map<HTMLElement, HTMLElement>();
   let frameRequest = 0;
 
+  const place = (
+    frame: HTMLElement,
+    target: HTMLElement,
+    covers?: ReadonlyMap<Element, DOMRect>
+  ) => {
+    if (isShown(target)) placeFrame(frame, target, FRAME_IDLE_WIDTH, covers);
+    else frame.style.display = "none";
+  };
+
   const repositionAll = () => {
     frameRequest = 0;
     const covers = measureCovers();
     for (const [target, frame] of frames) {
-      placeFrame(frame, target, FRAME_IDLE_WIDTH, covers);
+      place(frame, target, covers);
     }
   };
 
@@ -86,7 +97,7 @@ export function createFrameLayer(): FrameLayer {
         pointerEvents: "none",
       } as Partial<CSSStyleDeclaration>);
       layer.append(frame);
-      placeFrame(frame, target, FRAME_IDLE_WIDTH);
+      place(frame, target);
       frames.set(target, frame);
       resizes?.observe(areaOf(target));
     },

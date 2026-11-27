@@ -4,6 +4,8 @@ import { DATA_VE_TARGET_ATTR } from "../../src/client/overlay/constants";
 import { areaOf, rectOf, targetWithArea } from "../../src/client/overlay/targetArea";
 import { findTargetAncestor } from "../../src/client/overlay/targetSelector";
 
+const isShown = () => true;
+
 describe("the area of an edit target", () => {
   let main: HTMLElement;
 
@@ -53,8 +55,8 @@ describe("the area of an edit target", () => {
     const heading = main.querySelector("h1") as HTMLElement;
 
     expect(targetWithArea(heading)).toBe(target);
-    expect(findTargetAncestor(heading)).toBe(target);
-    expect(findTargetAncestor(main.querySelector("div"))).toBeNull();
+    expect(findTargetAncestor(heading, isShown)).toBe(target);
+    expect(findTargetAncestor(main.querySelector("div"), isShown)).toBeNull();
   });
 });
 

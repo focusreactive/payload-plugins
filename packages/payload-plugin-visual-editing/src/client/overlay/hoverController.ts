@@ -1,5 +1,6 @@
 import type { ActionOf, EditBadge } from "./editBadge.js";
 import type { TargetRegistry } from "./targetRegistry.js";
+import type { IsShown } from "./targetSelector.js";
 
 import { areaOf } from "./targetArea.js";
 import { findTargetAncestor } from "./targetSelector.js";
@@ -14,12 +15,11 @@ export interface HoverController {
 
 const CLEAR_GRACE_MS = 250;
 
-const offersNoAction: ActionOf = () => null;
-
 export function createHoverController(
   badge: EditBadge,
   registry: TargetRegistry,
-  actionOf: ActionOf = offersNoAction
+  actionOf: ActionOf,
+  isShown: IsShown
 ): HoverController {
   const badgeElements: HTMLElement[] = [badge.labelElement, badge.actionElement];
   const isOfBadge = (element: Element): boolean =>
@@ -61,7 +61,7 @@ export function createHoverController(
     const related = event.relatedTarget as Element | null;
     if (related && areaOf(activeTarget).contains(related)) return;
     if (related && isOfBadge(related)) return;
-    const nextTarget = related ? findTargetAncestor(related) : null;
+    const nextTarget = related ? findTargetAncestor(related, isShown) : null;
     if (nextTarget) setActive(nextTarget);
     else scheduleClear();
   };
@@ -86,12 +86,14 @@ export function createHoverController(
   return {
     attach(target) {
       if (targetListeners.has(target)) return;
-      const enter = () => setActive(target);
+      const enter = () => {
+        if (isShown(target)) setActive(target);
+      };
       const leave = (event: MouseEvent) => {
         if (activeTarget !== target) return;
         const related = event.relatedTarget as Element | null;
         if (related && isOfBadge(related)) return;
-        const nextTarget = related ? findTargetAncestor(related) : null;
+        const nextTarget = related ? findTargetAncestor(related, isShown) : null;
         if (nextTarget) setActive(nextTarget);
         else scheduleClear();
       };

@@ -4,9 +4,11 @@ const HIDDEN_VISIBILITIES: ReadonlySet<string> = new Set(["hidden", "collapse"])
 const NO_FONT_SIZE = "0px";
 const NO_OPACITY = "0";
 const CLIP_RECT = /^rect\((.+)\)$/u;
-const INSET = /^inset\((\d+(?:\.\d+)?)%/u;
+const INSET = /^inset\(([^)]*)\)/u;
+const ROUND = /\sround\s/u;
+const PERCENT = "%";
 const AUTO_EDGE = "auto";
-const HALF_PERCENT = 50;
+const WHOLE_PERCENT = 100;
 const PIXEL = 1;
 
 const isClippedAway = (clip: string): boolean => {
@@ -18,9 +20,18 @@ const isClippedAway = (clip: string): boolean => {
   return top >= bottom || left >= right;
 };
 
+const percentOf = (edge: string): number =>
+  edge.endsWith(PERCENT) ? Number.parseFloat(edge) || 0 : 0;
+
 const isInsetAway = (clipPath: string): boolean => {
   const [, inset] = INSET.exec(clipPath.trim()) ?? [];
-  return inset !== undefined && Number(inset) >= HALF_PERCENT;
+  if (inset === undefined) return false;
+  const [edges = ""] = inset.split(ROUND);
+  const [top = 0, right = top, bottom = top, left = right] = edges
+    .trim()
+    .split(/\s+/u)
+    .map(percentOf);
+  return top + bottom >= WHOLE_PERCENT || left + right >= WHOLE_PERCENT;
 };
 
 const isAtMostAPixel = ({ height, width }: DOMRect): boolean => width <= PIXEL || height <= PIXEL;

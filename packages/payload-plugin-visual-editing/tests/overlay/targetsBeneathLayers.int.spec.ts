@@ -367,6 +367,79 @@ describe("a target beneath a layer that takes the pointer", () => {
 
       expect(badgeIsFor()).toBe("card.title");
     });
+
+    it("edits the title when the page clips its path only from the top", () => {
+      hidden.style.clipPath = "inset(50% 0 0 0)";
+      start();
+
+      link.dispatchEvent(new MouseEvent("mouseenter"));
+
+      expect(badgeIsFor()).toBe("card.title");
+    });
+
+    it.each([
+      ["fades it in", { opacity: "0" }, { opacity: "1" }],
+      ["makes it visible", { visibility: "hidden" }, { visibility: "visible" }],
+      ["reveals its clipped path", { clipPath: "inset(50%)" }, { clipPath: "none" }],
+    ])("edits the title once the page %s after it was found", (_, before, after) => {
+      Object.assign(hidden.style, before);
+      start();
+      Object.assign(hidden.style, after);
+
+      link.dispatchEvent(new MouseEvent("mouseenter"));
+      const event = click(hidden, AT);
+
+      expect(badgeIsFor()).toBe("card.title");
+      expect(open).toHaveBeenCalledTimes(1);
+      expect(event.defaultPrevented).toBe(true);
+    });
+
+    it("offers the image again once the page hides the title it showed", () => {
+      start();
+      hidden.style.opacity = "0";
+
+      pointerMovesOver(hidden);
+      const event = click(hidden, AT);
+
+      expect(badgeIsFor()).toBe("card.image");
+      expect(open).not.toHaveBeenCalled();
+      expect(event.defaultPrevented).toBe(false);
+    });
+  });
+
+  describe("with a heading the page reveals on scroll", () => {
+    let heading: HTMLElement;
+
+    beforeEach(() => {
+      heading = document.createElement("h2");
+      heading.style.opacity = "0";
+      heading.textContent = markedText("Revealed", {
+        collectionSlug: "page",
+        docId: "1",
+        kind: "collection",
+        path: "hero.title",
+      });
+      main.append(heading);
+      drawnAt(heading, new DOMRect(0, 0, 400, 60));
+      start();
+    });
+
+    it("leaves a click to the page while the heading is not shown", () => {
+      const event = click(heading, AT);
+
+      expect(open).not.toHaveBeenCalled();
+      expect(event.defaultPrevented).toBe(false);
+    });
+
+    it("edits the heading once it is shown", () => {
+      heading.style.opacity = "1";
+
+      heading.dispatchEvent(new MouseEvent("mouseenter"));
+      click(heading, AT);
+
+      expect(badgeIsFor()).toBe("hero.title");
+      expect(open).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("among targets drawn over each other", () => {
