@@ -119,7 +119,9 @@ export function VisualEditingProvider({
     );
     return {
       ...session,
-      buildImageUrl: hasBuildImageUrl ? (media) => latestBuildImageUrl.current?.(media) : undefined,
+      buildImageUrl: hasBuildImageUrl
+        ? (media, size) => latestBuildImageUrl.current?.(media, size)
+        : undefined,
       onEdited: () => latestOnEdited.current?.(),
       richTextEditor: hasRichTextEditor
         ? () => latestRichTextEditor.current?.() ?? Promise.reject(new Error(NO_EDITOR))

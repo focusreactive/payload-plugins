@@ -4,8 +4,9 @@ import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { PickedMedia } from "../../src/client";
+import type { BuildImageUrl, PickedMedia } from "../../src/client";
 
+import { THUMBNAIL_SIZE } from "../../src/client/inlineEditing/imageReplacement";
 import { DATA_VE_MEDIA_PICKER_ATTR } from "../../src/client/inlineEditing/mediaPicker";
 import { DATA_VE_ACTION_ATTR } from "../../src/client/overlay/constants";
 import { VisualEditingOverlay } from "../../src/client/react/VisualEditingOverlay";
@@ -81,7 +82,7 @@ describe("the address a site gives a picked image", () => {
   describe("through the React provider", () => {
     let root: Root;
 
-    const render = (src?: (media: PickedMedia) => string | undefined) =>
+    const render = (src?: BuildImageUrl) =>
       act(() =>
         root.render(
           <VisualEditingProvider
@@ -111,6 +112,19 @@ describe("the address a site gives a picked image", () => {
       await pickLighthouse();
 
       expect(shownImage().getAttribute("src")).toBe(SITE_IMAGE);
+    });
+
+    it("shows the thumbnails of the picker at the address it gives for a thumbnail", async () => {
+      render(({ url }, size) => `/images?url=${url}&width=${size?.width}`);
+      await act(() => vi.advanceTimersByTimeAsync(0));
+      shownImage().dispatchEvent(new MouseEvent("mouseenter"));
+      click(document.querySelector(`[${DATA_VE_ACTION_ATTR}]`) as HTMLElement);
+      await act(() => vi.advanceTimersByTimeAsync(0));
+
+      const picker = document.querySelector(`[${DATA_VE_MEDIA_PICKER_ATTR}]`)?.shadowRoot;
+      expect(picker?.querySelector(".grid img")?.getAttribute("src")).toBe(
+        `/images?url=${LIGHTHOUSE.thumbnailUrl}&width=${THUMBNAIL_SIZE.width}`
+      );
     });
 
     it("shows it at the address of the API when the option gives none", async () => {

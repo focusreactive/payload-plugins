@@ -1,4 +1,4 @@
-import type { VeEditedField, VePickedMedia } from "../../shared/protocol.js";
+import type { VeEditedField, VeMediaOption, VePickedMedia } from "../../shared/protocol.js";
 import type { BadgeAction } from "../overlay/editBadge.js";
 import type { FieldTracker } from "../overlay/fieldTracker.js";
 import type { ImageEdit, ShownImage } from "./editTransport.js";
@@ -36,6 +36,8 @@ export interface ImageReplacement {
 
 export const REPLACE_IMAGE_LABEL = "Replace image";
 
+export const THUMBNAIL_SIZE = { width: 320 } as const;
+
 type ReplaceableImage = {
   field: VeEditedField;
   image: HTMLImageElement;
@@ -61,7 +63,10 @@ export function createImageReplacement({
 }: ImageReplacementOptions): ImageReplacement {
   const trackedTexts = new Set<Text>();
   const urlOf = (url: string) => absoluteUrlOf(url, getCtx().payloadApi);
-  const picker = createMediaPicker(document, createMediaLibrary(mediaApiOf), urlOf);
+  const thumbnailSrcOf = (media: VeMediaOption) =>
+    getCtx().buildImageUrl?.({ ...media, url: media.thumbnailUrl }, THUMBNAIL_SIZE) ??
+    urlOf(media.thumbnailUrl);
+  const picker = createMediaPicker(document, createMediaLibrary(mediaApiOf), thumbnailSrcOf);
 
   const stopTracking = tracker.subscribe({
     onFields: (_root, matches) => {

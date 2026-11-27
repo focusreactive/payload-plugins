@@ -125,7 +125,11 @@ describe("the media picker of a page of its own", () => {
     upload = vi.fn<MediaLibrary["upload"]>();
     onUse = vi.fn();
     onRefused = vi.fn();
-    picker = createMediaPicker(document, { list, upload }, (url) => `${CMS}${url}`);
+    picker = createMediaPicker(
+      document,
+      { list, upload },
+      ({ thumbnailUrl }) => `${CMS}${thumbnailUrl}`
+    );
   });
 
   afterEach(() => {
@@ -411,6 +415,19 @@ describe("the media picker of a page of its own", () => {
 
       button("use").click();
       expect(onUse).toHaveBeenCalledWith(PIER);
+    });
+
+    it("shows the uploaded document at the address of its thumbnail", async () => {
+      const held = heldAnswer<VeMediaOptions>();
+      upload.mockResolvedValue({ media: PIER });
+      await open();
+      list.mockReturnValue(held.promise);
+
+      chooseFile(file);
+      await flushMutations();
+
+      const thumbnail = options()[0]!.querySelector("img") as HTMLImageElement;
+      expect(thumbnail.getAttribute("src")).toBe(`${CMS}/api/media/file/pier-small.jpg`);
     });
 
     it("puts the focus on the uploaded document, and keeps it there when the list arrives", async () => {

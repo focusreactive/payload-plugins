@@ -4,8 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Overlay, OverlayCtx } from "../../src/client/createOverlay";
 
+import type { ImageSize } from "../../src/client/inlineEditing/shownImage";
+
 import { createOverlay } from "../../src/client/createOverlay";
 import { MEDIA_API_TIME_LIMIT_MS } from "../../src/client/inlineEditing/adminEditChannel";
+import { THUMBNAIL_SIZE } from "../../src/client/inlineEditing/imageReplacement";
 import { DATA_VE_MEDIA_PICKER_ATTR } from "../../src/client/inlineEditing/mediaPicker";
 import { DATA_VE_SAVE_STATUS_ATTR } from "../../src/client/inlineEditing/saveStatus";
 import { DATA_VE_ACTION_ATTR } from "../../src/client/overlay/constants";
@@ -364,6 +367,59 @@ describe("replacing an image on the page", () => {
 
       expect(image.getAttribute("src")).toBe("/images/lighthouse.jpg?width=1080");
       expect(buildImageUrl).toHaveBeenCalledWith(expect.objectContaining(LIGHTHOUSE));
+    });
+
+    describe("the thumbnails of the picker", () => {
+      const openPicker = async () => {
+        offersReplacement(image);
+        click(actionButton());
+        await flushMutations();
+      };
+
+      const thumbnailSrc = () => picker()?.querySelector(".grid img")?.getAttribute("src");
+
+      it("are at the address the site gives for the thumbnail of the media, at the size of a thumbnail", async () => {
+        const buildImageUrl = vi.fn(
+          ({ url }: { url: string }, size?: ImageSize) =>
+            `/_image?url=${encodeURIComponent(url)}&w=${size?.width ?? 1920}`
+        );
+        ctx = { ...ctx, buildImageUrl };
+
+        await openPicker();
+
+        expect(thumbnailSrc()).toBe(
+          `/_image?url=${encodeURIComponent(LIGHTHOUSE.thumbnailUrl)}&w=${THUMBNAIL_SIZE.width}`
+        );
+        expect(buildImageUrl).toHaveBeenCalledWith(
+          { ...LIGHTHOUSE, url: LIGHTHOUSE.thumbnailUrl },
+          THUMBNAIL_SIZE
+        );
+      });
+
+      it("are at the address of the API when the site gives none", async () => {
+        ctx = { ...ctx, buildImageUrl: () => undefined };
+
+        await openPicker();
+
+        expect(thumbnailSrc()).toBe(`${CMS}/api/media/file/lighthouse-small.jpg`);
+      });
+
+      it("are at the address of the API without the option", async () => {
+        await openPicker();
+
+        expect(thumbnailSrc()).toBe(`${CMS}/api/media/file/lighthouse-small.jpg`);
+      });
+
+      it("leave the picked image on the page at the full address the site gives", async () => {
+        ctx = {
+          ...ctx,
+          buildImageUrl: ({ url }, size) => `/_image?url=${url}&w=${size?.width ?? 1920}`,
+        };
+
+        await useLighthouse();
+
+        expect(image.getAttribute("src")).toBe("/_image?url=/api/media/file/lighthouse.jpg&w=1920");
+      });
     });
 
     it("names the media the page shows as the one the save began from", async () => {

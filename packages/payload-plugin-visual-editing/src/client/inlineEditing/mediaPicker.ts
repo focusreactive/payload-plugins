@@ -263,7 +263,7 @@ const withSelectedListed = (
 export function createMediaPicker(
   doc: Document,
   library: MediaLibrary,
-  absoluteUrlOf: (url: string) => string
+  thumbnailSrcOf: (media: VeMediaOption) => string
 ): MediaPicker {
   let pick: OpenPick | null = null;
 
@@ -302,7 +302,7 @@ export function createMediaPicker(
     const thumbnail = doc.createElement("img");
     thumbnail.loading = "lazy";
     thumbnail.alt = media.alt ?? "";
-    thumbnail.src = absoluteUrlOf(media.thumbnailUrl);
+    thumbnail.src = thumbnailSrcOf(media);
     const name = doc.createElement("span");
     name.textContent = media.filename;
     option.append(thumbnail, name);
