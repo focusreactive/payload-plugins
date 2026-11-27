@@ -1,3 +1,15 @@
+# @focus-reactive/payload-plugin-analytics [1.3.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-analytics@1.2.2...@focus-reactive/payload-plugin-analytics@1.3.0) (2026-11-27)
+
+
+### Bug Fixes
+
+* **analytics:** keep the admin components registered without GA4 credentials ([6df1471](https://github.com/focusreactive/payload-plugins/commit/6df14714198c6e675de87df3a198d7ec6be3b5fe))
+
+
+### Features
+
+* **analytics:** hide the admin view and header link from users the access rule refuses ([df1afa6](https://github.com/focusreactive/payload-plugins/commit/df1afa6dc849ee9a84b552330d1151149b1b9d7e))
+
 ## @focus-reactive/payload-plugin-analytics [1.2.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-analytics@1.2.1...@focus-reactive/payload-plugin-analytics@1.2.2) (2026-07-08)
 
 
