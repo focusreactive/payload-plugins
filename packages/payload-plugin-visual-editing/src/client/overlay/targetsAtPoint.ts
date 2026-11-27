@@ -2,7 +2,7 @@ import type { IsShown } from "./targetSelector.js";
 
 import { rectOf } from "./targetArea.js";
 
-type Point = { x: number; y: number };
+export type Point = { x: number; y: number };
 
 type Measured = readonly [HTMLElement, DOMRect];
 

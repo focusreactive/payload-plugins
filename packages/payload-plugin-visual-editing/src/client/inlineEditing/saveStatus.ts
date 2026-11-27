@@ -2,6 +2,7 @@ import type { SaveRefusal } from "../../shared/fieldEdit.js";
 import type { EditStatus } from "./editTransport.js";
 
 import { CHANGED_ELSEWHERE, SAVE_FAILED } from "../../shared/fieldEdit.js";
+import { DATA_VE_LAYER_ATTR } from "../overlay/constants.js";
 
 export interface SaveStatus {
   show(status: EditStatus, refusal?: SaveRefusal): void;
@@ -122,6 +123,7 @@ export function createSaveStatus(
   const mount = (): HTMLElement => {
     const mounted = doc.createElement("div");
     mounted.setAttribute(DATA_VE_SAVE_STATUS_ATTR, "");
+    mounted.setAttribute(DATA_VE_LAYER_ATTR, "status");
     const shadow = mounted.attachShadow({ mode: "open" });
     shadow.innerHTML = TEMPLATE;
     shadow.querySelector("button")?.addEventListener("click", () => {

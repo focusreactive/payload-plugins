@@ -5,6 +5,7 @@ import {
   ACTION_STYLES,
   DATA_VE_ACTION_ATTR,
   DATA_VE_FOR_ATTR,
+  DATA_VE_LAYER_ATTR,
   DATA_VE_TARGET_ATTR,
   LABEL_CLASS,
   LABEL_ICON_SVG,
@@ -46,7 +47,7 @@ const insetInView = (start: number, size: number, actionSize: number): number =>
 
 export function createEditBadge(): EditBadge {
   const layer = document.createElement("div");
-  layer.dataset.veLayer = "true";
+  layer.setAttribute(DATA_VE_LAYER_ATTR, "badge");
   Object.assign(layer.style, {
     position: "fixed",
     top: "0",

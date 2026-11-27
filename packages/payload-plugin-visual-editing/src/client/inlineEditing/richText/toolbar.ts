@@ -9,6 +9,7 @@ import {
   UNDERLINE_FORMAT,
 } from "../../../shared/richText/formats.js";
 import { isAllowedLinkUrl, linkUrlOf } from "../../../shared/richText/linkUrls.js";
+import { DATA_VE_LAYER_ATTR } from "../../overlay/constants.js";
 import { zoomOf } from "../../overlay/zoom.js";
 import { DATA_VE_TOGGLE_ATTR } from "../../toggle.js";
 
@@ -241,6 +242,7 @@ export function createToolbar(
 ): Toolbar {
   const host = doc.createElement("div");
   host.setAttribute(DATA_VE_RICH_TEXT_TOOLBAR_ATTR, "");
+  host.setAttribute(DATA_VE_LAYER_ATTR, "toolbar");
   host.style.display = HIDDEN_DISPLAY;
   const shadow = host.attachShadow({ mode: "open" });
   shadow.innerHTML = TEMPLATE;

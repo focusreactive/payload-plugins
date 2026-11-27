@@ -1,11 +1,12 @@
 import type { ActionOf } from "./editBadge.js";
 import type { FieldMatch, FieldTracker } from "./fieldTracker.js";
 import type { Marker } from "./markerExtractor.js";
+import type { Point } from "./targetsAtPoint.js";
 import type { TargetConfig, TargetRegistryCtx } from "./targetRegistry.js";
 
 import { DATA_VE_PATH_ATTR } from "../../shared/protocol.js";
 import { documentAddressOf } from "../../shared/veDocument.js";
-import { LABEL_CLASS } from "./constants.js";
+import { DATA_VE_LAYER_ATTR, LABEL_CLASS } from "./constants.js";
 import { isDrawnText } from "./drawnText.js";
 import { createEditBadge } from "./editBadge.js";
 import { createFrameLayer } from "./frameLayer.js";
@@ -56,9 +57,7 @@ const holdsContent = (element: Element): boolean =>
 const isPassedThrough = (element: Element, target: HTMLElement): boolean =>
   element.contains(target) || !holdsContent(element);
 
-const pointOf = (event: MouseEvent) => ({ x: event.clientX, y: event.clientY });
-
-type Point = ReturnType<typeof pointOf>;
+const pointOf = (event: MouseEvent): Point => ({ x: event.clientX, y: event.clientY });
 
 const mediaOf = (control: Element): Element[] =>
   control.matches(MEDIA) ? [control] : Array.from(control.querySelectorAll(MEDIA));
@@ -106,6 +105,9 @@ const drawsAt = (control: Element, point: Point): boolean =>
 const elementOf = (event: MouseEvent): Element | null =>
   event.target instanceof Element ? event.target : null;
 
+const isOfTheOverlay = (element: Element): boolean =>
+  element.closest(`[${DATA_VE_LAYER_ATTR}]`) !== null;
+
 const isRepeatedClick = (event: MouseEvent) => event.detail > 1;
 
 const addressesSameField = (bound: TargetConfig, marker: Marker) =>
@@ -150,25 +152,35 @@ export function createEditTargets(
   const wrapperTargets = new Set<HTMLElement>();
   const targetsAtPoint = createTargetsAtPoint(registry.targets, isShownInThisFrame);
 
-  const targetBeneath = (element: Element, event: MouseEvent): HTMLElement | null => {
+  const targetBeneath = (element: Element, point: Point): HTMLElement | null => {
     if (element.closest(INTERACTIVE)) return null;
-    const target = targetsAtPoint.innermostAt(pointOf(event));
+    const target = targetsAtPoint.innermostAt(point);
     return target && isPassedThrough(element, target) ? target : null;
   };
 
   const targetUnder = (event: MouseEvent): HTMLElement | null => {
     const element = elementOf(event);
-    if (!element) return null;
-    return findTargetAncestor(element, isShown) ?? targetBeneath(element, event);
+    if (!element || isOfTheOverlay(element)) return null;
+    return findTargetAncestor(element, isShown) ?? targetBeneath(element, pointOf(event));
+  };
+
+  const hoveredTarget = (element: Element, point: Point): HTMLElement | null => {
+    const ancestor = findTargetAncestor(element, isShown);
+    if (ancestor) return ancestor;
+    const control = element.closest(INTERACTIVE);
+    if (!control) return targetBeneath(element, point);
+    return drawsAt(control, point) ? null : targetsAtPoint.innermostAt(point);
   };
 
   const hoverTargetBeneath = (event: MouseEvent) => {
     const element = elementOf(event);
-    if (!element || findTargetAncestor(element, isShown)) return;
-    const control = element.closest(INTERACTIVE);
+    if (!element) return;
+    if (isOfTheOverlay(element)) {
+      hover.pointAtLayer(element);
+      return;
+    }
     const point = pointOf(event);
-    if (!control) hover.point(targetBeneath(element, event));
-    else hover.point(drawsAt(control, point) ? null : targetsAtPoint.innermostAt(point));
+    hover.point(hoveredTarget(element, point), point);
   };
 
   const registerTarget = (target: HTMLElement, marker: Marker) => {

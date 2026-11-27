@@ -1,6 +1,7 @@
 import type { VeEditedField, VeMediaOption } from "../../shared/protocol.js";
 import type { MediaLibrary } from "./mediaLibrary.js";
 
+import { DATA_VE_LAYER_ATTR } from "../overlay/constants.js";
 import { FIELD_REFUSED } from "./mediaLibrary.js";
 
 export interface MediaPicker {
@@ -427,6 +428,7 @@ export function createMediaPicker(
   ): OpenPick => {
     const host = doc.createElement("div");
     host.setAttribute(DATA_VE_MEDIA_PICKER_ATTR, "");
+    host.setAttribute(DATA_VE_LAYER_ATTR, "media-picker");
     const shadow = host.attachShadow({ mode: "open" });
     shadow.innerHTML = TEMPLATE;
     const open: OpenPick = {

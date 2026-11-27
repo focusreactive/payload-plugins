@@ -1,5 +1,6 @@
 import type { VisualEditingMode } from "./visualEditingMode.js";
 
+import { DATA_VE_LAYER_ATTR } from "./overlay/constants.js";
 import { zoomOf } from "./overlay/zoom.js";
 import { VISUAL_EDITING_MODES } from "./visualEditingMode.js";
 
@@ -226,6 +227,7 @@ const isMode = (value: string | undefined): value is VisualEditingMode =>
 export function createToggle(doc: Document, onSelect: (mode: VisualEditingMode) => void): Toggle {
   const host = doc.createElement("div");
   host.setAttribute(DATA_VE_TOGGLE_ATTR, "");
+  host.setAttribute(DATA_VE_LAYER_ATTR, "toggle");
   const shadow = host.attachShadow({ mode: "open" });
   shadow.innerHTML = TEMPLATE;
   const buttons = [...shadow.querySelectorAll<HTMLButtonElement>("button")];

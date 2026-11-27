@@ -1,6 +1,7 @@
 export const DATA_VE_TARGET_ATTR = "data-ve-target";
 export const DATA_VE_FOR_ATTR = "data-ve-for";
 export const LABEL_CLASS = "ve-edit-label";
+export const DATA_VE_LAYER_ATTR = "data-ve-layer";
 
 export const isOverlayLabel = (node: Node): boolean =>
   node instanceof Element && node.classList.contains(LABEL_CLASS);

@@ -2,6 +2,7 @@ import type { ShownInAFrame } from "./targetSelector.js";
 
 import {
   DATA_VE_FRAME_ATTR,
+  DATA_VE_LAYER_ATTR,
   FRAME_IDLE_BORDER,
   FRAME_IDLE_WIDTH,
   FRAME_RADIUS,
@@ -40,7 +41,7 @@ export interface FrameLayer {
  */
 export function createFrameLayer(root: Element, isShown: ShownInAFrame): FrameLayer {
   const layer = document.createElement("div");
-  layer.dataset.veLayer = "frames";
+  layer.setAttribute(DATA_VE_LAYER_ATTR, "frames");
   Object.assign(layer.style, {
     position: "fixed",
     top: "0",
