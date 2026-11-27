@@ -27,16 +27,42 @@ const commonAncestorOf = (one: Element, other: Element): Element | null => {
   return ancestor;
 };
 
+const STACKING_POSITIONS: ReadonlySet<string> = new Set(["fixed", "sticky"]);
+const FLEX_OR_GRID = /(?:flex|grid)$/u;
+const STACKING_WILL_CHANGE = /transform|opacity|filter|isolation|perspective|z-index|position/u;
+const STACKING_CONTAIN = /layout|paint|strict|content/u;
+const AUTO = "auto";
+const NONE = "none";
+const ISOLATE = "isolate";
+
+const isSet = (value: string): boolean => value !== "" && value !== NONE;
+
+const createsStackingContext = (style: CSSStyleDeclaration, parent: CSSStyleDeclaration | null) =>
+  (style.zIndex !== AUTO &&
+    (POSITIONED.has(style.position) || FLEX_OR_GRID.test(parent?.display ?? ""))) ||
+  STACKING_POSITIONS.has(style.position) ||
+  Number.parseFloat(style.opacity) < 1 ||
+  isSet(style.transform) ||
+  isSet(style.filter) ||
+  style.isolation === ISOLATE ||
+  STACKING_WILL_CHANGE.test(style.willChange) ||
+  STACKING_CONTAIN.test(style.contain);
+
 const stackingOf = (element: Element, below: Element | null): Stacking => {
   const view = element.ownerDocument.defaultView;
+  if (!view) return [0, 0];
+  let stacking: Stacking = [0, 0];
   for (let current: Element | null = element; current && current !== below; ) {
-    const style = view?.getComputedStyle(current);
-    if (style && POSITIONED.has(style.position)) {
-      return [Number.parseInt(style.zIndex, 10) || 0, 1];
+    const style = view.getComputedStyle(current);
+    const parent = current.parentElement ? view.getComputedStyle(current.parentElement) : null;
+    if (createsStackingContext(style, parent)) {
+      stacking = [Number.parseInt(style.zIndex, 10) || 0, 1];
+    } else if (POSITIONED.has(style.position)) {
+      stacking = [stacking[0], 1];
     }
     current = current.parentElement;
   }
-  return [0, 0];
+  return stacking;
 };
 
 const stackedAbove = (one: HTMLElement, other: HTMLElement): number => {

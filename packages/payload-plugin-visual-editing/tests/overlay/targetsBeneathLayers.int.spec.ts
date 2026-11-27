@@ -593,6 +593,24 @@ describe("a target beneath a layer that takes the pointer", () => {
 
       expect(badgeIsFor()).toBe("hero.caption");
     });
+
+    it("takes the one inside a layer stacked on top, however deep in that layer it sits", () => {
+      const raised = document.createElement("div");
+      Object.assign(raised.style, { position: "absolute", zIndex: "10" });
+      const holder = document.createElement("div");
+      holder.style.position = "relative";
+      image.before(raised);
+      raised.append(holder);
+      holder.append(image);
+      image.style.pointerEvents = "none";
+      Object.assign(caption.style, { pointerEvents: "", position: "relative", zIndex: "1" });
+      paintedFromTheTop(layer, caption, image);
+      start();
+
+      pointerMovesOver(layer);
+
+      expect(badgeIsFor()).toBe("hero.image");
+    });
   });
 
   describe("in a card that cuts off the text of its title", () => {
