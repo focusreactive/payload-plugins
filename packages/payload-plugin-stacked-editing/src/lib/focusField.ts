@@ -37,12 +37,26 @@ const isFocusTakenFrom = (focusable: HTMLElement, active: Element | null) =>
     active.tagName === "IFRAME" ||
     active.closest(`.${PANEL_BODY_CLASS}`) !== null);
 
-const refocusIfTakenAway = (focusable: HTMLElement) =>
-  window.setTimeout(() => {
+const refocusIfTakenAway = (focusable: HTMLElement) => {
+  const userAction = new AbortController();
+  const timer = window.setTimeout(() => {
+    userAction.abort();
     if (isFocusTakenFrom(focusable, document.activeElement)) {
       focusable.focus({ preventScroll: true });
     }
   }, REFOCUS_MS);
+  const cancel = () => {
+    window.clearTimeout(timer);
+    userAction.abort();
+  };
+  for (const type of ["pointerdown", "keydown"]) {
+    document.addEventListener(type, cancel, {
+      capture: true,
+      once: true,
+      signal: userAction.signal,
+    });
+  }
+};
 
 const revealAndFlash = (field: HTMLElement): number => {
   field.scrollIntoView({ behavior: "smooth", block: "center" });
