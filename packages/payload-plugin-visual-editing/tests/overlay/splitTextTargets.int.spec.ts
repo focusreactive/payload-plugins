@@ -341,6 +341,28 @@ describe("a heading a site script splits into an element per letter, edited on t
     expect(caret()).toEqual([edited, "How X".length]);
   });
 
+  it("keeps the typed text and hides the split again when its owner renders it again from the text it had before the edit", async () => {
+    const letters = splitIntoLetters(heading);
+    await flushMutations();
+    clickedAt(letters[3] as Text);
+    click(letters[3]?.parentElement as Element);
+    const edited = heading.firstChild as Text;
+    edited.insertData("How ".length, "X");
+    document.getSelection()?.collapse(edited, "How X".length);
+    heading.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText" }));
+
+    heading.replaceChildren("How We Deliver");
+    const rendered = splitIntoLetters(heading);
+    await flushMutations();
+
+    expect(heading.firstChild).toBe(edited);
+    expect(shownText()).toBe("How XWe Deliver");
+    expect(caret()).toEqual([edited, "How X".length]);
+    expect(
+      rendered.every((letter) => letter.parentElement?.parentElement?.style.display === "none")
+    ).toBe(true);
+  });
+
   it("keeps the text and the caret of an edit that began before the script split the heading", async () => {
     click(heading);
     const edited = heading.firstChild as Text;

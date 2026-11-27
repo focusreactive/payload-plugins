@@ -483,9 +483,10 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     const { editedElement } = edit;
     if (tracked.match?.holder !== editedElement || sharedHolders.has(editedElement)) return false;
     const shown = `${edit.before}${edit.shownText()}${edit.after}`;
-    if (!main.contains(editedElement) || !isSplitIntoPlainElements(editedElement, shown)) {
-      return false;
-    }
+    const isSplit =
+      isSplitIntoPlainElements(editedElement, withoutMarker(tracked.original)) ||
+      isSplitIntoPlainElements(editedElement, shown);
+    if (!main.contains(editedElement) || !isSplit) return false;
     const nodes = setAside(editedElement, textNode);
     for (const node of nodes) edit.present.add(node);
     edit.onSetAside(nodes);
