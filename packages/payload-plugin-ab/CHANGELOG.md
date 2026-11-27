@@ -1,3 +1,12 @@
+## @focus-reactive/payload-plugin-ab [2.11.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.11.0...@focus-reactive/payload-plugin-ab@2.11.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* **ab:** create variants of draft pages as drafts ([63fb3ec](https://github.com/focusreactive/payload-plugins/commit/63fb3ec3fe09d62ec1f3ee9e8803bf05f6b8c532))
+* **ab:** drop running-state explanation from the A/B test panel ([9ea497e](https://github.com/focusreactive/payload-plugins/commit/9ea497e01282d34356377290504664f58447bb9f))
+* **ab:** native primary button and field spacing in the A/B test panel ([c1d15b5](https://github.com/focusreactive/payload-plugins/commit/c1d15b58fcbcb6c073d1a85a3cbd94e762710d51))
+
 # @focus-reactive/payload-plugin-ab [2.11.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.10.1...@focus-reactive/payload-plugin-ab@2.11.0) (2026-11-17)
 
 
