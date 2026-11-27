@@ -530,9 +530,9 @@ export function createEditTransport(
       const opened = open(field);
       return {
         pickInTheDrawer() {
-          const drawerWindow = routes.drawerOf(field);
-          if (!drawerWindow) return false;
-          askAdmin(drawerWindow, field, image);
+          const adminWindow = adminOf(field);
+          if (!adminWindow) return false;
+          askAdmin(adminWindow, field, image);
           close(opened);
           return true;
         },

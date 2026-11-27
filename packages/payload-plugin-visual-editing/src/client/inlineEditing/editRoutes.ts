@@ -16,7 +16,6 @@ export interface EditRoutes {
   pin(field: VeEditedField): void;
   releaseFinished(isFinished: IsFinished): void;
   adminOf(field: VeEditedField): Window | null;
-  drawerOf(field: VeEditedField): Window | null;
 }
 
 type PinnedRoute = { field: VeEditedField; admin: Window | null };
@@ -39,9 +38,6 @@ export function createEditRoutes({ holdsAnyForm, win }: EditRoutesDeps): EditRou
   return {
     adminOf,
     currentAdmin,
-    drawerOf(field) {
-      return isFramedByAdmin(win) ? adminOf(field) : null;
-    },
     pin(field) {
       pinnedRoutes.set(editedFieldAddressOf(field), { admin: currentAdmin(), field });
     },

@@ -667,11 +667,16 @@ describe("the transport of an edit", () => {
       expect(statuses.at(-1)).toBe("saved");
     });
 
-    it("asks no drawer of a window it is not framed by", () => {
+    it("asks the drawer of the admin that opened it once the admin holds a form", () => {
+      expect(transport.beginImageEdit(IMAGE, pageImage()).pickInTheDrawer()).toBe(false);
+
       holdsAnyForm = true;
 
-      expect(transport.beginImageEdit(IMAGE, pageImage()).pickInTheDrawer()).toBe(false);
-      expect(admin.postMessage).not.toHaveBeenCalled();
+      expect(transport.beginImageEdit(IMAGE, pageImage()).pickInTheDrawer()).toBe(true);
+      expect(admin.postMessage).toHaveBeenCalledWith(
+        { ...IMAGE, type: VE_PICK_MEDIA_TYPE },
+        expect.any(String)
+      );
     });
   });
 

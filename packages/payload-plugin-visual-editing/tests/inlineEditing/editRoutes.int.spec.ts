@@ -131,26 +131,4 @@ describe("the routes of the edits of a page", () => {
       expect(routes.adminOf(BODY)).toBeNull();
     });
   });
-
-  describe("the drawer of the admin", () => {
-    it("is the window that frames the page, as the edit began with it", () => {
-      const page = framedPage(adminWindow());
-      const routes = routesOf(page);
-      routes.pin(TITLE);
-      const admin = page.parent;
-
-      expect(routes.drawerOf(TITLE)).toBe(admin);
-
-      page.parent = adminWindow();
-
-      expect(routes.drawerOf(TITLE)).toBeNull();
-    });
-
-    it("is none in a window the admin opened", () => {
-      const routes = routesOf(pageOpenedBy(adminWindow()), () => true);
-      routes.pin(TITLE);
-
-      expect(routes.drawerOf(TITLE)).toBeNull();
-    });
-  });
 });

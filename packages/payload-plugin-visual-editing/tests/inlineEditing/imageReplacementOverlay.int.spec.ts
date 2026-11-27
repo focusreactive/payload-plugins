@@ -705,9 +705,12 @@ describe("replacing an image on the page", () => {
 
     const fromOpener = (data: unknown) => postFromAdmin(data, { source: window.opener });
 
-    const refused = () => fromOpener({ ...IMAGE_FIELD, type: VE_FIELD_EDIT_REFUSED_TYPE });
-
     const picks = () => messagesOfType(postToOpener, VE_PICK_MEDIA_TYPE);
+
+    const ask = () => {
+      offersReplacement(image);
+      click(actionButton());
+    };
 
     beforeEach(() => {
       postToOpener.mockClear();
@@ -721,40 +724,17 @@ describe("replacing an image on the page", () => {
       });
     });
 
-    it("asks the admin to write the media picked on the page", async () => {
-      await useLighthouse();
+    it("asks the admin to pick media for the field and asks the API of the admin nothing itself", async () => {
+      ask();
+      await flushMutations();
 
-      expect(picks()).toEqual([{ ...IMAGE_FIELD, mediaId: 9, type: VE_PICK_MEDIA_TYPE }]);
-      expect(requestsTo("/visual-editing/field-edit")).toEqual([]);
+      expect(picks()).toEqual([{ ...IMAGE_FIELD, type: VE_PICK_MEDIA_TYPE }]);
+      expect(picker()).toBeNull();
+      expect(fetchApi).not.toHaveBeenCalled();
     });
 
-    it("says the pick was not saved when the form refuses it, and opens the field", async () => {
-      await useLighthouse();
-
-      refused();
-
-      expect(statusLabel()).toBe("Not saved");
-      expect(image.getAttribute("src")).toBe("/old.jpg");
-      expect(messagesOfType(postToOpener, VE_MESSAGE_TYPE)).toMatchObject([{ path: "image" }]);
-    });
-
-    it("asks the admin again for the same media on Retry, without a drawer", async () => {
-      await useLighthouse();
-      refused();
-
-      retry();
-
-      expect(picks()).toEqual([
-        { ...IMAGE_FIELD, mediaId: 9, type: VE_PICK_MEDIA_TYPE },
-        { ...IMAGE_FIELD, mediaId: 9, type: VE_PICK_MEDIA_TYPE },
-      ]);
-      expect(statusLabel()).toBe("In the admin form, not saved yet");
-    });
-
-    it("shows the media once the admin wrote the pick it was asked again", async () => {
-      await useLighthouse();
-      refused();
-      retry();
+    it("shows the media the admin picked and says the form holds unsaved changes", () => {
+      ask();
 
       fromOpener({
         ...IMAGE_FIELD,
@@ -768,15 +748,13 @@ describe("replacing an image on the page", () => {
       expect(statusLabel()).toBe("In the admin form, not saved yet");
     });
 
-    it("says so again when the form refuses the pick it was asked again", async () => {
-      await useLighthouse();
-      refused();
-      retry();
+    it("opens the field when the form refuses the pick", () => {
+      ask();
 
-      refused();
+      fromOpener({ ...IMAGE_FIELD, type: VE_FIELD_EDIT_REFUSED_TYPE });
 
-      expect(statusLabel()).toBe("Not saved");
-      expect(retryButton()?.hidden).toBe(false);
+      expect(image.getAttribute("src")).toBe("/old.jpg");
+      expect(messagesOfType(postToOpener, VE_MESSAGE_TYPE)).toMatchObject([{ path: "image" }]);
     });
   });
 });
