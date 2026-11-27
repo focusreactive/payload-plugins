@@ -78,6 +78,47 @@ describe("a field the editor types into", () => {
     expect(listener.onNodesReleased).not.toHaveBeenCalled();
   });
 
+  describe("after the browser split the text into lines", () => {
+    let edited: Text;
+
+    beforeEach(async () => {
+      edited = textNode();
+      begin();
+      edited.data = "lo";
+      edited.before("Hel", "\n");
+      shown = "Hel\nlo";
+      await flushMutations();
+    });
+
+    it("shows the typed lines once, in the node of the edit, when the page writes the text into it", async () => {
+      edited.data = stega("Hel\nlo");
+      await flushMutations();
+
+      expect(Array.from(heading.childNodes)).toEqual([edited]);
+      expect(edited.data).toBe("Hel\nlo");
+      expect(onShownAgain).toHaveBeenCalledTimes(1);
+      expect(listener.onNodesReleased).not.toHaveBeenCalled();
+    });
+
+    it("keeps the node of the edit when the page replaces the lines with a text of its own", async () => {
+      heading.textContent = stega("Hel\nlo");
+      await flushMutations();
+
+      expect(Array.from(heading.childNodes)).toEqual([edited]);
+      expect(edited.data).toBe("Hel\nlo");
+      expect(onShownAgain).toHaveBeenCalledTimes(1);
+      expect(listener.onNodesReleased).not.toHaveBeenCalled();
+    });
+
+    it("leaves a text of another field the page puts in its place to that field", async () => {
+      heading.textContent = stega("Other", "subtitle");
+      await flushMutations();
+
+      expect(listener.onNodesReleased).toHaveBeenCalledWith([match]);
+      expect(onShownAgain).not.toHaveBeenCalled();
+    });
+  });
+
   it("shows the text the edit ended with, in the node the page rendered", async () => {
     const rendered = textNode();
     begin();

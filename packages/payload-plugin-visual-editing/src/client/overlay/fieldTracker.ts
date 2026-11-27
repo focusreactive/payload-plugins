@@ -83,6 +83,11 @@ const isSameNodeKey = (known: FieldMatch | null, match: FieldMatch) =>
   known.key === match.key &&
   documentAddressOf(known) === documentAddressOf(match);
 
+const isSameField = (one: VeIdentity, other: VeIdentity): boolean =>
+  fieldKeyOfMarker(one) === fieldKeyOfMarker(other) &&
+  one.locale === other.locale &&
+  documentAddressOf(one) === documentAddressOf(other);
+
 const IMAGE_DESCRIPTION_ATTR = "alt";
 
 const IMAGES = "img";
@@ -326,10 +331,51 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     for (const listener of listeners) listener.onFields(root, found);
   };
 
+  const showEditedTextAgain = (
+    textNode: Text,
+    tracked: TrackedText,
+    edit: TextEdit,
+    rendered = textNode.data
+  ) => {
+    tracked.original = rendered;
+    const holder = tracked.match?.holder;
+    if (holder && tracked.match) holders.set(holder, { match: tracked.match, original: rendered });
+    showOnlyEditedText(edit, textNode);
+    const shown = `${edit.before}${edit.shownText()}${edit.after}`;
+    if (textNode.data !== shown) {
+      tracked.ownWritesToObserve += 1;
+      textNode.data = shown;
+    }
+    edit.onShownAgain();
+  };
+
+  const isRenderOf = (tracked: TrackedText, child: ChildNode): child is Text => {
+    if (!(child instanceof Text) || texts.has(child)) return false;
+    const field = fromStegaPayload(payloadIn(child.data));
+    return field !== null && tracked.match !== null && isSameField(tracked.match, field);
+  };
+
+  const renderedInsteadOf = (tracked: TrackedText, { editedElement }: TextEdit) =>
+    Array.from(editedElement.childNodes).find((child) => isRenderOf(tracked, child));
+
+  const showEditedTextInsteadOfTheRender = (
+    textNode: Text,
+    tracked: TrackedText,
+    edit: TextEdit
+  ): boolean => {
+    const rendered = main.contains(edit.editedElement) && renderedInsteadOf(tracked, edit);
+    if (!rendered) return false;
+    rendered.replaceWith(textNode);
+    showEditedTextAgain(textNode, tracked, edit, rendered.data);
+    return true;
+  };
+
   const releaseDetachedNodes = () => {
     const released: FieldMatch[] = [];
     for (const [textNode, tracked] of texts) {
       if (main.contains(textNode)) continue;
+      const edit = edits.get(textNode);
+      if (edit && showEditedTextInsteadOfTheRender(textNode, tracked, edit)) continue;
       textNode.data = tracked.original;
       texts.delete(textNode);
       if (tracked.match) released.push(tracked.match);
@@ -355,16 +401,6 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
   const forgetUnlessEdited = (textNode: Text) => {
     if (isOwnWrite(textNode) || edits.has(textNode)) return;
     forget(textNode);
-  };
-
-  const showEditedTextAgain = (textNode: Text, tracked: TrackedText, edit: TextEdit) => {
-    tracked.original = textNode.data;
-    const holder = tracked.match?.holder;
-    if (holder && tracked.match)
-      holders.set(holder, { match: tracked.match, original: textNode.data });
-    tracked.ownWritesToObserve += 1;
-    textNode.data = `${edit.before}${edit.shownText()}${edit.after}`;
-    edit.onShownAgain();
   };
 
   const forgetUnlessEditedOrOwnWrite = (textNode: Text) => {

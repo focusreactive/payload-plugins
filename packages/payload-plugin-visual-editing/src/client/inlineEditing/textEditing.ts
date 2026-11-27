@@ -384,6 +384,25 @@ const putBackWhatTheDeletionTook = (edit: Edit): void => {
   }
 };
 
+const textStartIn = ({ before }: EditedText, texts: readonly Text[]): number =>
+  texts
+    .map(({ data }) => data)
+    .join("")
+    .startsWith(before)
+    ? before.length
+    : 0;
+
+const caretInTheText = (edit: Edit): number => {
+  const texts = textsOf(edit);
+  const caret = caretOffsetIn(edit.editedElement, texts);
+  return caret === null ? edit.caret : Math.max(0, caret - textStartIn(edit, texts));
+};
+
+const placeCaretInTheText = (edit: Edit): void => {
+  const texts = textsOf(edit);
+  placeCaret(edit.editedElement, textStartIn(edit, texts) + edit.caret, texts);
+};
+
 const isInsideButton = (editedElement: Element): boolean =>
   editedElement.closest("button") !== null;
 
@@ -508,13 +527,13 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
   const followTyping = (edit: Edit) => {
     putBackWhatTheDeletionTook(edit);
     edit.text = textOfEdit(edit);
-    edit.caret = caretOffsetIn(edit.editedElement, textsOf(edit)) ?? edit.caret;
+    edit.caret = caretInTheText(edit);
     edit.saving.change(edit.text);
   };
 
   const followCaret = (edit: Edit) => {
     if (sharesItsElement(edit)) keepSelectionInTheText(edit);
-    edit.caret = caretOffsetIn(edit.editedElement, textsOf(edit)) ?? edit.caret;
+    edit.caret = caretInTheText(edit);
   };
 
   const handleKey = (edit: Edit, isPlainTextOnly: boolean, event: KeyboardEvent) => {
@@ -584,7 +603,7 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
 
       const editedElement = tracker.beginEdit(match, {
         onShownAgain: () => {
-          if (editing) placeCaret(editing.editedElement, editing.caret, textsOf(editing));
+          if (editing) placeCaretInTheText(editing);
         },
         shownText: () => editing?.text ?? "",
       });

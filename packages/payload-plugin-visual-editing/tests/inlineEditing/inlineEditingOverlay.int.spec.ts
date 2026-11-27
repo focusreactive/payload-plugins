@@ -608,6 +608,24 @@ describe("editing text on the page", () => {
         });
       });
 
+      it("keeps the caret after the typed text when the page renders it again with the whitespace the browser dropped", async () => {
+        click(line);
+        const lineText = textIn(line);
+        lineText.data = "OUR FIRST RELEASEX ";
+        document.getSelection()?.collapse(lineText, "OUR FIRST RELEASEX".length);
+        line.dispatchEvent(new Event("input", { bubbles: true }));
+
+        lineText.data = `\n  ${stega("OUR FIRST RELEASEX", "line")} `;
+        await flushMutations();
+
+        const selection = document.getSelection() as Selection;
+        expect(lineText.data).toBe("\n  OUR FIRST RELEASEX ");
+        expect([selection.focusNode, selection.focusOffset]).toEqual([
+          lineText,
+          "\n  OUR FIRST RELEASEX".length,
+        ]);
+      });
+
       it("narrows a selection of the whole line to its text", () => {
         click(line);
         document.getSelection()?.selectAllChildren(line);
@@ -798,6 +816,23 @@ describe("editing text on the page", () => {
       });
 
       afterEach(() => Reflect.deleteProperty(document, "execCommand"));
+
+      it("keep the caret where the editor typed when the page renders the typed lines again", async () => {
+        click(summary);
+        const edited = textIn(summary);
+        edited.data = "es";
+        edited.before("Lin", "\n");
+        document.getSelection()?.collapse(edited, 0);
+        summary.dispatchEvent(new Event("input", { bubbles: true }));
+
+        summary.textContent = stega("Lin\nes", "summary", { multiline: true });
+        await flushMutations();
+
+        const selection = document.getSelection() as Selection;
+        expect(Array.from(summary.childNodes)).toEqual([edited]);
+        expect(edited.data).toBe("Lin\nes");
+        expect([selection.focusNode, selection.focusOffset]).toEqual([edited, "Lin\n".length]);
+      });
 
       it("are left to the page on Shift and Enter in a field of several lines", () => {
         click(summary);
