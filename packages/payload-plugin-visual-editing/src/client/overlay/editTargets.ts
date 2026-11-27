@@ -12,6 +12,7 @@ import { createHoverController } from "./hoverController.js";
 import { groupNodesByPath, readMarkerFromAttrs } from "./markerExtractor.js";
 import { createTargetRegistry } from "./targetRegistry.js";
 import { findTargetAncestor, pickTargetForGroup } from "./targetSelector.js";
+import { createTargetsAtPoint } from "./targetsAtPoint.js";
 
 export const CLICK_LEFT_TO_THE_PAGE = "page";
 
@@ -27,6 +28,14 @@ const isPlainPrimaryClick = (event: MouseEvent) =>
   event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
 
 const hasTextSelection = () => document.getSelection()?.isCollapsed === false;
+
+const INTERACTIVE = "a, button, input, select, textarea, label, [contenteditable]";
+
+const isPassedThrough = (element: Element, target: HTMLElement): boolean =>
+  element.contains(target) || (element.textContent ?? "").trim() === "";
+
+const elementOf = (event: MouseEvent): Element | null =>
+  event.target instanceof Element ? event.target : null;
 
 const isRepeatedClick = (event: MouseEvent) => event.detail > 1;
 
@@ -63,6 +72,25 @@ export function createEditTargets(
   );
   const frames = getCtx().mode === "always" ? createFrameLayer() : null;
   const wrapperTargets = new Set<HTMLElement>();
+  const targetsAtPoint = createTargetsAtPoint(registry.targets);
+
+  const targetBeneath = (element: Element, event: MouseEvent): HTMLElement | null => {
+    if (element.closest(INTERACTIVE)) return null;
+    const target = targetsAtPoint.innermostAt({ x: event.clientX, y: event.clientY });
+    return target && isPassedThrough(element, target) ? target : null;
+  };
+
+  const targetUnder = (event: MouseEvent): HTMLElement | null => {
+    const element = elementOf(event);
+    if (!element) return null;
+    return findTargetAncestor(element) ?? targetBeneath(element, event);
+  };
+
+  const hoverTargetBeneath = (event: MouseEvent) => {
+    const element = elementOf(event);
+    if (!element || findTargetAncestor(element)) return;
+    hover.point(targetBeneath(element, event));
+  };
 
   const registerTarget = (target: HTMLElement, marker: Marker) => {
     const existing = registry.get(target);
@@ -119,7 +147,7 @@ export function createEditTargets(
 
   const openFieldOnTargetClick = (event: MouseEvent) => {
     if (!isPlainPrimaryClick(event)) return;
-    const target = findTargetAncestor(event.target instanceof Element ? event.target : null);
+    const target = targetUnder(event);
     const config = target ? registry.get(target) : undefined;
     if (!target || !config) return;
     const taken = getCtx().editInPlace?.(target, event, () => config.clickHandler(event));
@@ -139,9 +167,12 @@ export function createEditTargets(
     config.clickHandler(event);
   };
   main.addEventListener("click", openFieldOnTargetClick, true);
+  main.addEventListener("pointermove", hoverTargetBeneath, true);
 
   return () => {
     main.removeEventListener("click", openFieldOnTargetClick, true);
+    main.removeEventListener("pointermove", hoverTargetBeneath, true);
+    targetsAtPoint.dispose();
     stopTracking();
     hover.dispose();
     frames?.dispose();

@@ -8,6 +8,7 @@ export interface HoverController {
   attach(target: HTMLElement): void;
   detach(target: HTMLElement): void;
   refresh(target: HTMLElement): void;
+  point(target: HTMLElement | null): void;
   dispose(): void;
 }
 
@@ -110,6 +111,10 @@ export function createHoverController(
         badge.hide();
         activeTarget = null;
       }
+    },
+    point(target) {
+      if (target) setActive(target);
+      else if (activeTarget) scheduleClear();
     },
     refresh(target) {
       if (activeTarget !== target) return;
