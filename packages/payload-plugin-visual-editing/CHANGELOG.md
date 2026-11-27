@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-visual-editing [1.7.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-visual-editing@1.7.1...@focus-reactive/payload-plugin-visual-editing@1.7.2) (2026-11-27)
+
+
+### Bug Fixes
+
+* **visual-editing:** keep the edit badge in sight and frame fill images ([c3b0686](https://github.com/focusreactive/payload-plugins/commit/c3b06864004d9d8e068e7090b6ec3c8c8954ae07))
+
 ## @focus-reactive/payload-plugin-visual-editing [1.7.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-visual-editing@1.7.0...@focus-reactive/payload-plugin-visual-editing@1.7.1) (2026-11-24)
 
 # @focus-reactive/payload-plugin-visual-editing [1.7.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-visual-editing@1.6.0...@focus-reactive/payload-plugin-visual-editing@1.7.0) (2026-11-24)
