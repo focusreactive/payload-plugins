@@ -530,3 +530,28 @@ describe("a heading a site script splits into an element per letter, edited on t
     expect(heading.querySelectorAll("div > div")).toHaveLength("HowWeDeliver".length);
   });
 });
+
+describe("a page whose script split the marker of a heading into pieces before the overlay started", () => {
+  it("starts the overlay and finds the other fields of the page", () => {
+    document.body.innerHTML = "";
+    const main = document.createElement("main");
+    const heading = document.createElement("h2");
+    const markerOfTheHeading = [...marked("Work", "title")].slice("Work".length);
+    heading.append(
+      ...[0, 8, 16].map((start) => {
+        const piece = document.createElement("div");
+        piece.textContent = markerOfTheHeading.slice(start, start + 8).join("");
+        return piece;
+      })
+    );
+    const lead = document.createElement("p");
+    lead.textContent = marked("Lead", "lead");
+    main.append(heading, lead);
+    document.body.append(main);
+
+    const overlay = createOverlay(main, () => ({ ...ctx, mode: "always" }));
+
+    expect(lead.getAttribute(DATA_VE_TARGET_ATTR)).toBe("lead");
+    overlay.dispose();
+  });
+});

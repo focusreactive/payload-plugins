@@ -136,8 +136,14 @@ const CLICKABLE = "a, button";
 
 const RICH_TEXT_WRAPPER = `[${DATA_VE_PATH_ATTR}]`;
 
-const payloadIn = (text: string): unknown =>
-  hasMarker(text) ? vercelStegaDecode(text) : undefined;
+const payloadIn = (text: string): unknown => {
+  if (!hasMarker(text)) return undefined;
+  try {
+    return vercelStegaDecode(text);
+  } catch {
+    return undefined;
+  }
+};
 
 const richTextMatchOf = (
   textNode: Text,
