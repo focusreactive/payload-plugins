@@ -22,6 +22,7 @@ const admin = vi.hoisted(() => {
     dispatchFields: vi.fn(),
     isFormDisabled: false,
     isModified: false,
+    holdsFiles: false,
     fields: { title: { value: "Title" } } as Record<string, { value: unknown }>,
     frame,
     iframeRef: { current: frame },
@@ -32,7 +33,10 @@ const admin = vi.hoisted(() => {
 vi.mock("@payloadcms/ui", () => ({
   useConfig: () => ({
     config: { blocksMap: {} },
-    getEntityConfig: () => ({ fields: [{ name: "title", type: "text" }] }),
+    getEntityConfig: () => ({
+      fields: [{ name: "title", type: "text" }],
+      ...(admin.holdsFiles && { upload: true }),
+    }),
   }),
   useDocumentInfo: () => ({ collectionSlug: "page", docPermissions: admin.permissions, id: 7 }),
   useFormModified: () => admin.isModified,
@@ -91,6 +95,7 @@ describe("InlineEditReceiver", () => {
     container.remove();
     admin.permissions = EVERY_FIELD;
     admin.isModified = false;
+    admin.holdsFiles = false;
     admin.fields = { title: { value: "Title" } };
     vi.clearAllMocks();
   });
@@ -120,6 +125,16 @@ describe("InlineEditReceiver", () => {
       editTo("Title");
 
       expect(admin.setModified.mock.calls.map(([isModified]) => isModified)).toEqual([true, false]);
+    });
+
+    it("keeps the form of a document of an upload collection changed, since a picked file is not one of its fields", () => {
+      admin.holdsFiles = true;
+      act(() => root.render(<InlineEditReceiver />));
+
+      editTo("New title");
+      editTo("Title");
+
+      expect(admin.setModified.mock.calls.map(([isModified]) => isModified)).toEqual([true, true]);
     });
 
     it("keeps the form changed when it held other unsaved changes before the edits", () => {

@@ -1,6 +1,6 @@
 import type { FormState, SanitizedDocumentPermissions } from "payload";
 
-import { useDocumentInfo, useForm, useFormModified, useLocale } from "@payloadcms/ui";
+import { useConfig, useDocumentInfo, useForm, useFormModified, useLocale } from "@payloadcms/ui";
 import { useEffect, useRef, useState } from "react";
 
 import type { EditableSchema } from "../../shared/editableSchema/editableSchema.js";
@@ -77,6 +77,8 @@ export function useOpenDocumentForm(
   const isModified = useFormModified();
   const valuesBeforeTheEdits = useRef<FormValues | null>(null);
   const { id, collectionSlug, docPermissions, globalSlug } = useDocumentInfo();
+  const { getEntityConfig } = useConfig();
+  const holdsAFile = Boolean(collectionSlug && getEntityConfig({ collectionSlug })?.upload);
   const editableSchema = useEditableSchema({ collectionSlug, globalSlug }, excludeFieldNames);
   const { code: locale } = useLocale();
   const previewWindow = usePreviewWindow();
@@ -105,7 +107,9 @@ export function useOpenDocumentForm(
           ...(initialValue !== undefined && { initialValue }),
         });
         const before = valuesBeforeTheEdits.current;
-        setModified(before === null || !isSameValue({ ...values, [path]: value }, before));
+        const isAsBefore =
+          !holdsAFile && before !== null && isSameValue({ ...values, [path]: value }, before);
+        setModified(!isAsBefore);
       },
     };
   });
