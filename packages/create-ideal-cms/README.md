@@ -39,10 +39,15 @@ my-app/
 │   ├── tailwind-config/
 │   ├── typescript-config/
 │   └── ui/
+├── .github/workflows/
+│   └── neon-cleanup.yml      # deletes the Neon preview branch when a PR closes
 ├── turbo.json
 ├── package.json              # bun workspaces
 └── …
 ```
+
+`neon-cleanup.yml` needs the repository variable `NEON_PROJECT_ID` and the
+repository secret `NEON_API_KEY`. Without them it skips instead of failing.
 
 The published `@focus-reactive/payload-plugin-*` packages are added to
 `apps/cms` as regular dependencies, pinned to the exact versions released from
