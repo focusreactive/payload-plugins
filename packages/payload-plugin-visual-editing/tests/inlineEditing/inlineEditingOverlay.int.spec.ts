@@ -465,6 +465,30 @@ describe("editing text on the page", () => {
           expect(sentToEndpoint().map(({ value }) => value)).toEqual(["ro title"]);
         });
 
+        it("undoes letters typed in a row in one step, and apart from the letters typed before the editor moved the caret", () => {
+          const lineText = textIn(line);
+          const typeAt = (text: string, caret: number) => {
+            lineText.data = text;
+            document.getSelection()?.collapse(lineText, caret);
+            line.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText" }));
+            document.dispatchEvent(new Event("selectionchange"));
+          };
+          typeAt("Hero titleX", "Hero titleX".length);
+          typeAt("Hero titleXZ", "Hero titleXZ".length);
+          press(line, "z", { metaKey: true });
+
+          expect(textIn(line).data).toBe("Hero title");
+
+          typeAt("Hero titleX", "Hero titleX".length);
+          document.getSelection()?.collapse(lineText, 0);
+          document.dispatchEvent(new Event("selectionchange"));
+          typeAt("YHero titleX", 1);
+
+          press(line, "z", { metaKey: true });
+
+          expect(textIn(line).data).toBe("Hero titleX");
+        });
+
         it("leaves an undo during a composition of an input method to the browser", () => {
           reachOfModify = 0;
           deleteWithoutRanges("deleteWordBackward", "He".length);

@@ -609,7 +609,9 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
 
   const followCaret = (edit: Edit) => {
     if (sharesItsElement(edit)) keepSelectionInTheText(edit);
-    edit.caret = caretInTheText(edit);
+    const caret = caretInTheText(edit);
+    if (caret !== edit.caret) edit.lastInputType = null;
+    edit.caret = caret;
   };
 
   const handleKey = (edit: Edit, isPlainTextOnly: boolean, event: KeyboardEvent) => {
