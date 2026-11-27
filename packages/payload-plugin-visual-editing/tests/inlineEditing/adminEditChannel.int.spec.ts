@@ -11,6 +11,7 @@ import type {
 } from "../../src/shared/protocol";
 
 import {
+  CLOSED_ADMIN_CHECK_MS,
   createAdminEditChannel,
   MEDIA_API_TIME_LIMIT_MS,
   MEDIA_PICK_TIME_LIMIT_MS,
@@ -353,6 +354,55 @@ describe("the channel of the page to the admin for edits", () => {
       });
 
       await expect(listing).resolves.toEqual({ answer: null, ok: false });
+    });
+
+    it("answers no answer at once when the admin window is closed, and asks it nothing", async () => {
+      admin.closed = true;
+
+      await expect(channel.mediaApiOf(adminWindow()).list(LISTING)).resolves.toEqual({
+        answer: null,
+        ok: false,
+      });
+      expect(sent()).toEqual([]);
+    });
+
+    it("answers no answer soon after the admin window is closed while it waits", async () => {
+      const upload = channel.mediaApiOf(adminWindow()).upload(IMAGE, "media", file);
+
+      admin.closed = true;
+      await vi.advanceTimersByTimeAsync(CLOSED_ADMIN_CHECK_MS);
+
+      await expect(upload).resolves.toEqual({ answer: null, ok: false });
+    });
+
+    it("takes no answer to a request of an earlier channel, as the ids of requests never repeat", async () => {
+      void channel.mediaApiOf(adminWindow()).list(LISTING);
+      channel.dispose();
+      channel = createAdminEditChannel(window, () => ADMIN_ORIGIN);
+      const listing = channel.mediaApiOf(adminWindow()).list(LISTING);
+      const answered = vi.fn();
+      void listing.then(answered);
+
+      postFromAdmin({
+        answer: "earlier",
+        ok: true,
+        requestId: requestIdOf(0),
+        type: VE_MEDIA_OPTIONS_ANSWER_TYPE,
+      });
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(requestIdOf(1)).not.toBe(requestIdOf(0));
+      expect(answered).not.toHaveBeenCalled();
+    });
+
+    it("stops waiting for every request once disposed", () => {
+      const api = channel.mediaApiOf(adminWindow());
+      void api.list(LISTING);
+      void api.upload(IMAGE, "media", file);
+
+      channel.dispose();
+
+      expect(vi.getTimerCount()).toBe(0);
     });
 
     it("sends a file to upload with the field it is for and takes the answer of the admin", async () => {

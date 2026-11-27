@@ -45,6 +45,8 @@ export const RICH_TEXT_STATE_TIME_LIMIT_MS = 4000;
 
 export const MEDIA_API_TIME_LIMIT_MS = 60_000;
 
+export const CLOSED_ADMIN_CHECK_MS = 500;
+
 export type VeToldOfAnEdit =
   | VeFieldEditMessage
   | VeRichTextEditMessage
@@ -97,7 +99,7 @@ type MediaApiRequest =
 
 type AskedOfTheMediaApi = {
   answerType: string;
-  timer: ReturnType<typeof setTimeout>;
+  watch: ReturnType<typeof setInterval>;
   resolve(answer: VeMediaApiAnswer): void;
 };
 
@@ -212,30 +214,31 @@ export function createAdminEditChannel(win: Window, adminOrigin: () => string): 
   );
 
   const askedOfTheMediaApi = new Map<string, AskedOfTheMediaApi>();
-  let mediaApiRequests = 0;
 
   const settleMediaApiRequest = (requestId: string, answer: VeMediaApiAnswer) => {
     const asked = askedOfTheMediaApi.get(requestId);
     if (!asked) return;
-    clearTimeout(asked.timer);
+    clearInterval(asked.watch);
     askedOfTheMediaApi.delete(requestId);
     asked.resolve(answer);
   };
 
   const askTheMediaApi = (adminWindow: Window, request: MediaApiRequest) =>
     new Promise<VeMediaApiAnswer>((resolve) => {
-      mediaApiRequests += 1;
-      const requestId = String(mediaApiRequests);
-      const timer = setTimeout(
-        settleMediaApiRequest,
-        MEDIA_API_TIME_LIMIT_MS,
-        requestId,
-        NO_ANSWER
-      );
+      if (adminWindow.closed) {
+        resolve(NO_ANSWER);
+        return;
+      }
+      const requestId = crypto.randomUUID();
+      const askedAt = Date.now();
+      const watch = setInterval(() => {
+        const isOverdue = Date.now() - askedAt >= MEDIA_API_TIME_LIMIT_MS;
+        if (adminWindow.closed || isOverdue) settleMediaApiRequest(requestId, NO_ANSWER);
+      }, CLOSED_ADMIN_CHECK_MS);
       askedOfTheMediaApi.set(requestId, {
         answerType: ANSWER_TYPE_OF[request.type],
         resolve,
-        timer,
+        watch,
       });
       tell(adminWindow, { ...request, requestId });
     });
@@ -275,6 +278,8 @@ export function createAdminEditChannel(win: Window, adminOrigin: () => string): 
   return {
     dispose() {
       stopHearing();
+      for (const { watch } of askedOfTheMediaApi.values()) clearInterval(watch);
+      askedOfTheMediaApi.clear();
       refusedEditListeners.clear();
       newsListeners.clear();
     },
