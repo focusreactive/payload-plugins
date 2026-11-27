@@ -13,6 +13,7 @@ import {
 } from "../../src/client/overlay/constants";
 import { createEditTargets } from "../../src/client/overlay/editTargets";
 import { createFieldTracker } from "../../src/client/overlay/fieldTracker";
+import { holds } from "../../src/client/overlay/targetsAtPoint";
 import { DATA_VE_COLLECTION_ATTR, DATA_VE_PATH_ATTR } from "../../src/shared/protocol";
 
 import { click, overlayCtx } from "../support/overlay";
@@ -180,7 +181,7 @@ describe("the badge of a target on a page whose overlay root is the body", () =>
   it("moves to another target the pointer enters away from the label", () => {
     movePointer(photo, { x: 390, y: 110 });
 
-    movePointer(caption, { x: 320, y: 90 });
+    movePointer(caption, { x: 320, y: 60 });
 
     expect(badgeIsFor()).toBe("caption");
   });
@@ -205,6 +206,107 @@ describe("the badge of a target on a page whose overlay root is the body", () =>
 
     expect(open).toHaveBeenCalledTimes(1);
     expect(run).not.toHaveBeenCalled();
+  });
+
+  describe("of a wide line of text under a heading", () => {
+    const TRIP_STEPS = 20;
+    const LINE_TOP = 400;
+    let heading: HTMLElement;
+    let line: HTMLElement;
+    let label: DOMRect;
+    let lineRect: DOMRect;
+    let headingRect: DOMRect;
+
+    const elementAt = (point: Point): Element => {
+      if (holds(label, point)) return editLabel();
+      if (holds(lineRect, point)) return line;
+      if (holds(headingRect, point)) return heading;
+      return document.body;
+    };
+
+    const labelCenter = () => ({
+      x: label.left + label.width / 2,
+      y: label.top + label.height / 2,
+    });
+
+    const tripAlong = (from: Point, bow: number, steps: number, onStep?: () => void) => {
+      const to = labelCenter();
+      for (let step = 0; step <= steps; step += 1) {
+        const along = step / TRIP_STEPS;
+        const point = {
+          x: from.x + (to.x - from.x) * along,
+          y: from.y + (to.y - from.y) * along + bow * Math.sin(Math.PI * along),
+        };
+        movePointer(elementAt(point), point);
+        onStep?.();
+      }
+    };
+
+    const layOut = (width: number) => {
+      removeEditTargets();
+      tracker.dispose();
+      heading = marked("h2", "heading");
+      heading.textContent = "Heading";
+      line = marked("p", "line");
+      line.textContent = "Line";
+      headingRect = new DOMRect(100, LINE_TOP - 60, width, 56);
+      lineRect = new DOMRect(100, LINE_TOP, width, 24);
+      label = new DOMRect(100 + width - 50, LINE_TOP - 24, 52, 24);
+      drawnAt(heading, headingRect);
+      drawnAt(line, lineRect);
+      tracker = createFieldTracker(document.body);
+      removeEditTargets = createEditTargets(document.body, tracker, () => ({
+        ...overlayCtx({ mode: "hover" }),
+        actionOf: () => null,
+        mode: "hover",
+      }));
+      drawnAt(editLabel(), label);
+      drawnAt(actionButton(), new DOMRect(0, 0, 0, 0));
+    };
+
+    it.each([
+      [480, -30],
+      [480, 30],
+      [640, -30],
+      [640, 30],
+    ])(
+      "stays on the line %ipx wide while the pointer bows %ipx off the straight way to the label",
+      (width, bow) => {
+        layOut(width);
+        movePointer(line, { x: 110, y: LINE_TOP + 12 });
+        const badgeFor: (string | null)[] = [];
+
+        tripAlong({ x: 110, y: LINE_TOP + 12 }, bow, TRIP_STEPS, () =>
+          badgeFor.push(isBadgeShown() ? badgeIsFor() : null)
+        );
+        vi.advanceTimersByTime(1000);
+
+        expect(new Set(badgeFor)).toEqual(new Set(["line"]));
+        expect(isBadgeShown()).toBe(true);
+        expect(badgeIsFor()).toBe("line");
+      }
+    );
+
+    it("moves to the heading when the pointer rests on it on the way to the label", () => {
+      layOut(560);
+      movePointer(line, { x: 110, y: LINE_TOP + 12 });
+      tripAlong({ x: 110, y: LINE_TOP + 12 }, -30, TRIP_STEPS / 2);
+      expect(badgeIsFor()).toBe("line");
+
+      vi.advanceTimersByTime(CLEAR_GRACE_MS);
+
+      expect(badgeIsFor()).toBe("heading");
+    });
+
+    it("moves to the heading when the pointer goes up into it, away from the label", () => {
+      layOut(560);
+      movePointer(line, { x: 110, y: LINE_TOP + 12 });
+
+      movePointer(heading, { x: 112, y: LINE_TOP - 10 });
+      movePointer(heading, { x: 114, y: LINE_TOP - 30 });
+
+      expect(badgeIsFor()).toBe("heading");
+    });
   });
 
   describe("under another layer of the overlay", () => {

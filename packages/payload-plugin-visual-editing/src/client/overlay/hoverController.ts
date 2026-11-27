@@ -18,6 +18,10 @@ export interface HoverController {
 
 const CLEAR_GRACE_MS = 250;
 
+const WAY_MARGIN_MIN_PX = 24;
+
+const WAY_MARGIN_PER_DISTANCE = 0.06;
+
 const cornersOf = ({ bottom, left, right, top }: DOMRect): Point[] => [
   { x: left, y: top },
   { x: right, y: top },
@@ -33,10 +37,33 @@ const isInTriangle = (at: Point, a: Point, b: Point, c: Point): boolean => {
   return turns.every((side) => side >= 0) || turns.every((side) => side <= 0);
 };
 
+const distanceBetween = (one: Point, other: Point): number =>
+  Math.hypot(one.x - other.x, one.y - other.y);
+
+const centerOf = ({ height, left, top, width }: DOMRect): Point => ({
+  x: left + width / 2,
+  y: top + height / 2,
+});
+
+const distanceToSegment = (at: Point, start: Point, end: Point): number => {
+  const run = { x: end.x - start.x, y: end.y - start.y };
+  const squaredLength = run.x ** 2 + run.y ** 2;
+  const projected =
+    squaredLength === 0 ? 0 : ((at.x - start.x) * run.x + (at.y - start.y) * run.y) / squaredLength;
+  const along = Math.min(1, Math.max(0, projected));
+  return distanceBetween(at, { x: start.x + along * run.x, y: start.y + along * run.y });
+};
+
 const isOnTheWay = (from: Point, rect: DOMRect, at: Point): boolean => {
+  const center = centerOf(rect);
+  const distance = distanceBetween(from, center);
+  if (distanceBetween(at, center) >= distance) return false;
+  const margin = Math.max(WAY_MARGIN_MIN_PX, distance * WAY_MARGIN_PER_DISTANCE);
   const corners = cornersOf(rect);
-  return corners.some((corner, index) =>
-    isInTriangle(at, from, corner, corners[(index + 1) % corners.length] as Point)
+  return corners.some(
+    (corner, index) =>
+      isInTriangle(at, from, corner, corners[(index + 1) % corners.length] as Point) ||
+      distanceToSegment(at, from, corner) <= margin
   );
 };
 
