@@ -8,6 +8,7 @@ import {
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
+import { PUBLIC_URL_FIELD_NAME, publicUrlField } from "@/lib/fields/publicUrlField";
 import { createSharedSlugField } from "@/lib/fields/slugField";
 import type { Page as PageType } from "@/payload-types";
 
@@ -30,7 +31,7 @@ export const Page: CollectionConfig<"page"> = {
     components: {
       edit: createLivePreviewEditComponents(),
     },
-    defaultColumns: ["title", "slug", "updatedAt"],
+    defaultColumns: ["title", PUBLIC_URL_FIELD_NAME, "updatedAt"],
     group: "Content",
     livePreview: {
       url: ({ data, locale }) =>
@@ -65,12 +66,7 @@ export const Page: CollectionConfig<"page"> = {
   },
   fields: [
     {
-      admin: {
-        description: {
-          en: "The title of the page",
-          es: "El título de la página",
-        },
-      },
+      label: { en: "Title", es: "Título" },
       localized: true,
       name: "title",
       required: true,
@@ -78,6 +74,7 @@ export const Page: CollectionConfig<"page"> = {
     },
     ...createBasePageFields({ withBlocksDefaultValue: true }),
     createSharedSlugField("page"),
+    publicUrlField(),
     createParentField("page", {
       admin: {
         position: "sidebar",
@@ -88,7 +85,10 @@ export const Page: CollectionConfig<"page"> = {
       }),
     }),
     createBreadcrumbsField("page", {
+      // Computed by nestedDocsPlugin from the parent chain; stays in form state, hooks,
+      // live preview and the list "URL" column, but editors never need to touch it.
       admin: {
+        hidden: true,
         position: "sidebar",
       },
       hooks: {

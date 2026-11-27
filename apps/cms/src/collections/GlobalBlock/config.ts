@@ -6,7 +6,7 @@ import {
   createLivePreviewEditComponents,
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
-import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
+import { ADMIN_GROUPS } from "@/lib/config/adminGroups";
 import { createStandalonePreview } from "@/lib/utils/standalonePreview";
 
 import { preventDeleteIfReferenced } from "./hooks/preventDeleteIfReferenced";
@@ -23,8 +23,8 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
     components: {
       edit: createLivePreviewEditComponents(),
     },
-    defaultColumns: ["title", "block", "updatedAt"],
-    group: "Global Components",
+    defaultColumns: ["title", "block", "_status", "updatedAt"],
+    group: ADMIN_GROUPS.visualSections,
     ...createStandalonePreview("globalBlock"),
     useAsTitle: "title",
   },
@@ -33,12 +33,13 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
     {
       admin: {
         description: {
-          en: "Internal name to identify this global block in the picker.",
-          es: "Nombre interno para identificar este bloque global en el selector.",
+          en: "Internal name, shown only in the admin.",
+          es: "Nombre interno, solo visible en el panel.",
         },
+        position: "sidebar",
       },
-      defaultValue: createLocalizedDefault({ en: "Global Block", es: "Bloque Global" }),
-      localized: true,
+      defaultValue: "Reusable section",
+      label: { en: "Name", es: "Nombre" },
       name: "title",
       required: true,
       type: "text",
@@ -48,13 +49,10 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
         components: {
           Cell: "/components/admin/BlockNameCell#BlockNameCell",
         },
-        description: {
-          en: "The single block this global represents. Edit once, reuse on any page.",
-          es: "El único bloque que representa este global. Edítalo una vez y reutilízalo en cualquier página.",
-        },
         initCollapsed: true,
       },
       blocks: contentBlocks,
+      label: { en: "Section", es: "Sección" },
       localized: true,
       maxRows: 1,
       minRows: 1,
@@ -68,8 +66,8 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
     beforeDelete: [preventDeleteIfReferenced],
   },
   labels: {
-    plural: { en: "Global Blocks", es: "Bloques Globales" },
-    singular: { en: "Global Block", es: "Bloque Global" },
+    plural: { en: "Reusable sections", es: "Secciones reutilizables" },
+    singular: { en: "Reusable section", es: "Sección reutilizable" },
   },
   slug: "globalBlock",
   versions: createLivePreviewVersions(),

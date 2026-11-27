@@ -4,23 +4,25 @@ import { getPayloadClient } from "@/dal/payload-client";
 export const DEFAULT_MEDIA_CACHE_TAG = "default-media";
 const REVALIDATE_SEC = 60;
 
-async function fetchDefaultMediaId(slot: string): Promise<string | number | null> {
+async function fetchDefaultMediaId(): Promise<string | number | null> {
   const payload = await getPayloadClient();
 
   const { docs } = await payload.find({
     collection: "media",
     depth: 0,
     limit: 1,
+    // `keepSingleDefaultImage` keeps one ticked; should older data hold several, the newest wins.
+    sort: "-updatedAt",
     where: {
-      defaultFor: { contains: slot },
+      isDefaultImage: { equals: true },
     },
   });
   return docs[0]?.id ?? null;
 }
 
-export async function getDefaultMediaId(slot: string): Promise<string | number | null> {
-  const cacheKey = `default-media-${slot}`;
-  return scopedCache(() => fetchDefaultMediaId(slot), [cacheKey], {
+/** The media item editors ticked as "Use as the default image", used as a field default. */
+export async function getDefaultMediaId(): Promise<string | number | null> {
+  return scopedCache(fetchDefaultMediaId, ["default-media"], {
     revalidate: REVALIDATE_SEC,
     tags: [DEFAULT_MEDIA_CACHE_TAG],
   })();

@@ -8,18 +8,12 @@ export const generateSeoFields = ({
   seoTextField({
     name: "title",
     kind: "title",
-    label: { en: "Meta title", es: "Meta título" },
+    label: { en: "Title in search results", es: "Título en buscadores" },
     showButton: generation,
     generateOnPublish: generation,
   }),
   {
-    admin: {
-      description: {
-        en: "Image used when sharing this page on social media.",
-        es: "Imagen utilizada al compartir esta página en redes sociales.",
-      },
-    },
-    label: { en: "Meta image", es: "Imagen meta" },
+    label: { en: "Social sharing image", es: "Imagen para redes sociales" },
     name: "image",
     relationTo: "media",
     type: "upload",
@@ -27,23 +21,23 @@ export const generateSeoFields = ({
   seoTextField({
     name: "description",
     kind: "description",
-    label: { en: "Meta description", es: "Meta descripción" },
+    label: { en: "Description in search results", es: "Descripción en buscadores" },
     showButton: generation,
     generateOnPublish: generation,
   }),
   {
-    admin: {
-      description: {
-        en: "Allow search engines to index this page",
-        es: "Permite a los motores de búsqueda indexar esta página",
-      },
-    },
     defaultValue: robotsDefault,
-    label: { en: "Robots", es: "Robots" },
+    label: { en: "Search engines", es: "Buscadores" },
     name: "robots",
     options: [
-      { label: { en: "Index", es: "Index" }, value: "index" },
-      { label: { en: "No Index", es: "No Index" }, value: "noindex" },
+      {
+        label: { en: "Show in search results", es: "Mostrar en los resultados de búsqueda" },
+        value: "index",
+      },
+      {
+        label: { en: "Hide from search results", es: "Ocultar de los resultados de búsqueda" },
+        value: "noindex",
+      },
     ],
     type: "select",
   },

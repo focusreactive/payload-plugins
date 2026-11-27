@@ -1,15 +1,15 @@
 import type { CollectionConfig } from "payload";
 
-import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import { anyone, or, user, superAdmin } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
-import { link } from "@/lib/fields/link";
+import { link, linkListRowLabel } from "@/lib/fields/link";
 import { SOCIAL_PLATFORMS, SOCIAL_PLATFORM_LABELS } from "@/components/SocialIcon/platforms";
 import {
   createLivePreviewEditComponents,
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
+import { ADMIN_GROUPS } from "@/lib/config/adminGroups";
 import { createStandalonePreview } from "@/lib/utils/standalonePreview";
 
 import { revalidateResourcesUsingFooter } from "./hooks/revalidateResourcesUsingFooter";
@@ -25,8 +25,8 @@ export const Footer: CollectionConfig<"footer"> = {
     components: {
       edit: createLivePreviewEditComponents(),
     },
-    defaultColumns: ["name", "logo"],
-    group: "Global Components",
+    defaultColumns: ["name", "logo", "_status", "updatedAt"],
+    group: ADMIN_GROUPS.visualSections,
     useAsTitle: "name",
     ...createStandalonePreview("footer"),
   },
@@ -34,36 +34,37 @@ export const Footer: CollectionConfig<"footer"> = {
     {
       admin: {
         description: {
-          en: "The name of the footer",
-          es: "El nombre del footer",
+          en: "Internal name, shown only in the admin.",
+          es: "Nombre interno, solo visible en el panel.",
         },
+        position: "sidebar",
       },
-      defaultValue: createLocalizedDefault({
-        en: "Footer",
-        es: "Pie de página",
-      }),
+      defaultValue: "Footer",
+      label: { en: "Name", es: "Nombre" },
       name: "name",
       required: true,
       type: "text",
     },
     {
-      admin: {
-        description: {
-          en: "The logo to display in the footer",
-          es: "El logo a mostrar en el footer",
+      fields: [
+        {
+          admin: { width: "50%" },
+          defaultValue: async () => getDefaultMediaId(),
+          label: { en: "Logo", es: "Logo" },
+          name: "logo",
+          relationTo: "media",
+          required: true,
+          type: "upload",
         },
-      },
-      defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
-      name: "logo",
-      relationTo: "media",
-      required: true,
-      type: "upload",
-    },
-    {
-      label: { en: "Description", es: "Descripción" },
-      localized: true,
-      name: "description",
-      type: "text",
+        {
+          admin: { width: "50%" },
+          label: { en: "Description", es: "Descripción" },
+          localized: true,
+          name: "description",
+          type: "textarea",
+        },
+      ],
+      type: "row",
     },
     {
       admin: {
@@ -85,7 +86,7 @@ export const Footer: CollectionConfig<"footer"> = {
             label: "Company",
             links: [
               { link: { label: "About", newTab: false, type: "custom", url: "#" } },
-              { link: { label: "Blog", newTab: false, type: "custom", url: "/blog" } },
+              { link: { customPage: "blog", label: "Blog", newTab: false, type: "customPage" } },
               { link: { label: "Careers", newTab: false, type: "custom", url: "#" } },
               { link: { label: "Contact", newTab: false, type: "custom", url: "#" } },
             ],
@@ -114,7 +115,7 @@ export const Footer: CollectionConfig<"footer"> = {
             label: "Empresa",
             links: [
               { link: { label: "Acerca de", newTab: false, type: "custom", url: "#" } },
-              { link: { label: "Blog", newTab: false, type: "custom", url: "/blog" } },
+              { link: { customPage: "blog", label: "Blog", newTab: false, type: "customPage" } },
               { link: { label: "Empleo", newTab: false, type: "custom", url: "#" } },
               { link: { label: "Contacto", newTab: false, type: "custom", url: "#" } },
             ],
@@ -132,30 +133,44 @@ export const Footer: CollectionConfig<"footer"> = {
       }),
       fields: [
         {
-          label: { en: "Group label", es: "Etiqueta del grupo" },
+          label: { en: "Column title", es: "Título de la columna" },
           localized: true,
           name: "label",
           required: true,
           type: "text",
         },
         {
-          admin: { initCollapsed: true },
-          fields: [link({ appearances: false })],
+          admin: { components: { RowLabel: linkListRowLabel }, initCollapsed: true },
+          fields: [link({ label: false })],
+          label: { en: "Links", es: "Enlaces" },
+          labels: {
+            plural: { en: "Links", es: "Enlaces" },
+            singular: { en: "Link", es: "Enlace" },
+          },
           minRows: 1,
           name: "links",
           required: true,
           type: "array",
         },
       ],
+      label: { en: "Link columns", es: "Columnas de enlaces" },
+      labels: {
+        plural: { en: "Link columns", es: "Columnas de enlaces" },
+        singular: { en: "Link column", es: "Columna de enlaces" },
+      },
       localized: true,
       maxRows: 4,
       name: "linkGroups",
       type: "array",
     },
     {
-      admin: { initCollapsed: true },
-      fields: [link({ appearances: false })],
+      admin: { components: { RowLabel: linkListRowLabel }, initCollapsed: true },
+      fields: [link({ label: false })],
       label: { en: "Legal links", es: "Enlaces legales" },
+      labels: {
+        plural: { en: "Legal links", es: "Enlaces legales" },
+        singular: { en: "Legal link", es: "Enlace legal" },
+      },
       localized: true,
       maxRows: 4,
       name: "legalLinks",
@@ -163,54 +178,42 @@ export const Footer: CollectionConfig<"footer"> = {
     },
     {
       admin: {
-        components: { RowLabel: "@/components/admin/RowLabel#RowLabel" },
+        components: { RowLabel: "@/components/admin/RowLabel#RowLabelSocial" },
         description: {
-          en: "Icons shown in the bottom-right corner of the footer",
-          es: "Iconos que se muestran en la esquina inferior derecha del footer",
+          en: "Icons in the bottom-right corner of the footer.",
+          es: "Iconos en la esquina inferior derecha del pie de página.",
         },
         initCollapsed: true,
       },
       fields: [
         {
-          type: "row",
-          fields: [
-            {
-              admin: { width: "40%" },
-              label: { en: "Platform", es: "Plataforma" },
-              name: "platform",
-              options: SOCIAL_PLATFORMS.map((platform) => ({
-                label: SOCIAL_PLATFORM_LABELS[platform],
-                value: platform,
-              })),
-              required: true,
-              type: "select",
-            },
-            {
-              admin: { width: "60%" },
-              label: { en: "URL", es: "URL" },
-              name: "url",
-              required: true,
-              type: "text",
-            },
-          ],
+          label: { en: "Platform", es: "Plataforma" },
+          name: "platform",
+          options: SOCIAL_PLATFORMS.map((platform) => ({
+            label: SOCIAL_PLATFORM_LABELS[platform],
+            value: platform,
+          })),
+          required: true,
+          type: "select",
         },
+        // A profile is always a web address, opened in a new tab unless the editor unticks it.
+        link({ label: false, newTabByDefault: true, types: ["custom"], withText: false }),
       ],
       label: { en: "Social links", es: "Redes sociales" },
+      labels: {
+        plural: { en: "Social links", es: "Redes sociales" },
+        singular: { en: "Social link", es: "Red social" },
+      },
       maxRows: 8,
       name: "socialLinks",
       type: "array",
     },
     {
-      admin: {
-        description: {
-          en: "Copyright text shown at the bottom",
-          es: "Texto de copyright al pie",
-        },
-      },
       defaultValue: createLocalizedDefault({
         en: "© 2026 Cadence (The Netherlands)",
         es: "© 2026 Cadence (Países Bajos)",
       }),
+      label: { en: "Copyright line", es: "Texto de copyright" },
       localized: true,
       name: "copyrightText",
       type: "text",
@@ -222,7 +225,7 @@ export const Footer: CollectionConfig<"footer"> = {
   labels: {
     plural: {
       en: "Footers",
-      es: "Pie de página",
+      es: "Pies de página",
     },
     singular: {
       en: "Footer",

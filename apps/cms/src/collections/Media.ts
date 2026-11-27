@@ -1,7 +1,7 @@
 import type { CollectionBeforeChangeHook, CollectionConfig } from "payload";
 
 import { revalidateScopedTag } from "@/lib/utils/scopedCache";
-import { anyone, author, or, superAdmin, user } from "@/lib/access";
+import { anyone, author, editor, or, superAdmin, user } from "@/lib/access";
 import {
   deleteFailedClientUpload,
   rememberClientUploadKey,
@@ -10,6 +10,7 @@ import {
   protectOtherEnvironmentFilesOnDelete,
   protectOtherEnvironmentFilesOnReplace,
 } from "@/lib/hooks/protectOtherEnvironmentFiles";
+import { keepSingleDefaultImage } from "@/lib/hooks/keepSingleDefaultImage";
 import { validateMediaUpload } from "@/lib/hooks/validateMediaUpload";
 import { generateRichText } from "@/lib/utils/generateRichText";
 import { DEFAULT_MEDIA_CACHE_TAG } from "@/dal/getDefaultMediaId";
@@ -29,13 +30,14 @@ const setDefaultFocalPoint: CollectionBeforeChangeHook = ({ data }) => {
 
 export const Media: CollectionConfig<"media"> = {
   access: {
-    create: or(superAdmin, user, author),
+    // Editors upload and caption images from posts; deleting shared media stays with other roles.
+    create: or(superAdmin, user, author, editor),
     delete: or(superAdmin, user, author),
     read: anyone,
-    update: or(superAdmin, user, author),
+    update: or(superAdmin, user, author, editor),
   },
   admin: {
-    defaultColumns: ["filename", "alt"],
+    defaultColumns: ["filename", "alt", "mimeType", "filesize", "updatedAt"],
     group: "Content",
     pagination: {
       limits: [20, 50, 100],
@@ -44,8 +46,8 @@ export const Media: CollectionConfig<"media"> = {
   fields: [
     {
       label: {
-        en: "Alt",
-        es: "Alt",
+        en: "Image description (alt text)",
+        es: "Descripción de la imagen (texto alternativo)",
       },
       localized: true,
       name: "alt",
@@ -56,7 +58,7 @@ export const Media: CollectionConfig<"media"> = {
       editor: generateRichText(),
       label: {
         en: "Caption",
-        es: "Descripción",
+        es: "Pie de foto",
       },
       localized: true,
       name: "caption",
@@ -65,22 +67,15 @@ export const Media: CollectionConfig<"media"> = {
     {
       admin: {
         description: {
-          en: "Use this file as default when no image is selected.",
-          es: "Usar este archivo por defecto cuando no se seleccione ninguna imagen.",
+          en: "Shown wherever an image is needed but none was picked (e.g. a new header logo, hero or post image). Only one image can be the default: ticking it here unticks the others.",
+          es: "Se muestra donde hace falta una imagen y no se eligió ninguna (p. ej. el logo de una cabecera nueva, un hero o la imagen de un post). Solo una imagen puede ser la predeterminada: al marcarla aquí se desmarcan las demás.",
         },
+        position: "sidebar",
       },
-      hasMany: true,
-      name: "defaultFor",
-      options: [
-        {
-          label: {
-            en: "Default image for the platform (logo, blocks, sections)",
-            es: "Imagen por defecto de la plataforma (logo, bloques, secciones)",
-          },
-          value: "platform_default",
-        },
-      ],
-      type: "select",
+      defaultValue: false,
+      label: { en: "Use as default", es: "Usar por defecto" },
+      name: "isDefaultImage",
+      type: "checkbox",
     },
   ],
   defaultPopulate: {
@@ -104,6 +99,7 @@ export const Media: CollectionConfig<"media"> = {
     beforeChange: [protectOtherEnvironmentFilesOnReplace, setDefaultFocalPoint],
     beforeDelete: [protectOtherEnvironmentFilesOnDelete],
     afterChange: [
+      keepSingleDefaultImage,
       ({ req }) => {
         if (req?.context?.disableRevalidate) return;
         try {

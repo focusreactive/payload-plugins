@@ -9,32 +9,22 @@ import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 const fields: Field[] = [
   sectionHeadingField(),
   {
-    defaultValue: "slide",
-    label: { en: "Effect", es: "Efecto" },
-    name: "effect",
-    options: [
-      { label: "Slide", value: "slide" },
-      { label: "Fade", value: "fade" },
-      { label: "Cube", value: "cube" },
-      { label: "Flip", value: "flip" },
-      { label: "Coverflow", value: "coverflow" },
-      { label: "Cards", value: "cards" },
-    ],
-    type: "select",
-  },
-  {
     admin: { initCollapsed: true },
     fields: [
       imageField("image", { withAspectRatio: false }),
       {
         editor: generateRichText(),
-        label: { en: "Slide Text", es: "Texto de la diapositiva" },
+        label: { en: "Slide caption", es: "Texto de la diapositiva" },
         localized: true,
         name: "text",
         type: "richText",
       },
     ],
     label: { en: "Slides", es: "Diapositivas" },
+    labels: {
+      plural: { en: "Slides", es: "Diapositivas" },
+      singular: { en: "Slide", es: "Diapositiva" },
+    },
     localized: true,
     minRows: 1,
     name: "slides",
@@ -43,13 +33,30 @@ const fields: Field[] = [
   },
 ];
 
-export const CarouselBlock: Block = injectSection({
-  slug: "carousel",
-  interfaceName: "CarouselBlock",
-  ...getBlockPreviewImage("Carousel"),
-  labels: {
-    plural: { en: "Carousels", es: "Carruseles" },
-    singular: { en: "Carousel", es: "Carrusel" },
+/** How slides change. */
+const lookFields: Field[] = [
+  {
+    defaultValue: "slide",
+    label: { en: "Slide transition", es: "Transición entre diapositivas" },
+    name: "effect",
+    options: [
+      { label: { en: "Slide sideways", es: "Deslizar de lado" }, value: "slide" },
+      { label: { en: "Fade in and out", es: "Fundido" }, value: "fade" },
+    ],
+    type: "select",
   },
-  fields,
-});
+];
+
+export const CarouselBlock: Block = injectSection(
+  {
+    slug: "carousel",
+    interfaceName: "CarouselBlock",
+    ...getBlockPreviewImage("Carousel"),
+    labels: {
+      plural: { en: "Image carousels", es: "Carruseles de imágenes" },
+      singular: { en: "Image carousel", es: "Carrusel de imágenes" },
+    },
+    fields,
+  },
+  { lookFields }
+);

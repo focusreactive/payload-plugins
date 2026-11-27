@@ -13,27 +13,32 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
         {
           fields: [
             {
-              admin: {
-                description: {
-                  en: "The header to display on the page",
-                  es: "El header a mostrar en la página",
+              // Presentational only: header/footer keep their top-level data paths. One compact
+              // strip at the top of the tab (owner's decision).
+              fields: [
+                {
+                  admin: { width: "50%" },
+                  defaultValue: async () => getSoleRelationId("header"),
+                  label: { en: "Header", es: "Cabecera" },
+                  name: "header",
+                  relationTo: "header",
+                  type: "relationship",
                 },
-              },
-              defaultValue: async () => getSoleRelationId("header"),
-              name: "header",
-              relationTo: "header",
-              type: "relationship",
+                {
+                  admin: { width: "50%" },
+                  defaultValue: async () => getSoleRelationId("footer"),
+                  label: { en: "Footer", es: "Pie de página" },
+                  name: "footer",
+                  relationTo: "footer",
+                  type: "relationship",
+                },
+              ],
+              type: "row",
             },
             {
-              admin: {
-                description: {
-                  en: "The page's main heading (H1). Every page has exactly one hero.",
-                  es: "El encabezado principal de la página (H1). Cada página tiene exactamente un hero.",
-                },
-                initCollapsed: true,
-              },
+              admin: { initCollapsed: true },
               blocks: heroBlocks,
-              label: { en: "Hero", es: "Hero" },
+              label: { en: "Hero banner", es: "Cabecera" },
               localized: true,
               maxRows: 1,
               minRows: 1,
@@ -45,13 +50,7 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
               }),
             },
             {
-              admin: {
-                description: {
-                  en: "Page sections below the hero. Section titles render as H2.",
-                  es: "Secciones de la página debajo del hero. Los títulos de sección se muestran como H2.",
-                },
-                initCollapsed: true,
-              },
+              admin: { initCollapsed: true },
               blocks: [...contentBlocks, GlobalSectionSlotBlock],
               label: { en: "Sections", es: "Secciones" },
               localized: true,
@@ -64,18 +63,6 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
                     blockType,
                   })),
               }),
-            },
-            {
-              admin: {
-                description: {
-                  en: "The footer to display on the page",
-                  es: "El footer a mostrar en la página",
-                },
-              },
-              defaultValue: async () => getSoleRelationId("footer"),
-              name: "footer",
-              relationTo: "footer",
-              type: "relationship",
             },
           ],
           label: { en: "Content", es: "Contenido" },

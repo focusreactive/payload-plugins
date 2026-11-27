@@ -169,14 +169,15 @@ function expandBlock(
         ),
       ];
     case "ctaBannerInline": {
+      const bannerHeading = isRecord(fields.heading) ? fields.heading : {};
       const nodes: (ContentNode | null)[] = [
-        heading(3, str(fields.heading)),
-        paragraph(str(fields.eyebrow)),
-        paragraph(str(fields.description)),
+        heading(3, str(bannerHeading.title)),
+        paragraph(str(bannerHeading.eyebrow)),
+        paragraph(str(bannerHeading.description)),
       ];
 
       for (const action of recordsOf(fields.actions)) {
-        nodes.push(linkToContentNode(action as LinkValue, linkCtx));
+        nodes.push(linkToContentNode(action.link as LinkValue, linkCtx));
       }
 
       return nodes;

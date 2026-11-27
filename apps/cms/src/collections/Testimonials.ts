@@ -10,11 +10,21 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
     update: or(superAdmin, user),
   },
   admin: {
-    defaultColumns: ["author", "company", "rating", "createdAt"],
+    defaultColumns: ["author", "company", "rating", "updatedAt"],
     group: "Content",
     useAsTitle: "author",
   },
   fields: [
+    {
+      label: {
+        en: "Quote",
+        es: "Cita",
+      },
+      localized: true,
+      name: "content",
+      required: true,
+      type: "textarea",
+    },
     {
       type: "row",
       fields: [
@@ -31,10 +41,11 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
         {
           admin: { width: "50%" },
           label: {
-            en: "Company",
-            es: "Empresa",
+            en: "Job title",
+            es: "Cargo",
           },
-          name: "company",
+          localized: true,
+          name: "position",
           type: "text",
         },
       ],
@@ -45,19 +56,21 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
         {
           admin: { width: "50%" },
           label: {
-            en: "Position",
-            es: "Posición",
+            en: "Company",
+            es: "Empresa",
           },
-          localized: true,
-          name: "position",
+          name: "company",
           type: "text",
         },
         {
-          admin: { width: "50%" },
+          admin: {
+            components: { Field: "/components/admin/StarRatingField#StarRatingField" },
+            width: "50%",
+          },
           defaultValue: 5,
           label: {
-            en: "Rating (1-5)",
-            es: "Calificación (1-5)",
+            en: "Rating",
+            es: "Calificación",
           },
           max: 5,
           min: 1,
@@ -68,22 +81,12 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
     },
     {
       label: {
-        en: "Avatar",
-        es: "Avatar",
+        en: "Photo",
+        es: "Foto",
       },
       name: "avatar",
       relationTo: "media",
       type: "upload",
-    },
-    {
-      label: {
-        en: "Review",
-        es: "Reseña",
-      },
-      localized: true,
-      name: "content",
-      required: true,
-      type: "textarea",
     },
   ],
   labels: {

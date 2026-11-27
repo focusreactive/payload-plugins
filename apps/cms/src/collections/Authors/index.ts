@@ -1,16 +1,16 @@
 import type { CollectionConfig } from "payload";
 
-import { or, user, author, superAdmin } from "@/lib/access";
+import { author, editor, or, superAdmin, user } from "@/lib/access";
 
 export const Authors: CollectionConfig<"authors"> = {
   access: {
-    create: or(superAdmin, user, author, user),
-    delete: or(superAdmin, user, author, user),
-    read: or(superAdmin, user, author, user),
-    update: or(superAdmin, user, author, user),
+    create: or(superAdmin, user, author, editor),
+    delete: or(superAdmin, user, author, editor),
+    read: or(superAdmin, user, author, editor),
+    update: or(superAdmin, user, author, editor),
   },
   admin: {
-    defaultColumns: ["name", "updatedAt"],
+    defaultColumns: ["name", "avatar", "updatedAt"],
     group: "Blog",
     pagination: {
       limits: [20, 50, 100],
@@ -19,25 +19,26 @@ export const Authors: CollectionConfig<"authors"> = {
   },
   fields: [
     {
-      admin: {
-        description: {
-          en: "The name of the author",
-          es: "El nombre del autor",
+      fields: [
+        {
+          admin: { width: "50%" },
+          label: {
+            en: "Name",
+            es: "Nombre",
+          },
+          name: "name",
+          required: true,
+          type: "text",
         },
-      },
-      label: {
-        en: "Name",
-        es: "Nombre",
-      },
-      name: "name",
-      required: true,
-      type: "text",
-    },
-    {
-      label: { en: "Avatar", es: "Avatar" },
-      name: "avatar",
-      relationTo: "media",
-      type: "upload",
+        {
+          admin: { width: "50%" },
+          label: { en: "Photo", es: "Foto" },
+          name: "avatar",
+          relationTo: "media",
+          type: "upload",
+        },
+      ],
+      type: "row",
     },
   ],
   labels: {

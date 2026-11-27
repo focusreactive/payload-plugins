@@ -111,8 +111,15 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (pr
 
   const blocksData = (getDataByPath<unknown[]>(path) || []) as unknown[];
   const addRowIndex = blocksData.length;
+  // The native "Add block" button is replaced by ours, so the row limit has to be enforced here too.
+  const hasMaxRows = typeof field.maxRows === "number" && blocksData.length >= field.maxRows;
 
   const handleBlockSelect = (blockType: string, preset?: Preset | null) => {
+    if (hasMaxRows) {
+      closeModal(customDrawerSlug);
+      return;
+    }
+
     const targetRowIndex = insertIndexRef.current ?? addRowIndex;
 
     if (preset) {
@@ -148,6 +155,8 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (pr
   };
 
   const handleOpenDrawer = async (insertIndex: number | null = null) => {
+    if (hasMaxRows) return;
+
     if (beforeOpenDrawer) {
       const allowed = await beforeOpenDrawer({
         field,
@@ -175,7 +184,7 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (pr
         <div className="blocks-field-with-presets">
           <BlocksField {...props} />
 
-          {!readOnly && (
+          {!readOnly && !hasMaxRows && (
             <div className="blocks-field-with-presets__footer-actions">
               <button
                 className="blocks-field__drawer-toggler blocks-field-with-presets__drawer-toggler"

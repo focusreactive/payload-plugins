@@ -1,6 +1,6 @@
 import type { CollectionConfig } from "payload";
 
-import { authenticated, onlySelf, or, superAdmin, user } from "@/lib/access";
+import { EDITOR_ROLE, authenticated, onlySelf, or, superAdmin, user } from "@/lib/access";
 
 export const Users: CollectionConfig<"users"> = {
   access: {
@@ -46,7 +46,7 @@ export const Users: CollectionConfig<"users"> = {
     },
   },
   admin: {
-    defaultColumns: ["name", "role", "email", "updatedAt"],
+    defaultColumns: ["name", "email", "role", "updatedAt"],
     group: "Settings",
     pagination: {
       limits: [20, 50, 100],
@@ -56,12 +56,6 @@ export const Users: CollectionConfig<"users"> = {
   auth: true,
   fields: [
     {
-      admin: {
-        description: {
-          en: "The name of the user",
-          es: "El nombre del usuario",
-        },
-      },
       defaultValue: "",
       label: {
         en: "Name",
@@ -91,10 +85,6 @@ export const Users: CollectionConfig<"users"> = {
         },
       },
       admin: {
-        description: {
-          en: "The role of the user",
-          es: "El rol del usuario",
-        },
         position: "sidebar",
       },
       defaultValue: "admin",
@@ -117,6 +107,13 @@ export const Users: CollectionConfig<"users"> = {
             es: "Autor",
           },
           value: "author",
+        },
+        {
+          label: {
+            en: "Editor",
+            es: "Editor",
+          },
+          value: EDITOR_ROLE,
         },
         {
           label: {

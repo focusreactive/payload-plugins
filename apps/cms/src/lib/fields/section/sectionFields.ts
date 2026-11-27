@@ -7,16 +7,16 @@ export const sectionFields: GroupField = {
       fields: [
         {
           admin: { width: "50%" },
-          label: { en: "Theme", es: "Tema" },
+          label: { en: "Section look", es: "Aspecto de la sección" },
           name: "theme",
           options: [
-            // The redesign is dark-only: the stored values are kept, but each one now
-            // selects a surface treatment instead of a light/dark palette.
-            { label: { en: "Base (black)", es: "Base (negro)" }, value: "light" },
-            { label: { en: "Ink (lifted black)", es: "Tinta (negro elevado)" }, value: "dark" },
+            // The site is dark-only: the stored values are kept, but each one now selects a
+            // surface treatment instead of a light/dark palette.
+            { label: { en: "Black", es: "Negro" }, value: "light" },
+            { label: { en: "Soft black", es: "Negro suave" }, value: "dark" },
             { label: { en: "Glass panel", es: "Panel de cristal" }, value: "light-gray" },
             {
-              label: { en: "Glass panel + glow", es: "Panel de cristal + resplandor" },
+              label: { en: "Glass panel with glow", es: "Panel de cristal con brillo" },
               value: "dark-gray",
             },
           ],
@@ -25,11 +25,11 @@ export const sectionFields: GroupField = {
         {
           admin: { width: "50%" },
           defaultValue: "base",
-          label: { en: "Max Width", es: "Ancho Máximo" },
+          label: { en: "Content width", es: "Ancho del contenido" },
           name: "maxWidth",
           options: [
-            { label: { en: "None", es: "Ninguno" }, value: "none" },
-            { label: { en: "Base", es: "Base" }, value: "base" },
+            { label: { en: "Full width", es: "Ancho completo" }, value: "none" },
+            { label: { en: "Standard", es: "Estándar" }, value: "base" },
           ],
           type: "select",
         },
@@ -41,11 +41,11 @@ export const sectionFields: GroupField = {
         {
           admin: { width: "50%" },
           defaultValue: "base",
-          label: { en: "Padding Y", es: "Relleno Vertical" },
+          label: { en: "Space above and below", es: "Espacio arriba y abajo" },
           name: "paddingY",
           options: [
             { label: { en: "None", es: "Ninguno" }, value: "none" },
-            { label: { en: "Base", es: "Base" }, value: "base" },
+            { label: { en: "Standard", es: "Estándar" }, value: "base" },
             { label: { en: "Large", es: "Grande" }, value: "large" },
           ],
           type: "select",
@@ -53,11 +53,11 @@ export const sectionFields: GroupField = {
         {
           admin: { width: "50%" },
           defaultValue: "base",
-          label: { en: "Padding X", es: "Relleno Horizontal" },
+          label: { en: "Space at the sides", es: "Espacio a los lados" },
           name: "paddingX",
           options: [
             { label: { en: "None", es: "Ninguno" }, value: "none" },
-            { label: { en: "Base", es: "Base" }, value: "base" },
+            { label: { en: "Standard", es: "Estándar" }, value: "base" },
           ],
           type: "select",
         },
@@ -68,8 +68,8 @@ export const sectionFields: GroupField = {
         {
           admin: {
             description: {
-              en: 'Upload an image or video. Use the "Background" folder.',
-              es: 'Sube una imagen o video. Usa la carpeta "Background".',
+              en: 'Pick an image or video from the "Background" folder.',
+              es: 'Elige una imagen o un video de la carpeta "Background".',
             },
           },
           filterOptions: () => ({
@@ -78,8 +78,8 @@ export const sectionFields: GroupField = {
             },
           }),
           label: {
-            en: "Background (Image or Video)",
-            es: "Fondo (Imagen o Video)",
+            en: "Background image or video",
+            es: "Imagen o video de fondo",
           },
           name: "media",
           relationTo: "media",
@@ -91,7 +91,7 @@ export const sectionFields: GroupField = {
               name: "overlay",
               type: "select",
               dbName: "sec_bg_ovrly",
-              label: { en: "Overlay Color", es: "Color de Capa" },
+              label: { en: "Tint over the background", es: "Velo sobre el fondo" },
               options: [
                 { label: { en: "Black", es: "Negro" }, value: "black" },
                 { label: { en: "White", es: "Blanco" }, value: "white" },
@@ -104,17 +104,13 @@ export const sectionFields: GroupField = {
             {
               name: "opacity",
               type: "number",
-              label: { en: "Overlay Opacity (%)", es: "Opacidad de Capa (%)" },
+              label: { en: "Tint strength (%)", es: "Intensidad del velo (%)" },
               min: 0,
               max: 100,
               defaultValue: 35,
               admin: {
                 width: "50%",
                 condition: (_, siblingData) => !!siblingData?.overlay,
-                description: {
-                  en: "0 = transparent, 100 = fully opaque",
-                  es: "0 = transparente, 100 = completamente opaco",
-                },
               },
             },
           ],

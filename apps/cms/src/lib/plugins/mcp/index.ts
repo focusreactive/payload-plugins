@@ -128,7 +128,7 @@ export const mcpPluginConfig = mcpPlugin({
     },
     media: {
       description:
-        "Media library of uploaded files (images and documents). Each item has localized alt text, an optional rich-text caption, platform-default flags, and generated image sizes. Use this collection to read, create, update or delete media.",
+        "Media library of uploaded files (images and documents). Each item has localized alt text, an optional rich-text caption, an `isDefaultImage` checkbox (the image used wherever none was picked), and generated image sizes. Use this collection to read, create, update or delete media.",
       enabled: {
         create: true,
         delete: true,
@@ -148,7 +148,7 @@ export const mcpPluginConfig = mcpPlugin({
     },
     posts: {
       description:
-        "Blog posts. Each post has a title, excerpt, hero image, rich-text body, SEO metadata, categories, authors, and related posts. Supports draft/publish versioning and localization (en/es). Use this collection to read, create, update or delete blog articles.",
+        "Blog posts. Each post has a title, excerpt, hero image, rich-text body, optional sections below the body (`blocks`, the same section blocks as pages, e.g. FAQ and CTA band), SEO metadata, categories, authors, and related posts. Supports draft/publish versioning and localization (en/es). Use this collection to read, create, update or delete blog articles.",
       enabled: {
         create: true,
         delete: true,
@@ -168,7 +168,7 @@ export const mcpPluginConfig = mcpPlugin({
     },
     users: {
       description:
-        "CMS user accounts. Each user has a name, email, and role (admin/author/user). Authentication-enabled. Use this collection to read, create, update or delete users.",
+        "CMS user accounts. Each user has a name, email, and role (admin/author/editor/user). Authentication-enabled. Use this collection to read, create, update or delete users.",
       enabled: {
         create: true,
         delete: true,
@@ -194,5 +194,31 @@ export const mcpPluginConfig = mcpPlugin({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ] as any,
   },
+  // The auth "API Key" field is rendered by Payload's Auth block right above the
+  // collection fields, so a leading UI field lands directly under it.
+  overrideApiKeyCollection: (collection) => ({
+    ...collection,
+    admin: { ...collection.admin, defaultColumns: ["label", "user", "updatedAt"] },
+    // `reveal` mounts Payload's `POST /api/payload-mcp-api-keys/:id/api-key/reveal`
+    // so the stored (encrypted) key can be shown again after save. The endpoint runs
+    // the collection's read + update access, which the MCP plugin restricts to the
+    // key's own user, so only the owner can reveal a key (admins included).
+    auth: {
+      ...(typeof collection.auth === "object" ? collection.auth : {}),
+      useAPIKey: { reveal: true },
+    },
+    fields: [
+      {
+        name: "claudeCodeCommand",
+        type: "ui",
+        admin: {
+          components: {
+            Field: "/components/admin/ClaudeCodeMcpCommand#ClaudeCodeMcpCommand",
+          },
+        },
+      },
+      ...collection.fields,
+    ],
+  }),
   overrideAuth,
 });

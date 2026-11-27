@@ -20,9 +20,12 @@ const actionButton = () =>
 
 const editLabel = () => document.querySelector<HTMLElement>(`.${LABEL_CLASS}`) as HTMLElement;
 
+// The action sits in the active frame; the Edit label is the frame's sibling (so the clip under a
+// sticky header never hides it). Both live in the overlay layer, which is what shows them.
+const layerOf = (element: HTMLElement) => element.closest<HTMLElement>("[data-ve-layer]");
+
 const isShown = (element: HTMLElement) =>
-  element.style.display !== "none" &&
-  element.parentElement?.parentElement?.style.visibility === "visible";
+  element.style.display !== "none" && layerOf(element)?.style.visibility === "visible";
 
 const frameOf = (button: HTMLElement) => button.parentElement as HTMLElement;
 
@@ -153,10 +156,13 @@ describe("the action the overlay offers for a target", () => {
 
     expect(main.contains(actionButton())).toBe(false);
     expect(photo.childElementCount).toBe(0);
-    expect(actionButton().parentElement).toBe(editLabel().parentElement);
+    expect(layerOf(actionButton())).not.toBeNull();
+    expect(layerOf(actionButton())).toBe(layerOf(editLabel()));
   });
 
   it("is not shown for a target that offers none", () => {
+    // A target without a box of its own gets no Edit label, so the caption needs one here.
+    vi.spyOn(caption, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 200, 20));
     pointerOver(caption);
 
     expect(isShown(editLabel())).toBe(true);

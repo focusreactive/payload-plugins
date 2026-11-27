@@ -10,6 +10,7 @@ export const DocumentEmbeddings: CollectionConfig = {
     update: superAdmin,
   },
   admin: {
+    defaultColumns: ["documentId", "collection", "locale", "updatedAt"],
     group: "System",
   },
   fields: [
@@ -19,18 +20,25 @@ export const DocumentEmbeddings: CollectionConfig = {
       type: "text",
     },
     {
-      name: "collection",
-      options: [
-        { label: "Page", value: "page" },
-        { label: "Post", value: "post" },
+      fields: [
+        {
+          admin: { width: "50%" },
+          name: "collection",
+          options: [
+            { label: "Page", value: "page" },
+            { label: "Post", value: "post" },
+          ],
+          required: true,
+          type: "select",
+        },
+        {
+          admin: { width: "50%" },
+          name: "locale",
+          required: true,
+          type: "text",
+        },
       ],
-      required: true,
-      type: "select",
-    },
-    {
-      name: "locale",
-      required: true,
-      type: "text",
+      type: "row",
     },
   ],
   labels: {

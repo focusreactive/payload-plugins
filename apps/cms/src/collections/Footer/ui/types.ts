@@ -15,6 +15,7 @@ export interface FooterLinkGroup {
 export interface FooterSocialLink {
   platform: SocialPlatform;
   href: string;
+  newTab?: boolean;
 }
 
 export interface FooterBrand {

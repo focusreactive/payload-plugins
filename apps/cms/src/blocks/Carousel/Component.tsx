@@ -16,7 +16,7 @@ export const CarouselBlockComponent: React.FC<CarouselBlock> = ({
   id,
 }) => {
   const cards: ICarouselCardProps[] = (slides ?? []).map((slide) => ({
-    effect: (effect as ICarouselCardProps["effect"]) ?? "slide",
+    effect: effect ?? "slide",
     image: prepareMediaProps(slide.image),
     text: slide.text ? prepareRichTextProps(slide.text) : undefined,
   }));
@@ -24,7 +24,7 @@ export const CarouselBlockComponent: React.FC<CarouselBlock> = ({
   return (
     <SectionContainer sectionData={{ ...section, id }}>
       <SectionHeading {...heading} align="center" className="mb-sectionGap" />
-      <Carousel slides={cards} effect={(effect as ICarouselCardProps["effect"]) ?? "slide"} />
+      <Carousel slides={cards} effect={effect ?? "slide"} />
     </SectionContainer>
   );
 };

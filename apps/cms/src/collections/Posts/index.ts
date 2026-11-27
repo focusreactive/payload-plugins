@@ -1,7 +1,8 @@
-import type { CollectionConfig, GroupField } from "payload";
+import type { CollectionConfig } from "payload";
 
 import { CardsGridInlineBlock } from "@/blocks/CardsGrid/inlineConfig";
 import { CodeInlineBlock } from "@/blocks/Code/inlineConfig";
+import { contentBlocks } from "@/blocks/contentBlocks";
 import { CtaBannerInlineBlock } from "@/blocks/CtaBanner/inlineConfig";
 import { LogosInlineBlock } from "@/blocks/Logos/inlineConfig";
 import { BLOG_CONFIG } from "@/lib/config/blog";
@@ -10,8 +11,7 @@ import {
   createLivePreviewEditComponents,
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
-import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
-import { anyone, author, or, user, superAdmin } from "@/lib/access";
+import { anyone, author, editor, or, user, superAdmin } from "@/lib/access";
 import {
   createLocalizedDefault,
   createLocalizedRichText,
@@ -21,8 +21,7 @@ import { generateRichText } from "@/lib/utils/generateRichText";
 import { generateSeoFields } from "@/lib/utils/seoFields";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
-import { link } from "@/lib/fields/link";
-import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
+import { PUBLIC_URL_FIELD_NAME, publicUrlField } from "@/lib/fields/publicUrlField";
 import { createSharedSlugField } from "@/lib/fields/slugField";
 
 import { computeReadingTime } from "./hooks/computeReadingTime";
@@ -31,16 +30,16 @@ import { revalidateDelete, revalidatePost } from "./hooks/revalidatePost";
 
 export const Posts: CollectionConfig<"posts"> = {
   access: {
-    create: or(superAdmin, user, author),
-    delete: or(superAdmin, user, author),
+    create: or(superAdmin, user, author, editor),
+    delete: or(superAdmin, user, author, editor),
     read: anyone,
-    update: or(superAdmin, user, author),
+    update: or(superAdmin, user, author, editor),
   },
   admin: {
     components: {
       edit: createLivePreviewEditComponents(),
     },
-    defaultColumns: ["title", "slug", "heroImage", "updatedAt"],
+    defaultColumns: ["title", PUBLIC_URL_FIELD_NAME, "heroImage", "updatedAt"],
     group: "Blog",
     livePreview: {
       url: ({ data, locale: localeProp }) => {
@@ -111,10 +110,10 @@ export const Posts: CollectionConfig<"posts"> = {
               type: "textarea",
             },
             {
-              defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
+              defaultValue: async () => getDefaultMediaId(),
               label: {
-                en: "Hero Image",
-                es: "Imagen de la cabecera",
+                en: "Cover image",
+                es: "Imagen de portada",
               },
               name: "heroImage",
               relationTo: "media",
@@ -141,64 +140,15 @@ export const Posts: CollectionConfig<"posts"> = {
               type: "richText",
             },
             {
-              admin: {
-                description: {
-                  en: "Optional FAQ shown after the article body.",
-                  es: "FAQ opcional mostrado tras el cuerpo del artículo.",
-                },
-              },
-              fields: [
-                sectionHeadingField(),
-                {
-                  admin: { initCollapsed: true },
-                  fields: [
-                    {
-                      label: { en: "Question", es: "Pregunta" },
-                      localized: true,
-                      name: "question",
-                      required: true,
-                      type: "text",
-                    },
-                    {
-                      editor: generateRichText(),
-                      label: { en: "Answer", es: "Respuesta" },
-                      localized: true,
-                      name: "answer",
-                      required: true,
-                      type: "richText",
-                    },
-                  ],
-                  localized: true,
-                  name: "items",
-                  type: "array",
-                },
-              ],
-              label: { en: "FAQ", es: "FAQ" },
-              name: "faq",
-              type: "group",
-            },
-            {
-              admin: {
-                description: {
-                  en: "Optional CTA band shown at the end of the post. Hidden when the heading is empty.",
-                  es: "Banda CTA opcional al final de la publicación. Oculta si el encabezado está vacío.",
-                },
-              },
-              fields: [
-                sectionHeadingField(),
-                {
-                  admin: { initCollapsed: true },
-                  fields: (link() as GroupField).fields,
-                  label: { en: "Actions", es: "Acciones" },
-                  localized: true,
-                  maxRows: 2,
-                  name: "actions",
-                  type: "array",
-                },
-              ],
-              label: { en: "CTA", es: "CTA" },
-              name: "cta",
-              type: "group",
+              admin: { initCollapsed: true },
+              // Same section library as pages, minus GlobalSectionSlot: global sections are managed
+              // outside the Blog (editors cannot read them) and their usage tracking/revalidation
+              // only covers pages.
+              blocks: contentBlocks,
+              label: { en: "Sections", es: "Secciones" },
+              localized: true,
+              name: "blocks",
+              type: "blocks",
             },
           ],
           label: {
@@ -222,6 +172,7 @@ export const Posts: CollectionConfig<"posts"> = {
       type: "tabs",
     },
     createSharedSlugField("posts"),
+    publicUrlField(),
     {
       admin: {
         date: {
@@ -241,20 +192,18 @@ export const Posts: CollectionConfig<"posts"> = {
       },
       index: true,
       label: {
-        en: "Published At",
-        es: "Publicado el",
+        en: "Publish date",
+        es: "Fecha de publicación",
       },
       name: "publishedAt",
       type: "date",
     },
     {
       admin: {
+        // Computed on save (computeReadingTime) and stored for post cards; not an editor concern.
+        hidden: true,
         position: "sidebar",
         readOnly: true,
-        description: {
-          en: "Estimated reading time in minutes. Auto-calculated from the content on save.",
-          es: "Tiempo de lectura estimado en minutos. Se calcula automáticamente al guardar.",
-        },
       },
       label: {
         en: "Reading Time (min)",
@@ -294,10 +243,6 @@ export const Posts: CollectionConfig<"posts"> = {
     },
     {
       admin: {
-        description: {
-          en: "Select up to 3 related posts. If fewer than 3 are selected, additional posts from the same categories will be shown automatically based on publish date.",
-          es: "Selecciona hasta 3 publicaciones relacionadas. Si se seleccionan menos de 3, se mostrarán automáticamente publicaciones adicionales de las mismas categorías según la fecha de publicación.",
-        },
         position: "sidebar",
       },
       filterOptions: ({ id }) => ({
@@ -307,9 +252,10 @@ export const Posts: CollectionConfig<"posts"> = {
       }),
       hasMany: true,
       label: {
-        en: "Related Posts",
+        en: "Related posts",
         es: "Publicaciones relacionadas",
       },
+      maxRows: 3,
       name: "relatedPosts",
       relationTo: BLOG_CONFIG.collection,
       type: "relationship",

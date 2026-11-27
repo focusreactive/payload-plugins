@@ -88,6 +88,7 @@ export interface Config {
     'payload-mcp-api-keys': PayloadMcpApiKey;
     'audit-events': AuditEvent;
     'payload-kv': PayloadKv;
+    'payload-jobs': PayloadJob;
     'payload-folders': FolderInterface;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -119,6 +120,7 @@ export interface Config {
     'payload-mcp-api-keys': PayloadMcpApiKeysSelect<false> | PayloadMcpApiKeysSelect<true>;
     'audit-events': AuditEventsSelect<false> | AuditEventsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-folders': PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -142,7 +144,13 @@ export interface Config {
   };
   user: User | PayloadMcpApiKey;
   jobs: {
-    tasks: unknown;
+    tasks: {
+      schedulePublish: TaskSchedulePublish;
+      inline: {
+        input: unknown;
+        output: unknown;
+      };
+    };
     workflows: unknown;
   };
 }
@@ -188,14 +196,8 @@ export interface PayloadMcpApiKeyAuthOperations {
  */
 export interface User {
   id: number;
-  /**
-   * The name of the user
-   */
   name: string;
-  /**
-   * The role of the user
-   */
-  role: 'admin' | 'author' | 'user';
+  role: 'admin' | 'author' | 'editor' | 'user';
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -239,9 +241,9 @@ export interface Media {
     [k: string]: unknown;
   } | null;
   /**
-   * Use this file as default when no image is selected.
+   * Shown wherever an image is needed but none was picked (e.g. a new header logo, hero or post image). Only one image can be the default: ticking it here unticks the others.
    */
-  defaultFor?: 'platform_default'[] | null;
+  isDefaultImage?: boolean | null;
   prefix?: string | null;
   _objectKey?: string | null;
   folder?: (number | null) | FolderInterface;
@@ -352,21 +354,10 @@ export interface FolderInterface {
 export interface Page {
   id: number;
   _abPassPercentage?: number | null;
-  /**
-   * The title of the page
-   */
   title: string;
-  /**
-   * The header to display on the page
-   */
   header?: (number | null) | Header;
-  /**
-   * The page's main heading (H1). Every page has exactly one hero.
-   */
+  footer?: (number | null) | Footer;
   hero: HeroBlock[];
-  /**
-   * Page sections below the hero. Section titles render as H2.
-   */
   blocks: (
     | ContentBlock
     | FaqBlock
@@ -381,20 +372,10 @@ export interface Page {
     | RawHtmlBlock
     | GlobalSectionSlotBlock
   )[];
-  /**
-   * The footer to display on the page
-   */
-  footer?: (number | null) | Footer;
   meta?: {
     title?: string | null;
-    /**
-     * Image used when sharing this page on social media.
-     */
     image?: (number | null) | Media;
     description?: string | null;
-    /**
-     * Allow search engines to index this page
-     */
     robots?: ('index' | 'noindex') | null;
   };
   /**
@@ -436,12 +417,9 @@ export interface Page {
 export interface Header {
   id: number;
   /**
-   * The name of the header
+   * Internal name, shown only in the admin.
    */
   name?: string | null;
-  /**
-   * The logo to display in the header
-   */
   logo: number | Media;
   navItems?:
     | {
@@ -449,7 +427,6 @@ export interface Header {
         type: 'link' | 'dropdown';
         link?: {
           type?: ('reference' | 'custom' | 'customPage') | null;
-          newTab?: boolean | null;
           reference?:
             | ({
                 relationTo: 'page';
@@ -461,6 +438,7 @@ export interface Header {
               } | null);
           url?: string | null;
           customPage?: ('blog' | 'search') | null;
+          newTab?: boolean | null;
         };
         dropdown?: {
           featured?: {
@@ -469,8 +447,8 @@ export interface Header {
             title?: string | null;
             description?: string | null;
             link?: {
+              label?: string | null;
               type?: ('reference' | 'custom' | 'customPage') | null;
-              newTab?: boolean | null;
               reference?:
                 | ({
                     relationTo: 'page';
@@ -482,7 +460,7 @@ export interface Header {
                   } | null);
               url?: string | null;
               customPage?: ('blog' | 'search') | null;
-              label?: string | null;
+              newTab?: boolean | null;
             };
           };
           links?:
@@ -491,7 +469,6 @@ export interface Header {
                 description?: string | null;
                 link?: {
                   type?: ('reference' | 'custom' | 'customPage') | null;
-                  newTab?: boolean | null;
                   reference?:
                     | ({
                         relationTo: 'page';
@@ -503,6 +480,7 @@ export interface Header {
                       } | null);
                   url?: string | null;
                   customPage?: ('blog' | 'search') | null;
+                  newTab?: boolean | null;
                 };
                 id?: string | null;
               }[]
@@ -513,24 +491,23 @@ export interface Header {
     | null;
   actions?:
     | {
-        type?: ('reference' | 'custom' | 'customPage') | null;
-        newTab?: boolean | null;
-        reference?:
-          | ({
-              relationTo: 'page';
-              value: number | Page;
-            } | null)
-          | ({
-              relationTo: 'posts';
-              value: number | Post;
-            } | null);
-        url?: string | null;
-        customPage?: ('blog' | 'search') | null;
-        label: string;
-        /**
-         * Choose how the link should be rendered.
-         */
-        appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+        link: {
+          label: string;
+          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          newTab?: boolean | null;
+        };
         id?: string | null;
       }[]
     | null;
@@ -562,72 +539,25 @@ export interface Post {
     };
     [k: string]: unknown;
   };
-  /**
-   * Optional FAQ shown after the article body.
-   */
-  faq?: {
-    heading?: SectionHeadingFields;
-    items?:
-      | {
-          question: string;
-          answer: {
-            root: {
-              type: string;
-              children: {
-                type: any;
-                version: number;
-                [k: string]: unknown;
-              }[];
-              direction: ('ltr' | 'rtl') | null;
-              format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-              indent: number;
-              version: number;
-            };
-            [k: string]: unknown;
-          };
-          id?: string | null;
-        }[]
-      | null;
-  };
-  /**
-   * Optional CTA band shown at the end of the post. Hidden when the heading is empty.
-   */
-  cta?: {
-    heading?: SectionHeadingFields;
-    actions?:
-      | {
-          type?: ('reference' | 'custom' | 'customPage') | null;
-          newTab?: boolean | null;
-          reference?:
-            | ({
-                relationTo: 'page';
-                value: number | Page;
-              } | null)
-            | ({
-                relationTo: 'posts';
-                value: number | Post;
-              } | null);
-          url?: string | null;
-          customPage?: ('blog' | 'search') | null;
-          label: string;
-          /**
-           * Choose how the link should be rendered.
-           */
-          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
-          id?: string | null;
-        }[]
-      | null;
-  };
+  blocks?:
+    | (
+        | ContentBlock
+        | FaqBlock
+        | TestimonialsListBlock
+        | CardsGridBlock
+        | CarouselBlock
+        | LogosBlock
+        | ChartBlock
+        | CtaBandBlock
+        | NewsletterBlock
+        | StatsBlock
+        | RawHtmlBlock
+      )[]
+    | null;
   meta?: {
     title?: string | null;
-    /**
-     * Image used when sharing this page on social media.
-     */
     image?: (number | null) | Media;
     description?: string | null;
-    /**
-     * Allow search engines to index this page
-     */
     robots?: ('index' | 'noindex') | null;
   };
   /**
@@ -636,15 +566,9 @@ export interface Post {
   generateSlug?: boolean | null;
   slug: string;
   publishedAt?: string | null;
-  /**
-   * Estimated reading time in minutes. Auto-calculated from the content on save.
-   */
   readingTime?: number | null;
   categories: (number | Category)[];
   authors: (number | Author)[];
-  /**
-   * Select up to 3 related posts. If fewer than 3 are selected, additional posts from the same categories will be shown automatically based on publish date.
-   */
   relatedPosts?: (number | Post)[] | null;
   updatedAt: string;
   createdAt: string;
@@ -652,109 +576,10 @@ export interface Post {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "SectionHeadingFields".
- */
-export interface SectionHeadingFields {
-  eyebrow?: string | null;
-  /**
-   * Wrap a word in *asterisks* to accent it in the brand colour.
-   */
-  title?: string | null;
-  description?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "categories".
- */
-export interface Category {
-  id: number;
-  title: string;
-  /**
-   * When enabled, the slug will auto-generate from the title field on save and autosave.
-   */
-  generateSlug?: boolean | null;
-  slug: string;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "authors".
- */
-export interface Author {
-  id: number;
-  /**
-   * The name of the author
-   */
-  name: string;
-  avatar?: (number | null) | Media;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "HeroBlock".
- */
-export interface HeroBlock {
-  variant: 'showcase' | 'centered';
-  heading?: SectionHeadingFields;
-  actions?:
-    | {
-        type?: ('reference' | 'custom' | 'customPage') | null;
-        newTab?: boolean | null;
-        reference?:
-          | ({
-              relationTo: 'page';
-              value: number | Page;
-            } | null)
-          | ({
-              relationTo: 'posts';
-              value: number | Post;
-            } | null);
-        url?: string | null;
-        customPage?: ('blog' | 'search') | null;
-        label: string;
-        /**
-         * Choose how the link should be rendered.
-         */
-        appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
-        id?: string | null;
-      }[]
-    | null;
-  image?: {
-    image?: (number | null) | Media;
-    aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
-  };
-  section?: {
-    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
-    maxWidth?: ('none' | 'base') | null;
-    paddingY?: ('none' | 'base' | 'large') | null;
-    paddingX?: ('none' | 'base') | null;
-    background?: {
-      /**
-       * Upload an image or video. Use the "Background" folder.
-       */
-      media?: (number | null) | Media;
-      overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
-      opacity?: number | null;
-    };
-  };
-  _hidden?: boolean | null;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'hero';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "ContentBlock".
  */
 export interface ContentBlock {
   heading?: SectionHeadingFields;
-  layout: 'stacked' | 'image-text' | 'text-image';
-  image: number | Media;
   content: {
     root: {
       type: string;
@@ -770,29 +595,30 @@ export interface ContentBlock {
     };
     [k: string]: unknown;
   };
+  image: number | Media;
   actions?:
     | {
-        type?: ('reference' | 'custom' | 'customPage') | null;
-        newTab?: boolean | null;
-        reference?:
-          | ({
-              relationTo: 'page';
-              value: number | Page;
-            } | null)
-          | ({
-              relationTo: 'posts';
-              value: number | Post;
-            } | null);
-        url?: string | null;
-        customPage?: ('blog' | 'search') | null;
-        label: string;
-        /**
-         * Choose how the link should be rendered.
-         */
-        appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+        link: {
+          label: string;
+          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          newTab?: boolean | null;
+        };
         id?: string | null;
       }[]
     | null;
+  layout: 'stacked' | 'image-text' | 'text-image';
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
     maxWidth?: ('none' | 'base') | null;
@@ -800,13 +626,10 @@ export interface ContentBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -814,6 +637,18 @@ export interface ContentBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'content';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SectionHeadingFields".
+ */
+export interface SectionHeadingFields {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  title?: string | null;
+  description?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -847,13 +682,10 @@ export interface FaqBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -877,7 +709,7 @@ export interface TestimonialsListBlock {
   showRating?: boolean | null;
   showAvatar?: boolean | null;
   /**
-   * Seconds the slider takes to auto-advance through every testimonial. 0 turns autoplay off.
+   * 0 turns automatic sliding off.
    */
   duration?: number | null;
   section?: {
@@ -887,13 +719,10 @@ export interface TestimonialsListBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -908,12 +737,12 @@ export interface TestimonialsListBlock {
  */
 export interface Testimonial {
   id: number;
+  content: string;
   author: string;
-  company?: string | null;
   position?: string | null;
+  company?: string | null;
   rating?: number | null;
   avatar?: (number | null) | Media;
-  content: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -923,11 +752,8 @@ export interface Testimonial {
  */
 export interface CardsGridBlock {
   heading?: SectionHeadingFields;
-  columns?: number | null;
   items: {
-    /**
-     * Optional icon shown in a tinted tile
-     */
+    title: string;
     icon?:
       | (
           | 'map'
@@ -958,15 +784,15 @@ export interface CardsGridBlock {
           | 'notification-box'
         )
       | null;
-    title: string;
     description?: string | null;
     image?: {
       image?: (number | null) | Media;
-      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
+      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '3/4' | 'auto') | null;
     };
     link?: {
+      label?: string | null;
+      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
       type?: ('reference' | 'custom' | 'customPage') | null;
-      newTab?: boolean | null;
       reference?:
         | ({
             relationTo: 'page';
@@ -978,17 +804,17 @@ export interface CardsGridBlock {
           } | null);
       url?: string | null;
       customPage?: ('blog' | 'search') | null;
-      label?: string | null;
-      /**
-       * Choose how the link should be rendered.
-       */
-      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+      newTab?: boolean | null;
     };
-    alignVariant?: ('left' | 'center' | 'right') | null;
-    rounded?: ('none' | 'large') | null;
-    backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
     id?: string | null;
   }[];
+  /**
+   * On wide screens. Phones always show one card per row.
+   */
+  columns?: ('1' | '2' | '3' | '4') | null;
+  alignVariant?: ('left' | 'center' | 'right') | null;
+  rounded?: ('none' | 'large') | null;
+  backgroundColor?: ('none' | 'light-gray' | 'dark' | 'dark-gray' | 'gradient-2') | null;
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
     maxWidth?: ('none' | 'base') | null;
@@ -996,13 +822,10 @@ export interface CardsGridBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -1017,7 +840,6 @@ export interface CardsGridBlock {
  */
 export interface CarouselBlock {
   heading?: SectionHeadingFields;
-  effect?: ('slide' | 'fade' | 'cube' | 'flip' | 'coverflow' | 'cards') | null;
   slides: {
     image: {
       image: number | Media;
@@ -1039,6 +861,7 @@ export interface CarouselBlock {
     } | null;
     id?: string | null;
   }[];
+  effect?: ('slide' | 'fade') | null;
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
     maxWidth?: ('none' | 'base') | null;
@@ -1046,13 +869,10 @@ export interface CarouselBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -1067,14 +887,13 @@ export interface CarouselBlock {
  */
 export interface LogosBlock {
   label?: string | null;
-  alignVariant?: ('left' | 'center' | 'right') | null;
   items: {
     image: {
       image: number | Media;
     };
     link: {
+      label: string;
       type?: ('reference' | 'custom' | 'customPage') | null;
-      newTab?: boolean | null;
       reference?:
         | ({
             relationTo: 'page';
@@ -1086,10 +905,11 @@ export interface LogosBlock {
           } | null);
       url?: string | null;
       customPage?: ('blog' | 'search') | null;
-      label: string;
+      newTab?: boolean | null;
     };
     id?: string | null;
   }[];
+  alignVariant?: ('left' | 'center' | 'right') | null;
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
     maxWidth?: ('none' | 'base') | null;
@@ -1097,13 +917,10 @@ export interface LogosBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -1121,7 +938,7 @@ export interface ChartBlock {
   title: string;
   subtitle?: string | null;
   /**
-   * Each range becomes a tab. The first range is shown by default.
+   * Each time period gets its own tab above the chart. Visitors see the first one first.
    */
   ranges: {
     label: string;
@@ -1139,13 +956,10 @@ export interface ChartBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -1161,24 +975,23 @@ export interface ChartBlock {
 export interface CtaBandBlock {
   heading?: SectionHeadingFields;
   actions: {
-    type?: ('reference' | 'custom' | 'customPage') | null;
-    newTab?: boolean | null;
-    reference?:
-      | ({
-          relationTo: 'page';
-          value: number | Page;
-        } | null)
-      | ({
-          relationTo: 'posts';
-          value: number | Post;
-        } | null);
-    url?: string | null;
-    customPage?: ('blog' | 'search') | null;
-    label: string;
-    /**
-     * Choose how the link should be rendered.
-     */
-    appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+    link: {
+      label: string;
+      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+      type?: ('reference' | 'custom' | 'customPage') | null;
+      reference?:
+        | ({
+            relationTo: 'page';
+            value: number | Page;
+          } | null)
+        | ({
+            relationTo: 'posts';
+            value: number | Post;
+          } | null);
+      url?: string | null;
+      customPage?: ('blog' | 'search') | null;
+      newTab?: boolean | null;
+    };
     id?: string | null;
   }[];
   section?: {
@@ -1188,13 +1001,10 @@ export interface CtaBandBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -1219,13 +1029,10 @@ export interface NewsletterBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -1251,13 +1058,10 @@ export interface StatsBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -1271,9 +1075,6 @@ export interface StatsBlock {
  * via the `definition` "RawHtmlBlock".
  */
 export interface RawHtmlBlock {
-  /**
-   * Raw HTML rendered as-is on the page. Use for embeds and one-off markup.
-   */
   html: string;
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
@@ -1282,13 +1083,10 @@ export interface RawHtmlBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
       opacity?: number | null;
     };
   };
@@ -1299,11 +1097,166 @@ export interface RawHtmlBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: number;
+  title: string;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "authors".
+ */
+export interface Author {
+  id: number;
+  name: string;
+  avatar?: (number | null) | Media;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer".
+ */
+export interface Footer {
+  id: number;
+  /**
+   * Internal name, shown only in the admin.
+   */
+  name: string;
+  logo: number | Media;
+  description?: string | null;
+  linkGroups?:
+    | {
+        label: string;
+        links: {
+          link: {
+            label: string;
+            type?: ('reference' | 'custom' | 'customPage') | null;
+            reference?:
+              | ({
+                  relationTo: 'page';
+                  value: number | Page;
+                } | null)
+              | ({
+                  relationTo: 'posts';
+                  value: number | Post;
+                } | null);
+            url?: string | null;
+            customPage?: ('blog' | 'search') | null;
+            newTab?: boolean | null;
+          };
+          id?: string | null;
+        }[];
+        id?: string | null;
+      }[]
+    | null;
+  legalLinks?:
+    | {
+        link: {
+          label: string;
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          newTab?: boolean | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Icons in the bottom-right corner of the footer.
+   */
+  socialLinks?:
+    | {
+        platform: 'instagram' | 'x' | 'facebook' | 'youtube' | 'github' | 'tiktok' | 'linkedin';
+        link?: {
+          type?: 'custom' | null;
+          url?: string | null;
+          newTab?: boolean | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  copyrightText?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroBlock".
+ */
+export interface HeroBlock {
+  heading?: SectionHeadingFields;
+  variant: 'showcase' | 'centered';
+  image?: {
+    image?: (number | null) | Media;
+    aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '3/4' | 'auto') | null;
+  };
+  actions?:
+    | {
+        link: {
+          label: string;
+          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          newTab?: boolean | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Pick an image or video from the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'hero';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "GlobalSectionSlotBlock".
  */
 export interface GlobalSectionSlotBlock {
   /**
-   * Pick a global block to embed. Editing that block updates every page using it.
+   * Changes to a reusable section show up on every page that uses it.
    */
   reference: number | GlobalBlock;
   _hidden?: boolean | null;
@@ -1318,12 +1271,9 @@ export interface GlobalSectionSlotBlock {
 export interface GlobalBlock {
   id: number;
   /**
-   * Internal name to identify this global block in the picker.
+   * Internal name, shown only in the admin.
    */
   title: string;
-  /**
-   * The single block this global represents. Edit once, reuse on any page.
-   */
   block: (
     | ContentBlock
     | FaqBlock
@@ -1337,85 +1287,6 @@ export interface GlobalBlock {
     | StatsBlock
     | RawHtmlBlock
   )[];
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "footer".
- */
-export interface Footer {
-  id: number;
-  /**
-   * The name of the footer
-   */
-  name: string;
-  /**
-   * The logo to display in the footer
-   */
-  logo: number | Media;
-  description?: string | null;
-  linkGroups?:
-    | {
-        label: string;
-        links: {
-          link: {
-            type?: ('reference' | 'custom' | 'customPage') | null;
-            newTab?: boolean | null;
-            reference?:
-              | ({
-                  relationTo: 'page';
-                  value: number | Page;
-                } | null)
-              | ({
-                  relationTo: 'posts';
-                  value: number | Post;
-                } | null);
-            url?: string | null;
-            customPage?: ('blog' | 'search') | null;
-            label: string;
-          };
-          id?: string | null;
-        }[];
-        id?: string | null;
-      }[]
-    | null;
-  legalLinks?:
-    | {
-        link: {
-          type?: ('reference' | 'custom' | 'customPage') | null;
-          newTab?: boolean | null;
-          reference?:
-            | ({
-                relationTo: 'page';
-                value: number | Page;
-              } | null)
-            | ({
-                relationTo: 'posts';
-                value: number | Post;
-              } | null);
-          url?: string | null;
-          customPage?: ('blog' | 'search') | null;
-          label: string;
-        };
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Icons shown in the bottom-right corner of the footer
-   */
-  socialLinks?:
-    | {
-        platform: 'instagram' | 'x' | 'facebook' | 'youtube' | 'github' | 'tiktok' | 'linkedin';
-        url: string;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Copyright text shown at the bottom
-   */
-  copyrightText?: string | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -1439,7 +1310,7 @@ export interface DocumentEmbedding {
 export interface Redirect {
   id: number;
   /**
-   * Latin letters, numbers, / - _ . ~ only. No spaces. Stored as lowercase with leading slash.
+   * The old address, e.g. /old-page. Letters, numbers and / - _ . ~ only, no spaces.
    */
   from: string;
   to?: {
@@ -1456,11 +1327,11 @@ export interface Redirect {
     url?: string | null;
   };
   /**
-   * Choose the redirect type. 307 - temporary, 308 - permanent.
+   * 307 = temporary (the old address comes back later), 308 = permanent (best for SEO when a page has moved for good).
    */
   type: '307' | '308';
   /**
-   * Whether the redirect is active.
+   * Turn off to pause this redirect without deleting it.
    */
   isActive: boolean;
   updatedAt: string;
@@ -1503,35 +1374,34 @@ export interface Preset {
   preview?: (number | null) | Media;
   presetBlock: (
     | {
-        variant: 'showcase' | 'centered';
         heading?: SectionHeadingFields;
+        variant: 'showcase' | 'centered';
+        image?: {
+          image?: (number | null) | Media;
+          aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '3/4' | 'auto') | null;
+        };
         actions?:
           | {
-              type?: ('reference' | 'custom' | 'customPage') | null;
-              newTab?: boolean | null;
-              reference?:
-                | ({
-                    relationTo: 'page';
-                    value: number | Page;
-                  } | null)
-                | ({
-                    relationTo: 'posts';
-                    value: number | Post;
-                  } | null);
-              url?: string | null;
-              customPage?: ('blog' | 'search') | null;
-              label: string;
-              /**
-               * Choose how the link should be rendered.
-               */
-              appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+              link: {
+                label: string;
+                appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+                type?: ('reference' | 'custom' | 'customPage') | null;
+                reference?:
+                  | ({
+                      relationTo: 'page';
+                      value: number | Page;
+                    } | null)
+                  | ({
+                      relationTo: 'posts';
+                      value: number | Post;
+                    } | null);
+                url?: string | null;
+                customPage?: ('blog' | 'search') | null;
+                newTab?: boolean | null;
+              };
               id?: string | null;
             }[]
           | null;
-        image?: {
-          image?: (number | null) | Media;
-          aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
-        };
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
           maxWidth?: ('none' | 'base') | null;
@@ -1539,13 +1409,10 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -1556,8 +1423,6 @@ export interface Preset {
       }
     | {
         heading?: SectionHeadingFields;
-        layout: 'stacked' | 'image-text' | 'text-image';
-        image: number | Media;
         content: {
           root: {
             type: string;
@@ -1573,29 +1438,30 @@ export interface Preset {
           };
           [k: string]: unknown;
         };
+        image: number | Media;
         actions?:
           | {
-              type?: ('reference' | 'custom' | 'customPage') | null;
-              newTab?: boolean | null;
-              reference?:
-                | ({
-                    relationTo: 'page';
-                    value: number | Page;
-                  } | null)
-                | ({
-                    relationTo: 'posts';
-                    value: number | Post;
-                  } | null);
-              url?: string | null;
-              customPage?: ('blog' | 'search') | null;
-              label: string;
-              /**
-               * Choose how the link should be rendered.
-               */
-              appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+              link: {
+                label: string;
+                appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+                type?: ('reference' | 'custom' | 'customPage') | null;
+                reference?:
+                  | ({
+                      relationTo: 'page';
+                      value: number | Page;
+                    } | null)
+                  | ({
+                      relationTo: 'posts';
+                      value: number | Post;
+                    } | null);
+                url?: string | null;
+                customPage?: ('blog' | 'search') | null;
+                newTab?: boolean | null;
+              };
               id?: string | null;
             }[]
           | null;
+        layout: 'stacked' | 'image-text' | 'text-image';
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
           maxWidth?: ('none' | 'base') | null;
@@ -1603,13 +1469,10 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -1646,13 +1509,10 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -1672,7 +1532,7 @@ export interface Preset {
         showRating?: boolean | null;
         showAvatar?: boolean | null;
         /**
-         * Seconds the slider takes to auto-advance through every testimonial. 0 turns autoplay off.
+         * 0 turns automatic sliding off.
          */
         duration?: number | null;
         section?: {
@@ -1682,13 +1542,10 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -1699,11 +1556,8 @@ export interface Preset {
       }
     | {
         heading?: SectionHeadingFields;
-        columns?: number | null;
         items: {
-          /**
-           * Optional icon shown in a tinted tile
-           */
+          title: string;
           icon?:
             | (
                 | 'map'
@@ -1734,15 +1588,15 @@ export interface Preset {
                 | 'notification-box'
               )
             | null;
-          title: string;
           description?: string | null;
           image?: {
             image?: (number | null) | Media;
-            aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
+            aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '3/4' | 'auto') | null;
           };
           link?: {
+            label?: string | null;
+            appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
             type?: ('reference' | 'custom' | 'customPage') | null;
-            newTab?: boolean | null;
             reference?:
               | ({
                   relationTo: 'page';
@@ -1754,17 +1608,17 @@ export interface Preset {
                 } | null);
             url?: string | null;
             customPage?: ('blog' | 'search') | null;
-            label?: string | null;
-            /**
-             * Choose how the link should be rendered.
-             */
-            appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+            newTab?: boolean | null;
           };
-          alignVariant?: ('left' | 'center' | 'right') | null;
-          rounded?: ('none' | 'large') | null;
-          backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
           id?: string | null;
         }[];
+        /**
+         * On wide screens. Phones always show one card per row.
+         */
+        columns?: ('1' | '2' | '3' | '4') | null;
+        alignVariant?: ('left' | 'center' | 'right') | null;
+        rounded?: ('none' | 'large') | null;
+        backgroundColor?: ('none' | 'light-gray' | 'dark' | 'dark-gray' | 'gradient-2') | null;
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
           maxWidth?: ('none' | 'base') | null;
@@ -1772,13 +1626,10 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -1789,7 +1640,6 @@ export interface Preset {
       }
     | {
         heading?: SectionHeadingFields;
-        effect?: ('slide' | 'fade' | 'cube' | 'flip' | 'coverflow' | 'cards') | null;
         slides: {
           image: {
             image: number | Media;
@@ -1811,6 +1661,7 @@ export interface Preset {
           } | null;
           id?: string | null;
         }[];
+        effect?: ('slide' | 'fade') | null;
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
           maxWidth?: ('none' | 'base') | null;
@@ -1818,13 +1669,10 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -1835,14 +1683,13 @@ export interface Preset {
       }
     | {
         label?: string | null;
-        alignVariant?: ('left' | 'center' | 'right') | null;
         items: {
           image: {
             image: number | Media;
           };
           link: {
+            label: string;
             type?: ('reference' | 'custom' | 'customPage') | null;
-            newTab?: boolean | null;
             reference?:
               | ({
                   relationTo: 'page';
@@ -1854,10 +1701,11 @@ export interface Preset {
                 } | null);
             url?: string | null;
             customPage?: ('blog' | 'search') | null;
-            label: string;
+            newTab?: boolean | null;
           };
           id?: string | null;
         }[];
+        alignVariant?: ('left' | 'center' | 'right') | null;
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
           maxWidth?: ('none' | 'base') | null;
@@ -1865,13 +1713,10 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -1885,7 +1730,7 @@ export interface Preset {
         title: string;
         subtitle?: string | null;
         /**
-         * Each range becomes a tab. The first range is shown by default.
+         * Each time period gets its own tab above the chart. Visitors see the first one first.
          */
         ranges: {
           label: string;
@@ -1903,13 +1748,10 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -1921,24 +1763,23 @@ export interface Preset {
     | {
         heading?: SectionHeadingFields;
         actions: {
-          type?: ('reference' | 'custom' | 'customPage') | null;
-          newTab?: boolean | null;
-          reference?:
-            | ({
-                relationTo: 'page';
-                value: number | Page;
-              } | null)
-            | ({
-                relationTo: 'posts';
-                value: number | Post;
-              } | null);
-          url?: string | null;
-          customPage?: ('blog' | 'search') | null;
-          label: string;
-          /**
-           * Choose how the link should be rendered.
-           */
-          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+          link: {
+            label: string;
+            appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+            type?: ('reference' | 'custom' | 'customPage') | null;
+            reference?:
+              | ({
+                  relationTo: 'page';
+                  value: number | Page;
+                } | null)
+              | ({
+                  relationTo: 'posts';
+                  value: number | Post;
+                } | null);
+            url?: string | null;
+            customPage?: ('blog' | 'search') | null;
+            newTab?: boolean | null;
+          };
           id?: string | null;
         }[];
         section?: {
@@ -1948,13 +1789,10 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -1975,13 +1813,10 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -2003,13 +1838,10 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -2019,9 +1851,6 @@ export interface Preset {
         blockType: 'stats';
       }
     | {
-        /**
-         * Raw HTML rendered as-is on the page. Use for embeds and one-off markup.
-         */
         html: string;
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
@@ -2030,13 +1859,10 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
             opacity?: number | null;
           };
         };
@@ -2047,7 +1873,7 @@ export interface Preset {
       }
     | {
         /**
-         * Pick a global block to embed. Editing that block updates every page using it.
+         * Changes to a reusable section show up on every page that uses it.
          */
         reference: number | GlobalBlock;
         _hidden?: boolean | null;
@@ -2400,6 +2226,98 @@ export interface PayloadKv {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs".
+ */
+export interface PayloadJob {
+  id: number;
+  /**
+   * Input data provided to the job
+   */
+  input?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  taskStatus?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  completedAt?: string | null;
+  totalTried?: number | null;
+  /**
+   * If hasError is true this job will not be retried
+   */
+  hasError?: boolean | null;
+  /**
+   * If hasError is true, this is the error that caused it
+   */
+  error?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Task execution log
+   */
+  log?:
+    | {
+        executedAt: string;
+        completedAt: string;
+        taskSlug: 'inline' | 'schedulePublish';
+        taskID: string;
+        input?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        output?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        state: 'failed' | 'succeeded';
+        error?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  taskSlug?: ('inline' | 'schedulePublish') | null;
+  queue?: string | null;
+  waitUntil?: string | null;
+  processing?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -2565,7 +2483,7 @@ export interface UsersSelect<T extends boolean = true> {
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
   caption?: T;
-  defaultFor?: T;
+  isDefaultImage?: T;
   prefix?: T;
   _objectKey?: T;
   folder?: T;
@@ -2663,6 +2581,7 @@ export interface PageSelect<T extends boolean = true> {
   _abPassPercentage?: T;
   title?: T;
   header?: T;
+  footer?: T;
   hero?:
     | T
     | {
@@ -2684,7 +2603,6 @@ export interface PageSelect<T extends boolean = true> {
         rawHtml?: T | RawHtmlBlockSelect<T>;
         globalSectionSlot?: T | GlobalSectionSlotBlockSelect<T>;
       };
-  footer?: T;
   meta?:
     | T
     | {
@@ -2716,25 +2634,29 @@ export interface PageSelect<T extends boolean = true> {
  * via the `definition` "HeroBlock_select".
  */
 export interface HeroBlockSelect<T extends boolean = true> {
-  variant?: T;
   heading?: T | SectionHeadingFieldsSelect<T>;
-  actions?:
-    | T
-    | {
-        type?: T;
-        newTab?: T;
-        reference?: T;
-        url?: T;
-        customPage?: T;
-        label?: T;
-        appearance?: T;
-        id?: T;
-      };
+  variant?: T;
   image?:
     | T
     | {
         image?: T;
         aspectRatio?: T;
+      };
+  actions?:
+    | T
+    | {
+        link?:
+          | T
+          | {
+              label?: T;
+              appearance?: T;
+              type?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              newTab?: T;
+            };
+        id?: T;
       };
   section?:
     | T
@@ -2770,21 +2692,25 @@ export interface SectionHeadingFieldsSelect<T extends boolean = true> {
  */
 export interface ContentBlockSelect<T extends boolean = true> {
   heading?: T | SectionHeadingFieldsSelect<T>;
-  layout?: T;
-  image?: T;
   content?: T;
+  image?: T;
   actions?:
     | T
     | {
-        type?: T;
-        newTab?: T;
-        reference?: T;
-        url?: T;
-        customPage?: T;
-        label?: T;
-        appearance?: T;
+        link?:
+          | T
+          | {
+              label?: T;
+              appearance?: T;
+              type?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              newTab?: T;
+            };
         id?: T;
       };
+  layout?: T;
   section?:
     | T
     | {
@@ -2876,12 +2802,11 @@ export interface TestimonialsListBlockSelect<T extends boolean = true> {
  */
 export interface CardsGridBlockSelect<T extends boolean = true> {
   heading?: T | SectionHeadingFieldsSelect<T>;
-  columns?: T;
   items?:
     | T
     | {
-        icon?: T;
         title?: T;
+        icon?: T;
         description?: T;
         image?:
           | T
@@ -2892,19 +2817,20 @@ export interface CardsGridBlockSelect<T extends boolean = true> {
         link?:
           | T
           | {
+              label?: T;
+              appearance?: T;
               type?: T;
-              newTab?: T;
               reference?: T;
               url?: T;
               customPage?: T;
-              label?: T;
-              appearance?: T;
+              newTab?: T;
             };
-        alignVariant?: T;
-        rounded?: T;
-        backgroundColor?: T;
         id?: T;
       };
+  columns?: T;
+  alignVariant?: T;
+  rounded?: T;
+  backgroundColor?: T;
   section?:
     | T
     | {
@@ -2930,7 +2856,6 @@ export interface CardsGridBlockSelect<T extends boolean = true> {
  */
 export interface CarouselBlockSelect<T extends boolean = true> {
   heading?: T | SectionHeadingFieldsSelect<T>;
-  effect?: T;
   slides?:
     | T
     | {
@@ -2942,6 +2867,7 @@ export interface CarouselBlockSelect<T extends boolean = true> {
         text?: T;
         id?: T;
       };
+  effect?: T;
   section?:
     | T
     | {
@@ -2967,7 +2893,6 @@ export interface CarouselBlockSelect<T extends boolean = true> {
  */
 export interface LogosBlockSelect<T extends boolean = true> {
   label?: T;
-  alignVariant?: T;
   items?:
     | T
     | {
@@ -2979,15 +2904,16 @@ export interface LogosBlockSelect<T extends boolean = true> {
         link?:
           | T
           | {
+              label?: T;
               type?: T;
-              newTab?: T;
               reference?: T;
               url?: T;
               customPage?: T;
-              label?: T;
+              newTab?: T;
             };
         id?: T;
       };
+  alignVariant?: T;
   section?:
     | T
     | {
@@ -3056,13 +2982,17 @@ export interface CtaBandBlockSelect<T extends boolean = true> {
   actions?:
     | T
     | {
-        type?: T;
-        newTab?: T;
-        reference?: T;
-        url?: T;
-        customPage?: T;
-        label?: T;
-        appearance?: T;
+        link?:
+          | T
+          | {
+              label?: T;
+              appearance?: T;
+              type?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              newTab?: T;
+            };
         id?: T;
       };
   section?:
@@ -3208,34 +3138,20 @@ export interface PostsSelect<T extends boolean = true> {
   excerpt?: T;
   heroImage?: T;
   content?: T;
-  faq?:
+  blocks?:
     | T
     | {
-        heading?: T | SectionHeadingFieldsSelect<T>;
-        items?:
-          | T
-          | {
-              question?: T;
-              answer?: T;
-              id?: T;
-            };
-      };
-  cta?:
-    | T
-    | {
-        heading?: T | SectionHeadingFieldsSelect<T>;
-        actions?:
-          | T
-          | {
-              type?: T;
-              newTab?: T;
-              reference?: T;
-              url?: T;
-              customPage?: T;
-              label?: T;
-              appearance?: T;
-              id?: T;
-            };
+        content?: T | ContentBlockSelect<T>;
+        faq?: T | FaqBlockSelect<T>;
+        testimonialsList?: T | TestimonialsListBlockSelect<T>;
+        cardsGrid?: T | CardsGridBlockSelect<T>;
+        carousel?: T | CarouselBlockSelect<T>;
+        logos?: T | LogosBlockSelect<T>;
+        chart?: T | ChartBlockSelect<T>;
+        ctaBand?: T | CtaBandBlockSelect<T>;
+        newsletter?: T | NewsletterBlockSelect<T>;
+        stats?: T | StatsBlockSelect<T>;
+        rawHtml?: T | RawHtmlBlockSelect<T>;
       };
   meta?:
     | T
@@ -3261,12 +3177,12 @@ export interface PostsSelect<T extends boolean = true> {
  * via the `definition` "testimonials_select".
  */
 export interface TestimonialsSelect<T extends boolean = true> {
+  content?: T;
   author?: T;
-  company?: T;
   position?: T;
+  company?: T;
   rating?: T;
   avatar?: T;
-  content?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -3286,10 +3202,10 @@ export interface HeaderSelect<T extends boolean = true> {
           | T
           | {
               type?: T;
-              newTab?: T;
               reference?: T;
               url?: T;
               customPage?: T;
+              newTab?: T;
             };
         dropdown?:
           | T
@@ -3304,12 +3220,12 @@ export interface HeaderSelect<T extends boolean = true> {
                     link?:
                       | T
                       | {
+                          label?: T;
                           type?: T;
-                          newTab?: T;
                           reference?: T;
                           url?: T;
                           customPage?: T;
-                          label?: T;
+                          newTab?: T;
                         };
                   };
               links?:
@@ -3321,10 +3237,10 @@ export interface HeaderSelect<T extends boolean = true> {
                       | T
                       | {
                           type?: T;
-                          newTab?: T;
                           reference?: T;
                           url?: T;
                           customPage?: T;
+                          newTab?: T;
                         };
                     id?: T;
                   };
@@ -3334,13 +3250,17 @@ export interface HeaderSelect<T extends boolean = true> {
   actions?:
     | T
     | {
-        type?: T;
-        newTab?: T;
-        reference?: T;
-        url?: T;
-        customPage?: T;
-        label?: T;
-        appearance?: T;
+        link?:
+          | T
+          | {
+              label?: T;
+              appearance?: T;
+              type?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              newTab?: T;
+            };
         id?: T;
       };
   updatedAt?: T;
@@ -3365,12 +3285,12 @@ export interface FooterSelect<T extends boolean = true> {
               link?:
                 | T
                 | {
+                    label?: T;
                     type?: T;
-                    newTab?: T;
                     reference?: T;
                     url?: T;
                     customPage?: T;
-                    label?: T;
+                    newTab?: T;
                   };
               id?: T;
             };
@@ -3382,12 +3302,12 @@ export interface FooterSelect<T extends boolean = true> {
         link?:
           | T
           | {
+              label?: T;
               type?: T;
-              newTab?: T;
               reference?: T;
               url?: T;
               customPage?: T;
-              label?: T;
+              newTab?: T;
             };
         id?: T;
       };
@@ -3395,7 +3315,13 @@ export interface FooterSelect<T extends boolean = true> {
     | T
     | {
         platform?: T;
-        url?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              url?: T;
+              newTab?: T;
+            };
         id?: T;
       };
   copyrightText?: T;
@@ -3483,25 +3409,29 @@ export interface PresetsSelect<T extends boolean = true> {
         hero?:
           | T
           | {
-              variant?: T;
               heading?: T | SectionHeadingFieldsSelect<T>;
-              actions?:
-                | T
-                | {
-                    type?: T;
-                    newTab?: T;
-                    reference?: T;
-                    url?: T;
-                    customPage?: T;
-                    label?: T;
-                    appearance?: T;
-                    id?: T;
-                  };
+              variant?: T;
               image?:
                 | T
                 | {
                     image?: T;
                     aspectRatio?: T;
+                  };
+              actions?:
+                | T
+                | {
+                    link?:
+                      | T
+                      | {
+                          label?: T;
+                          appearance?: T;
+                          type?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                          newTab?: T;
+                        };
+                    id?: T;
                   };
               section?:
                 | T
@@ -3526,21 +3456,25 @@ export interface PresetsSelect<T extends boolean = true> {
           | T
           | {
               heading?: T | SectionHeadingFieldsSelect<T>;
-              layout?: T;
-              image?: T;
               content?: T;
+              image?: T;
               actions?:
                 | T
                 | {
-                    type?: T;
-                    newTab?: T;
-                    reference?: T;
-                    url?: T;
-                    customPage?: T;
-                    label?: T;
-                    appearance?: T;
+                    link?:
+                      | T
+                      | {
+                          label?: T;
+                          appearance?: T;
+                          type?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                          newTab?: T;
+                        };
                     id?: T;
                   };
+              layout?: T;
               section?:
                 | T
                 | {
@@ -3626,12 +3560,11 @@ export interface PresetsSelect<T extends boolean = true> {
           | T
           | {
               heading?: T | SectionHeadingFieldsSelect<T>;
-              columns?: T;
               items?:
                 | T
                 | {
-                    icon?: T;
                     title?: T;
+                    icon?: T;
                     description?: T;
                     image?:
                       | T
@@ -3642,19 +3575,20 @@ export interface PresetsSelect<T extends boolean = true> {
                     link?:
                       | T
                       | {
+                          label?: T;
+                          appearance?: T;
                           type?: T;
-                          newTab?: T;
                           reference?: T;
                           url?: T;
                           customPage?: T;
-                          label?: T;
-                          appearance?: T;
+                          newTab?: T;
                         };
-                    alignVariant?: T;
-                    rounded?: T;
-                    backgroundColor?: T;
                     id?: T;
                   };
+              columns?: T;
+              alignVariant?: T;
+              rounded?: T;
+              backgroundColor?: T;
               section?:
                 | T
                 | {
@@ -3678,7 +3612,6 @@ export interface PresetsSelect<T extends boolean = true> {
           | T
           | {
               heading?: T | SectionHeadingFieldsSelect<T>;
-              effect?: T;
               slides?:
                 | T
                 | {
@@ -3690,6 +3623,7 @@ export interface PresetsSelect<T extends boolean = true> {
                     text?: T;
                     id?: T;
                   };
+              effect?: T;
               section?:
                 | T
                 | {
@@ -3713,7 +3647,6 @@ export interface PresetsSelect<T extends boolean = true> {
           | T
           | {
               label?: T;
-              alignVariant?: T;
               items?:
                 | T
                 | {
@@ -3725,15 +3658,16 @@ export interface PresetsSelect<T extends boolean = true> {
                     link?:
                       | T
                       | {
+                          label?: T;
                           type?: T;
-                          newTab?: T;
                           reference?: T;
                           url?: T;
                           customPage?: T;
-                          label?: T;
+                          newTab?: T;
                         };
                     id?: T;
                   };
+              alignVariant?: T;
               section?:
                 | T
                 | {
@@ -3798,13 +3732,17 @@ export interface PresetsSelect<T extends boolean = true> {
               actions?:
                 | T
                 | {
-                    type?: T;
-                    newTab?: T;
-                    reference?: T;
-                    url?: T;
-                    customPage?: T;
-                    label?: T;
-                    appearance?: T;
+                    link?:
+                      | T
+                      | {
+                          label?: T;
+                          appearance?: T;
+                          type?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                          newTab?: T;
+                        };
                     id?: T;
                   };
               section?:
@@ -4117,6 +4055,37 @@ export interface PayloadKvSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs_select".
+ */
+export interface PayloadJobsSelect<T extends boolean = true> {
+  input?: T;
+  taskStatus?: T;
+  completedAt?: T;
+  totalTried?: T;
+  hasError?: T;
+  error?: T;
+  log?:
+    | T
+    | {
+        executedAt?: T;
+        completedAt?: T;
+        taskSlug?: T;
+        taskID?: T;
+        input?: T;
+        output?: T;
+        state?: T;
+        error?: T;
+        id?: T;
+      };
+  taskSlug?: T;
+  queue?: T;
+  waitUntil?: T;
+  processing?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-folders_select".
  */
 export interface PayloadFoldersSelect<T extends boolean = true> {
@@ -4166,92 +4135,55 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 export interface SiteSetting {
   id: number;
   general?: {
-    /**
-     * The name of your website
-     */
     siteName?: string | null;
   };
   adminPanel?: {
     /**
-     * Logo displayed in the admin panel sidebar (recommended: SVG or PNG, ~150x40px)
+     * SVG or PNG, ~150×40px.
      */
     logo?: (number | null) | Media;
     /**
-     * Icon displayed when sidebar is collapsed (recommended: SVG or PNG, 32x32px)
+     * Shown when the sidebar is collapsed. SVG or PNG, 32×32px.
      */
     icon?: (number | null) | Media;
   };
   seo?: {
-    /**
-     * Character used to separate page title from site name
-     */
     titleSeparator?: ('|' | '-' | '•') | null;
-    /**
-     * Text added after separator (defaults to Site Name if empty)
-     */
     titleSuffix?: string | null;
-    /**
-     * Fallback description when page has no description
-     */
     defaultDescription?: string | null;
     og?: {
-      /**
-       * Fallback title for Open Graph when page has no title
-       */
       title?: string | null;
       /**
-       * Site name for Open Graph. Defaults to Site Name if empty
-       */
-      siteName?: string | null;
-      /**
-       * Fallback description for Open Graph (uses Meta Description if empty)
+       * Leave empty to reuse the default description in search results.
        */
       description?: string | null;
-      /**
-       * Fallback image for social media sharing
-       */
       image?: (number | null) | Media;
     };
     x?: {
-      /**
-       * Twitter/X username for the website (e.g., @yoursite)
-       */
       site?: string | null;
-      /**
-       * Default Twitter/X username for content creator (e.g., @author)
-       */
       creator?: string | null;
-      /**
-       * Type of Twitter Card to display
-       */
       card?: ('summary_large_image' | 'summary') | null;
     };
   };
   notFound?: {
     header?: (number | null) | Header;
+    footer?: (number | null) | Footer;
     title?: string | null;
     description?: string | null;
-    footer?: (number | null) | Footer;
   };
   blog: {
     header?: (number | null) | Header;
+    footer?: (number | null) | Footer;
     eyebrow?: string | null;
     title: string;
     description: string;
     searchPlaceholder?: string | null;
     readMoreLabel: string;
     relatedPostsLabel: string;
-    footer?: (number | null) | Footer;
     meta?: {
       title?: string | null;
-      /**
-       * Image used when sharing this page on social media.
-       */
       image?: (number | null) | Media;
       description?: string | null;
-      /**
-       * Allow search engines to index this page
-       */
       robots?: ('index' | 'noindex') | null;
     };
   };
@@ -4306,7 +4238,6 @@ export interface SiteSettingsSelect<T extends boolean = true> {
           | T
           | {
               title?: T;
-              siteName?: T;
               description?: T;
               image?: T;
             };
@@ -4322,21 +4253,21 @@ export interface SiteSettingsSelect<T extends boolean = true> {
     | T
     | {
         header?: T;
+        footer?: T;
         title?: T;
         description?: T;
-        footer?: T;
       };
   blog?:
     | T
     | {
         header?: T;
+        footer?: T;
         eyebrow?: T;
         title?: T;
         description?: T;
         searchPlaceholder?: T;
         readMoreLabel?: T;
         relatedPostsLabel?: T;
-        footer?: T;
         meta?:
           | T
           | {
@@ -4373,14 +4304,45 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSchedulePublish".
+ */
+export interface TaskSchedulePublish {
+  input: {
+    type?: ('publish' | 'unpublish') | null;
+    locale?: string | null;
+    doc?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null)
+      | ({
+          relationTo: 'globalBlock';
+          value: number | GlobalBlock;
+        } | null);
+    global?: 'site-settings' | null;
+    user?:
+      | ({
+          relationTo: 'users';
+          value: number | User;
+        } | null)
+      | ({
+          relationTo: 'payload-mcp-api-keys';
+          value: number | PayloadMcpApiKey;
+        } | null);
+  };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "CardsGridInlineBlock".
  */
 export interface CardsGridInlineBlock {
-  columns?: number | null;
   items: {
-    /**
-     * Optional icon shown in a tinted tile
-     */
+    title: string;
     icon?:
       | (
           | 'map'
@@ -4411,15 +4373,15 @@ export interface CardsGridInlineBlock {
           | 'notification-box'
         )
       | null;
-    title: string;
     description?: string | null;
     image?: {
       image?: (number | null) | Media;
-      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
+      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '3/4' | 'auto') | null;
     };
     link?: {
+      label?: string | null;
+      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
       type?: ('reference' | 'custom' | 'customPage') | null;
-      newTab?: boolean | null;
       reference?:
         | ({
             relationTo: 'page';
@@ -4431,17 +4393,17 @@ export interface CardsGridInlineBlock {
           } | null);
       url?: string | null;
       customPage?: ('blog' | 'search') | null;
-      label?: string | null;
-      /**
-       * Choose how the link should be rendered.
-       */
-      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+      newTab?: boolean | null;
     };
-    alignVariant?: ('left' | 'center' | 'right') | null;
-    rounded?: ('none' | 'large') | null;
-    backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
     id?: string | null;
   }[];
+  /**
+   * On wide screens. Phones always show one card per row.
+   */
+  columns?: ('1' | '2' | '3' | '4') | null;
+  alignVariant?: ('left' | 'center' | 'right') | null;
+  rounded?: ('none' | 'large') | null;
+  backgroundColor?: ('none' | 'light-gray' | 'dark' | 'dark-gray' | 'gradient-2') | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'cardsGridInline';
@@ -4452,14 +4414,13 @@ export interface CardsGridInlineBlock {
  */
 export interface LogosInlineBlock {
   label?: string | null;
-  alignVariant?: ('left' | 'center' | 'right') | null;
   items: {
     image: {
       image: number | Media;
     };
     link: {
+      label: string;
       type?: ('reference' | 'custom' | 'customPage') | null;
-      newTab?: boolean | null;
       reference?:
         | ({
             relationTo: 'page';
@@ -4471,10 +4432,11 @@ export interface LogosInlineBlock {
           } | null);
       url?: string | null;
       customPage?: ('blog' | 'search') | null;
-      label: string;
+      newTab?: boolean | null;
     };
     id?: string | null;
   }[];
+  alignVariant?: ('left' | 'center' | 'right') | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'logosInline';
@@ -4484,10 +4446,23 @@ export interface LogosInlineBlock {
  * via the `definition` "CodeInlineBlock".
  */
 export interface CodeInlineBlock {
-  /**
-   * Language hint (e.g. typescript, bash). Used for the syntax class.
-   */
-  language?: string | null;
+  language?:
+    | (
+        | 'typescript'
+        | 'javascript'
+        | 'tsx'
+        | 'jsx'
+        | 'json'
+        | 'bash'
+        | 'html'
+        | 'css'
+        | 'python'
+        | 'sql'
+        | 'yaml'
+        | 'markdown'
+        | 'plaintext'
+      )
+    | null;
   code: string;
   id?: string | null;
   blockName?: string | null;
@@ -4498,36 +4473,28 @@ export interface CodeInlineBlock {
  * via the `definition` "CtaBannerInline".
  */
 export interface CtaBannerInline {
-  eyebrow?: string | null;
-  /**
-   * Visual emphasis of the banner.
-   */
+  heading?: SectionHeadingFields;
+  actions: {
+    link: {
+      label: string;
+      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+      type?: ('reference' | 'custom' | 'customPage') | null;
+      reference?:
+        | ({
+            relationTo: 'page';
+            value: number | Page;
+          } | null)
+        | ({
+            relationTo: 'posts';
+            value: number | Post;
+          } | null);
+      url?: string | null;
+      customPage?: ('blog' | 'search') | null;
+      newTab?: boolean | null;
+    };
+    id?: string | null;
+  }[];
   variant?: ('default' | 'accent' | 'dark') | null;
-  heading?: string | null;
-  description?: string | null;
-  actions?:
-    | {
-        type?: ('reference' | 'custom' | 'customPage') | null;
-        newTab?: boolean | null;
-        reference?:
-          | ({
-              relationTo: 'page';
-              value: number | Page;
-            } | null)
-          | ({
-              relationTo: 'posts';
-              value: number | Post;
-            } | null);
-        url?: string | null;
-        customPage?: ('blog' | 'search') | null;
-        label: string;
-        /**
-         * Choose how the link should be rendered.
-         */
-        appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
-        id?: string | null;
-      }[]
-    | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'ctaBannerInline';

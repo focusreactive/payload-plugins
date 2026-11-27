@@ -106,15 +106,16 @@ function mapNavItem(item: PayloadNavItem, locale: string): HeaderNavItem | null 
 }
 
 function mapAction(action: PayloadAction, locale: string): HeaderAction | null {
-  const { href } = prepareLinkProps(action, locale);
+  const { link } = action;
+  const { href } = prepareLinkProps(link, locale);
   if (!href) {
     return null;
   }
   return {
     href,
-    label: action.label,
-    newTab: action.newTab ?? false,
-    variant: actionAppearanceToVariant[action.appearance ?? "default"] ?? ButtonVariant.Primary,
+    label: link.label,
+    newTab: link.newTab ?? false,
+    variant: actionAppearanceToVariant[link.appearance ?? "default"] ?? ButtonVariant.Primary,
   };
 }
 

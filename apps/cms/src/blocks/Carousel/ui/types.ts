@@ -1,7 +1,7 @@
 import type { PreparedMedia } from "@/components/media";
 import type { IRichTextProps } from "@/components/richText/types";
 
-export type CarouselEffect = "slide" | "fade" | "cube" | "flip" | "coverflow" | "cards";
+export type CarouselEffect = "slide" | "fade";
 
 export interface ICarouselProps {
   effect?: CarouselEffect;

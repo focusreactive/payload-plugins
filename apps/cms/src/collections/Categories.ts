@@ -2,18 +2,18 @@ import type { CollectionConfig } from "payload";
 import { slugField } from "payload";
 
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
-import { anyone, author, or, superAdmin, user } from "@/lib/access";
+import { anyone, author, editor, or, superAdmin, user } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 
 export const Categories: CollectionConfig<"categories"> = {
   access: {
-    create: or(superAdmin, user, author),
-    delete: or(superAdmin, user, author),
+    create: or(superAdmin, user, author, editor),
+    delete: or(superAdmin, user, author, editor),
     read: anyone,
-    update: or(superAdmin, user, author),
+    update: or(superAdmin, user, author, editor),
   },
   admin: {
-    defaultColumns: ["title"],
+    defaultColumns: ["title", "slug", "updatedAt"],
     group: "Blog",
     useAsTitle: "title",
   },

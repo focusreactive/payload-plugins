@@ -27,6 +27,7 @@ import serverExtractPageContent from "@/collections/Page/serverExtractPageConten
 import { Posts } from "@/collections/Posts";
 import serverExtractPostContent from "@/collections/Posts/serverExtractPostContent";
 import { Testimonials } from "@/collections/Testimonials";
+import { ADMIN_GROUPS } from "@/lib/config/adminGroups";
 import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
 import { resolveDocUrl } from "@/lib/contentExtraction/links";
 import { getMediaStoragePrefix } from "@/lib/storage/mediaStoragePrefix";
@@ -34,7 +35,8 @@ import { I18N_CONFIG } from "@/lib/config/i18n";
 import { abAdapter } from "@/lib/plugins/ab/abAdapter";
 import { buildVariantData } from "@/lib/plugins/ab/buildVariantData";
 import type { ABVariantData } from "@/lib/plugins/ab/types";
-import { superAdmin, or, authenticated, user } from "@/lib/access";
+import { superAdmin, or, authenticated, user, isEditor } from "@/lib/access";
+import { BLOG_CONFIG } from "@/lib/config/blog";
 import { getServerSideURL } from "@/lib/utils/getURL";
 import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
 import { validateRedirectPath } from "@/lib/utils/redirectUrl";
@@ -46,6 +48,9 @@ import type { Page } from "@/payload-types";
 
 import { mcpPluginConfig } from "./mcp";
 import { restrictApiAccess } from "./restrictApiAccess";
+import { restrictEditorAccess } from "./restrictEditorAccess";
+
+const ALL_OPERATIONS = ["create", "read", "update", "delete"] as const;
 
 const withBlockNameCell = (field: Field): Field => {
   if (field.type !== "blocks" || field.name !== "presetBlock") return field;
@@ -60,8 +65,8 @@ const withBlockNameCell = (field: Field): Field => {
       },
     },
     label: {
-      en: "Block",
-      es: "Bloque",
+      en: "Section",
+      es: "Sección",
     },
   };
 };
@@ -139,7 +144,7 @@ export const plugins: Plugin[] = [
   redirectsPlugin({
     collections: ["page", "posts"],
     overrides: {
-      admin: { group: "Settings" },
+      admin: { defaultColumns: ["from", "type", "isActive", "updatedAt"], group: "Settings" },
       // @ts-expect-error — `.map()` over the `Field` union returns spread object literals that TS
       // will not re-narrow to `Field`, so the callback's return type is not assignable to
       // `FieldsOverride`'s `Field[]`.
@@ -148,8 +153,8 @@ export const plugins: Plugin[] = [
           {
             admin: {
               description: {
-                en: "Whether the redirect is active.",
-                es: "Si la redirección está activa.",
+                en: "Turn off to pause this redirect without deleting it.",
+                es: "Desactívalo para pausar la redirección sin borrarla.",
               },
             },
             defaultValue: true,
@@ -170,8 +175,8 @@ export const plugins: Plugin[] = [
               ...field,
               admin: {
                 description: {
-                  en: "Latin letters, numbers, / - _ . ~ only. No spaces. Stored as lowercase with leading slash.",
-                  es: "Solo letras latinas, números, / - _ . ~. Sin espacios. Se guarda en minúsculas con barra inicial.",
+                  en: "The old address, e.g. /old-page. Letters, numbers and / - _ . ~ only, no spaces.",
+                  es: "La dirección antigua, p. ej. /pagina-antigua. Solo letras, números y / - _ . ~, sin espacios.",
                 },
               },
               unique: false,
@@ -227,8 +232,8 @@ export const plugins: Plugin[] = [
     redirectTypeFieldOverride: {
       admin: {
         description: {
-          en: "Choose the redirect type. 307 - temporary, 308 - permanent.",
-          es: "Elige el tipo de redirección. 307 - temporal, 308 - permanente.",
+          en: "307 = temporary (the old address comes back later), 308 = permanent (best for SEO when a page has moved for good).",
+          es: "307 = temporal (la dirección antigua volverá), 308 = permanente (lo mejor para SEO si la página se ha movido definitivamente).",
         },
       },
       defaultValue: "307",
@@ -278,13 +283,14 @@ export const plugins: Plugin[] = [
     generateURL: (docs) => docs.reduce((url, doc) => `${url}/${doc.slug}`, ""),
   }),
 
-  // Before presetsPlugin, which wraps existing row labels.
-  stackedEditing({ collections: ["page", "posts"], globals: [] }),
+  // Every collection and global registered so far (app collections, redirects, SEO keyphrases,
+  // site-settings). Must stay before presetsPlugin, which wraps the block labels this sets.
+  stackedEditing(),
 
   presetsPlugin({
     labels: {
-      plural: { en: "Presets", es: "Presets" },
-      singular: { en: "Preset", es: "Preset" },
+      plural: { en: "Section templates", es: "Plantillas de sección" },
+      singular: { en: "Section template", es: "Plantilla de sección" },
     },
     overrides: {
       access: {
@@ -295,12 +301,16 @@ export const plugins: Plugin[] = [
       },
       admin: {
         defaultColumns: ["name", "preview", "presetBlock", "updatedAt"],
-        group: "Settings",
+        group: ADMIN_GROUPS.visualSections,
       },
       fields: (defaultFields: Field[]) => defaultFields.map(withBlockNameCell),
     },
     packageName: "@focus-reactive/payload-plugin-presets",
   }),
+
+  // `presets` only exists once presetsPlugin has run, so it gets its own pass. The plugin is
+  // idempotent: labels and `initCollapsed` already set by the first pass are kept.
+  stackedEditing({ collections: ["presets"], globals: [] }),
 
   commentsPlugin({
     collections: [
@@ -402,6 +412,8 @@ export const plugins: Plugin[] = [
   }),
 
   analyticsPlugin({
+    // Editors only work on the blog; site analytics stay with the other roles.
+    access: ({ req }) => Boolean(req.user) && !isEditor(req.user),
     ga4: {
       measurementId: process.env.GA4_MEASUREMENT_ID!,
       propertyId: process.env.GA4_PROPERTY_ID!,
@@ -454,6 +466,35 @@ export const plugins: Plugin[] = [
       access: { read: superAdmin },
     })
   ),
+
+  // Confines the `editor` role to the Blog group. Runs after every other plugin (its own `order`),
+  // so plugin-added collections/globals (redirects, presets, comments, A/B, MCP API keys…) are
+  // covered too.
+  restrictEditorAccess({
+    collections: {
+      [BLOG_CONFIG.collection]: { navigation: true, operations: ALL_OPERATIONS },
+      authors: { navigation: true, operations: ALL_OPERATIONS },
+      categories: { navigation: true, operations: ALL_OPERATIONS },
+      // Not in the editor's sidebar, but usable through a post's upload fields and drawers.
+      media: { operations: ["create", "read", "update"] },
+      // Browse media folders in the upload drawer, without reorganising them.
+      "payload-folders": { operations: ["read"] },
+      // Read-only targets of post fields: link references, testimonial sections, block presets.
+      page: { operations: ["read"] },
+      presets: { operations: ["read"] },
+      testimonials: { operations: ["read"] },
+      // Comment threads on the blog documents the editor works on.
+      "comment-reads": { operations: ALL_OPERATIONS },
+      comments: {
+        operations: ALL_OPERATIONS,
+        where: () => ({
+          collectionSlug: { in: [BLOG_CONFIG.collection, "authors", "categories"] },
+        }),
+      },
+      // Their own account only (sign-in, profile, password).
+      users: { operations: ["read", "update"], where: ({ id }) => ({ id: { equals: id } }) },
+    },
+  }),
 
   // Must stay last so it also protects collections and globals added by the plugins above.
   restrictApiAccess({

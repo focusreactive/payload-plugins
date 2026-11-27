@@ -15,31 +15,26 @@ const fields: Field[] = [
     type: "ui",
   },
   {
-    admin: {
-      description: {
-        en: "Raw HTML rendered as-is on the page. Use for embeds and one-off markup.",
-        es: "HTML sin procesar que se renderiza tal cual en la página. Úsalo para embeds y marcado puntual.",
-      },
-    },
+    admin: { language: "html" },
     defaultValue: createLocalizedDefault({
       en: "<p>Hello from Raw HTML</p>",
       es: "<p>Hola desde HTML sin procesar</p>",
     }),
-    label: { en: "HTML", es: "HTML" },
+    label: { en: "HTML code", es: "Código HTML" },
     localized: true,
     name: "html",
     required: true,
-    type: "textarea",
+    type: "code",
   },
 ];
 
 export const RawHtmlBlock: Block = injectSection({
   slug: "rawHtml",
   interfaceName: "RawHtmlBlock",
-  ...getBlockPreviewImage("Raw HTML"),
+  ...getBlockPreviewImage("Custom HTML"),
   labels: {
-    plural: { en: "Raw HTML", es: "HTML sin procesar" },
-    singular: { en: "Raw HTML", es: "HTML sin procesar" },
+    plural: { en: "Custom HTML", es: "HTML personalizado" },
+    singular: { en: "Custom HTML", es: "HTML personalizado" },
   },
   fields,
 });

@@ -65,7 +65,6 @@ describe("getUnsavedRichText", () => {
     ["no arguments", []],
     ["an empty object", {}],
     ["a field that is null", { field: null, state: STATE }],
-    ["no state", { field: FIELD, locale: "en" }],
   ])(
     "gives nothing for a request that is %s, without signing anyone in",
     async (_name, request) => {
@@ -74,8 +73,13 @@ describe("getUnsavedRichText", () => {
     }
   );
 
-  it("gives nothing to a request without a signed-in user", async () => {
-    expect(await getUnsavedRichText({ field: FIELD, locale: "en", state: STATE })).toBeNull();
+  // A field without a state asks for its saved value (the base the page renders an unsaved
+  // structure on), so it is read like a state: only for a signed-in user.
+  it.each([
+    ["a state", { field: FIELD, locale: "en", state: STATE }],
+    ["no state (the saved value)", { field: FIELD, locale: "en" }],
+  ])("gives nothing for %s to a request without a signed-in user", async (_name, request) => {
+    expect(await getUnsavedRichText(request)).toBeNull();
     expect(preview.auth).toHaveBeenCalledTimes(1);
   });
 });

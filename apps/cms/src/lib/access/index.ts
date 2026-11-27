@@ -1,6 +1,7 @@
 export { anyone } from "./anyone";
 export { authenticated } from "./authenticated";
 export { author } from "./author";
+export { EDITOR_ROLE, editor, isEditor } from "./editor";
 export { user } from "./user";
 export { or } from "./or";
 export { and } from "./and";

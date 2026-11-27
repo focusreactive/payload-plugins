@@ -1,6 +1,10 @@
 import { slugField as payloadSlugField } from "payload";
 import type { CheckboxField, FieldHook, PayloadRequest, TextField } from "payload";
 
+import { getServerSideURL } from "@/lib/utils/getURL";
+
+const USE_AS_SLUG = "title";
+
 const isDefaultLocaleRequest = (req: PayloadRequest) => {
   const { localization } = req.payload.config;
 
@@ -53,6 +57,17 @@ export const createSharedSlugField = (currentCollection: "page" | "posts") => {
       }
 
       if (slugInput) {
+        slugInput.admin = {
+          ...slugInput.admin,
+          components: {
+            ...slugInput.admin?.components,
+            Field: {
+              // Site origin resolved on the server: the client bundle only sees NEXT_PUBLIC_* vars.
+              clientProps: { siteUrl: getServerSideURL(), useAsSlug: USE_AS_SLUG },
+              path: "/components/admin/SlugPathField#SlugPathField",
+            },
+          },
+        };
         slugInput.unique = true;
         slugInput.validate = async (
           value: string | null | undefined,
@@ -80,6 +95,6 @@ export const createSharedSlugField = (currentCollection: "page" | "posts") => {
       return field;
     },
     required: true,
-    useAsSlug: "title",
+    useAsSlug: USE_AS_SLUG,
   });
 };

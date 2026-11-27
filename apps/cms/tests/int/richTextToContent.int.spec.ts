@@ -86,13 +86,13 @@ describe("richTextToContent", () => {
       root([
         {
           type: "block",
-          fields: { blockType: "codeInline", language: "ts", code: "const x = 1 < 2;" },
+          fields: { blockType: "codeInline", language: "typescript", code: "const x = 1 < 2;" },
         },
       ]),
       ctx()
     );
     const h = htmlOf(out[0]);
-    expect(h).toContain('<pre><code class="language-ts">');
+    expect(h).toContain('<pre><code class="language-typescript">');
     expect(h).toContain("const x = 1 &lt; 2;");
   });
 
@@ -120,6 +120,26 @@ describe("richTextToContent", () => {
     expect(out).toContainEqual({ type: "paragraph", text: "Desc" });
     expect(out).toContainEqual({ type: "image", src: "/c.jpg", alt: "C" });
     expect(out).toContainEqual({ type: "link", href: "https://x.com", text: "Go" });
+  });
+
+  it("expands a ctaBannerInline block's section heading group and actions", () => {
+    const out = richTextToContent(
+      root([
+        {
+          type: "block",
+          fields: {
+            blockType: "ctaBannerInline",
+            heading: { eyebrow: "New", title: "Join us", description: "Start today" },
+            actions: [{ link: { type: "custom", url: "/signup", label: "Sign up" } }],
+          },
+        },
+      ]),
+      ctx()
+    );
+    expect(out).toContainEqual({ type: "heading", level: 3, text: "Join us" });
+    expect(out).toContainEqual({ type: "paragraph", text: "New" });
+    expect(out).toContainEqual({ type: "paragraph", text: "Start today" });
+    expect(out).toContainEqual({ type: "link", href: "/signup", text: "Sign up" });
   });
 
   it("expands logosInline into a label paragraph + per-item image/link", () => {
@@ -174,7 +194,7 @@ describe("richTextToContent", () => {
   });
 
   it.each([
-    ["ctaBannerInline", { heading: "Join us", actions: 0 }],
+    ["ctaBannerInline", { heading: { title: "Join us" }, actions: 0 }],
     ["cardsGridInline", { items: 0 }],
     ["logosInline", { label: "Partners", items: 0 }],
   ])("expands a %s block whose array field holds a form-state row count", (blockType, fields) => {

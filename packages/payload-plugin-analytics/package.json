@@ -51,6 +51,10 @@
     "./components/AnalyticsView/AnalyticsHeaderLink": {
       "import": "./dist/components/AnalyticsView/AnalyticsHeaderLink.js",
       "types": "./dist/components/AnalyticsView/AnalyticsHeaderLink.d.ts"
+    },
+    "./components/AnalyticsView/AnalyticsHeaderAction": {
+      "import": "./dist/components/AnalyticsView/AnalyticsHeaderAction.js",
+      "types": "./dist/components/AnalyticsView/AnalyticsHeaderAction.d.ts"
     }
   },
   "scripts": {

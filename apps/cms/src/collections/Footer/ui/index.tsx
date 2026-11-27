@@ -132,8 +132,7 @@ export function Footer({
                     <li key={index}>
                       <a
                         href={social.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        {...(social.newTab ? { rel: "noopener noreferrer", target: "_blank" } : {})}
                         aria-label={SOCIAL_PLATFORM_LABELS[social.platform]}
                         className="inline-flex text-foreground transition-opacity duration-150 hover:opacity-70 motion-reduce:transition-none"
                       >

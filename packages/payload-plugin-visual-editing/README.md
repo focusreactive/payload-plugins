@@ -220,7 +220,7 @@ Open a document in the admin, open **Live Preview** and set the toggle to **Alwa
 
 To leave draft mode in a normal browser tab, open `/next/exit-preview`.
 
-Frames and the badge are drawn above the whole page, so they would also cross a sticky header or another bar that stays over the content while it scrolls. Mark such an element with `data-ve-cover` and the part of every frame and badge that lies under it is hidden:
+Frames and the badge are drawn above the whole page, so they would also cross a sticky header or another bar that stays over the content while it scrolls. Mark such an element with `data-ve-cover` and the part of every frame that lies under it is hidden. The badge always stays in sight: it sits on the top right corner of the frame like a tab, and when a cover pinned to the top of the window or the top of the window itself takes that room (a heading right under a sticky header, a tall image scrolled half out of view), it hangs inside the top of the visible part of the frame, or below a frame too short for that:
 
 ```tsx
 <header className="sticky top-0" data-ve-cover>
@@ -253,7 +253,7 @@ and the `OpenFieldEventDetail` type are exported for components that want to rai
 
 - Fields of type `text`, `textarea` and `email`, at any depth: in groups, tabs, rows, collapsibles, array rows and blocks (declared inline or through `blockReferences`).
 - The name of a block (`blockName`), unless the block sets `admin.disableBlockName`. A click on a rendered block name focuses the name input in the block header.
-- Not: empty values, and values that match `excludeValues` (by default URLs, slugs like `hello-world`, `#fragments` and ISO dates). A range of numbers such as `8-10` and a text that starts with a hash, such as `#1 in the ranking`, are marked.
+- Not: empty values, and values that match `excludeValues` (by default URLs, slugs like `hello-world`, `#fragments` and ISO dates; a URL has no white space, so an eyebrow such as `New: Insights 2.0` is marked). A range of numbers such as `8-10` and a text that starts with a hash, such as `#1 in the ranking`, are marked.
 - Not: fields named `slug`, `folder`, `_status`, `apiKey` or anything in `excludeFieldNames`.
 - Not: fields the editor cannot change in the admin, that is `hidden: true`, `admin.hidden`, `admin.readOnly` or `admin.disabled`, and everything inside a group, array or blocks field that has one of them.
 - Not: `text` fields with `hasMany`, numbers, selects, dates and other non-text fields.

@@ -4,24 +4,11 @@ import { ButtonSize } from "@/components/button/types";
 
 import { CMSLink } from "@/components/shared/CMSLink";
 import type { SectionHeadingContent } from "@/components/SectionHeading";
-import type { Page, Post } from "@/payload-types";
+import type { LinkFieldValue } from "@/lib/adapters/prepareLinkProps";
 
 export interface CtaBandSectionAction {
-  type?: ("reference" | "custom" | "customPage") | null;
-  newTab?: boolean | null;
-  reference?:
-    | ({
-        relationTo: "page";
-        value: number | Page;
-      } | null)
-    | ({
-        relationTo: "posts";
-        value: number | Post;
-      } | null);
-  url?: string | null;
-  label: string;
-  appearance?: ("default" | "outline" | "accent" | "ghost" | "link") | null;
   id?: string | null;
+  link: LinkFieldValue;
 }
 
 interface CtaBandSectionProps {
@@ -34,23 +21,8 @@ export function CtaBandSection({ heading, actions }: CtaBandSectionProps) {
     <CtaBand
       heading={heading}
       actions={(actions ?? []).map((action) => (
-        <TrackLeadAction key={action.id ?? action.label} on="click" type="cta_click">
-          <CMSLink
-            type={action.type}
-            reference={
-              action.reference
-                ? {
-                    relationTo: action.reference.relationTo as "page" | "posts",
-                    value: action.reference.value as Page | Post | string | number,
-                  }
-                : null
-            }
-            url={action.url}
-            newTab={action.newTab}
-            label={action.label}
-            appearance={action.appearance}
-            size={ButtonSize.Large}
-          />
+        <TrackLeadAction key={action.id ?? action.link.label} on="click" type="cta_click">
+          <CMSLink link={action.link} size={ButtonSize.Large} />
         </TrackLeadAction>
       ))}
     />

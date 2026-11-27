@@ -4,15 +4,18 @@ import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
 import { injectSection } from "@/lib/fields/section/injectSection";
 import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 
-import { cardsGridFields } from "./fields";
+import { cardsGridItemsField, cardsGridLookFields } from "./fields";
 
-export const CardsGridBlock: Block = injectSection({
-  slug: "cardsGrid",
-  interfaceName: "CardsGridBlock",
-  ...getBlockPreviewImage("Cards Grid"),
-  labels: {
-    plural: { en: "Cards Grids", es: "Cuadrículas de Tarjetas" },
-    singular: { en: "Cards Grid", es: "Cuadrícula de Tarjetas" },
+export const CardsGridBlock: Block = injectSection(
+  {
+    slug: "cardsGrid",
+    interfaceName: "CardsGridBlock",
+    ...getBlockPreviewImage("Cards Grid"),
+    labels: {
+      plural: { en: "Cards", es: "Tarjetas" },
+      singular: { en: "Cards", es: "Tarjetas" },
+    },
+    fields: [sectionHeadingField(), cardsGridItemsField],
   },
-  fields: [sectionHeadingField(), ...cardsGridFields],
-});
+  { lookFields: cardsGridLookFields }
+);

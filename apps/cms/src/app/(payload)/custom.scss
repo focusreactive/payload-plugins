@@ -13,3 +13,69 @@
 .LexicalEditorTheme__table {
   width: 100%;
 }
+
+// "URL" column in the Pages / Posts list views (PublicUrlCell).
+.public-url-cell {
+  display: inline-block;
+  max-width: 24rem;
+  overflow: hidden;
+  vertical-align: bottom;
+  color: var(--theme-success-500);
+  text-decoration: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  // Long nested paths clip on the left so the page's own segment stays visible;
+  // the full URL is in the title tooltip.
+  direction: rtl;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
+}
+
+// Slug input with the document's non-editable path prefix (SlugPathField). Visual only.
+.slug-path-field {
+  width: 100%;
+
+  .slug-path-field__open {
+    display: inline-flex;
+    align-items: center;
+    color: var(--theme-elevation-500);
+    border-radius: var(--style-radius-s);
+
+    &:hover,
+    &:focus-visible {
+      color: var(--theme-text);
+    }
+  }
+
+  // Prefix and input share one bordered box: the prefix is an addon on the start side.
+  .field-type.text:not(.has-many) > .field-type__wrap {
+    display: flex;
+    align-items: stretch;
+
+    > input {
+      flex: 1 1 0;
+      min-width: 0;
+      width: auto;
+      border-start-start-radius: 0;
+      border-end-start-radius: 0;
+    }
+  }
+
+  .slug-path-field__prefix {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    padding-inline: calc(var(--base) * 0.5);
+    border: 1px solid var(--theme-elevation-150);
+    border-inline-end: 0;
+    border-start-start-radius: var(--style-radius-s);
+    border-end-start-radius: var(--style-radius-s);
+    background-color: var(--theme-elevation-50);
+    color: var(--theme-elevation-500);
+    font-size: 1rem;
+    white-space: nowrap;
+  }
+}

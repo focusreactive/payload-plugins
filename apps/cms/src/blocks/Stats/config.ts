@@ -31,7 +31,7 @@ const fields: Field[] = [
         fields: [
           {
             admin: { width: "50%" },
-            label: { en: "Value", es: "Valor" },
+            label: { en: "Number", es: "Cifra" },
             localized: true,
             name: "value",
             required: true,
@@ -39,7 +39,7 @@ const fields: Field[] = [
           },
           {
             admin: { width: "50%" },
-            label: { en: "Label", es: "Etiqueta" },
+            label: { en: "What it measures", es: "Qué mide" },
             localized: true,
             name: "label",
             required: true,
@@ -48,6 +48,11 @@ const fields: Field[] = [
         ],
       },
     ],
+    label: { en: "Numbers", es: "Cifras" },
+    labels: {
+      plural: { en: "Numbers", es: "Cifras" },
+      singular: { en: "Number", es: "Cifra" },
+    },
     localized: true,
     maxRows: 4,
     minRows: 2,
@@ -60,10 +65,11 @@ const fields: Field[] = [
 export const StatsBlock: Block = injectSection({
   slug: "stats",
   interfaceName: "StatsBlock",
+  admin: { custom: { preview: definePreview({ title: "items.length" }) } },
   ...getBlockPreviewImage("Stats"),
   labels: {
-    plural: { en: "Stats", es: "Estadísticas" },
-    singular: { en: "Stats", es: "Estadísticas" },
+    plural: { en: "Key numbers", es: "Cifras clave" },
+    singular: { en: "Key numbers", es: "Cifras clave" },
   },
   fields,
 });

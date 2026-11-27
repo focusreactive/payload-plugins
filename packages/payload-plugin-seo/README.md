@@ -477,6 +477,22 @@ export default buildConfig({
 
 If the configured `extractContentPath` is set but the function is not registered (e.g. the provider is missing), the plugin logs a one-time console error and content analysis for that collection is empty — there is no built-in fallback.
 
+### The URL in the search-result preview
+
+By default the search-result preview shows `site.baseUrl` followed by `/<slug>`. That is wrong for a nested page (`/services/web`, not `/web`), a blog post (`/blog/<slug>`) or a locale prefix. Register a preview path resolver per collection slug in the same client module, and the preview shows `site.baseUrl` followed by the path it returns:
+
+```ts
+import { registerPreviewPathResolvers } from "@focus-reactive/payload-plugin-seo/content";
+
+registerPreviewPathResolvers({
+  // `values` are the unsaved form values, `locale` the locale being edited.
+  pages: (values, { locale }) => buildPagePath(values, locale), // "/es/services/web"
+  posts: (values, { locale }) => buildPostPath(values.slug, locale), // "/blog/my-post"
+});
+```
+
+The resolver runs in the browser on every analysis (debounced, on the unsaved form values). It may return a promise, for example to read the path of a parent page that the form does not hold; cache what it fetches. Return `null` or `undefined` to fall back to `/<slug>`; a thrown error is logged and falls back the same way. A collection without a resolver keeps the old behaviour.
+
 ### Limitation: links and uploads embedded inside richText
 
 `helpers.richText(value)` serializes the lexical tree to HTML **as-is**. Internal-link nodes and upload nodes embedded inside richText *body content* are **not** resolved by the plugin — their `href`s / `src`s are left as the lexical tree provides them. This keeps the plugin fully schema-agnostic. If you need those resolved, walk the lexical tree yourself inside your extractor (its structure is standard Payload lexical), collect the referenced ids, fetch them with `resolveDocs`, and rewrite the nodes before building the IR.

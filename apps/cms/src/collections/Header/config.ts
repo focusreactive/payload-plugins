@@ -1,14 +1,14 @@
-import type { CollectionConfig, GroupField } from "payload";
+import type { CollectionConfig } from "payload";
 
-import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import { anyone, or, user, superAdmin } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
-import { link } from "@/lib/fields/link";
+import { buttonsField, link } from "@/lib/fields/link";
 import {
   createLivePreviewEditComponents,
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
+import { ADMIN_GROUPS } from "@/lib/config/adminGroups";
 import { createStandalonePreview } from "@/lib/utils/standalonePreview";
 
 import { revalidateResourcesUsingHeader } from "./hooks/revalidateResourcesUsingHeader";
@@ -24,8 +24,8 @@ export const Header: CollectionConfig<"header"> = {
     components: {
       edit: createLivePreviewEditComponents(),
     },
-    defaultColumns: ["name", "logo"],
-    group: "Global Components",
+    defaultColumns: ["name", "logo", "_status", "updatedAt"],
+    group: ADMIN_GROUPS.visualSections,
     useAsTitle: "name",
     ...createStandalonePreview("header"),
   },
@@ -33,23 +33,19 @@ export const Header: CollectionConfig<"header"> = {
     {
       admin: {
         description: {
-          en: "The name of the header",
-          es: "El nombre del header",
+          en: "Internal name, shown only in the admin.",
+          es: "Nombre interno, solo visible en el panel.",
         },
+        position: "sidebar",
       },
-      defaultValue: createLocalizedDefault({ en: "Header", es: "Header" }),
-      localized: true,
+      defaultValue: "Header",
+      label: { en: "Name", es: "Nombre" },
       name: "name",
       type: "text",
     },
     {
-      admin: {
-        description: {
-          en: "The logo to display in the header",
-          es: "El logo a mostrar en el header",
-        },
-      },
-      defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
+      defaultValue: async () => getDefaultMediaId(),
+      label: { en: "Logo", es: "Logo" },
       name: "logo",
       relationTo: "media",
       required: true,
@@ -64,11 +60,19 @@ export const Header: CollectionConfig<"header"> = {
       },
       defaultValue: createLocalizedDefault({
         en: [
-          { label: "Blog", link: { newTab: false, type: "custom", url: "/blog" }, type: "link" },
+          {
+            label: "Blog",
+            link: { customPage: "blog", newTab: false, type: "customPage" },
+            type: "link",
+          },
           { label: "Pricing", link: { newTab: false, type: "custom", url: "#" }, type: "link" },
         ],
         es: [
-          { label: "Blog", link: { newTab: false, type: "custom", url: "/blog" }, type: "link" },
+          {
+            label: "Blog",
+            link: { customPage: "blog", newTab: false, type: "customPage" },
+            type: "link",
+          },
           { label: "Precios", link: { newTab: false, type: "custom", url: "#" }, type: "link" },
         ],
       }),
@@ -78,7 +82,7 @@ export const Header: CollectionConfig<"header"> = {
           fields: [
             {
               admin: { width: "60%" },
-              label: { en: "Label", es: "Etiqueta" },
+              label: { en: "Menu text", es: "Texto del menú" },
               localized: true,
               name: "label",
               required: true,
@@ -87,11 +91,11 @@ export const Header: CollectionConfig<"header"> = {
             {
               admin: { width: "40%" },
               defaultValue: "link",
-              label: { en: "Type", es: "Tipo" },
+              label: { en: "Opens", es: "Abre" },
               name: "type",
               options: [
-                { label: { en: "Link", es: "Enlace" }, value: "link" },
-                { label: { en: "Dropdown", es: "Desplegable" }, value: "dropdown" },
+                { label: { en: "A link", es: "Un enlace" }, value: "link" },
+                { label: { en: "A dropdown menu", es: "Un menú desplegable" }, value: "dropdown" },
               ],
               required: true,
               type: "select",
@@ -99,11 +103,8 @@ export const Header: CollectionConfig<"header"> = {
           ],
         },
         link({
-          appearances: false,
-          disableLabel: true,
-          overrides: {
-            admin: { condition: (_, siblingData) => siblingData?.type === "link" },
-          },
+          condition: (_, siblingData) => siblingData?.type === "link",
+          withText: false,
         }),
         {
           admin: { condition: (_, siblingData) => siblingData?.type === "dropdown" },
@@ -112,7 +113,7 @@ export const Header: CollectionConfig<"header"> = {
               fields: [
                 {
                   defaultValue: false,
-                  label: { en: "Enabled", es: "Habilitado" },
+                  label: { en: "Show a featured card", es: "Mostrar una tarjeta destacada" },
                   name: "enabled",
                   type: "checkbox",
                 },
@@ -122,7 +123,7 @@ export const Header: CollectionConfig<"header"> = {
                   fields: [
                     {
                       admin: { width: "40%" },
-                      label: { en: "Eyebrow", es: "Antetítulo" },
+                      label: { en: "Label above title", es: "Texto sobre el título" },
                       localized: true,
                       name: "eyebrow",
                       type: "text",
@@ -144,12 +145,9 @@ export const Header: CollectionConfig<"header"> = {
                   type: "textarea",
                 },
                 link({
-                  appearances: false,
+                  condition: (_, siblingData) => !!siblingData?.enabled,
                   customPageDbName: "hdr_ni_dd_ft_lnk_cp",
                   required: false,
-                  overrides: {
-                    admin: { condition: (_, siblingData) => !!siblingData?.enabled },
-                  },
                 }),
               ],
               label: { en: "Featured card", es: "Tarjeta destacada" },
@@ -180,12 +178,15 @@ export const Header: CollectionConfig<"header"> = {
                   ],
                 },
                 link({
-                  appearances: false,
                   customPageDbName: "hdr_ni_dd_lnks_lnk_cp",
-                  disableLabel: true,
+                  withText: false,
                 }),
               ],
               label: { en: "Menu links", es: "Enlaces del menú" },
+              labels: {
+                plural: { en: "Links", es: "Enlaces" },
+                singular: { en: "Link", es: "Enlace" },
+              },
               minRows: 1,
               name: "links",
               type: "array",
@@ -196,20 +197,17 @@ export const Header: CollectionConfig<"header"> = {
           type: "group",
         },
       ],
+      label: { en: "Menu items", es: "Elementos del menú" },
+      labels: {
+        plural: { en: "Menu items", es: "Elementos del menú" },
+        singular: { en: "Menu item", es: "Elemento del menú" },
+      },
       localized: true,
       maxRows: 6,
       name: "navItems",
       type: "array",
     },
-    {
-      admin: { initCollapsed: true },
-      fields: (link() as GroupField).fields,
-      label: { en: "Actions", es: "Acciones" },
-      localized: true,
-      maxRows: 2,
-      name: "actions",
-      type: "array",
-    },
+    buttonsField({ maxRows: 2 }),
   ],
   hooks: {
     afterChange: [revalidateResourcesUsingHeader],
@@ -217,11 +215,11 @@ export const Header: CollectionConfig<"header"> = {
   labels: {
     plural: {
       en: "Headers",
-      es: "Headers",
+      es: "Cabeceras",
     },
     singular: {
       en: "Header",
-      es: "Header",
+      es: "Cabecera",
     },
   },
   slug: "header",

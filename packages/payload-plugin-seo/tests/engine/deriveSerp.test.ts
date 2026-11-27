@@ -24,6 +24,18 @@ describe("deriveSerp", () => {
     expect(result.siteName).toBe("RunShop");
   });
 
+  it("shows the resolved public path of a nested page or a post instead of the bare slug", () => {
+    expect(deriveSerp({ ...base, slug: "web", path: "/services/web" }).url).toBe(
+      "https://runshop.com/services/web"
+    );
+    expect(deriveSerp({ ...base, path: "/es/blog/running-shoes" }).url).toBe(
+      "https://runshop.com/es/blog/running-shoes"
+    );
+    expect(
+      deriveSerp({ ...base, site: { ...base.site, baseUrl: "https://runshop.com/" } }).url
+    ).toBe("https://runshop.com/running-shoes");
+  });
+
   it("falls back to path-only URL when baseUrl is empty", () => {
     const result = deriveSerp({ ...base, site: { ...base.site, baseUrl: "" } });
     expect(result.url).toBe("/running-shoes");

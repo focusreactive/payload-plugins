@@ -60,9 +60,10 @@ export async function Footer({ data: rawData, editable = false }: Props) {
     return resolved ? [resolved] : [];
   });
 
-  const socialLinks: FooterSocialLink[] = (data.socialLinks ?? []).flatMap((entry) =>
-    entry.url ? [{ href: entry.url, platform: entry.platform }] : []
-  );
+  const socialLinks: FooterSocialLink[] = (data.socialLinks ?? []).flatMap((entry) => {
+    const href = entry.link ? prepareLinkProps(entry.link, locale).href : undefined;
+    return href ? [{ href, newTab: entry.link?.newTab ?? false, platform: entry.platform }] : [];
+  });
 
   const props: IFooterProps = {
     brand: {

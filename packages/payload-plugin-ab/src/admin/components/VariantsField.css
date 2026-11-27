@@ -1,3 +1,8 @@
+/*
+ * The root is a `div.field-type` so Payload's `.render-fields > .field-type`
+ * rules space it like any native field (var(--spacing-field)). A non-div root
+ * made the field above it `:last-of-type`, which zeroes its bottom margin.
+ */
 .ab-test {
   --ab-series-0: var(--theme-elevation-400);
   --ab-series-1: var(--color-blue-500);
@@ -10,7 +15,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--ab-gap);
-  margin-bottom: var(--base);
   transition: opacity 150ms ease;
 }
 
@@ -41,11 +45,8 @@
   background: var(--theme-elevation-50);
 }
 
-.ab-test__empty {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--ab-gap);
+.ab-test__create {
+  align-self: flex-start;
 }
 
 .ab-split {

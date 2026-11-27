@@ -18,6 +18,7 @@ import { Page } from "@/collections/Page/Page";
 import { Posts } from "@/collections/Posts";
 import { Testimonials } from "@/collections/Testimonials";
 import { Users } from "@/collections/Users";
+import { superAdmin } from "@/lib/access";
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import { MAX_UPLOAD_BYTES } from "@/lib/constants/uploadLimits";
 import { createDatabaseAdapter } from "@/lib/database";
@@ -84,6 +85,13 @@ export default buildConfig({
   graphQL: {
     disable: true,
   },
+  jobs: {
+    // Payload's default lets any signed-in user (editors included) run or cancel queued jobs over
+    // REST (/api/payload-jobs/run, /handle-schedules). Scheduled publishing does not need that:
+    // the cron calls the scheduling plugin's secret-guarded endpoint, which runs the queue through
+    // the Local API (no access check), and scheduling a publish queues jobs the same way.
+    access: { cancel: superAdmin, run: superAdmin },
+  },
   i18n: {
     fallbackLanguage: "en",
     supportedLanguages: { en, es },
@@ -93,11 +101,20 @@ export default buildConfig({
           dividerLabel: "SSO",
           signInWith: "Sign in with {{provider}}",
         },
+        // Payload's own list-length errors read "This field requires at least 1 Rows."
+        validation: {
+          requiresAtLeast: "Add at least {{count}} item(s) here.",
+          requiresNoMoreThan: "Keep this to {{count}} item(s) or fewer.",
+        },
       },
       es: {
         sso: {
           dividerLabel: "SSO",
           signInWith: "Iniciar sesión con {{provider}}",
+        },
+        validation: {
+          requiresAtLeast: "Añade al menos {{count}} elemento(s) aquí.",
+          requiresNoMoreThan: "Deja como máximo {{count}} elemento(s).",
         },
       },
     },

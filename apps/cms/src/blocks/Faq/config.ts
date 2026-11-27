@@ -46,6 +46,11 @@ const fields: Field[] = [
         type: "richText",
       },
     ],
+    label: { en: "Questions", es: "Preguntas" },
+    labels: {
+      plural: { en: "Questions", es: "Preguntas" },
+      singular: { en: "Question", es: "Pregunta" },
+    },
     localized: true,
     minRows: 1,
     name: "items",
@@ -59,8 +64,8 @@ export const FaqBlock: Block = injectSection({
   interfaceName: "FaqBlock",
   ...getBlockPreviewImage("FAQ Section"),
   labels: {
-    plural: { en: "FAQ Sections", es: "Secciones de FAQ" },
-    singular: { en: "FAQ Section", es: "Sección de FAQ" },
+    plural: { en: "FAQ", es: "Preguntas frecuentes" },
+    singular: { en: "FAQ", es: "Preguntas frecuentes" },
   },
   fields,
 });
