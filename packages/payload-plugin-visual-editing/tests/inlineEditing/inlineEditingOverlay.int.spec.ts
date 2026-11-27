@@ -330,12 +330,92 @@ describe("editing text on the page", () => {
           expect(withoutTargetRanges("deleteContentForward").defaultPrevented).toBe(false);
         });
 
-        it("keeps typing over a selection that reaches into the elements beside the text from happening", () => {
-          click(line);
-          document.getSelection()?.setBaseAndExtent(textIn(line), startOfTheText(), tag, 1);
+        describe("and the editor changes more than the text", () => {
+          let changed: [string, string | undefined, string][];
 
-          expect(withoutTargetRanges("insertText").defaultPrevented).toBe(true);
-          expect(press(line, "Backspace").defaultPrevented).toBe(true);
+          const selectBeyondTheText = () => {
+            click(line);
+            document.getSelection()?.setBaseAndExtent(textIn(line), startOfTheText(), tag, 1);
+          };
+
+          beforeEach(() => {
+            changed = [];
+            const execCommand = vi.fn((command: string, _ui: boolean, value?: string) => {
+              changed.push([command, value, document.getSelection()?.toString() ?? ""]);
+              return true;
+            });
+            Object.assign(document, { execCommand });
+          });
+
+          afterEach(() => Reflect.deleteProperty(document, "execCommand"));
+
+          it("types over the text alone when the selection reaches into the elements beside it", () => {
+            selectBeyondTheText();
+            const event = new InputEvent("beforeinput", {
+              bubbles: true,
+              cancelable: true,
+              data: "X",
+              inputType: "insertText",
+            });
+            Object.defineProperty(event, "getTargetRanges", { value: () => [] });
+
+            line.dispatchEvent(event);
+
+            expect(event.defaultPrevented).toBe(true);
+            expect(changed).toEqual([["insertText", "X", "OUR FIRST RELEASE"]]);
+          });
+
+          it("deletes the text alone when the selection reaches into the elements beside it", () => {
+            selectBeyondTheText();
+
+            expect(press(line, "Backspace").defaultPrevented).toBe(true);
+            expect(changed).toEqual([["delete", undefined, "OUR FIRST RELEASE"]]);
+          });
+
+          it.each([
+            ["Option and Backspace", "Backspace", { altKey: true }, "REL"],
+            ["Control and Backspace", "Backspace", { ctrlKey: true }, "REL"],
+            ["Command and Backspace", "Backspace", { metaKey: true }, "OUR FIRST REL"],
+            ["Option and Delete", "Delete", { altKey: true }, "EASE"],
+            ["Command and Delete", "Delete", { metaKey: true }, "EASE"],
+          ])("deletes with %s up to the edge of the text at most", (_, key, modifiers, deleted) => {
+            putCaretAt(startOfTheText() + "OUR FIRST REL".length);
+
+            expect(press(line, key, modifiers).defaultPrevented).toBe(true);
+            expect(changed).toEqual([["delete", undefined, deleted]]);
+          });
+
+          it("deletes nothing with Option and Backspace at the start of the text", () => {
+            putCaretAt(startOfTheText());
+
+            expect(press(line, "Backspace", { altKey: true }).defaultPrevented).toBe(true);
+            expect(changed).toEqual([]);
+          });
+
+          it("deletes the part of the text in the range the browser would delete beyond it", () => {
+            putCaretAt(startOfTheText() + "OUR FIRST REL".length);
+            const reach = document.createRange();
+            reach.setStart(textIn(line), startOfTheText() + "OUR FIRST REL".length);
+            reach.setEnd(tag, 1);
+            const event = new InputEvent("beforeinput", {
+              bubbles: true,
+              cancelable: true,
+              inputType: "deleteSoftLineForward",
+            });
+            Object.defineProperty(event, "getTargetRanges", { value: () => [reach] });
+
+            line.dispatchEvent(event);
+
+            expect(event.defaultPrevented).toBe(true);
+            expect(changed).toEqual([["delete", undefined, "EASE"]]);
+          });
+
+          it("lets an undo and a redo happen", () => {
+            selectBeyondTheText();
+
+            expect(withoutTargetRanges("historyUndo").defaultPrevented).toBe(false);
+            expect(withoutTargetRanges("historyRedo").defaultPrevented).toBe(false);
+          });
         });
 
         it("keeps a new paragraph from splitting the line", () => {

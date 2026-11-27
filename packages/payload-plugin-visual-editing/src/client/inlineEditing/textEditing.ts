@@ -32,7 +32,11 @@ type EditedText = {
   after: string;
 };
 
-type Deletion = "backward" | "forward" | null;
+type Direction = "backward" | "forward";
+
+type Reach = "character" | "word" | "line";
+
+type Deletion = { direction: Direction; reach: Reach };
 
 type Edit = {
   match: FieldMatch;
@@ -63,6 +67,7 @@ const CANCEL_KEY = "Escape";
 const COMMIT_KEY = "Enter";
 const SPACE_KEY = " ";
 const INSERT_TEXT_COMMAND = "insertText";
+const DELETE_COMMAND = "delete";
 const PLAIN_TEXT_FORMAT = "text/plain";
 const EDITING_ATTRS = [EDITABLE_ATTR, SPELLCHECK_ATTR, DATA_VE_EDITING_ATTR];
 const LINE_BREAK_TAG = "BR";
@@ -74,11 +79,24 @@ const INSERT_TEXT_INPUT = "insertText";
 const FIRST_INPUT_EVENT = "beforeinput";
 const LINE_INPUTS: ReadonlySet<string> = new Set(["insertLineBreak", "insertParagraph"]);
 const PARAGRAPH_INPUT = "insertParagraph";
-const DELETION_INPUT_PREFIX = "delete";
-const DELETION_KEYS: ReadonlyMap<string, NonNullable<Deletion>> = new Map([
+const HISTORY_INPUT_PREFIX = "history";
+const REPLACING_INPUTS: ReadonlySet<string> = new Set(["insertText", "insertReplacementText"]);
+const DELETION_INPUTS: ReadonlyMap<string, Deletion> = new Map([
+  ["deleteContentBackward", { direction: "backward", reach: "character" }],
+  ["deleteContentForward", { direction: "forward", reach: "character" }],
+  ["deleteWordBackward", { direction: "backward", reach: "word" }],
+  ["deleteWordForward", { direction: "forward", reach: "word" }],
+  ["deleteSoftLineBackward", { direction: "backward", reach: "line" }],
+  ["deleteSoftLineForward", { direction: "forward", reach: "line" }],
+  ["deleteHardLineBackward", { direction: "backward", reach: "line" }],
+  ["deleteHardLineForward", { direction: "forward", reach: "line" }],
+]);
+const DELETION_KEYS: ReadonlyMap<string, Direction> = new Map([
   ["Backspace", "backward"],
   ["Delete", "forward"],
 ]);
+const WORD_BEFORE = /\S*\s*$/u;
+const WORD_AFTER = /^\s*\S*/u;
 const EVENTS_BEFORE_THE_FIRST_INPUT = [
   "keydown",
   "paste",
@@ -160,37 +178,145 @@ const reachesBeyondTheText = (
   );
 };
 
-const deletionOf = (inputType: string): Deletion => {
-  if (!inputType.startsWith(DELETION_INPUT_PREFIX)) return null;
-  if (inputType.endsWith("Backward")) return "backward";
-  return inputType.endsWith("Forward") ? "forward" : null;
-};
-
 const lengthOf = (texts: readonly Text[]): number =>
   texts.reduce((length, textNode) => length + textNode.length, 0);
 
-const deletesBeyondTheText = (edit: EditedText, deletion: Deletion): boolean => {
-  const selection = edit.editedElement.ownerDocument.getSelection();
-  if (!selection || selection.rangeCount === 0) return false;
-  const range = selection.getRangeAt(0);
-  if (!range.collapsed) return reachesBeyondTheText(edit, range);
-  if (!deletion) return false;
-  const texts = textsOf(edit);
-  const caret = caretOffsetIn(edit.editedElement, texts);
-  if (caret === null) return false;
-  return deletion === "backward"
-    ? caret <= edit.before.length
-    : caret >= lengthOf(texts) - edit.after.length;
+const pointAt = (texts: readonly Text[], offset: number): readonly [Text, number] | null => {
+  let remaining = offset;
+  for (const textNode of texts) {
+    if (remaining <= textNode.length) return [textNode, remaining];
+    remaining -= textNode.length;
+  }
+  return null;
 };
 
-const keepInputInTheText = (edit: EditedText, event: InputEvent): void => {
-  const ranges = event.getTargetRanges?.() ?? [];
-  if (
-    event.inputType === PARAGRAPH_INPUT ||
-    ranges.some((range) => reachesBeyondTheText(edit, range)) ||
-    deletesBeyondTheText(edit, deletionOf(event.inputType))
-  )
+const rangeOfText = (
+  edit: EditedText,
+  texts: readonly Text[],
+  from: number,
+  to: number
+): Range | null => {
+  const start = pointAt(texts, from);
+  const end = pointAt(texts, to);
+  if (!start || !end) return null;
+  const range = edit.editedElement.ownerDocument.createRange();
+  range.setStart(...start);
+  range.setEnd(...end);
+  return range;
+};
+
+const textRangeOf = (edit: EditedText): Range | null => {
+  const texts = textsOf(edit);
+  return rangeOfText(edit, texts, edit.before.length, lengthOf(texts) - edit.after.length);
+};
+
+const clampedTo = (text: Range, range: AbstractRange): Range => {
+  const clamped = text.cloneRange();
+  const startsAt = text.comparePoint(range.startContainer, range.startOffset);
+  const endsAt = text.comparePoint(range.endContainer, range.endOffset);
+  if (startsAt === 0) clamped.setStart(range.startContainer, range.startOffset);
+  if (endsAt === 0) clamped.setEnd(range.endContainer, range.endOffset);
+  if (startsAt > 0) clamped.collapse(false);
+  if (endsAt < 0) clamped.collapse(true);
+  return clamped;
+};
+
+const selectedRangeOf = ({ editedElement }: EditedText): Range | null => {
+  const selection = editedElement.ownerDocument.getSelection();
+  return selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+};
+
+const reachBefore = (text: string, reach: Reach): number => {
+  if (reach === "line") return text.length;
+  if (reach === "word") return WORD_BEFORE.exec(text)?.[0].length ?? 0;
+  return Math.min(1, text.length);
+};
+
+const reachAfter = (text: string, reach: Reach): number => {
+  if (reach === "line") return text.length;
+  if (reach === "word") return WORD_AFTER.exec(text)?.[0].length ?? 0;
+  return Math.min(1, text.length);
+};
+
+const deletedFromTheCaret = (edit: EditedText, { direction, reach }: Deletion): Range | null => {
+  const texts = textsOf(edit);
+  const caret = caretOffsetIn(edit.editedElement, texts);
+  if (caret === null) return null;
+  const start = edit.before.length;
+  const end = lengthOf(texts) - edit.after.length;
+  const at = Math.min(Math.max(caret, start), end);
+  const content = texts.map(({ data }) => data).join("");
+  return direction === "backward"
+    ? rangeOfText(edit, texts, at - reachBefore(content.slice(start, at), reach), at)
+    : rangeOfText(edit, texts, at, at + reachAfter(content.slice(at, end), reach));
+};
+
+const select = ({ editedElement }: EditedText, range: Range): Document => {
+  const doc = editedElement.ownerDocument;
+  const selection = doc.getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+  return doc;
+};
+
+const insertText = (doc: Document, text: string): void => {
+  if (typeof doc.execCommand === "function") doc.execCommand(INSERT_TEXT_COMMAND, false, text);
+};
+
+const deleteWithinTheText = (edit: EditedText, range: Range): void => {
+  if (range.collapsed) return;
+  const doc = select(edit, range);
+  if (typeof doc.execCommand === "function") doc.execCommand(DELETE_COMMAND);
+};
+
+const reachOfKey = ({ altKey, ctrlKey, metaKey }: KeyboardEvent): Reach => {
+  if (metaKey) return "line";
+  return altKey || ctrlKey ? "word" : "character";
+};
+
+const keepDeletionInTheText = (
+  edit: EditedText,
+  deletion: Deletion,
+  event: Event,
+  target?: AbstractRange
+): void => {
+  const text = textRangeOf(edit);
+  const changed = target ?? selectedRangeOf(edit);
+  if (!text || !changed) return;
+  if (!changed.collapsed) {
+    if (!reachesBeyondTheText(edit, changed)) return;
     event.preventDefault();
+    deleteWithinTheText(edit, clampedTo(text, changed));
+    return;
+  }
+  const deleted = deletedFromTheCaret(edit, deletion);
+  if (!deleted || (deletion.reach === "character" && !deleted.collapsed)) return;
+  event.preventDefault();
+  deleteWithinTheText(edit, deleted);
+};
+
+const textOfInput = (event: InputEvent): string =>
+  event.data ?? event.dataTransfer?.getData(PLAIN_TEXT_FORMAT) ?? "";
+
+const keepInputInTheText = (edit: EditedText, event: InputEvent): void => {
+  if (event.inputType.startsWith(HISTORY_INPUT_PREFIX)) return;
+  if (event.inputType === PARAGRAPH_INPUT) {
+    event.preventDefault();
+    return;
+  }
+  const [target] = event.getTargetRanges?.() ?? [];
+  const deletion = DELETION_INPUTS.get(event.inputType);
+  if (deletion) {
+    keepDeletionInTheText(edit, deletion, event, target);
+    return;
+  }
+  const changed = target ?? selectedRangeOf(edit);
+  const text = textRangeOf(edit);
+  if (!changed || !text || !reachesBeyondTheText(edit, changed)) return;
+  event.preventDefault();
+  if (!REPLACING_INPUTS.has(event.inputType)) return;
+  select(edit, clampedTo(text, changed));
+  insertText(edit.editedElement.ownerDocument, textOfInput(event));
 };
 
 const POINT_AFTER_THE_RANGE = 1;
@@ -212,10 +338,6 @@ const keepSelectionInTheText = (edit: EditedText): void => {
   if (!range.collapsed) selection.setBaseAndExtent(first, 0, last, last.length);
   else if (range.comparePoint(first, 0) === POINT_AFTER_THE_RANGE) selection.collapse(first, 0);
   else selection.collapse(last, last.length);
-};
-
-const insertText = (doc: Document, text: string): void => {
-  if (typeof doc.execCommand === "function") doc.execCommand(INSERT_TEXT_COMMAND, false, text);
 };
 
 const isInsideButton = (editedElement: Element): boolean =>
@@ -243,9 +365,6 @@ const isOneLine = (match: FieldMatch): boolean => match.multiline !== true;
 
 const typedTextOf = (match: FieldMatch): TypedText =>
   isOneLine(match) ? oneLineOf : (text) => text;
-
-const textOfInput = (event: InputEvent): string =>
-  event.data ?? event.dataTransfer?.getData(PLAIN_TEXT_FORMAT) ?? "";
 
 const selectTargetOf = (event: InputEvent, doc: Document): void => {
   const [target] = event.getTargetRanges?.() ?? [];
@@ -355,7 +474,7 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
 
   const handleKey = (edit: Edit, isPlainTextOnly: boolean, event: KeyboardEvent) => {
     if (event.isComposing) return;
-    const deletion = DELETION_KEYS.get(event.key);
+    const direction = DELETION_KEYS.get(event.key);
     if (event.key === CANCEL_KEY) {
       event.preventDefault();
       cancel();
@@ -368,8 +487,8 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
     } else if (event.key === SPACE_KEY && isInsideButton(edit.editedElement)) {
       event.preventDefault();
       insertText(edit.editedElement.ownerDocument, SPACE_KEY);
-    } else if (deletion && sharesItsElement(edit) && deletesBeyondTheText(edit, deletion)) {
-      event.preventDefault();
+    } else if (direction && sharesItsElement(edit)) {
+      keepDeletionInTheText(edit, { direction, reach: reachOfKey(event) }, event);
     }
   };
 
