@@ -322,6 +322,32 @@ describe("a heading a site script splits into an element per letter, edited on t
     expect(heading.getAttribute("contenteditable")).toBe("true");
   });
 
+  it("leaves a split heading whose field the page cannot edit split, without asking where the click landed", async () => {
+    overlay.dispose();
+    heading.textContent = markedText("How We Deliver", { ...page, locale: "en", path: "title" });
+    overlay = createOverlay(main, () =>
+      overlayCtx({
+        inlineEditing: true,
+        instantPreview: true,
+        mode: "hover",
+        payloadApi: "https://cms.example.com/api",
+      })
+    );
+    const letters = splitIntoLetters(heading);
+    await flushMutations();
+    const caretRangeFromPoint = vi.fn(() => null);
+    Object.defineProperty(document, "caretRangeFromPoint", {
+      configurable: true,
+      value: caretRangeFromPoint,
+    });
+
+    click(letters[3]?.parentElement as Element);
+
+    expect(caretRangeFromPoint).not.toHaveBeenCalled();
+    expect(heading.querySelectorAll("div > div")).toHaveLength("HowWeDeliver".length);
+    expect(heading.hasAttribute("contenteditable")).toBe(false);
+  });
+
   it("opens the field in the admin when the split text is not the text of the field", async () => {
     splitIntoLetters(heading);
     heading.append(" now");

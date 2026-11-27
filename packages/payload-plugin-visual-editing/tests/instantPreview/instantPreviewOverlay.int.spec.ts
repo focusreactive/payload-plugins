@@ -308,6 +308,7 @@ describe("instant preview in the overlay", () => {
       namesUploadOf: vi.fn(() => false),
       isIdentifiedByThePage: vi.fn(() => false),
       joinSplitText: vi.fn(() => null),
+      splitFieldOf: vi.fn(() => null),
       showText: vi.fn(),
       showTextInHolder: vi.fn(() => false),
       subscribe: (listener) => {

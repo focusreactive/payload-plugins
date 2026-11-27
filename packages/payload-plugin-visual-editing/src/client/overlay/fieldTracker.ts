@@ -50,7 +50,8 @@ export interface FieldTracker {
   whitespaceAround(match: FieldMatch): WhitespaceAround;
   showText(node: Text, text: string): void;
   showTextInHolder(match: FieldMatch, text: string): boolean;
-  joinSplitText(holder: Element, mayJoin: (match: FieldMatch) => boolean): FieldMatch | null;
+  splitFieldOf(holder: Element): FieldMatch | null;
+  joinSplitText(holder: Element): FieldMatch | null;
   beginEdit(match: FieldMatch, edit: FieldEdit): HTMLElement | null;
   endEdit(match: FieldMatch, text: string): void;
   isIdentifiedByThePage(element: Element): boolean;
@@ -211,6 +212,13 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     const pieces = [...visibleTextNodesIn(holder)];
     if (pieces.some((piece) => texts.has(piece) || hasMarker(piece.data))) return false;
     return comparableText(holder.textContent ?? "") === comparableText(text);
+  };
+
+  const splitHeldFieldOf = (holder: Element): HeldField | null => {
+    const held = holders.get(holder);
+    if (!held || sharedHolders.has(holder) || edits.has(held.match.textNode)) return null;
+    if (main.contains(held.match.textNode) || !main.contains(holder)) return null;
+    return isSplitIntoPlainElements(holder, withoutMarker(held.original)) ? held : null;
   };
 
   const showFieldInHolder = (holder: Element, held: HeldField, text: string): FieldMatch => {
@@ -519,13 +527,12 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       showFieldInHolder(holder, held, text);
       return true;
     },
-    joinSplitText(holder, mayJoin) {
-      const held = holders.get(holder);
-      if (!held || sharedHolders.has(holder) || edits.has(held.match.textNode)) return null;
-      if (main.contains(held.match.textNode) || !main.contains(holder)) return null;
-      const text = withoutMarker(held.original);
-      if (!isSplitIntoPlainElements(holder, text) || !mayJoin(held.match)) return null;
-      return showFieldInHolder(holder, held, text);
+    splitFieldOf(holder) {
+      return splitHeldFieldOf(holder)?.match ?? null;
+    },
+    joinSplitText(holder) {
+      const held = splitHeldFieldOf(holder);
+      return held && showFieldInHolder(holder, held, withoutMarker(held.original));
     },
     beginEdit(match, edit) {
       const { holder, textNode } = match;

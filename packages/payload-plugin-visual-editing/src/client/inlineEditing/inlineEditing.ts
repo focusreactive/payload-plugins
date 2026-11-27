@@ -171,18 +171,13 @@ export function createInlineEditing(
   };
 
   const editSplitTextInPlace = (target: HTMLElement, event: MouseEvent): boolean | null => {
-    const click: { textBefore?: string | null } = {};
-    const joined = tracker.joinSplitText(target, (held) => {
-      if (textFieldEditedHereOf(held) === null) return false;
-      click.textBefore = textBeforeTheClick(target, event);
-      return true;
-    });
-    const field = textFieldEditedHereOf(joined ?? undefined);
-    if (!joined || !field) return null;
+    const field = textFieldEditedHereOf(tracker.splitFieldOf(target) ?? undefined);
+    if (!field) return null;
+    const textBefore = textBeforeTheClick(target, event);
+    const joined = tracker.joinSplitText(target);
+    if (!joined) return null;
     const caret =
-      typeof click.textBefore === "string"
-        ? offsetOfTheSameText(click.textBefore, joined.textNode.data)
-        : undefined;
+      textBefore === null ? undefined : offsetOfTheSameText(textBefore, joined.textNode.data);
     return editTextInPlace(joined, field, event, caret);
   };
 
