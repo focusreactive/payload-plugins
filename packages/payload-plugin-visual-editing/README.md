@@ -178,6 +178,8 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
 
 A global is read the same way, `payload.findGlobal({ slug: 'header', draft })`, and is marked at every `depth`. With `enrichment: 'explicit'`, also pass `context: { visualEditing: draft }`, see [Enrichment modes](#enrichment-modes).
 
+A global or another document that the site reads on its own and renders into the page, such as a header or a list of partners, gets markers only when the site reads it in the same preview as a draft read that asks for markers: with `draft` (and `context: { visualEditing: draft }` under `'explicit'`) in the Local API, or with the `x-visual-editing` header over REST or GraphQL. Read in another way, for example published, cached for every visitor or by a layout that does not know the preview is on, it shows no frames and cannot be edited from the page.
+
 ### 6. Wrap the frontend layout
 
 ```tsx
