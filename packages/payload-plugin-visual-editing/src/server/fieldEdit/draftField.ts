@@ -93,6 +93,8 @@ const refusalOfFailure = (error: unknown): Refusal => {
 
 const isRefusal = (answered: object): answered is Refusal => "reason" in answered;
 
+const LATEST_VERSIONS_TO_READ = 20;
+
 const AS_THE_EDITOR_SEES_IT = { overrideAccess: false, showHiddenFields: false };
 
 const AS_IT_IS_STORED = {
@@ -160,10 +162,12 @@ const heldRowBefore = async (
   const options = {
     depth: 0,
     fallbackLocale: false as const,
+    limit: LATEST_VERSIONS_TO_READ,
     locale,
     overrideAccess: true,
     pagination: false,
     select: { version: { [topLevelNameOf(rowKey)]: true as const } },
+    sort: "-updatedAt",
   };
   const { docs } =
     document.kind === "global"

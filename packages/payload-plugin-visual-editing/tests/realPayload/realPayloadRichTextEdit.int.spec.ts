@@ -1,7 +1,7 @@
 import type { Access, FieldAccess, Payload, PayloadRequest } from "payload";
 
 import { createLocalReq } from "payload";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { VE_FIELD_EDIT_PATH, VE_RICH_TEXT_VALUE_PATH } from "../../src/shared/protocol";
 import { MAX_POSTED_EDITOR_STATE_LENGTH } from "../../src/shared/richText/postedEditorState";
@@ -248,6 +248,25 @@ describe("editing rich text through the endpoints", () => {
       const answer = await valueOf({ ...page(docId), key: `list.${row!.id}.note` });
 
       expect(answer).toEqual({ reason: "not-editable", status: 422, value: null });
+    });
+
+    it("finds the removed row in the field of the latest versions alone", async () => {
+      const docId = await create({ list: [{ label: "Row", note: richText("Note") }] });
+      const [row] = (await read(docId)).list as Row[];
+      await payload.update({ collection: "pages", data: { list: [] }, draft: true, id: docId });
+      const findVersions = vi.spyOn(payload, "findVersions");
+
+      const answer = await valueOf({ ...page(docId), key: `list.${row!.id}.note` });
+
+      expect(answer).toMatchObject({ reason: "not-editable", status: 422 });
+      expect(findVersions).toHaveBeenCalledWith(
+        expect.objectContaining({
+          limit: 20,
+          select: { version: { list: true } },
+          sort: "-updatedAt",
+        })
+      );
+      findVersions.mockRestore();
     });
 
     it("is not answered for a field of a group the user may not read", async () => {
