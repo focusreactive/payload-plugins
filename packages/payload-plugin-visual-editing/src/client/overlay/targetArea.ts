@@ -60,7 +60,7 @@ const isWithin = (rect: DOMRect, box: DOMRect): boolean =>
   rect.top >= box.top &&
   rect.bottom <= box.bottom;
 
-const clipsItsContent = (element: Element): boolean => {
+export const clipsItsContent = (element: Element): boolean => {
   const style = element.ownerDocument.defaultView?.getComputedStyle(element);
   return (
     style !== undefined &&

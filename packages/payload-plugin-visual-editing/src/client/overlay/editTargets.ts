@@ -6,6 +6,7 @@ import type { TargetConfig, TargetRegistryCtx } from "./targetRegistry.js";
 import { DATA_VE_PATH_ATTR } from "../../shared/protocol.js";
 import { documentAddressOf } from "../../shared/veDocument.js";
 import { LABEL_CLASS } from "./constants.js";
+import { isDrawnText } from "./drawnText.js";
 import { createEditBadge } from "./editBadge.js";
 import { createFrameLayer } from "./frameLayer.js";
 import { createHoverController } from "./hoverController.js";
@@ -116,6 +117,7 @@ export function createEditTargets(
   );
   const frames = getCtx().mode === "always" ? createFrameLayer() : null;
   const wrapperTargets = new Set<HTMLElement>();
+  const undrawnTexts = new WeakSet<HTMLElement>();
   const targetsAtPoint = createTargetsAtPoint(registry.targets);
 
   const targetBeneath = (element: Element, event: MouseEvent): HTMLElement | null => {
@@ -170,12 +172,18 @@ export function createEditTargets(
     const fieldMatches = matches.filter(({ richText }) => richText === undefined);
     for (const { nodes, ctx: marker } of groupNodesByPath(fieldMatches)) {
       const target = pickTargetForGroup(nodes, main);
-      if (target instanceof HTMLElement) registerTarget(target, marker);
+      if (!(target instanceof HTMLElement)) continue;
+      if (nodes.some((node) => isDrawnText(node, target, main))) {
+        undrawnTexts.delete(target);
+        registerTarget(target, marker);
+      } else {
+        undrawnTexts.add(target);
+      }
     }
 
     for (const wrapper of pathWrappersIn(root)) {
       const marker = readMarkerFromAttrs(wrapper);
-      if (!marker) continue;
+      if (!marker || undrawnTexts.has(wrapper)) continue;
       registerTarget(wrapper, marker);
       wrapperTargets.add(wrapper);
     }

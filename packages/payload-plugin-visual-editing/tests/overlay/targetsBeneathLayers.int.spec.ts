@@ -14,6 +14,7 @@ import { createEditTargets } from "../../src/client/overlay/editTargets";
 import { createFieldTracker } from "../../src/client/overlay/fieldTracker";
 import { DATA_VE_COLLECTION_ATTR, DATA_VE_PATH_ATTR } from "../../src/shared/protocol";
 
+import { markedText } from "../support/markedData";
 import { click, overlayCtx } from "../support/overlay";
 
 const CLEAR_GRACE_MS = 250;
@@ -293,6 +294,78 @@ describe("a target beneath a layer that takes the pointer", () => {
 
         expect(isBadgeShown()).toBe(false);
       });
+    });
+  });
+
+  describe("under a link over the whole card that names it only for screen readers", () => {
+    let link: HTMLAnchorElement;
+    let hidden: HTMLElement;
+
+    beforeEach(() => {
+      const card = document.createElement("article");
+      const image = marked("img", "card.image");
+      link = document.createElement("a");
+      link.href = "#project";
+      hidden = document.createElement("span");
+      hidden.textContent = markedText("A project", {
+        collectionSlug: "page",
+        docId: "1",
+        kind: "collection",
+        path: "card.title",
+      });
+      link.append(hidden);
+      card.append(image, link);
+      main.append(card);
+      drawnAt(image, new DOMRect(0, 0, 400, 300));
+      drawnAt(link, new DOMRect(0, 0, 400, 300));
+    });
+
+    afterEach(() => {
+      Reflect.deleteProperty(Range.prototype, "getClientRects");
+    });
+
+    it.each([
+      ["clips it away", { clip: "rect(0px, 0px, 0px, 0px)", position: "absolute" }],
+      ["clips its path away", { clipPath: "inset(50%)" }],
+      ["shows it with no opacity", { opacity: "0" }],
+      ["hides it", { visibility: "hidden" }],
+      ["gives it no font size", { fontSize: "0px" }],
+      [
+        "squeezes it into a pixel",
+        { height: "1px", overflowX: "hidden", overflowY: "hidden", width: "1px" },
+      ],
+    ])("offers the image and leaves a click to the link when the page %s", (_, style) => {
+      Object.assign(hidden.style, style);
+      drawnAt(hidden, new DOMRect(0, 0, 1, 1));
+      start();
+
+      pointerMovesOver(hidden);
+      const event = click(hidden, AT);
+
+      expect(badgeIsFor()).toBe("card.image");
+      expect(actionButton().textContent).toBe("Replace image");
+      expect(open).not.toHaveBeenCalled();
+      expect(event.defaultPrevented).toBe(false);
+    });
+
+    it("offers the image when the letters of the text take no more than a pixel", () => {
+      Object.defineProperty(Range.prototype, "getClientRects", {
+        configurable: true,
+        value: () => [new DOMRect(0, 0, 1, 1)],
+      });
+      start();
+
+      pointerMovesOver(hidden);
+
+      expect(badgeIsFor()).toBe("card.image");
+    });
+
+    it("edits the title the link shows", () => {
+      start();
+
+      link.dispatchEvent(new MouseEvent("mouseenter"));
+
+      expect(badgeIsFor()).toBe("card.title");
     });
   });
 
