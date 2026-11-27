@@ -35,6 +35,12 @@ const pointerMovesOver = (element: Element, at: MouseEventInit = AT) =>
 const drawnAt = (element: Element, rect: DOMRect) =>
   vi.spyOn(element, "getBoundingClientRect").mockReturnValue(rect);
 
+const paintedFromTheTop = (...elements: HTMLElement[]) =>
+  Object.defineProperty(document, "elementsFromPoint", {
+    configurable: true,
+    value: () => elements.filter((element) => getComputedStyle(element).pointerEvents !== "none"),
+  });
+
 describe("a target beneath a layer that takes the pointer", () => {
   let main: HTMLElement;
   let tracker: FieldTracker;
@@ -265,15 +271,22 @@ describe("a target beneath a layer that takes the pointer", () => {
     });
 
     it("takes the one the browser paints on top", () => {
-      Object.defineProperty(document, "elementsFromPoint", {
-        configurable: true,
-        value: () => [layer, image, caption],
-      });
+      caption.style.pointerEvents = "";
+      paintedFromTheTop(layer, image, caption);
       start();
 
       pointerMovesOver(layer);
 
       expect(badgeIsFor()).toBe("hero.image");
+    });
+
+    it("takes the one that comes later in the page when the browser finds no point of it that takes the pointer", () => {
+      paintedFromTheTop(layer, caption, image);
+      start();
+
+      pointerMovesOver(layer);
+
+      expect(badgeIsFor()).toBe("hero.caption");
     });
   });
 

@@ -22,14 +22,13 @@ const topmostOf = (hits: readonly HTMLElement[], point: Point): HTMLElement | nu
   const [first, ...rest] = hits;
   if (!first || rest.length === 0) return first ?? null;
   const painted = paintedOrderAt(point, first.ownerDocument);
-  const depthOf = (hit: HTMLElement) => {
-    const depth = painted.findIndex((element) => hit.contains(element));
-    return depth === -1 ? painted.length : depth;
-  };
+  const depthOf = (hit: HTMLElement) => painted.findIndex((element) => hit.contains(element));
   return hits.reduce((top, hit) => {
     const [hitDepth, topDepth] = [depthOf(hit), depthOf(top)];
-    if (hitDepth !== topDepth) return hitDepth < topDepth ? hit : top;
-    return isAfter(hit, top) ? hit : top;
+    if (hitDepth === -1 || topDepth === -1 || hitDepth === topDepth) {
+      return isAfter(hit, top) ? hit : top;
+    }
+    return hitDepth < topDepth ? hit : top;
   });
 };
 
