@@ -33,6 +33,10 @@ type EditedText = {
 
 type Direction = "backward" | "forward";
 
+type HistoryStep = "undo" | "redo";
+
+type TextState = { text: string; caret: number };
+
 type Edit = {
   match: FieldMatch;
   editedElement: HTMLElement;
@@ -46,6 +50,10 @@ type Edit = {
   after: string;
   keptAside: ReadonlyMap<Element, string | null>;
   childrenBeforeDeletion: readonly ChildNode[];
+  keptAfterTheText: readonly ChildNode[];
+  history: readonly TextState[];
+  historyAt: number;
+  lastInputType: string | null;
   breakLinesAsThePageDid(): void;
   hideFrame(): void;
   breakLinesAsTyped(): void;
@@ -74,7 +82,17 @@ const INSERT_TEXT_INPUT = "insertText";
 const FIRST_INPUT_EVENT = "beforeinput";
 const LINE_INPUTS: ReadonlySet<string> = new Set(["insertLineBreak", "insertParagraph"]);
 const PARAGRAPH_INPUT = "insertParagraph";
-const HISTORY_INPUT_PREFIX = "history";
+const HISTORY_STEPS_OF_INPUTS: ReadonlyMap<string, HistoryStep> = new Map([
+  ["historyUndo", "undo"],
+  ["historyRedo", "redo"],
+]);
+const UNDO_KEY = "z";
+const REDO_KEY = "y";
+const RUNNING_INPUTS: ReadonlySet<string> = new Set([
+  "insertText",
+  "deleteContentBackward",
+  "deleteContentForward",
+]);
 const REPLACING_INPUTS: ReadonlySet<string> = new Set(["insertText", "insertReplacementText"]);
 const DELETION_INPUTS: ReadonlyMap<string, Direction> = new Map([
   ["deleteContentBackward", "backward"],
@@ -330,7 +348,6 @@ const textOfInput = (event: InputEvent): string =>
   event.data ?? event.dataTransfer?.getData(PLAIN_TEXT_FORMAT) ?? "";
 
 const keepInputInTheText = (edit: EditedText, event: InputEvent): void => {
-  if (event.inputType.startsWith(HISTORY_INPUT_PREFIX)) return;
   if (event.inputType === PARAGRAPH_INPUT) {
     event.preventDefault();
     return;
@@ -396,6 +413,37 @@ const putBackWhatTheDeletionTook = (edit: Edit): void => {
       .find((later) => later.parentNode === editedElement);
     editedElement.insertBefore(node, next ?? null);
   }
+};
+
+const historyStepOfKey = (event: KeyboardEvent): HistoryStep | null => {
+  if ((!event.metaKey && !event.ctrlKey) || event.altKey) return null;
+  const key = event.key.toLowerCase();
+  if (key === UNDO_KEY) return event.shiftKey ? "redo" : "undo";
+  return key === REDO_KEY && event.ctrlKey ? "redo" : null;
+};
+
+const rememberTextState = (edit: Edit, inputType: string): void => {
+  if (edit.history[edit.historyAt]?.text === edit.text) return;
+  const continuesTheRun =
+    edit.historyAt > 0 && inputType === edit.lastInputType && RUNNING_INPUTS.has(inputType);
+  const kept = edit.history.slice(0, continuesTheRun ? edit.historyAt : edit.historyAt + 1);
+  edit.history = [...kept, { caret: edit.caret, text: edit.text }];
+  edit.historyAt = edit.history.length - 1;
+  edit.lastInputType = inputType;
+};
+
+const placeOfTheText = ({ editedElement, keptAfterTheText }: Edit): ChildNode | null =>
+  keptAfterTheText.find((node) => node.parentNode === editedElement) ?? null;
+
+const showTextState = (edit: Edit, { caret, text }: TextState): void => {
+  const [first, ...rest] = ownNodesOf(edit);
+  const textNode = first instanceof Text ? first : edit.match.textNode;
+  for (const node of first instanceof Text ? rest : ownNodesOf(edit)) node.remove();
+  if (textNode.parentNode !== edit.editedElement) {
+    edit.editedElement.insertBefore(textNode, placeOfTheText(edit));
+  }
+  textNode.data = `${edit.before}${text}${edit.after}`;
+  placeCaret(edit.editedElement, edit.before.length + caret, [textNode]);
 };
 
 const textStartIn = ({ before }: EditedText, texts: readonly Text[]): number =>
@@ -538,10 +586,23 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
     if (editing) end(editing.initialText, true);
   };
 
-  const followTyping = (edit: Edit) => {
+  const followTyping = (edit: Edit, inputType: string) => {
     putBackWhatTheDeletionTook(edit);
     edit.text = textOfEdit(edit);
     edit.caret = caretInTheText(edit);
+    if (sharesItsElement(edit)) rememberTextState(edit, inputType);
+    edit.saving.change(edit.text);
+  };
+
+  const stepThroughHistory = (edit: Edit, step: HistoryStep) => {
+    const at = edit.historyAt + (step === "undo" ? -1 : 1);
+    const state = edit.history[at];
+    edit.lastInputType = null;
+    if (!state) return;
+    edit.historyAt = at;
+    showTextState(edit, state);
+    edit.text = state.text;
+    edit.caret = state.caret;
     edit.saving.change(edit.text);
   };
 
@@ -553,7 +614,11 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
   const handleKey = (edit: Edit, isPlainTextOnly: boolean, event: KeyboardEvent) => {
     if (event.isComposing) return;
     const direction = DELETION_KEYS.get(event.key);
-    if (event.key === CANCEL_KEY) {
+    const historyStep = sharesItsElement(edit) ? historyStepOfKey(event) : null;
+    if (historyStep) {
+      event.preventDefault();
+      stepThroughHistory(edit, historyStep);
+    } else if (event.key === CANCEL_KEY) {
       event.preventDefault();
       cancel();
     } else if (
@@ -581,11 +646,18 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
   const listen = (edit: Edit, isPlainTextOnly: boolean): (() => void) => {
     const { editedElement } = edit;
     const doc = editedElement.ownerDocument;
-    const onInput = () => followTyping(edit);
+    const onInput = (event: Event) =>
+      followTyping(edit, event instanceof InputEvent ? event.inputType : "");
     const onKey = (event: KeyboardEvent) => handleKey(edit, isPlainTextOnly, event);
     const onPaste = (event: ClipboardEvent) => pastePlainText(edit, event);
     const onSelection = () => followCaret(edit);
     const onBeforeInput = (event: InputEvent) => {
+      const historyStep = HISTORY_STEPS_OF_INPUTS.get(event.inputType);
+      if (historyStep) {
+        event.preventDefault();
+        stepThroughHistory(edit, historyStep);
+        return;
+      }
       keepInputInTheText(edit, event);
       if (!event.defaultPrevented && DELETION_INPUTS.has(event.inputType)) {
         edit.childrenBeforeDeletion = Array.from(editedElement.childNodes);
@@ -633,6 +705,13 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
         before,
         caret: text.length,
         childrenBeforeDeletion: [],
+        history: [],
+        historyAt: 0,
+        keptAfterTheText: [...kept].filter(
+          (node) =>
+            (match.textNode.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0
+        ),
+        lastInputType: null,
         breakLinesAsThePageDid: keepLineBreaking(editedElement),
         breakLinesAsTyped: () => undefined,
         editedElement,
@@ -659,6 +738,7 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
       editedElement.focus();
       placeCaretAtPoint(editedElement, point, textsOf(edit));
       followCaret(edit);
+      edit.history = [{ caret: edit.caret, text }];
       return true;
     },
     commit,

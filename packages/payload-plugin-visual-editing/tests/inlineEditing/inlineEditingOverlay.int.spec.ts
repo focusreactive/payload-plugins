@@ -393,6 +393,70 @@ describe("editing text on the page", () => {
           ]);
         });
 
+        it("brings back the text a deletion kept in the text took on an undo, and deletes it again on a redo", async () => {
+          reachOfModify = 0;
+          deleteWithoutRanges("deleteWordBackward", "He".length);
+
+          const undo = inputBefore(line, { inputType: "historyUndo" });
+
+          expect(undo.defaultPrevented).toBe(true);
+          expect(Array.from(line.childNodes)).toEqual([icon, textIn(line), badge]);
+          expect(textIn(line).data).toBe("Hero title");
+
+          inputBefore(line, { inputType: "historyRedo" });
+          press(line, "Enter");
+          await flushMutations();
+
+          expect(textIn(line).data).toBe("ro title");
+          expect(sentToEndpoint().map(({ value }) => value)).toEqual(["ro title"]);
+        });
+
+        it("undoes the typing and the deletion one step at a time with Cmd+Z and sends what is shown", async () => {
+          reachOfModify = 0;
+          deleteWithoutRanges("deleteWordBackward", "He".length);
+          typeInto(line, "Xro title");
+
+          const firstUndo = press(line, "z", { metaKey: true });
+
+          expect(firstUndo.defaultPrevented).toBe(true);
+          expect(textIn(line).data).toBe("ro title");
+
+          press(line, "z", { metaKey: true });
+          press(line, "z", { metaKey: true });
+
+          expect(textIn(line).data).toBe("Hero title");
+
+          press(line, "z", { metaKey: true, shiftKey: true });
+          press(line, "Enter");
+          await flushMutations();
+
+          const selection = document.getSelection() as Selection;
+          expect(textIn(line).data).toBe("ro title");
+          expect([selection.focusNode, selection.focusOffset]).toEqual([textIn(line), 0]);
+          expect(sentToEndpoint().map(({ value }) => value)).toEqual(["ro title"]);
+        });
+
+        it("brings the text back with Ctrl+Z after a deletion took all of it and the browser dropped its empty text node", async () => {
+          reachOfModify = 0;
+          deleteWithoutRanges("deleteWordBackward", "Hero title".length);
+          for (const node of Array.from(line.childNodes)) {
+            if (node instanceof Text) node.remove();
+          }
+          await flushMutations();
+
+          press(line, "z", { ctrlKey: true });
+          press(line, "Enter");
+          await flushMutations();
+
+          expect(sentToEndpoint().map(({ value }) => value)).toEqual(["Hero title"]);
+          expect(line.textContent).toBe("Hero titleNEW");
+          expect(Array.from(line.childNodes).map((node) => node.nodeName)).toEqual([
+            "svg",
+            "#text",
+            "SPAN",
+          ]);
+        });
+
         it("puts back the elements beside the text when the browser deleted them with it", () => {
           Reflect.deleteProperty(Selection.prototype, "modify");
           const lineText = textIn(line);
@@ -643,11 +707,12 @@ describe("editing text on the page", () => {
             expect(Array.from(line.childNodes)).toEqual([textIn(line), tag]);
           });
 
-          it("lets an undo and a redo happen", () => {
+          it("takes an undo and a redo itself, so the browser undoes nothing it did not do", () => {
             selectBeyondTheText();
 
-            expect(withoutTargetRanges("historyUndo").defaultPrevented).toBe(false);
-            expect(withoutTargetRanges("historyRedo").defaultPrevented).toBe(false);
+            expect(withoutTargetRanges("historyUndo").defaultPrevented).toBe(true);
+            expect(withoutTargetRanges("historyRedo").defaultPrevented).toBe(true);
+            expect(changed).toEqual([]);
           });
         });
 
