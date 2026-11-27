@@ -1,6 +1,6 @@
 import type { VePickedMedia, VeShownMedia } from "../../shared/protocol.js";
 
-export type ImageSrc = (media: VePickedMedia) => string;
+export type BuildImageUrl = (media: VePickedMedia) => string | undefined;
 
 const SOURCE_ATTR = "src";
 const VARIANTS_ATTR = "srcset";

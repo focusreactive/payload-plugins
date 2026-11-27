@@ -30,7 +30,7 @@ const SITE_IMAGE = "/images/lighthouse.jpg?width=1080";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
-const imageSrc = ({ filename }: PickedMedia) => `/images/${filename}?width=1080`;
+const buildImageUrl = ({ filename }: PickedMedia) => `/images/${filename}?width=1080`;
 
 const shownImage = () => document.querySelector("img") as HTMLImageElement;
 
@@ -81,10 +81,15 @@ describe("the address a site gives a picked image", () => {
   describe("through the React provider", () => {
     let root: Root;
 
-    const render = (src?: (media: PickedMedia) => string) =>
+    const render = (src?: (media: PickedMedia) => string | undefined) =>
       act(() =>
         root.render(
-          <VisualEditingProvider available imageSrc={src} inlineEditing payloadApi={PAYLOAD_API}>
+          <VisualEditingProvider
+            available
+            buildImageUrl={src}
+            inlineEditing
+            payloadApi={PAYLOAD_API}
+          >
             <VisualEditingOverlay locale="en">
               {createElement("img", { alt: "", src: "/old.jpg", ...identityAttrsOf(IMAGE) })}
             </VisualEditingOverlay>
@@ -101,11 +106,21 @@ describe("the address a site gives a picked image", () => {
     });
 
     it("shows the picked image at that address", async () => {
-      render(imageSrc);
+      render(buildImageUrl);
 
       await pickLighthouse();
 
       expect(shownImage().getAttribute("src")).toBe(SITE_IMAGE);
+    });
+
+    it("shows it at the address of the API when the option gives none", async () => {
+      render(() => undefined);
+
+      await pickLighthouse();
+
+      expect(shownImage().getAttribute("src")).toBe(
+        "https://cms.example.com/api/media/file/lighthouse.jpg"
+      );
     });
 
     it("shows it at the address of the API without the option", async () => {
@@ -128,7 +143,7 @@ describe("the address a site gives a picked image", () => {
       container.append(image);
       const mounted = mountVisualEditing({
         available: true,
-        imageSrc,
+        buildImageUrl,
         inlineEditing: true,
         locale: "en",
         payloadApi: PAYLOAD_API,

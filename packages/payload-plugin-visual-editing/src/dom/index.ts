@@ -16,4 +16,4 @@ export {
   defaultBuildAdminEditUrl,
 } from "../shared/buildAdminEditUrl.js";
 export type { LiveRichTextRequest, VePickedMedia as PickedMedia } from "../shared/protocol.js";
-export type { ImageSrc } from "../client/inlineEditing/shownImage.js";
+export type { BuildImageUrl } from "../client/inlineEditing/shownImage.js";

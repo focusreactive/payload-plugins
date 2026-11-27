@@ -352,15 +352,15 @@ describe("replacing an image on the page", () => {
     });
 
     it("shows the picked media at the address the site gives for it", async () => {
-      const imageSrc = vi.fn(
+      const buildImageUrl = vi.fn(
         ({ filename }: { filename?: string }) => `/images/${filename}?width=1080`
       );
-      ctx = { ...ctx, imageSrc };
+      ctx = { ...ctx, buildImageUrl };
 
       await useLighthouse();
 
       expect(image.getAttribute("src")).toBe("/images/lighthouse.jpg?width=1080");
-      expect(imageSrc).toHaveBeenCalledWith(expect.objectContaining(LIGHTHOUSE));
+      expect(buildImageUrl).toHaveBeenCalledWith(expect.objectContaining(LIGHTHOUSE));
     });
 
     it("names the media the page shows as the one the save began from", async () => {
@@ -560,15 +560,15 @@ describe("replacing an image on the page", () => {
     });
 
     it("shows the media the admin picked at the address the site gives for it", () => {
-      const imageSrc = vi.fn(({ filename }: { filename?: string }) => `/images/${filename}`);
-      ctx = { ...ctx, imageSrc };
+      const buildImageUrl = vi.fn(({ filename }: { filename?: string }) => `/images/${filename}`);
+      ctx = { ...ctx, buildImageUrl };
       formOfThePage();
       ask();
 
       postFromAdmin(picked({ alt: "A lighthouse", filename: "lighthouse.jpg", id: 9 }));
 
       expect(image.getAttribute("src")).toBe("/images/lighthouse.jpg");
-      expect(imageSrc).toHaveBeenCalledWith({
+      expect(buildImageUrl).toHaveBeenCalledWith({
         alt: "A lighthouse",
         filename: "lighthouse.jpg",
         height: 600,

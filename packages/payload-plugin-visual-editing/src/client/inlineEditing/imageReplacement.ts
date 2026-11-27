@@ -3,7 +3,7 @@ import type { BadgeAction } from "../overlay/editBadge.js";
 import type { FieldTracker } from "../overlay/fieldTracker.js";
 import type { ImageEdit, ShownImage } from "./editTransport.js";
 import type { PageFields } from "./pageFields.js";
-import type { ImageSrc } from "./shownImage.js";
+import type { BuildImageUrl } from "./shownImage.js";
 
 import { DATA_VE_LIVE_RICH_TEXT_ATTR, DATA_VE_VALUE_ID_ATTR } from "../../shared/protocol.js";
 
@@ -16,7 +16,7 @@ import { absoluteUrlOf, showMedia } from "./shownImage.js";
 export type ImageReplacementCtx = {
   payloadApi: string;
   inlineEditing: boolean;
-  imageSrc?: ImageSrc;
+  buildImageUrl?: BuildImageUrl;
 };
 
 export type ImageReplacementOptions = {
@@ -93,7 +93,7 @@ export function createImageReplacement({
     };
   };
 
-  const srcOf = (media: VePickedMedia) => getCtx().imageSrc?.(media) ?? urlOf(media.url);
+  const srcOf = (media: VePickedMedia) => getCtx().buildImageUrl?.(media) ?? urlOf(media.url);
 
   const replace = (
     { field, image, isDescribedByTheField, shownMediaId }: ReplaceableImage,

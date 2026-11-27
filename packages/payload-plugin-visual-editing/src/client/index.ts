@@ -19,7 +19,7 @@ export type {
   LiveRichTextRequest,
   VePickedMedia as PickedMedia,
 } from "../shared/protocol.js";
-export type { ImageSrc } from "./inlineEditing/shownImage.js";
+export type { BuildImageUrl } from "./inlineEditing/shownImage.js";
 export { useVisualEditing } from "./react/VisualEditingProvider.js";
 export { withVisualEditingPath } from "./withVisualEditingPath.js";
 
