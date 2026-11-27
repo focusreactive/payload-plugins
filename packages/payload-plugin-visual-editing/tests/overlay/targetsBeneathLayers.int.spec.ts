@@ -513,6 +513,25 @@ describe("a target beneath a layer that takes the pointer", () => {
       expect(event.defaultPrevented).toBe(false);
     });
 
+    it("reads whether the heading is shown once in a frame, however often the pointer moves", () => {
+      const layer = document.createElement("div");
+      main.append(layer);
+      heading.style.opacity = "1";
+      const readsOfTheHeading = () =>
+        vi.mocked(window.getComputedStyle).mock.calls.filter(([element]) => element === heading)
+          .length;
+      const before = readsOfTheHeading();
+      pointerMovesOver(layer);
+      const readsOfOneMove = readsOfTheHeading() - before;
+
+      pointerMovesOver(layer, { clientX: 60, clientY: 30 });
+      pointerMovesOver(layer, { clientX: 70, clientY: 30 });
+
+      expect(badgeIsFor()).toBe("hero.title");
+      expect(readsOfOneMove).toBeGreaterThan(0);
+      expect(readsOfTheHeading() - before).toBe(readsOfOneMove);
+    });
+
     it("edits the heading once it is shown", () => {
       heading.style.opacity = "1";
 

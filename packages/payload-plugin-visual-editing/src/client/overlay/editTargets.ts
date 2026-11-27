@@ -12,7 +12,7 @@ import { createFrameLayer } from "./frameLayer.js";
 import { createHoverController } from "./hoverController.js";
 import { groupNodesByPath, readMarkerFromAttrs } from "./markerExtractor.js";
 import { createTargetRegistry } from "./targetRegistry.js";
-import { findTargetAncestor, pickTargetForGroup } from "./targetSelector.js";
+import { findTargetAncestor, pickTargetForGroup, shownOncePerFrame } from "./targetSelector.js";
 import { createTargetsAtPoint, holds } from "./targetsAtPoint.js";
 
 export const CLICK_LEFT_TO_THE_PAGE = "page";
@@ -145,9 +145,10 @@ export function createEditTargets(
     (target) => getCtx().actionOf?.(target) ?? null,
     isShown
   );
-  const frames = getCtx().mode === "always" ? createFrameLayer(main, isShown) : null;
+  const isShownInThisFrame = shownOncePerFrame(isShown);
+  const frames = getCtx().mode === "always" ? createFrameLayer(main, isShownInThisFrame) : null;
   const wrapperTargets = new Set<HTMLElement>();
-  const targetsAtPoint = createTargetsAtPoint(registry.targets, isShown);
+  const targetsAtPoint = createTargetsAtPoint(registry.targets, isShownInThisFrame);
 
   const targetBeneath = (element: Element, event: MouseEvent): HTMLElement | null => {
     if (element.closest(INTERACTIVE)) return null;

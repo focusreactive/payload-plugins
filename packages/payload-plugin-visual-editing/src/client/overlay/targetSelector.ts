@@ -18,6 +18,23 @@ function walkAncestors<T>(
 
 export type IsShown = (target: HTMLElement) => boolean;
 
+export const shownOncePerFrame = (isShown: IsShown): IsShown => {
+  let shown = new WeakMap<HTMLElement, boolean>();
+  let frameRequest = 0;
+  const forget = () => {
+    shown = new WeakMap();
+    frameRequest = 0;
+  };
+  return (target) => {
+    const known = shown.get(target);
+    if (known !== undefined) return known;
+    const isTargetShown = isShown(target);
+    shown.set(target, isTargetShown);
+    if (frameRequest === 0) frameRequest = requestAnimationFrame(forget);
+    return isTargetShown;
+  };
+};
+
 export function findTargetAncestor(el: Element | null, isShown: IsShown): HTMLElement | null {
   return walkAncestors(el, (cur) => {
     const target =

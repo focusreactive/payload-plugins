@@ -93,7 +93,7 @@ describe("resting frames", () => {
     const nextFrame = () => vi.advanceTimersByTimeAsync(20);
 
     beforeEach(() => {
-      vi.useFakeTimers();
+      vi.useFakeTimers({ toFake: ["requestAnimationFrame", "cancelAnimationFrame"] });
       vi.spyOn(main.querySelector("h1") as HTMLElement, "getBoundingClientRect").mockReturnValue(
         new DOMRect(0, 0, 400, 40)
       );
