@@ -1,4 +1,5 @@
 import type { SaveRefusal } from "../../shared/fieldEdit.js";
+import type { MediaApi } from "../../shared/mediaApi.js";
 import type { PlainObject } from "../../shared/plainObject.js";
 import type {
   VeEditedField,
@@ -15,7 +16,6 @@ import type {
 } from "../../shared/protocol.js";
 import type { VeRichTextFormats } from "../../shared/richText/formats.js";
 import type { SavedDocument } from "../saveEvents.js";
-import type { MediaApi } from "./mediaLibrary.js";
 
 import { readEditedField, readRichTextEdit, readSaveRefusal } from "../../shared/fieldEdit.js";
 import { readPickedMediaAnswer } from "../../shared/mediaOption.js";

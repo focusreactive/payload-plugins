@@ -1,13 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { MediaApi, MediaLibrary } from "../../src/client/inlineEditing/mediaLibrary";
+import type { MediaLibrary } from "../../src/client/inlineEditing/mediaLibrary";
+import type { MediaApi } from "../../src/shared/mediaApi";
 
 import {
   createMediaLibrary,
   FIELD_REFUSED,
-  payloadMediaApi,
   UPLOAD_REFUSED,
 } from "../../src/client/inlineEditing/mediaLibrary";
+import { payloadMediaApi } from "../../src/shared/mediaApi";
 
 const PAYLOAD_API = "https://cms.example.com/api";
 

@@ -1,6 +1,6 @@
-import type { SaveRefusal } from "../../shared/fieldEdit.js";
+import type { SaveRefusal } from "./fieldEdit.js";
 
-import { readSaveRefusal } from "../../shared/fieldEdit.js";
+import { readSaveRefusal } from "./fieldEdit.js";
 
 export type EndpointAnswer = { answer: unknown; refusal: SaveRefusal | null };
 

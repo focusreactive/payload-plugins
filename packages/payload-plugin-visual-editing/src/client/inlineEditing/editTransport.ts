@@ -28,7 +28,7 @@ import { isSameValue } from "../../shared/sameValue.js";
 import { documentAddressOf, editedFieldAddressOf } from "../../shared/veDocument.js";
 
 import { MEDIA_PICK_TIME_LIMIT_MS } from "./adminEditChannel.js";
-import { endpointAnswerOf } from "./endpointAnswer.js";
+import { endpointAnswerOf } from "../../shared/endpointAnswer.js";
 
 export type EditStatus = "failed" | "in-form" | "saved" | "saving" | "unsaved";
 

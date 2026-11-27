@@ -2,7 +2,7 @@
 
 import { useConfig } from "@payloadcms/ui";
 
-import { payloadMediaApi } from "../../client/inlineEditing/mediaLibrary.js";
+import { payloadMediaApi } from "../../shared/mediaApi.js";
 import { answerMediaLibraryRequest, mediaLibraryRequestOf } from "./mediaLibraryRequest.js";
 import { useOpenDocumentForm } from "./useOpenDocumentForm.js";
 

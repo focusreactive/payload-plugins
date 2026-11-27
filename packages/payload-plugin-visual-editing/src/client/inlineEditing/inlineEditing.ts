@@ -9,12 +9,12 @@ import type { RichTextEditorLoader } from "./richTextEditor.js";
 import type { SaveStatus } from "./saveStatus.js";
 import type { BuildImageUrl } from "./shownImage.js";
 
+import { payloadMediaApi } from "../../shared/mediaApi.js";
 import { CLICK_LEFT_TO_THE_PAGE } from "../overlay/editTargets.js";
 import { createAdminEditChannel } from "./adminEditChannel.js";
 import { createEditRoutes } from "./editRoutes.js";
 import { createEditTransport } from "./editTransport.js";
 import { createImageReplacement } from "./imageReplacement.js";
-import { payloadMediaApi } from "./mediaLibrary.js";
 import { createPageFields, isPageField } from "./pageFields.js";
 import { createRichTextEditing } from "./richTextEditing.js";
 import { createSaveStatus } from "./saveStatus.js";
