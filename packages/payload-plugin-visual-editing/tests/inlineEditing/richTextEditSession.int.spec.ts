@@ -34,6 +34,7 @@ import {
   DATA_VE_OPAQUE_SELECTED_ATTR,
 } from "../../src/client/inlineEditing/richText/opaqueNode";
 import { DATA_VE_RICH_TEXT_TOOLBAR_ATTR } from "../../src/client/inlineEditing/richText/toolbar";
+import { DATA_VE_TOGGLE_ATTR } from "../../src/client/toggle";
 
 import { measureSelectionsAsEmpty } from "../support/selectionRects";
 import { flushMutations } from "../support/time";
@@ -1132,6 +1133,53 @@ describe("one edit of rich text", () => {
 
         expect(toolbarHost().style.visibility).toBe("");
         expect(toolbarHost().style.transform).toBe("translate(40px, 102px)");
+      });
+
+      it("stays in sight while its address field is open, though the text scrolls away", () => {
+        editAt(new DOMRect(40, 300, 300, 200));
+        pressInTwin("k", { ctrlKey: true });
+
+        vi.mocked(twin.getBoundingClientRect).mockReturnValue(new DOMRect(40, -250, 300, 200));
+        window.dispatchEvent(new Event("scroll"));
+
+        expect(toolbarHost().style.visibility).toBe("");
+      });
+
+      describe("with the visual editing toggle in the corner", () => {
+        let toggle: HTMLElement;
+
+        const toggleAt = (rect: DOMRect) => {
+          toggle = document.createElement("div");
+          toggle.setAttribute(DATA_VE_TOGGLE_ATTR, "");
+          document.body.append(toggle);
+          vi.spyOn(toggle, "getBoundingClientRect").mockReturnValue(rect);
+        };
+
+        afterEach(() => toggle.remove());
+
+        it("moves beside the toggle where the toggle would cover it", () => {
+          toggleAt(new DOMRect(340, 16, 40, 30));
+
+          editAt(new DOMRect(380, 120, 10, 200));
+
+          expect(toolbarHost().style.transform).toBe("translate(32px, 22px)");
+        });
+
+        it("goes below the toggle where there is no room beside it", () => {
+          toggleAt(new DOMRect(250, 16, 124, 36));
+
+          editAt(new DOMRect(40, 4, 300, 200));
+
+          expect(toolbarHost().style.transform).toBe("translate(40px, 60px)");
+        });
+
+        it("stays above the text where the toggle is not in its way", () => {
+          toggleAt(new DOMRect(250, 16, 124, 36));
+
+          editAt(new DOMRect(40, 300, 300, 200));
+
+          expect(toolbarHost().style.transform).toBe("translate(40px, 202px)");
+        });
       });
 
       it("is never wider than the viewport less its margin, and wraps its buttons", () => {
