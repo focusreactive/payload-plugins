@@ -162,7 +162,7 @@ const isTheOnlyTextOf = (element: Element, textNode: Text): boolean =>
 
 const SURROUNDING_WHITESPACE = /^(\s*).*?(\s*)$/su;
 
-const whitespaceAround = (textNode: Text, editedElement: Element) => {
+export const whitespaceAround = (textNode: Text, editedElement: Element) => {
   if (editedElement.childElementCount === 0) return { after: "", before: "" };
   const [, before = "", after = ""] = SURROUNDING_WHITESPACE.exec(textNode.data) ?? [];
   return { after, before };

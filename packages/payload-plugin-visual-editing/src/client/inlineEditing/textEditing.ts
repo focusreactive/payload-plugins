@@ -4,6 +4,7 @@ import type { Point } from "./caret.js";
 import type { FieldEdit } from "./editTransport.js";
 
 import { holdsLineBreak, oneLineOf } from "../../shared/fieldEdit.js";
+import { whitespaceAround } from "../overlay/fieldTracker.js";
 import { caretOffsetIn, placeCaret, placeCaretAtPoint, textNodesIn } from "./caret.js";
 import { showEditingFrame } from "./editingFrame.js";
 
@@ -24,7 +25,14 @@ export interface TextEditing {
 
 type TypedText = (text: string) => string;
 
-type EditedText = { editedElement: HTMLElement; kept: ReadonlySet<ChildNode> };
+type EditedText = {
+  editedElement: HTMLElement;
+  kept: ReadonlySet<ChildNode>;
+  before: string;
+  after: string;
+};
+
+type Deletion = "backward" | "forward" | null;
 
 type Edit = {
   match: FieldMatch;
@@ -35,6 +43,8 @@ type Edit = {
   saving: FieldEdit<string>;
   restored: ReadonlyMap<string, string | null>;
   kept: ReadonlySet<ChildNode>;
+  before: string;
+  after: string;
   keptAside: ReadonlyMap<Element, string | null>;
   breakLinesAsThePageDid(): void;
   hideFrame(): void;
@@ -63,6 +73,12 @@ const EDITING_STYLE = `[${DATA_VE_EDITING_ATTR}]{cursor:text !important;outline:
 const INSERT_TEXT_INPUT = "insertText";
 const FIRST_INPUT_EVENT = "beforeinput";
 const LINE_INPUTS: ReadonlySet<string> = new Set(["insertLineBreak", "insertParagraph"]);
+const PARAGRAPH_INPUT = "insertParagraph";
+const DELETION_INPUT_PREFIX = "delete";
+const DELETION_KEYS: ReadonlyMap<string, NonNullable<Deletion>> = new Map([
+  ["Backspace", "backward"],
+  ["Delete", "forward"],
+]);
 const EVENTS_BEFORE_THE_FIRST_INPUT = [
   "keydown",
   "paste",
@@ -138,9 +154,37 @@ const reachesBeyondTheText = (
   );
 };
 
+const deletionOf = (inputType: string): Deletion => {
+  if (!inputType.startsWith(DELETION_INPUT_PREFIX)) return null;
+  if (inputType.endsWith("Backward")) return "backward";
+  return inputType.endsWith("Forward") ? "forward" : null;
+};
+
+const lengthOf = (texts: readonly Text[]): number =>
+  texts.reduce((length, textNode) => length + textNode.length, 0);
+
+const deletesBeyondTheText = (edit: EditedText, deletion: Deletion): boolean => {
+  const selection = edit.editedElement.ownerDocument.getSelection();
+  if (!selection || selection.rangeCount === 0) return false;
+  const range = selection.getRangeAt(0);
+  if (!range.collapsed) return reachesBeyondTheText(edit, range);
+  if (!deletion) return false;
+  const texts = textsOf(edit);
+  const caret = caretOffsetIn(edit.editedElement, texts);
+  if (caret === null) return false;
+  return deletion === "backward"
+    ? caret <= edit.before.length
+    : caret >= lengthOf(texts) - edit.after.length;
+};
+
 const keepInputInTheText = (edit: EditedText, event: InputEvent): void => {
   const ranges = event.getTargetRanges?.() ?? [];
-  if (ranges.some((range) => reachesBeyondTheText(edit, range))) event.preventDefault();
+  if (
+    event.inputType === PARAGRAPH_INPUT ||
+    ranges.some((range) => reachesBeyondTheText(edit, range)) ||
+    deletesBeyondTheText(edit, deletionOf(event.inputType))
+  )
+    event.preventDefault();
 };
 
 const POINT_AFTER_THE_RANGE = 1;
@@ -305,6 +349,7 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
 
   const handleKey = (edit: Edit, isPlainTextOnly: boolean, event: KeyboardEvent) => {
     if (event.isComposing) return;
+    const deletion = DELETION_KEYS.get(event.key);
     if (event.key === CANCEL_KEY) {
       event.preventDefault();
       cancel();
@@ -317,6 +362,8 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
     } else if (event.key === SPACE_KEY && isInsideButton(edit.editedElement)) {
       event.preventDefault();
       insertText(edit.editedElement.ownerDocument, SPACE_KEY);
+    } else if (deletion && sharesItsElement(edit) && deletesBeyondTheText(edit, deletion)) {
+      event.preventDefault();
     }
   };
 
@@ -371,8 +418,11 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
       const doc = editedElement.ownerDocument;
       const isPlainTextOnly = takesPlainTextOnly(doc);
       const kept = keptBeside(editedElement, match.textNode);
-      const text = textOfEdit({ editedElement, kept });
+      const { after, before } = whitespaceAround(match.textNode, editedElement);
+      const text = textOfEdit({ after, before, editedElement, kept });
       const edit: Edit = {
+        after,
+        before,
         caret: text.length,
         breakLinesAsThePageDid: keepLineBreaking(editedElement),
         breakLinesAsTyped: () => undefined,

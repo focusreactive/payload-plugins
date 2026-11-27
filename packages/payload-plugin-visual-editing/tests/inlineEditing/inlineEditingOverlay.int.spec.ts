@@ -266,6 +266,85 @@ describe("editing text on the page", () => {
         expect(event.defaultPrevented).toBe(false);
       });
 
+      describe("when the browser gives no range of what an input would change", () => {
+        const withoutTargetRanges = (inputType: string) => {
+          const event = new InputEvent("beforeinput", {
+            bubbles: true,
+            cancelable: true,
+            inputType,
+          });
+          Object.defineProperty(event, "getTargetRanges", { value: () => [] });
+          line.dispatchEvent(event);
+          return event;
+        };
+
+        const putCaretAt = (offset: number) => {
+          click(line);
+          document.getSelection()?.collapse(textIn(line), offset);
+        };
+
+        const startOfTheText = () => textIn(line).data.indexOf("OUR");
+
+        const endOfTheText = () => textIn(line).data.indexOf("RELEASE") + "RELEASE".length;
+
+        it.each([
+          "deleteContentBackward",
+          "deleteWordBackward",
+          "deleteSoftLineBackward",
+          "deleteHardLineBackward",
+        ])("keeps %s at the start of the text from deleting the element before it", (inputType) => {
+          putCaretAt(startOfTheText());
+
+          expect(withoutTargetRanges(inputType).defaultPrevented).toBe(true);
+        });
+
+        it.each([
+          "deleteContentForward",
+          "deleteWordForward",
+          "deleteSoftLineForward",
+          "deleteHardLineForward",
+        ])("keeps %s at the end of the text from deleting the element after it", (inputType) => {
+          putCaretAt(endOfTheText());
+
+          expect(withoutTargetRanges(inputType).defaultPrevented).toBe(true);
+        });
+
+        it("keeps Backspace at the start and Delete at the end of the text to the text", () => {
+          putCaretAt(startOfTheText());
+          const backspace = press(line, "Backspace");
+          putCaretAt(endOfTheText());
+          const forwardDelete = press(line, "Delete");
+
+          expect([backspace.defaultPrevented, forwardDelete.defaultPrevented]).toEqual([
+            true,
+            true,
+          ]);
+        });
+
+        it("lets Backspace and Delete in the middle of the text happen", () => {
+          putCaretAt(startOfTheText() + 3);
+
+          expect(press(line, "Backspace").defaultPrevented).toBe(false);
+          expect(press(line, "Delete").defaultPrevented).toBe(false);
+          expect(withoutTargetRanges("deleteContentBackward").defaultPrevented).toBe(false);
+          expect(withoutTargetRanges("deleteContentForward").defaultPrevented).toBe(false);
+        });
+
+        it("keeps typing over a selection that reaches into the elements beside the text from happening", () => {
+          click(line);
+          document.getSelection()?.setBaseAndExtent(textIn(line), startOfTheText(), tag, 1);
+
+          expect(withoutTargetRanges("insertText").defaultPrevented).toBe(true);
+          expect(press(line, "Backspace").defaultPrevented).toBe(true);
+        });
+
+        it("keeps a new paragraph from splitting the line", () => {
+          putCaretAt(startOfTheText() + 3);
+
+          expect(withoutTargetRanges("insertParagraph").defaultPrevented).toBe(true);
+        });
+      });
+
       it("narrows a selection of the whole line to its text", () => {
         click(line);
         document.getSelection()?.selectAllChildren(line);
