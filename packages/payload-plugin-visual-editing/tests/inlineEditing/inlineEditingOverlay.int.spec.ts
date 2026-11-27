@@ -301,6 +301,35 @@ describe("editing text on the page", () => {
         expect(press(line, "Backspace", { metaKey: true }).defaultPrevented).toBe(false);
       });
 
+      it.each(["deleteWordBackward", "deleteSoftLineBackward", "deleteHardLineBackward"])(
+        "leaves %s at the start of a line of a text of several lines to the browser, which takes only the line break before it",
+        (inputType) => {
+          showLine("First line\nSecond line", { multiline: true });
+          const lineText = textIn(line);
+          const second = lineText.data.indexOf("Second");
+          document.getSelection()?.collapse(lineText, second);
+
+          const key = press(line, "Backspace", { altKey: true });
+          const event = deleteBack(inputType, second - 1, second);
+
+          expect([key.defaultPrevented, event.defaultPrevented]).toEqual([false, false]);
+          expect(Array.from(line.childNodes)).toEqual([icon, lineText]);
+          expect(lineText.data).toBe("First line\nSecond line");
+        }
+      );
+
+      it("keeps Option and Backspace at the start of the first line of a text of several lines from the icon", () => {
+        showLine("First line\nSecond line", { multiline: true });
+        const lineText = textIn(line);
+        document.getSelection()?.collapse(lineText, 0);
+
+        const key = press(line, "Backspace", { altKey: true });
+        const event = deleteBack("deleteWordBackward", 0, 0);
+
+        expect([key.defaultPrevented, event.defaultPrevented]).toEqual([true, true]);
+        expect(Array.from(line.childNodes)).toEqual([icon, lineText]);
+      });
+
       it.each([
         ["not cancelable", { cancelable: false }],
         ["composed by an input method", { isComposing: true }],
