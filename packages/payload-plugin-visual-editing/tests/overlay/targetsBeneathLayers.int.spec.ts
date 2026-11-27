@@ -54,13 +54,20 @@ const computedStyleOf = window.getComputedStyle.bind(window);
 
 const NO_CONTENT = "none";
 
-const pseudoElementsHold = (contentOf: (element: Element) => string) =>
+const pseudoElementsHold = (
+  contentOf: (element: Element) => string,
+  paintOf: (element: Element) => Partial<CSSStyleDeclaration> = () => ({})
+) =>
   vi.spyOn(window, "getComputedStyle").mockImplementation((element, pseudo) =>
     pseudo
       ? ({
+          backgroundColor: "rgba(0, 0, 0, 0)",
           backgroundImage: "none",
+          boxShadow: "none",
           content: contentOf(element),
+          getPropertyValue: () => "",
           maskImage: "none",
+          ...paintOf(element),
         } as CSSStyleDeclaration)
       : computedStyleOf(element)
   );
@@ -326,6 +333,10 @@ describe("a target beneath a layer that takes the pointer", () => {
 
       beforeEach(() => {
         arrow = document.createElement("button");
+        arrow.style.backgroundColor = "transparent";
+        for (const side of ["top", "right", "bottom", "left"]) {
+          arrow.style.setProperty(`border-${side}-width`, "0px");
+        }
         control(arrow);
         drawnAt(arrow, new DOMRect(0, 0, 100, 60));
       });
@@ -347,6 +358,60 @@ describe("a target beneath a layer that takes the pointer", () => {
         pointerMovesOver(arrow);
 
         expect(isBadgeShown()).toBe(false);
+      });
+
+      it.each([
+        ["a background colour", { backgroundColor: "rgb(255, 255, 255)" }],
+        ["a half transparent background colour", { backgroundColor: "rgba(0, 0, 0, 0.5)" }],
+        ["a shadow", { boxShadow: "rgb(0, 0, 0) 0px 2px 4px 0px" }],
+      ])(
+        "shows nothing and leaves a click to the page over an arrow whose empty pseudo-element paints %s",
+        (_, paint) => {
+          pseudoElementsHold(
+            (element) => (element === arrow ? '""' : NO_CONTENT),
+            (element) => (element === arrow ? paint : {})
+          );
+
+          pointerMovesOver(arrow);
+          const event = click(arrow, AT);
+
+          expect(isBadgeShown()).toBe(false);
+          expect(event.defaultPrevented).toBe(false);
+        }
+      );
+
+      it.each([
+        ["a background colour", { backgroundColor: "rgba(20, 20, 20, 0.8)" }],
+        [
+          "a border",
+          {
+            borderTopColor: "rgb(255, 255, 255)",
+            borderTopStyle: "solid",
+            borderTopWidth: "2px",
+          },
+        ],
+        ["a shadow", { boxShadow: "0 0 4px black" }],
+      ])("leaves a click to the page over an arrow painted with %s", (_, paint) => {
+        Object.assign(arrow.style, paint);
+
+        pointerMovesOver(arrow);
+        const event = click(arrow, AT);
+
+        expect(isBadgeShown()).toBe(false);
+        expect(event.defaultPrevented).toBe(false);
+      });
+
+      it("offers the image over an arrow whose background colour and border are transparent", () => {
+        Object.assign(arrow.style, {
+          backgroundColor: "transparent",
+          borderTopColor: "transparent",
+          borderTopStyle: "solid",
+          borderTopWidth: "2px",
+        });
+
+        pointerMovesOver(arrow);
+
+        expect(badgeIsFor()).toBe("hero.image");
       });
 
       it("offers the action of the image while the pointer is over a control whose pseudo-element holds no text", () => {

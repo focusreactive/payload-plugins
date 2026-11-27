@@ -83,17 +83,50 @@ const EMPTY_TEXT: ReadonlySet<string> = new Set(['""', "''"]);
 
 const PSEUDO_ELEMENTS = ["::before", "::after"];
 
-const paintsAnImage = ({ backgroundImage, maskImage }: CSSStyleDeclaration): boolean =>
-  !NONE.has(backgroundImage) || !NONE.has(maskImage);
+const TRANSPARENT = "transparent";
+
+const COLOR_CHANNELS = /\(([^)]*)\)/u;
+
+const CHANNEL_SEPARATORS = /[\s,/]+/u;
+
+const OPAQUE_CHANNELS = 3;
+
+const HIDDEN_BORDER_STYLES: ReadonlySet<string> = new Set(["", "none", "hidden"]);
+
+const BORDER_SIDES = ["top", "right", "bottom", "left"] as const;
+
+const isVisibleColor = (color = ""): boolean => {
+  if (color === "" || color === TRANSPARENT) return false;
+  const [, channels = ""] = COLOR_CHANNELS.exec(color) ?? [];
+  const values = channels.trim().split(CHANNEL_SEPARATORS);
+  if (values.length <= OPAQUE_CHANNELS) return true;
+  const alpha = values.at(-1) ?? "";
+  return Number.parseFloat(alpha) > 0;
+};
+
+const paintsABorder = (style: CSSStyleDeclaration): boolean =>
+  BORDER_SIDES.some(
+    (side) =>
+      Number.parseFloat(style.getPropertyValue(`border-${side}-width`)) > 0 &&
+      !HIDDEN_BORDER_STYLES.has(style.getPropertyValue(`border-${side}-style`)) &&
+      isVisibleColor(style.getPropertyValue(`border-${side}-color`))
+  );
+
+const paints = (style: CSSStyleDeclaration): boolean =>
+  !NONE.has(style.backgroundImage) ||
+  !NONE.has(style.maskImage) ||
+  isVisibleColor(style.backgroundColor) ||
+  !NONE.has(style.boxShadow) ||
+  paintsABorder(style);
 
 const pseudoElementPaints = (style: CSSStyleDeclaration): boolean =>
-  !NONE.has(style.content) && (!EMPTY_TEXT.has(style.content) || paintsAnImage(style));
+  !NONE.has(style.content) && (!EMPTY_TEXT.has(style.content) || paints(style));
 
 const paintsItself = (control: Element): boolean => {
   const view = control.ownerDocument.defaultView;
   if (!view) return false;
   return (
-    paintsAnImage(view.getComputedStyle(control)) ||
+    paints(view.getComputedStyle(control)) ||
     PSEUDO_ELEMENTS.some((pseudo) => pseudoElementPaints(view.getComputedStyle(control, pseudo)))
   );
 };
