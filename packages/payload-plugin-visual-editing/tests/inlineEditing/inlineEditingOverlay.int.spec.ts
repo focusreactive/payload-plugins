@@ -465,6 +465,35 @@ describe("editing text on the page", () => {
           expect(sentToEndpoint().map(({ value }) => value)).toEqual(["ro title"]);
         });
 
+        it("leaves an undo during a composition of an input method to the browser", () => {
+          reachOfModify = 0;
+          deleteWithoutRanges("deleteWordBackward", "He".length);
+
+          const undo = inputBefore(line, { inputType: "historyUndo", isComposing: true });
+
+          expect(undo.defaultPrevented).toBe(false);
+          expect(textIn(line).data).toBe("ro title");
+        });
+
+        it("undoes the text of a composition of an input method in one step", () => {
+          const lineText = textIn(line);
+          for (const composed of ["Hero titleか", "Hero titleかな", "Hero title仮名"]) {
+            lineText.data = composed;
+            document.getSelection()?.collapse(lineText, composed.length);
+            line.dispatchEvent(
+              new InputEvent("input", {
+                bubbles: true,
+                inputType: "insertCompositionText",
+                isComposing: true,
+              })
+            );
+          }
+
+          press(line, "z", { metaKey: true });
+
+          expect(textIn(line).data).toBe("Hero title");
+        });
+
         it("brings the text back with Ctrl+Z after a deletion took all of it and the browser dropped its empty text node", async () => {
           reachOfModify = 0;
           deleteWithoutRanges("deleteWordBackward", "Hero title".length);

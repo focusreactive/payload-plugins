@@ -92,6 +92,7 @@ const RUNNING_INPUTS: ReadonlySet<string> = new Set([
   "insertText",
   "deleteContentBackward",
   "deleteContentForward",
+  "insertCompositionText",
 ]);
 const REPLACING_INPUTS: ReadonlySet<string> = new Set(["insertText", "insertReplacementText"]);
 const DELETION_INPUTS: ReadonlyMap<string, Direction> = new Map([
@@ -654,7 +655,7 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
     const onBeforeInput = (event: InputEvent) => {
       if (!sharesItsElement(edit)) return;
       const historyStep = HISTORY_STEPS_OF_INPUTS.get(event.inputType);
-      if (historyStep) {
+      if (historyStep && !event.isComposing) {
         event.preventDefault();
         stepThroughHistory(edit, historyStep);
         return;
