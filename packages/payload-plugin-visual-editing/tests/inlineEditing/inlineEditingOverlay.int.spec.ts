@@ -250,6 +250,113 @@ describe("editing text on the page", () => {
         expect(event.defaultPrevented).toBe(false);
         expect(press(line, "Backspace", { metaKey: true }).defaultPrevented).toBe(false);
       });
+
+      it.each([
+        ["not cancelable", { cancelable: false }],
+        ["composed by an input method", { isComposing: true }],
+      ])("leaves a deletion that is %s to the browser", (_, init) => {
+        showLine("Hero title");
+        const lineText = textIn(line);
+        const reach = document.createRange();
+        reach.setStart(lineText, 0);
+        reach.setEnd(lineText, "Hero ".length);
+        const event = new InputEvent("beforeinput", {
+          bubbles: true,
+          cancelable: true,
+          inputType: "deleteWordBackward",
+          ...init,
+        });
+        Object.defineProperty(event, "getTargetRanges", { value: () => [reach] });
+
+        line.dispatchEvent(event);
+
+        expect(lineText.data).toBe("Hero title");
+      });
+
+      describe("when the browser gives no range of what a deletion would change", () => {
+        let badge: HTMLElement;
+        let reachOfModify: number;
+
+        const deleteWithoutRanges = (inputType: string, caret: number) => {
+          document.getSelection()?.collapse(textIn(line), caret);
+          const event = new InputEvent("beforeinput", {
+            bubbles: true,
+            cancelable: true,
+            inputType,
+          });
+          Object.defineProperty(event, "getTargetRanges", { value: () => [] });
+          line.dispatchEvent(event);
+          return event;
+        };
+
+        beforeEach(() => {
+          showLine("Hero title");
+          badge = document.createElement("span");
+          badge.textContent = "NEW";
+          line.append(badge);
+          overlay.dispose();
+          start();
+          click(line);
+          Object.defineProperty(Selection.prototype, "modify", {
+            configurable: true,
+            value(this: Selection) {
+              this.extend(textIn(line), reachOfModify);
+            },
+          });
+        });
+
+        afterEach(() => Reflect.deleteProperty(Selection.prototype, "modify"));
+
+        it("deletes the word up to the start of the text and keeps the icon before it", () => {
+          reachOfModify = 0;
+
+          const event = deleteWithoutRanges("deleteWordBackward", "He".length);
+
+          const selection = document.getSelection() as Selection;
+          expect(event.defaultPrevented).toBe(true);
+          expect(Array.from(line.childNodes)).toEqual([icon, textIn(line), badge]);
+          expect(textIn(line).data).toBe("ro title");
+          expect([selection.focusNode, selection.focusOffset]).toEqual([textIn(line), 0]);
+        });
+
+        it("deletes the word up to the end of the text and keeps the badge after it", () => {
+          reachOfModify = "Hero title".length;
+
+          const event = deleteWithoutRanges("deleteWordForward", "Hero ti".length);
+
+          expect(event.defaultPrevented).toBe(true);
+          expect(Array.from(line.childNodes)).toEqual([icon, textIn(line), badge]);
+          expect(textIn(line).data).toBe("Hero ti");
+        });
+
+        it("leaves a word the browser would delete inside the text to it, with the caret where it was", () => {
+          reachOfModify = "Hero ".length;
+
+          const event = deleteWithoutRanges("deleteWordForward", "Hero ti".length);
+
+          const selection = document.getSelection() as Selection;
+          expect(event.defaultPrevented).toBe(false);
+          expect(textIn(line).data).toBe("Hero title");
+          expect([selection.anchorOffset, selection.focusOffset]).toEqual([
+            "Hero ti".length,
+            "Hero ti".length,
+          ]);
+        });
+
+        it("puts back the elements beside the text when the browser deleted them with it", () => {
+          Reflect.deleteProperty(Selection.prototype, "modify");
+          const lineText = textIn(line);
+
+          const event = deleteWithoutRanges("deleteWordBackward", "He".length);
+          icon.remove();
+          badge.remove();
+          lineText.deleteData(0, "He".length);
+          line.dispatchEvent(new InputEvent("input", { bubbles: true }));
+
+          expect(event.defaultPrevented).toBe(false);
+          expect(Array.from(line.childNodes)).toEqual([icon, lineText, badge]);
+        });
+      });
     });
 
     describe("in a line that holds other elements", () => {

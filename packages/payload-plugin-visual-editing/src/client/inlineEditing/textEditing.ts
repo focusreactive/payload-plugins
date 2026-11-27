@@ -46,6 +46,7 @@ type Edit = {
   before: string;
   after: string;
   keptAside: ReadonlyMap<Element, string | null>;
+  childrenBeforeDeletion: readonly ChildNode[];
   breakLinesAsThePageDid(): void;
   hideFrame(): void;
   breakLinesAsTyped(): void;
@@ -85,6 +86,14 @@ const DELETION_INPUTS: ReadonlyMap<string, Direction> = new Map([
   ["deleteSoftLineForward", "forward"],
   ["deleteHardLineBackward", "backward"],
   ["deleteHardLineForward", "forward"],
+]);
+const GRANULARITY_OF_DELETION: ReadonlyMap<string, string> = new Map([
+  ["deleteWordBackward", "word"],
+  ["deleteWordForward", "word"],
+  ["deleteSoftLineBackward", "lineboundary"],
+  ["deleteSoftLineForward", "lineboundary"],
+  ["deleteHardLineBackward", "paragraphboundary"],
+  ["deleteHardLineForward", "paragraphboundary"],
 ]);
 const DELETION_KEYS: ReadonlyMap<string, Direction> = new Map([
   ["Backspace", "backward"],
@@ -268,14 +277,45 @@ const deleteFromTheText = (edit: EditedText, range: Range, inputType: string): v
   edit.editedElement.dispatchEvent(new InputEvent("input", { bubbles: true, inputType }));
 };
 
+const reachOfTheBrowser = (
+  { editedElement }: EditedText,
+  direction: Direction,
+  granularity: string
+): Range | null => {
+  const selection = editedElement.ownerDocument.getSelection();
+  if (!selection || selection.rangeCount === 0 || typeof selection.modify !== "function") {
+    return null;
+  }
+  const caret = selection.getRangeAt(0).cloneRange();
+  selection.modify("extend", direction, granularity);
+  const reach = selection.getRangeAt(0).cloneRange();
+  selection.removeAllRanges();
+  selection.addRange(caret);
+  return reach;
+};
+
+const changedByDeletion = (
+  edit: EditedText,
+  direction: Direction,
+  event: InputEvent,
+  target?: AbstractRange
+): AbstractRange | null => {
+  if (target) return target;
+  const selected = selectedRangeOf(edit);
+  const granularity = GRANULARITY_OF_DELETION.get(event.inputType);
+  if (!selected?.collapsed || !granularity) return selected;
+  return reachOfTheBrowser(edit, direction, granularity) ?? selected;
+};
+
 const keepDeletionInTheText = (
   edit: EditedText,
   direction: Direction,
   event: InputEvent,
   target?: AbstractRange
 ): void => {
+  if (!event.cancelable || event.isComposing) return;
   const text = textRangeOf(edit);
-  const changed = target ?? selectedRangeOf(edit);
+  const changed = changedByDeletion(edit, direction, event, target);
   if (!text || !changed) return;
   if (changed.collapsed) {
     if (isCaretAtTheEdge(edit, direction)) event.preventDefault();
@@ -330,6 +370,18 @@ const keepSelectionInTheText = (edit: EditedText): void => {
   if (!range.collapsed) selection.setBaseAndExtent(first, 0, last, last.length);
   else if (range.comparePoint(first, 0) === POINT_AFTER_THE_RANGE) selection.collapse(first, 0);
   else selection.collapse(last, last.length);
+};
+
+const putBackWhatTheDeletionTook = (edit: Edit): void => {
+  const { childrenBeforeDeletion, editedElement, kept } = edit;
+  edit.childrenBeforeDeletion = [];
+  for (const [index, node] of childrenBeforeDeletion.entries()) {
+    if (!kept.has(node) || node.parentNode === editedElement) continue;
+    const next = childrenBeforeDeletion
+      .slice(index + 1)
+      .find((later) => later.parentNode === editedElement);
+    editedElement.insertBefore(node, next ?? null);
+  }
 };
 
 const isInsideButton = (editedElement: Element): boolean =>
@@ -454,6 +506,7 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
   };
 
   const followTyping = (edit: Edit) => {
+    putBackWhatTheDeletionTook(edit);
     edit.text = textOfEdit(edit);
     edit.caret = caretOffsetIn(edit.editedElement, textsOf(edit)) ?? edit.caret;
     edit.saving.change(edit.text);
@@ -499,7 +552,12 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
     const onKey = (event: KeyboardEvent) => handleKey(edit, isPlainTextOnly, event);
     const onPaste = (event: ClipboardEvent) => pastePlainText(edit, event);
     const onSelection = () => followCaret(edit);
-    const onBeforeInput = (event: InputEvent) => keepInputInTheText(edit, event);
+    const onBeforeInput = (event: InputEvent) => {
+      keepInputInTheText(edit, event);
+      if (!event.defaultPrevented && DELETION_INPUTS.has(event.inputType)) {
+        edit.childrenBeforeDeletion = Array.from(editedElement.childNodes);
+      }
+    };
     if (sharesItsElement(edit))
       editedElement.addEventListener(FIRST_INPUT_EVENT, onBeforeInput, IN_CAPTURE_PHASE);
     editedElement.addEventListener("input", onInput);
@@ -541,6 +599,7 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
         after,
         before,
         caret: text.length,
+        childrenBeforeDeletion: [],
         breakLinesAsThePageDid: keepLineBreaking(editedElement),
         breakLinesAsTyped: () => undefined,
         editedElement,
