@@ -42,6 +42,7 @@ export type FieldEdit = {
   shownText(): string;
   onShownAgain(): void;
   onSetAside(nodes: readonly ChildNode[]): void;
+  isMadeByTheEdit(node: ChildNode): boolean;
 };
 
 export type WhitespaceAround = { before: string; after: string };
@@ -206,15 +207,15 @@ const isLeftByAnEdit = (child: ChildNode): boolean =>
 
 type TextEdit = FieldEdit & {
   editedElement: HTMLElement;
-  present: Set<ChildNode>;
   nextSibling: ChildNode | null;
   before: string;
   after: string;
 };
 
-const showOnlyEditedText = ({ editedElement, nextSibling, present }: TextEdit, textNode: Text) => {
+const showOnlyEditedText = (edit: TextEdit, textNode: Text) => {
+  const { editedElement, nextSibling } = edit;
   for (const child of Array.from(editedElement.childNodes)) {
-    if (child !== textNode && !present.has(child) && isLeftByAnEdit(child)) child.remove();
+    if (child !== textNode && edit.isMadeByTheEdit(child) && isLeftByAnEdit(child)) child.remove();
   }
   if (textNode.parentNode === editedElement) return;
   if (nextSibling?.parentNode === editedElement) nextSibling.before(textNode);
@@ -564,7 +565,6 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       isSplitIntoPlainElements(editedElement, shown);
     if (!main.contains(editedElement) || !isSplit) return false;
     const nodes = setAside(editedElement, textNode);
-    for (const node of nodes) edit.present.add(node);
     edit.onSetAside(nodes);
     showEditedTextAgain(textNode, tracked, edit, tracked.original);
     return true;
@@ -678,7 +678,6 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
         ...whitespaceAround(textNode, editedElement),
         editedElement,
         nextSibling: textNode.nextSibling,
-        present: new Set(editedElement.childNodes),
       });
       return editedElement;
     },

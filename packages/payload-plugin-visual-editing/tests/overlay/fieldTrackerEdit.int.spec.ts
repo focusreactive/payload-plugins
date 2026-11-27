@@ -11,6 +11,14 @@ import { flushMutations } from "../support/time";
 const stega = (visible: string, path = "title") =>
   markedText(visible, { collectionSlug: "page", docId: "1", kind: "collection", path });
 
+const madeFromNowOn = () => {
+  const present = new Set<Node>();
+  const walker = document.createTreeWalker(document.body);
+  for (let node: Node | null = walker.currentNode; node; node = walker.nextNode())
+    present.add(node);
+  return (node: ChildNode) => !present.has(node);
+};
+
 describe("a field the editor types into", () => {
   let main: HTMLElement;
   let heading: HTMLElement;
@@ -29,7 +37,12 @@ describe("a field the editor types into", () => {
   };
 
   const begin = () =>
-    tracker.beginEdit(match, { onSetAside: vi.fn(), onShownAgain, shownText: () => shown });
+    tracker.beginEdit(match, {
+      isMadeByTheEdit: madeFromNowOn(),
+      onSetAside: vi.fn(),
+      onShownAgain,
+      shownText: () => shown,
+    });
 
   beforeEach(() => {
     document.body.innerHTML = "";
@@ -164,6 +177,7 @@ describe("a field the editor types into", () => {
     const [[, [cta]]] = listener.onFields.mock.calls as [[Element, [FieldMatch]]];
 
     const editedElement = tracker.beginEdit(cta, {
+      isMadeByTheEdit: madeFromNowOn(),
       onSetAside: vi.fn(),
       onShownAgain,
       shownText: () => shown,
@@ -269,7 +283,12 @@ describe("a field the editor types into", () => {
     const body = matches.find(({ path }) => path === "body")!;
 
     expect(
-      tracker.beginEdit(body, { onSetAside: vi.fn(), onShownAgain, shownText: () => shown })
+      tracker.beginEdit(body, {
+        isMadeByTheEdit: madeFromNowOn(),
+        onSetAside: vi.fn(),
+        onShownAgain,
+        shownText: () => shown,
+      })
     ).toBeNull();
   });
 
@@ -297,6 +316,7 @@ describe("a field the editor types into", () => {
       const lineText = matchOf("line");
 
       const editedElement = tracker.beginEdit(lineText, {
+        isMadeByTheEdit: madeFromNowOn(),
         onSetAside: vi.fn(),
         onShownAgain,
         shownText: () => shown,
@@ -317,6 +337,7 @@ describe("a field the editor types into", () => {
       const tagText = matchOf("tag");
 
       const editedElement = tracker.beginEdit(tagText, {
+        isMadeByTheEdit: madeFromNowOn(),
         onSetAside: vi.fn(),
         onShownAgain,
         shownText: () => shown,
@@ -336,7 +357,12 @@ describe("a field the editor types into", () => {
       [[, matches]] = onFields.mock.calls as [[Element, FieldMatch[]]];
       const lineText = matchOf("line");
 
-      tracker.beginEdit(lineText, { onSetAside: vi.fn(), onShownAgain, shownText: () => shown });
+      tracker.beginEdit(lineText, {
+        isMadeByTheEdit: madeFromNowOn(),
+        onSetAside: vi.fn(),
+        onShownAgain,
+        shownText: () => shown,
+      });
       tracker.endEdit(lineText, "OUR NEXT RELEASE");
       await flushMutations();
 
@@ -380,6 +406,7 @@ describe("a heading split into elements and edited as one text", () => {
     onNodesReleased.mockClear();
     const joined = tracker.joinSplitText(heading) as FieldMatch;
     tracker.beginEdit(joined, {
+      isMadeByTheEdit: madeFromNowOn(),
       onSetAside: vi.fn(),
       onShownAgain: vi.fn(),
       shownText: () => "How We",

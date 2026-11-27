@@ -54,6 +54,8 @@ type Edit = {
   history: readonly TextState[];
   historyAt: number;
   lastInputType: string | null;
+  childrenBeforeInput: ReadonlySet<ChildNode>;
+  madeByTheEdit: Set<ChildNode>;
   breakLinesAsThePageDid(): void;
   hideFrame(): void;
   breakLinesAsTyped(): void;
@@ -588,6 +590,10 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
   };
 
   const followTyping = (edit: Edit, inputType: string) => {
+    for (const node of edit.editedElement.childNodes) {
+      if (!edit.childrenBeforeInput.has(node)) edit.madeByTheEdit.add(node);
+    }
+    edit.childrenBeforeInput = new Set(edit.editedElement.childNodes);
     putBackWhatTheDeletionTook(edit);
     edit.text = textOfEdit(edit);
     edit.caret = caretInTheText(edit);
@@ -655,6 +661,7 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
     const onPaste = (event: ClipboardEvent) => pastePlainText(edit, event);
     const onSelection = () => followCaret(edit);
     const onBeforeInput = (event: InputEvent) => {
+      edit.childrenBeforeInput = new Set(editedElement.childNodes);
       if (!sharesItsElement(edit)) return;
       const historyStep = HISTORY_STEPS_OF_INPUTS.get(event.inputType);
       if (historyStep && !event.isComposing) {
@@ -690,7 +697,9 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
       if (editing?.match === match) return true;
       commit();
 
+      const madeByTheEdit = new Set<ChildNode>();
       const editedElement = tracker.beginEdit(match, {
+        isMadeByTheEdit: (node) => madeByTheEdit.has(node),
         onSetAside: (nodes) => {
           for (const node of nodes) editing?.kept.add(node);
         },
@@ -711,6 +720,8 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
         before,
         caret: text.length,
         childrenBeforeDeletion: [],
+        childrenBeforeInput: new Set(editedElement.childNodes),
+        madeByTheEdit,
         history: [],
         historyAt: 0,
         keptAfterTheText: [...kept].filter(

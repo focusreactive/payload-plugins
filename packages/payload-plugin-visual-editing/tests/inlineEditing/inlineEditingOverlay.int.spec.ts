@@ -280,6 +280,22 @@ describe("editing text on the page", () => {
         expect(line.textContent).toBe("\n   Read on \n");
       });
 
+      it("leaves in place a text a script of the page adds beside the edited text, and removes the text the editor typed apart", async () => {
+        showLine("Hero title");
+        const lineText = textIn(line);
+        const typed = document.createTextNode(" now");
+        lineText.after(typed);
+        line.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText" }));
+        const added = document.createTextNode("");
+        line.append(added);
+
+        press(line, "Enter");
+        await flushMutations();
+
+        expect(Array.from(line.childNodes)).toEqual([icon, lineText, added]);
+        expect(lineText.data).toBe("Hero title now");
+      });
+
       it("leaves deleting a word inside the text to the browser", () => {
         showLine("Hero foo.bar here");
         const lineText = textIn(line);
