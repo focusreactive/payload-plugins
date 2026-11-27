@@ -1099,19 +1099,40 @@ describe("one edit of rich text", () => {
           new DOMRect(40, -400, 300, 900),
           "translate(40px, 8px)",
         ],
-        [
-          "text that begins below the viewport",
-          new DOMRect(40, 900, 300, 200),
-          "translate(40px, 502px)",
-        ],
       ])(
         "sits above the edited text and stays inside the viewport for %s",
         (_name, rect, transform) => {
           editAt(rect);
 
           expect(toolbarHost().style.transform).toBe(transform);
+          expect(toolbarHost().style.visibility).toBe("");
         }
       );
+
+      it.each<[string, DOMRect]>([
+        ["scrolled above the viewport", new DOMRect(40, -400, 300, 380)],
+        ["below the viewport", new DOMRect(40, 900, 300, 200)],
+      ])("is out of sight while the edited text is %s", (_name, rect) => {
+        editAt(rect);
+
+        expect(toolbarHost().style.visibility).toBe("hidden");
+      });
+
+      it("follows the edited text as the page scrolls and comes back with it", () => {
+        editAt(new DOMRect(40, 300, 300, 200));
+        const twinRect = vi.mocked(twin.getBoundingClientRect);
+
+        twinRect.mockReturnValue(new DOMRect(40, -250, 300, 200));
+        window.dispatchEvent(new Event("scroll"));
+
+        expect(toolbarHost().style.visibility).toBe("hidden");
+
+        twinRect.mockReturnValue(new DOMRect(40, 200, 300, 200));
+        window.dispatchEvent(new Event("scroll"));
+
+        expect(toolbarHost().style.visibility).toBe("");
+        expect(toolbarHost().style.transform).toBe("translate(40px, 102px)");
+      });
 
       it("is never wider than the viewport less its margin, and wraps its buttons", () => {
         const styles = toolbar().querySelector("style")?.textContent ?? "";

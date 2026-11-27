@@ -44,6 +44,7 @@ const LINK_PROBLEM =
   "Use an address that starts with http:, https:, mailto: or tel:, or a relative one.";
 const HIDDEN_DISPLAY = "none";
 const SHOWN_DISPLAY = "block";
+const OUT_OF_VIEW = "hidden";
 const TOGGLES: readonly ToolbarAction[] = [
   "bold",
   "italic",
@@ -208,6 +209,9 @@ const positionOf = (host: HTMLElement, edited: DOMRect, win: Window) => {
   };
 };
 
+const isInView = (edited: DOMRect, win: Window): boolean =>
+  edited.bottom > 0 && edited.top < win.innerHeight;
+
 export function createToolbar(
   doc: Document,
   formats: VeRichTextFormats,
@@ -232,7 +236,9 @@ export function createToolbar(
 
   const place = (selection: DOMRect) => {
     placedAt = selection;
-    const { left, top } = positionOf(host, selection, doc.defaultView ?? window);
+    const win = doc.defaultView ?? window;
+    host.style.visibility = isInView(selection, win) ? "" : OUT_OF_VIEW;
+    const { left, top } = positionOf(host, selection, win);
     const zoom = zoomOf(host);
     host.style.transform = `translate(${left / zoom}px, ${top / zoom}px)`;
   };
