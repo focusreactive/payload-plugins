@@ -442,6 +442,40 @@ describe("a heading a site script splits into an element per letter, edited on t
     });
   });
 
+  it("gives the split back as it was when the edit of the heading cannot begin", async () => {
+    const other = document.createElement("p");
+    other.textContent = marked("Lead", "lead");
+    main.append(other);
+    overlay.dispose();
+    overlay = createOverlay(main, () =>
+      overlayCtx({
+        inlineEditing: true,
+        instantPreview: true,
+        mode: "hover",
+        payloadApi: "https://cms.example.com/api",
+      })
+    );
+    const letters = splitIntoLetters(heading);
+    const splitNodes = Array.from(heading.childNodes);
+    await flushMutations();
+    click(other);
+    const blur = vi.spyOn(HTMLElement.prototype, "blur").mockImplementation(() => {
+      throw new Error("blur failed");
+    });
+    const reportError = vi.fn((event: ErrorEvent) => event.preventDefault());
+    window.addEventListener("error", reportError);
+
+    click(letters[0]?.parentElement as Element);
+
+    window.removeEventListener("error", reportError);
+    blur.mockRestore();
+    expect(reportError).toHaveBeenCalled();
+    expect(Array.from(heading.childNodes)).toEqual(splitNodes);
+    expect(splitNodes.some((node) => node instanceof Element && node.hasAttribute("style"))).toBe(
+      false
+    );
+  });
+
   it("gives the split back as it was when the overlay is disposed during the edit", async () => {
     const letters = splitIntoLetters(heading);
     const splitNodes = Array.from(heading.childNodes);

@@ -178,7 +178,13 @@ export function createInlineEditing(
     if (!joined) return null;
     const caret =
       textBefore === null ? undefined : offsetOfTheSameText(textBefore, joined.textNode.data);
-    return editTextInPlace(joined, field, event, caret);
+    let isEdited = false;
+    try {
+      isEdited = editTextInPlace(joined, field, event, caret);
+    } finally {
+      if (!isEdited) tracker.giveBackSplitText(target);
+    }
+    return isEdited;
   };
 
   return {

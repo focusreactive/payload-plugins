@@ -54,6 +54,7 @@ export interface FieldTracker {
   showTextInHolder(match: FieldMatch, text: string): boolean;
   splitFieldOf(holder: Element): FieldMatch | null;
   joinSplitText(holder: Element): FieldMatch | null;
+  giveBackSplitText(holder: Element): void;
   beginEdit(match: FieldMatch, edit: FieldEdit): HTMLElement | null;
   endEdit(match: FieldMatch, text: string): void;
   isIdentifiedByThePage(element: Element): boolean;
@@ -384,6 +385,13 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     for (const listener of listeners) listener.onNodesReleased?.(matches);
   };
 
+  const letGoOfTheJoinedText = (textNode: Text) => {
+    textNode.remove();
+    const match = texts.get(textNode)?.match;
+    texts.delete(textNode);
+    if (match) release([match]);
+  };
+
   const forget = (textNode: Text) => {
     const tracked = texts.get(textNode);
     if (!tracked) return;
@@ -668,6 +676,11 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
         )
       );
     },
+    giveBackSplitText(holder) {
+      const shown = setAsideIn.get(holder)?.shown;
+      if (!shown || edits.has(shown) || !putBackWhatWasSetAside(holder)) return;
+      letGoOfTheJoinedText(shown);
+    },
     beginEdit(match, edit) {
       const { holder, textNode } = match;
       const isHeld = holder !== undefined && holders.get(holder)?.match === match;
@@ -687,8 +700,7 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       const edit = edits.get(textNode);
       edits.delete(textNode);
       if (edit && putBackWhatWasSetAside(edit.editedElement)) {
-        textNode.remove();
-        if (texts.delete(textNode)) release([match]);
+        letGoOfTheJoinedText(textNode);
         return;
       }
       if (!edit || !holder || !held || !main.contains(edit.editedElement)) return;
