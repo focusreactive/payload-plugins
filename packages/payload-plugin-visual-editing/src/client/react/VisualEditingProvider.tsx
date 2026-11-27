@@ -142,7 +142,10 @@ export function VisualEditingProvider({
     latestAdminOrigin.current = value.adminOrigin;
   });
 
-  useEffect(() => pageStore.attach(window, () => latestAdminOrigin.current), [pageStore]);
+  useIsomorphicLayoutEffect(
+    () => pageStore.attach(window, () => latestAdminOrigin.current, Boolean(available)),
+    [pageStore, available]
+  );
 
   useIsomorphicLayoutEffect(() => {
     if (!isInstantPreviewOn || !payloadApi) return;

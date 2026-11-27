@@ -30,6 +30,26 @@ export interface VisualEditing {
   destroy(): void;
 }
 
+interface RunWhile {
+  sync(): void;
+  stop(): void;
+}
+
+function runWhile(shouldRun: () => boolean, start: () => () => void): RunWhile {
+  let stopRunning: (() => void) | null = null;
+  const stop = () => {
+    stopRunning?.();
+    stopRunning = null;
+  };
+  return {
+    sync() {
+      if (shouldRun() && !stopRunning) stopRunning = start();
+      if (!shouldRun()) stop();
+    },
+    stop,
+  };
+}
+
 export function mountVisualEditing({
   root = document.body,
   locale,
@@ -57,18 +77,31 @@ export function mountVisualEditing({
       pageStore.read()
     );
   const adminOrigin = () => session().adminOrigin;
-  const stopHearingTheFrame = pageStore.attach(window, adminOrigin);
+  const stopHearingTheFrame = pageStore.attach(window, adminOrigin, session().isDraft);
   const scope: OverlayScope = { locale, savedShapes: savedShapesWithin(null) };
 
-  const renderSources = session().isInstantPreviewOn
-    ? listenToRenderSources({ adminOrigin, payloadApi, rendersOnThePage: optimistic })
-    : null;
-  const stopLiveRichTexts =
-    renderSources &&
-    startLiveRichTextElements(root, scope, adminOrigin, renderSources, {
-      render: renderRichText ?? renderSources.htmlOfPayload,
-      renderValue: renderRichTextValue,
-    });
+  const instantPreview = runWhile(
+    () => session().isInstantPreviewOn,
+    () => {
+      const renderSources = listenToRenderSources({
+        adminOrigin,
+        payloadApi,
+        rendersOnThePage: optimistic,
+      });
+      const stopLiveRichTexts = startLiveRichTextElements(root, scope, adminOrigin, renderSources, {
+        render: renderRichText ?? renderSources.htmlOfPayload,
+        renderValue: renderRichTextValue,
+      });
+      return () => {
+        stopLiveRichTexts();
+        renderSources.stop();
+      };
+    }
+  );
+  const saves = runWhile(
+    () => Boolean(onSave) && session().available,
+    () => listenToSaves(adminOrigin, () => onSave?.())
+  );
 
   const pageEditing = { onEdited, richTextEditor };
   const overlay = startSessionOverlay(
@@ -79,22 +112,23 @@ export function mountVisualEditing({
   );
   const toggle = showsToggle ? startSessionToggle(document, session, pageStore.setMode) : null;
   const followSession = () => {
+    instantPreview.sync();
+    saves.sync();
     overlay.sync();
     toggle?.sync();
   };
 
   const stopFollowing = pageStore.subscribe(followSession);
-  const stopListeningToSaves =
-    onSave && session().available ? listenToSaves(adminOrigin, () => onSave()) : null;
+  instantPreview.sync();
+  saves.sync();
 
   return {
     destroy() {
       removeAccent();
       stopFollowing();
       stopHearingTheFrame();
-      stopListeningToSaves?.();
-      stopLiveRichTexts?.();
-      renderSources?.stop();
+      saves.stop();
+      instantPreview.stop();
       overlay.dispose();
       toggle?.dispose();
     },

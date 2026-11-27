@@ -19,16 +19,19 @@ export const isTurnedOffByItsFrame = (win: Window): boolean => {
   return frame !== null && frameVisualEditingOf(frame) === "off";
 };
 
+const OPAQUE_ORIGIN = "null";
+
 export function hearFrameSettings(
   win: Window,
   adminOrigin: () => string,
   onTurnedOff: (isTurnedOff: boolean) => void
 ): () => void {
-  if (!isFramedByAdmin(win)) return hearNothing;
+  const askedOrigin = adminOriginOf(adminOrigin(), win);
+  if (!isFramedByAdmin(win) || askedOrigin === OPAQUE_ORIGIN) return hearNothing;
   const stop = hearTheAdmin(win, adminOrigin, (message) => {
     if (message.type === VE_FRAME_SETTINGS_TYPE) onTurnedOff(message.visualEditing === "off");
   });
   const hello: VeFrameHelloMessage = { type: VE_FRAME_HELLO_TYPE };
-  win.parent.postMessage(hello, adminOriginOf(adminOrigin(), win));
+  win.parent.postMessage(hello, askedOrigin);
   return stop;
 }

@@ -158,6 +158,16 @@ describe("mountVisualEditing", () => {
       expect(document.querySelector("[data-ve-toggle]")).toBeNull();
     });
 
+    it("stops hearing saves once the admin answers off", () => {
+      const onSave = vi.fn();
+      mount({ onSave });
+
+      postFromAdmin({ type: VE_FRAME_SETTINGS_TYPE, visualEditing: "off" });
+      postFromAdmin({ type: VE_DOCUMENT_SAVED_TYPE });
+
+      expect(onSave).not.toHaveBeenCalled();
+    });
+
     it("keeps the toggle and the outlines when the admin does not answer or answers on", async () => {
       mount();
       postFromAdmin({ type: VE_FRAME_SETTINGS_TYPE, visualEditing: "on" });

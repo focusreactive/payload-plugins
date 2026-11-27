@@ -7,6 +7,7 @@ import { PreviewPagesContext } from "../../src/admin/previewPages";
 import type { PreviewPage } from "../../src/admin/previewPages";
 import { VisualEditingBridgeProvider } from "../../src/admin/VisualEditingBridgeProvider";
 import {
+  DATA_VISUAL_EDITING_ADMIN_ATTR,
   LIVE_PREVIEW_FRAME_ID,
   VE_FRAME_HELLO_TYPE,
   VE_FRAME_SETTINGS_TYPE,
@@ -182,6 +183,23 @@ describe("VisualEditingBridgeProvider — frames asking whether to edit visually
 
     expect(card.postToFrame).toHaveBeenCalledWith(settings("on"), SITE_ORIGIN);
     expect(preview.postToFrame).toHaveBeenCalledWith(settings("off"), SITE_ORIGIN);
+  });
+
+  it("answers no frame of an opaque origin, such as a sandboxed iframe", () => {
+    mountBridgeWith({ getWindow: previewWindow, origin: SITE_ORIGIN });
+    const { frame, postToFrame } = frameInTheAdmin();
+
+    helloFrom(frame, "null");
+
+    expect(postToFrame).not.toHaveBeenCalled();
+  });
+
+  it("marks its document as the admin while it is mounted", () => {
+    mountBridgeWith(null);
+    expect(document.documentElement.hasAttribute(DATA_VISUAL_EDITING_ADMIN_ATTR)).toBe(true);
+
+    act(() => root?.unmount());
+    expect(document.documentElement.hasAttribute(DATA_VISUAL_EDITING_ADMIN_ATTR)).toBe(false);
   });
 
   it("answers only the frame that asked", () => {
