@@ -269,6 +269,16 @@ const whitespaceAroundTheValue = (
   return { after: isBesideTheValue ? trailing : "", before };
 };
 
+const valueShownIn = (original: string): string => {
+  const shown = withoutMarker(original);
+  const { after, before } = whitespaceAroundTheValue(
+    shown,
+    original,
+    leadingWhitespaceOfPayload(payloadIn(original))
+  );
+  return shown.slice(before.length, shown.length - after.length);
+};
+
 export function createFieldTracker(main: HTMLElement): FieldTracker {
   const texts = new Map<Text, TrackedText>();
   const attrOriginals = new Map<Element, Map<string, string | null>>();
@@ -677,7 +687,7 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       const held = splitHeldFieldOf(holder);
       return (
         held &&
-        showFieldInHolder(holder, held, withoutMarker(held.original), (textNode) =>
+        showFieldInHolder(holder, held, valueShownIn(held.original), (textNode) =>
           setAside(holder, textNode)
         )
       );

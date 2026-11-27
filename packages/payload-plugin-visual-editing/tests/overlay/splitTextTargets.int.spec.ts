@@ -277,6 +277,27 @@ describe("a heading a site script splits into an element per letter, edited on t
     expect(caret()).toEqual([heading.firstChild, "How ".length]);
   });
 
+  it("edits only the value of a heading whose template indents it, without the indentation", async () => {
+    overlay.dispose();
+    heading.textContent = `\n      ${marked("How We Deliver", "title")}\n    `;
+    overlay = createOverlay(main, () =>
+      overlayCtx({
+        inlineEditing: true,
+        instantPreview: true,
+        mode: "hover",
+        payloadApi: "https://cms.example.com/api",
+      })
+    );
+    const letterW = splitIntoLetters(heading).find(({ data }) => data === "W") as Text;
+    await flushMutations();
+    clickedAt(letterW);
+
+    click(letterW.parentElement as Element);
+
+    expect((heading.firstChild as Text).data).toBe("How We Deliver");
+    expect(caret()).toEqual([heading.firstChild, "How ".length]);
+  });
+
   it("saves the whole heading with the text typed where the letter was clicked", async () => {
     const letters = splitIntoLetters(heading);
     const splitNodes = Array.from(heading.childNodes);
