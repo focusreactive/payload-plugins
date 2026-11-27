@@ -77,7 +77,29 @@ const drawsTextAt = (control: Element, point: Point): boolean => {
   return false;
 };
 
+const NONE: ReadonlySet<string> = new Set(["", "none", "normal"]);
+
+const EMPTY_TEXT: ReadonlySet<string> = new Set(['""', "''"]);
+
+const PSEUDO_ELEMENTS = ["::before", "::after"];
+
+const paintsAnImage = ({ backgroundImage, maskImage }: CSSStyleDeclaration): boolean =>
+  !NONE.has(backgroundImage) || !NONE.has(maskImage);
+
+const pseudoElementPaints = (style: CSSStyleDeclaration): boolean =>
+  !NONE.has(style.content) && (!EMPTY_TEXT.has(style.content) || paintsAnImage(style));
+
+const paintsItself = (control: Element): boolean => {
+  const view = control.ownerDocument.defaultView;
+  if (!view) return false;
+  return (
+    paintsAnImage(view.getComputedStyle(control)) ||
+    PSEUDO_ELEMENTS.some((pseudo) => pseudoElementPaints(view.getComputedStyle(control, pseudo)))
+  );
+};
+
 const drawsAt = (control: Element, point: Point): boolean =>
+  (paintsItself(control) && holds(control.getBoundingClientRect(), point)) ||
   mediaOf(control).some((media) => holds(media.getBoundingClientRect(), point)) ||
   drawsTextAt(control, point);
 

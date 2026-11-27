@@ -50,6 +50,21 @@ const paintedFromTheTop = (...elements: HTMLElement[]) =>
     value: () => elements.filter((element) => getComputedStyle(element).pointerEvents !== "none"),
   });
 
+const computedStyleOf = window.getComputedStyle.bind(window);
+
+const NO_CONTENT = "none";
+
+const pseudoElementsHold = (contentOf: (element: Element) => string) =>
+  vi.spyOn(window, "getComputedStyle").mockImplementation((element, pseudo) =>
+    pseudo
+      ? ({
+          backgroundImage: "none",
+          content: contentOf(element),
+          maskImage: "none",
+        } as CSSStyleDeclaration)
+      : computedStyleOf(element)
+  );
+
 describe("a target beneath a layer that takes the pointer", () => {
   let main: HTMLElement;
   let tracker: FieldTracker;
@@ -79,6 +94,7 @@ describe("a target beneath a layer that takes the pointer", () => {
     main = document.createElement("main");
     document.body.append(main);
     open = vi.spyOn(window, "open").mockImplementation(() => null);
+    pseudoElementsHold(() => NO_CONTENT);
   });
 
   afterEach(() => {
@@ -279,6 +295,44 @@ describe("a target beneath a layer that takes the pointer", () => {
 
       expect(isBadgeShown()).toBe(true);
       expect(badgeIsFor()).toBe("hero.image");
+    });
+
+    describe("such as an arrow of a carousel", () => {
+      let arrow: HTMLButtonElement;
+
+      beforeEach(() => {
+        arrow = document.createElement("button");
+        control(arrow);
+        drawnAt(arrow, new DOMRect(0, 0, 100, 60));
+      });
+
+      it.each([
+        ["a background image", "background-image"],
+        ["a mask image", "mask-image"],
+      ])("shows nothing while the pointer is over an arrow drawn as %s", (_, property) => {
+        arrow.style.setProperty(property, 'url("arrow.svg")');
+
+        pointerMovesOver(arrow);
+
+        expect(isBadgeShown()).toBe(false);
+      });
+
+      it("shows nothing while the pointer is over an arrow drawn by an icon font", () => {
+        pseudoElementsHold((element) => (element === arrow ? '"\\e900"' : NO_CONTENT));
+
+        pointerMovesOver(arrow);
+
+        expect(isBadgeShown()).toBe(false);
+      });
+
+      it("offers the action of the image while the pointer is over a control whose pseudo-element holds no text", () => {
+        pseudoElementsHold((element) => (element === arrow ? '""' : NO_CONTENT));
+
+        pointerMovesOver(arrow);
+
+        expect(isBadgeShown()).toBe(true);
+        expect(badgeIsFor()).toBe("hero.image");
+      });
     });
 
     it("offers the action of the image while the pointer is over an empty link stretched over the card", () => {
