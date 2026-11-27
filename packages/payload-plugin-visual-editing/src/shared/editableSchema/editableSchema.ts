@@ -114,6 +114,9 @@ export const textFieldTypeAt = (
 export const isRichTextAt = (schema: EditableSchema, steps: readonly FieldStep[]): boolean =>
   isRichText(schemaNodeAt(schema, steps));
 
+export const holdsFieldsAt = (schema: EditableSchema, steps: readonly FieldStep[]): boolean =>
+  isPlainObject(schemaNodeAt(schema, steps));
+
 export const uploadCollectionAt = (
   schema: EditableSchema,
   steps: readonly FieldStep[]

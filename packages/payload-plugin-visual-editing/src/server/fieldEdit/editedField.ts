@@ -4,6 +4,7 @@ import type { PlainObject } from "../../shared/plainObject.js";
 import type { VeEditorState } from "../../shared/protocol.js";
 
 import {
+  holdsFieldsAt,
   isRichTextAt,
   textFieldTypeAt,
   uploadCollectionAt,
@@ -134,6 +135,25 @@ export const shownRichTextOf = (
   const walked = walkTo(document, key);
   if (!walked || !isRichTextAt(schema, walked.steps)) return null;
   return isEditorStateTree(walked.value) ? { steps: walked.steps, value: walked.value } : null;
+};
+
+const holdsNoRowsYet = ({ steps, value }: Walked): boolean =>
+  steps.length > 0 && (Array.isArray(value) || value === undefined || value === null);
+
+export const isRowNotSavedYet = (
+  document: unknown,
+  schema: EditableSchema,
+  key: string
+): boolean => {
+  let walked = startOf(document);
+  for (const segment of key.split(FIELD_PATH_SEPARATOR)) {
+    const next = Array.isArray(walked.value)
+      ? intoRow(walked, segment)
+      : intoField(walked, segment);
+    if (!next) return holdsNoRowsYet(walked) && holdsFieldsAt(schema, walked.steps);
+    walked = next;
+  }
+  return false;
 };
 
 export type RichTextEdit = {

@@ -255,6 +255,10 @@ describe("RichTextEditReceiver", () => {
       ["refuses", () => answerOfTheEndpoint({ formats: null, value: null }, false)],
       ["cannot be reached", () => Promise.reject(new TypeError("Failed to fetch"))],
       ["answers no formats", () => answerOfTheEndpoint({ value: null })],
+      [
+        "says the field is not saved yet",
+        () => answerOfTheEndpoint({ formats: null, value: null }),
+      ],
     ])("offers the formats the form holds when the endpoint %s", async (_name, answer) => {
       askEndpoint.mockImplementation(answer);
 

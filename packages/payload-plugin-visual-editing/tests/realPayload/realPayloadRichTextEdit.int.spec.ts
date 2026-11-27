@@ -225,6 +225,21 @@ describe("editing rich text through the endpoints", () => {
       expect(answer).toMatchObject({ status: 200, value: richText("Note") });
     });
 
+    it.each([
+      ["a row of a list", { list: [{ label: "Row", note: richText("Note") }] }, "list.new.note"],
+      ["the first row of a list", {}, "list.new.note"],
+      ["a block", {}, "layout.new.body"],
+    ])(
+      "is nothing yet, and no refusal, for %s the draft does not hold yet",
+      async (_name, data, key) => {
+        const docId = await create({ label: "Label", ...data });
+
+        const answer = await valueOf({ ...page(docId), key });
+
+        expect(answer).toEqual({ reason: undefined, status: 200, value: null });
+      }
+    );
+
     it("leaves out the fields of a block the user may not read", async () => {
       const docId = await create({ story: story() });
 
@@ -288,6 +303,7 @@ describe("editing rich text through the endpoints", () => {
         ["a field that is not rich text", "label"],
         ["a field the schema does not have", "missing"],
         ["a rich text that holds nothing yet", "localizedBody"],
+        ["a row inside a field that holds no rows", "label.new.note"],
       ])("for %s", async (_name, key) => {
         expect(await valueOf({ ...page(docId), key })).toEqual({
           reason: "not-editable",
