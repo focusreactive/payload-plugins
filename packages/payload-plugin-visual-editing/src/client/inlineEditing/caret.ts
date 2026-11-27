@@ -123,15 +123,18 @@ export const textPositionAtPoint = (
 
 const WHITESPACE = /\s/u;
 
+const isLetter = (character: string): boolean => !WHITESPACE.test(character);
+
 export const offsetOfTheSameText = (textBefore: string, text: string): number => {
-  let letters = [...textBefore].filter((character) => !WHITESPACE.test(character)).length;
+  let letters = [...textBefore].filter(isLetter).length;
   let offset = 0;
-  while (letters > 0 && offset < text.length) {
-    if (!WHITESPACE.test(text.charAt(offset))) letters -= 1;
-    offset += 1;
+  for (const character of text) {
+    if (letters === 0) break;
+    if (isLetter(character)) letters -= 1;
+    offset += character.length;
   }
-  if (!WHITESPACE.test(textBefore.at(-1) ?? "")) return offset;
-  while (offset < text.length && WHITESPACE.test(text.charAt(offset))) offset += 1;
+  if (isLetter(textBefore.at(-1) ?? "")) return offset;
+  while (offset < text.length && !isLetter(text.charAt(offset))) offset += 1;
   return offset;
 };
 
