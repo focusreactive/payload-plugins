@@ -4,13 +4,18 @@ import { useEffect } from "react";
 
 const ADMIN_TAB_NAME = "payload-ve-admin";
 
+const hasAdminWindow = (): boolean => {
+  const opener = window.opener as Window | null;
+  return window.self !== window.top || (opener !== null && !opener.closed);
+};
+
 export const VisualEditingEditRouter: React.FC = () => {
   useEffect(() => {
-    if (window.self !== window.top) {
-      return;
-    }
-
     const handleClick = (event: MouseEvent) => {
+      if (hasAdminWindow()) {
+        return;
+      }
+
       if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
         return;
       }
