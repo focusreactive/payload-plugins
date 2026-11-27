@@ -35,7 +35,13 @@ const AUTO = "auto";
 const NONE = "none";
 const ISOLATE = "isolate";
 
+const NORMAL = "normal";
+const SIZE_CONTAINER = /size/u;
+const STACKING_WHEN_SET = ["clip-path", "mask-image", "backdrop-filter"] as const;
+
 const isSet = (value: string): boolean => value !== "" && value !== NONE;
+
+const isBlended = (value: string): boolean => value !== "" && value !== NORMAL;
 
 const createsStackingContext = (style: CSSStyleDeclaration, parent: CSSStyleDeclaration | null) =>
   (style.zIndex !== AUTO &&
@@ -46,7 +52,10 @@ const createsStackingContext = (style: CSSStyleDeclaration, parent: CSSStyleDecl
   isSet(style.filter) ||
   style.isolation === ISOLATE ||
   STACKING_WILL_CHANGE.test(style.willChange) ||
-  STACKING_CONTAIN.test(style.contain);
+  STACKING_CONTAIN.test(style.contain) ||
+  STACKING_WHEN_SET.some((property) => isSet(style.getPropertyValue(property))) ||
+  isBlended(style.getPropertyValue("mix-blend-mode")) ||
+  SIZE_CONTAINER.test(style.getPropertyValue("container-type"));
 
 const stackingOf = (element: Element, below: Element | null): Stacking => {
   const view = element.ownerDocument.defaultView;

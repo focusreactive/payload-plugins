@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createOverlay } from "../../src/client/createOverlay";
 import { DATA_VE_FRAME_ATTR } from "../../src/client/overlay/constants";
+import { createFrameLayer } from "../../src/client/overlay/frameLayer";
+import { shownOncePerFrame } from "../../src/client/overlay/targetSelector";
 
 import { markedText } from "../support/markedData";
 import { overlayCtx } from "../support/overlay";
@@ -139,6 +141,60 @@ describe("resting frames", () => {
         "block",
       ]);
       overlay.dispose();
+    });
+
+    it("hides the frame of a text the page hides in the frame its visibility was read in", async () => {
+      const heading = main.querySelector("h1") as HTMLElement;
+      let isHeadingShown = true;
+      const frames = createFrameLayer(
+        main,
+        shownOncePerFrame(() => isHeadingShown)
+      );
+      window.dispatchEvent(new Event("resize"));
+      frames.add(heading);
+      const frame = framesOnPage()[0] as HTMLElement;
+      const shownFirst = frame.style.display;
+
+      isHeadingShown = false;
+      await nextFrame();
+
+      expect([shownFirst, frame.style.display]).toEqual(["block", "none"]);
+      frames.dispose();
+    });
+
+    describe("and the page restyles an element", () => {
+      let readsOfTheHeading: () => number;
+
+      beforeEach(() => {
+        const heading = main.querySelector("h1") as HTMLElement;
+        readsOfTheHeading = () => vi.mocked(heading.getBoundingClientRect).mock.calls.length;
+      });
+
+      it("leaves the frames where they are when the element neither holds nor sits in a framed text", async () => {
+        const aside = document.createElement("aside");
+        main.append(aside);
+        const overlay = createOverlay(main, () => overlayCtx({ mode: "always" }));
+        await nextFrame();
+        const before = readsOfTheHeading();
+
+        aside.className = "spinning";
+        await nextFrame();
+
+        expect(readsOfTheHeading()).toBe(before);
+        overlay.dispose();
+      });
+
+      it("moves the frames when the element holds a framed text", async () => {
+        const overlay = createOverlay(main, () => overlayCtx({ mode: "always" }));
+        await nextFrame();
+        const before = readsOfTheHeading();
+
+        main.className = "shifted";
+        await nextFrame();
+
+        expect(readsOfTheHeading()).toBeGreaterThan(before);
+        overlay.dispose();
+      });
     });
   });
 

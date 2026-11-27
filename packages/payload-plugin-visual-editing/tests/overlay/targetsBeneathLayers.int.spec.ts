@@ -613,6 +613,25 @@ describe("a target beneath a layer that takes the pointer", () => {
       expect(badgeIsFor()).toBe("hero.caption");
     });
 
+    it.each([
+      ["mix-blend-mode", "multiply"],
+      ["clip-path", "circle(50%)"],
+      ["mask-image", "url(mask.png)"],
+      ["container-type", "inline-size"],
+    ])(
+      "takes the one that %s stacks on top when the browser finds no point of it",
+      (property, value) => {
+        caption.style.setProperty(property, value);
+        image.before(caption);
+        paintedFromTheTop(layer, caption, image);
+        start();
+
+        pointerMovesOver(layer);
+
+        expect(badgeIsFor()).toBe("hero.caption");
+      }
+    );
+
     it("takes the one inside a layer stacked on top, however deep in that layer it sits", () => {
       const raised = document.createElement("div");
       Object.assign(raised.style, { position: "absolute", zIndex: "10" });

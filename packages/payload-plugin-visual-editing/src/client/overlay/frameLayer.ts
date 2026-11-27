@@ -1,4 +1,4 @@
-import type { IsShown } from "./targetSelector.js";
+import type { ShownInAFrame } from "./targetSelector.js";
 
 import {
   DATA_VE_FRAME_ATTR,
@@ -38,7 +38,7 @@ export interface FrameLayer {
  * The resting frames of "always" mode: one dashed rectangle per edit target, kept in place on
  * scroll, resize and layout changes. Frames never take pointer events.
  */
-export function createFrameLayer(root: Element, isShown: IsShown): FrameLayer {
+export function createFrameLayer(root: Element, isShown: ShownInAFrame): FrameLayer {
   const layer = document.createElement("div");
   layer.dataset.veLayer = "frames";
   Object.assign(layer.style, {
@@ -66,6 +66,7 @@ export function createFrameLayer(root: Element, isShown: IsShown): FrameLayer {
 
   const repositionAll = () => {
     frameRequest = 0;
+    isShown.forget();
     const covers = measureCovers();
     for (const [target, frame] of frames) {
       place(frame, target, covers);
@@ -83,8 +84,10 @@ export function createFrameLayer(root: Element, isShown: IsShown): FrameLayer {
   window.addEventListener("resize", schedule, { passive: true });
   window.addEventListener("transitionend", schedule, { capture: true, passive: true });
   window.addEventListener("animationend", schedule, { capture: true, passive: true });
+  const movesAFrame = (restyled: Node): boolean =>
+    [...frames.keys()].some((target) => restyled.contains(target) || target.contains(restyled));
   const restyles = new MutationObserver((records) => {
-    if (records.some(({ target }) => !layer.contains(target))) schedule();
+    if ([...new Set(records.map(({ target }) => target))].some(movesAFrame)) schedule();
   });
   restyles.observe(root, { attributeFilter: ["class", "style"], subtree: true });
 
