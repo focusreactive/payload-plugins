@@ -972,7 +972,7 @@ A `beforeChange` hook removes intact markers from every write. It cannot recogni
 | `inlineEditing` | `boolean` | `false` | Adds the receivers of edits, of media picks and of rich text edits to the admin and the `field-edit`, `media-options` and `rich-text-value` endpoints, see [Editing on the page](#editing-on-the-page). Needs `instantPreview`. |
 | `renderHtml` | `({ value, field, locale, req }) => string \| Promise<string>` | none | Renders unsaved rich text to HTML for a page without React, see [Pages without React](#unsaved-rich-text-on-a-page-without-react). |
 | `readWholeDocument` | `boolean` | `false` | The `unsaved-rich-text` endpoint reads every field of the document instead of the top-level field that holds the rich text. For `afterRead` hooks that need other fields, see [Upgrading from 1.2.0](#upgrading-from-120). |
-| `imageDescriptionField` | `string` | `'alt'` | The field of a media document that describes its image. Read through an `upload` field, it carries the marker of that field, so an `<img>` rendered with that `alt` is found as the image of the field. An image replaced on the page shows the picked media's value of this field in its `alt`. |
+| `imageDescriptionField` | `string` | `'alt'` | The `text` or `textarea` field of a media document that describes its image; a field of another type describes nothing. Read through an `upload` field, it carries the marker of that field, so an `<img>` rendered with that `alt` is found as the image of the field. An image replaced on the page shows the picked media's value of this field in its `alt`. |
 
 `LiveRichText` props:
 

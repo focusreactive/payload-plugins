@@ -7,7 +7,7 @@ import type { DocumentToRead } from "../unsavedRichText/postedRequest.js";
 import type { SignedInRequest } from "./draftField.js";
 
 import { readEditedField } from "../../shared/fieldEdit.js";
-import { mediaOptionOf } from "../../shared/mediaOption.js";
+import { descriptionFieldOf, mediaOptionOf } from "../../shared/mediaOption.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import { VE_MEDIA_OPTIONS_PATH } from "../../shared/protocol.js";
 import { DOCUMENT_NOT_UPDATABLE, draftFieldEndpoint, FIELD_NOT_EDITABLE } from "./draftField.js";
@@ -19,7 +19,6 @@ const MAX_SEARCH_LENGTH = 200;
 const FIRST_PAGE = 1;
 const LATEST_ID_FIRST = "-id";
 const NEWEST_FIRST = ["-createdAt", LATEST_ID_FIRST];
-const DESCRIPTION_FIELD_TYPE = "text";
 
 const NOTHING_LISTED: VeMediaOptions = {
   collection: null,
@@ -40,17 +39,6 @@ const readRequest = (body: unknown): VeMediaOptionsRequest | null => {
   const { page, search } = body;
   return isPageNumber(page) && isSearch(search) ? { ...field, page, search } : null;
 };
-
-const describesItsFiles = (
-  payload: Payload,
-  collection: string,
-  descriptionField: string
-): boolean =>
-  Boolean(
-    payload.collections[collection]?.config.flattenedFields.some(
-      (field) => field.name === descriptionField && field.type === DESCRIPTION_FIELD_TYPE
-    )
-  );
 
 const orderOf = (payload: Payload, collection: string): string[] =>
   payload.collections[collection]?.config.timestamps === false ? [LATEST_ID_FIRST] : NEWEST_FIRST;
@@ -87,9 +75,10 @@ const listMedia = async (
     user,
     where: filesNamedLike(search),
   });
-  const shownDescription = describesItsFiles(payload, collection, descriptionField)
-    ? descriptionField
-    : null;
+  const shownDescription = descriptionFieldOf(
+    payload.collections[collection]?.config.flattenedFields ?? [],
+    descriptionField
+  );
   return {
     collection,
     descriptionField: shownDescription,

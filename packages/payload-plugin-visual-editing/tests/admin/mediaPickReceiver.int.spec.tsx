@@ -53,11 +53,18 @@ vi.mock("@payloadcms/ui", async () => {
   return {
     useConfig: () => ({
       config: { blocksMap: {}, routes: { api: "/api" }, serverURL: "https://cms.example.com" },
-      getEntityConfig: () => ({
-        fields: [
-          { name: "title", type: "text" },
-          { name: "image", relationTo: "media", type: "upload" },
-        ],
+      getEntityConfig: ({ collectionSlug }: { collectionSlug: string }) => ({
+        fields:
+          collectionSlug === "media"
+            ? [
+                { name: "alt", type: "text" },
+                { fields: [{ name: "caption", type: "textarea" }], type: "row" },
+                { name: "credit", options: ["Staff"], type: "select" },
+              ]
+            : [
+                { name: "title", type: "text" },
+                { name: "image", relationTo: "media", type: "upload" },
+              ],
       }),
     }),
     useDocumentInfo: () => ({ collectionSlug: "page", docPermissions: admin.permissions, id: 7 }),
@@ -239,6 +246,26 @@ describe("MediaPickReceiver", () => {
 
     expect(admin.postToPreview).toHaveBeenCalledWith(
       expect.objectContaining({ alt: "A lighthouse", type: VE_MEDIA_PICKED_TYPE }),
+      PREVIEW_ORIGIN
+    );
+  });
+
+  it("tells the preview page no description from a field of the media that holds no text", async () => {
+    fetchMedia.mockResolvedValue({
+      json: () => Promise.resolve({ ...LIGHTHOUSE, credit: "Staff" }),
+      ok: true,
+    } as Response);
+    act(() => root.render(<MediaPickReceiver imageDescriptionField="credit" />));
+    postRequest();
+
+    await select({ id: 9 });
+
+    expect(admin.postToPreview).toHaveBeenCalledWith(
+      expect.not.objectContaining({ alt: expect.anything() }),
+      PREVIEW_ORIGIN
+    );
+    expect(admin.postToPreview).toHaveBeenCalledWith(
+      expect.objectContaining({ type: VE_MEDIA_PICKED_TYPE }),
       PREVIEW_ORIGIN
     );
   });

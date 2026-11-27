@@ -15,6 +15,27 @@ export const DEFAULT_IMAGE_DESCRIPTION_FIELD = "alt";
 
 const DESCRIPTION_KEY = "alt";
 
+const DESCRIPTION_FIELD_TYPES: ReadonlySet<string> = new Set(["text", "textarea"]);
+
+type FieldOfMedia = {
+  name?: string;
+  type?: string;
+  fields?: readonly FieldOfMedia[];
+  tabs?: readonly FieldOfMedia[];
+};
+
+const holdsDescription = (fields: readonly FieldOfMedia[], descriptionField: string): boolean =>
+  fields.some(({ fields: inside = [], name, tabs = [], type = "" }) =>
+    name === undefined
+      ? holdsDescription([...inside, ...tabs], descriptionField)
+      : name === descriptionField && DESCRIPTION_FIELD_TYPES.has(type)
+  );
+
+export const descriptionFieldOf = (
+  fields: readonly FieldOfMedia[],
+  descriptionField: string
+): string | null => (holdsDescription(fields, descriptionField) ? descriptionField : null);
+
 const sizeOf = (size: unknown): number | undefined => (typeof size === "number" ? size : undefined);
 
 export const shownMediaOf = (media: unknown): VeShownMedia | null => {
