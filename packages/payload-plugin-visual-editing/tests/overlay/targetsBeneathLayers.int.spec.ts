@@ -276,6 +276,17 @@ describe("a target beneath a layer that takes the pointer", () => {
         expect(event.defaultPrevented).toBe(true);
       });
 
+      it.each([
+        ["where the browser puts no point", { clientX: 0, clientY: 0 }],
+        ["over the image", AT],
+      ])("leaves to the page a click the keyboard made on the link, %s", (_, at) => {
+        link.focus();
+        const event = click(link, { ...at, detail: 0 });
+
+        expect(open).not.toHaveBeenCalled();
+        expect(event.defaultPrevented).toBe(false);
+      });
+
       it("leaves a click on the text of the link to the page", () => {
         const onTheText = { clientX: 50, clientY: 290 };
         pointerMovesOver(link, onTheText);

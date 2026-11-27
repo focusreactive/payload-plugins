@@ -13,7 +13,13 @@ export const overlayCtx = (overrides: Partial<OverlayCtx> = {}): OverlayCtx => (
 });
 
 export const click = (element: Element, init: MouseEventInit = {}): MouseEvent => {
-  const event = new MouseEvent("click", { bubbles: true, button: 0, cancelable: true, ...init });
+  const event = new MouseEvent("click", {
+    bubbles: true,
+    button: 0,
+    cancelable: true,
+    detail: 1,
+    ...init,
+  });
   element.dispatchEvent(event);
   return event;
 };

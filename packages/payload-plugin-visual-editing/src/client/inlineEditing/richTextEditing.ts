@@ -124,8 +124,14 @@ const holdsEveryFixedNode = ({ held }: Edit, state: VeEditorState): boolean =>
   fixedNodesOf(state).length === fixedNodesOf(held.state).length;
 
 const clickWrapperInstead = (wrapper: HTMLElement, event: MouseEvent) => {
-  const { clientX, clientY } = event;
-  const click = new MouseEvent("click", { bubbles: true, cancelable: true, clientX, clientY });
+  const { clientX, clientY, detail } = event;
+  const click = new MouseEvent("click", {
+    bubbles: true,
+    cancelable: true,
+    clientX,
+    clientY,
+    detail,
+  });
   if (!wrapper.dispatchEvent(click)) event.preventDefault();
 };
 

@@ -30,6 +30,8 @@ export type EditTargetsCtx = TargetRegistryCtx & {
 const isPlainPrimaryClick = (event: MouseEvent) =>
   event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
 
+const isActivatedByTheKeyboard = (event: MouseEvent) => event.detail === 0;
+
 const hasTextSelection = () => document.getSelection()?.isCollapsed === false;
 
 const INTERACTIVE = [
@@ -258,7 +260,7 @@ export function createEditTargets(
   });
 
   const openFieldOnTargetClick = (event: MouseEvent) => {
-    if (!isPlainPrimaryClick(event)) return;
+    if (!isPlainPrimaryClick(event) || isActivatedByTheKeyboard(event)) return;
     const target = targetUnder(event);
     const config = target ? registry.get(target) : undefined;
     if (!target || !config) return;
