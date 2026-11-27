@@ -212,6 +212,56 @@ describe("editing text on the page", () => {
         return event;
       };
 
+      it("keeps the space a value starts with beside the icon when the editor changes it", async () => {
+        showLine(" Read more");
+
+        typeInto(line, " Read more now");
+        press(line, "Enter");
+        await flushMutations();
+
+        expect(sentToEndpoint().map(({ base, value }) => [base, value])).toEqual([
+          [" Read more", " Read more now"],
+        ]);
+        expect(line.textContent).toBe(" Read more now");
+      });
+
+      it("keeps the space a value ends with before the badge after it when the editor changes it", async () => {
+        line = document.createElement("h2");
+        const badge = document.createElement("i");
+        line.append(stega("Read more ", "line"), badge);
+        main.append(line);
+        overlay.dispose();
+        start();
+        click(line);
+
+        typeInto(line, "Read on ");
+        press(line, "Enter");
+        await flushMutations();
+
+        expect(sentToEndpoint().map(({ base, value }) => [base, value])).toEqual([
+          ["Read more ", "Read on "],
+        ]);
+        expect(line.textContent).toBe("Read on ");
+      });
+
+      it("leaves out of the value the whitespace the page puts around it, and keeps the whitespace of the value", async () => {
+        line = document.createElement("h2");
+        line.append(icon, `\n  ${stega(" Read more ", "line")}\n`);
+        main.append(line);
+        overlay.dispose();
+        start();
+        click(line);
+
+        typeInto(line, "\n   Read on \n");
+        press(line, "Enter");
+        await flushMutations();
+
+        expect(sentToEndpoint().map(({ base, value }) => [base, value])).toEqual([
+          [" Read more ", " Read on "],
+        ]);
+        expect(line.textContent).toBe("\n   Read on \n");
+      });
+
       it("leaves deleting a word inside the text to the browser", () => {
         showLine("Hero foo.bar here");
         const lineText = textIn(line);
@@ -634,7 +684,19 @@ describe("editing text on the page", () => {
 
         const selection = document.getSelection() as Selection;
         expect([selection.anchorNode, selection.focusNode]).toEqual([textIn(line), textIn(line)]);
-        expect(selection.toString()).toBe(textIn(line).data);
+        expect(selection.toString()).toBe("OUR FIRST RELEASE");
+      });
+
+      it("keeps the whitespace the page puts around the text out of a selection, so typing over it keeps the text apart from the tag", () => {
+        click(line);
+        const lineText = textIn(line);
+        document
+          .getSelection()
+          ?.setBaseAndExtent(lineText, "\n  OUR".length, lineText, lineText.length);
+
+        document.dispatchEvent(new Event("selectionchange"));
+
+        expect(document.getSelection()?.toString()).toBe(" FIRST RELEASE");
       });
 
       it("brings a caret put beside the elements of the line back into its text", () => {

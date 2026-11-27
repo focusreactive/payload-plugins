@@ -1,3 +1,4 @@
+import { vercelStegaDecode } from "@vercel/stega";
 import { describe, expect, it } from "vitest";
 
 import type { ReadOfDocument } from "../../src/server/markRead";
@@ -9,7 +10,7 @@ import { defaultExcludeValues, isUrl } from "../../src/excludeValues";
 import { markRead } from "../../src/server/markRead";
 import { buildEditableSchema } from "../../src/shared/editableSchema/editableSchema";
 import { isPlainObject } from "../../src/shared/plainObject";
-import { META_KEY, toStegaPayload } from "../../src/shared/shared";
+import { leadingWhitespaceOfPayload, META_KEY, toStegaPayload } from "../../src/shared/shared";
 import { withMarker, withoutMarker } from "../../src/shared/stegaText";
 
 import { paragraphsOf } from "../support/editorState";
@@ -69,6 +70,17 @@ describe("a marked read", () => {
     expect(
       [page.title, page.contact, page.sections[0]?.text].map((text) => markerOf(text))
     ).not.toContainEqual(expect.objectContaining({ multiline: true }));
+  });
+
+  it("says how much whitespace a text starts with, so the page tells it from the whitespace around it", () => {
+    const page = markPage({ subtitle: "Plain", title: "  Read more " });
+
+    expect(leadingWhitespaceOfPayload(vercelStegaDecode(page.title))).toBe(2);
+    expect(leadingWhitespaceOfPayload(vercelStegaDecode(page.subtitle))).toBe(0);
+    expect(vercelStegaDecode(page.subtitle)).toEqual(
+      toStegaPayload({ ...inPage, path: "subtitle" })
+    );
+    expect(withoutMarker(page.title)).toBe("  Read more ");
   });
 
   it("leaves blank text without a marker", () => {

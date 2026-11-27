@@ -60,6 +60,7 @@ export type StegaPayload = [
   locale?: string | Absent,
   multiline?: typeof MULTILINE | Absent,
   valueId?: string | Absent,
+  leadingWhitespace?: number | Absent,
 ];
 
 const segmentsOf = (path: string): string[] => path.split(FIELD_PATH_SEPARATOR);
@@ -88,16 +89,10 @@ const withoutAbsentTail = (payload: StegaPayload): StegaPayload => {
     : payload;
 };
 
-export const toStegaPayload = ({
-  collectionSlug,
-  docId,
-  key,
-  kind,
-  locale,
-  multiline,
-  path,
-  valueId,
-}: VeIdentity): StegaPayload =>
+export const toStegaPayload = (
+  { collectionSlug, docId, key, kind, locale, multiline, path, valueId }: VeIdentity,
+  leadingWhitespace = 0
+): StegaPayload =>
   withoutAbsentTail([
     DOC_KINDS.indexOf(kind),
     collectionSlug,
@@ -107,7 +102,15 @@ export const toStegaPayload = ({
     locale ?? ABSENT,
     multiline ? MULTILINE : ABSENT,
     valueId ?? ABSENT,
+    leadingWhitespace,
   ]);
+
+const LEADING_WHITESPACE_OF_PAYLOAD = 8;
+
+export const leadingWhitespaceOfPayload = (payload: unknown): number => {
+  const leading: unknown = Array.isArray(payload) ? payload[LEADING_WHITESPACE_OF_PAYLOAD] : 0;
+  return typeof leading === "number" && Number.isInteger(leading) && leading > 0 ? leading : 0;
+};
 
 const keyOfPayload = (path: string, rowIdsOrKey: unknown): string | undefined => {
   if (!Array.isArray(rowIdsOrKey)) return optionalString(rowIdsOrKey);

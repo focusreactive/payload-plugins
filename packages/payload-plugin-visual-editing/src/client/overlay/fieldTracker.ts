@@ -11,8 +11,13 @@ import {
 } from "../../shared/protocol.js";
 import { fieldKeyOfMarker } from "../../shared/fieldKey.js";
 import { fromRichTextNodeMarker, richTextNodeKeyOf } from "../../shared/richText/nodeKey.js";
-import { fromStegaPayload } from "../../shared/shared.js";
-import { hasMarker, withoutMarker } from "../../shared/stegaText.js";
+import { fromStegaPayload, leadingWhitespaceOfPayload } from "../../shared/shared.js";
+import {
+  hasMarker,
+  leadingWhitespaceOf,
+  textAfterMarker,
+  withoutMarker,
+} from "../../shared/stegaText.js";
 import { documentAddressOf } from "../../shared/veDocument.js";
 import { identityAttrsOf } from "../withVisualEditingPath.js";
 import { readMarkerFromAttrs } from "./markerExtractor.js";
@@ -38,8 +43,11 @@ export type FieldEdit = {
   onShownAgain(): void;
 };
 
+export type WhitespaceAround = { before: string; after: string };
+
 export interface FieldTracker {
   subscribe(listener: FieldListener): () => void;
+  whitespaceAround(match: FieldMatch): WhitespaceAround;
   showText(node: Text, text: string): void;
   showTextInHolder(match: FieldMatch, text: string): boolean;
   beginEdit(match: FieldMatch, edit: FieldEdit): HTMLElement | null;
@@ -165,12 +173,18 @@ const isTheOnlyTextOf = (element: Element, textNode: Text): boolean =>
     (child) => child === textNode || child instanceof Element || isBlankText(child)
   );
 
-const SURROUNDING_WHITESPACE = /^(\s*).*?(\s*)$/su;
+const NO_WHITESPACE_AROUND: WhitespaceAround = { after: "", before: "" };
 
-export const whitespaceAround = (textNode: Text, editedElement: Element) => {
-  if (editedElement.childElementCount === 0) return { after: "", before: "" };
-  const [, before = "", after = ""] = SURROUNDING_WHITESPACE.exec(textNode.data) ?? [];
-  return { after, before };
+const TRAILING_WHITESPACE = /\s*$/u;
+
+const whitespaceAroundTheValue = (shown: string, original: string): WhitespaceAround => {
+  const leading = leadingWhitespaceOf(shown);
+  const leadingOfTheValue = leadingWhitespaceOfPayload(payloadIn(original));
+  const before = leading.slice(0, Math.max(0, leading.length - leadingOfTheValue));
+  const [trailing = ""] = TRAILING_WHITESPACE.exec(textAfterMarker(original) ?? shown) ?? [];
+  const isBesideTheValue =
+    shown.endsWith(trailing) && shown.length - trailing.length >= before.length;
+  return { after: isBesideTheValue ? trailing : "", before };
 };
 
 export function createFieldTracker(main: HTMLElement): FieldTracker {
@@ -181,6 +195,11 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
   const ownAttributeWrites = new Map<Element, number>();
   const listeners = new Set<FieldListener>();
   const edits = new Map<Text, TextEdit>();
+
+  const whitespaceAround = (textNode: Text, editedElement: Element): WhitespaceAround =>
+    editedElement.childElementCount === 0
+      ? NO_WHITESPACE_AROUND
+      : whitespaceAroundTheValue(textNode.data, texts.get(textNode)?.original ?? textNode.data);
 
   const writeIdentityAttr = (element: Element, attr: string, value: string | null) => {
     if (element.getAttribute(attr) === value) return;
@@ -497,6 +516,10 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       texts.set(textNode, tracked);
       holders.set(holder, { match, original: held.original });
       for (const listener of listeners) listener.onFields(holder, [match]);
+    },
+    whitespaceAround({ textNode }) {
+      const editedElement = textNode.parentElement;
+      return editedElement ? whitespaceAround(textNode, editedElement) : NO_WHITESPACE_AROUND;
     },
     isIdentifiedByThePage,
     namesUploadOf: (element) => attrOriginals.get(element)?.get(DATA_VE_VALUE_ID_ATTR) === null,

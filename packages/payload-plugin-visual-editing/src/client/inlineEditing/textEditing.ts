@@ -4,7 +4,6 @@ import type { Point } from "./caret.js";
 import type { FieldEdit } from "./editTransport.js";
 
 import { holdsLineBreak, oneLineOf } from "../../shared/fieldEdit.js";
-import { whitespaceAround } from "../overlay/fieldTracker.js";
 import { caretOffsetIn, placeCaret, placeCaretAtPoint, textNodesIn } from "./caret.js";
 import { showEditingFrame } from "./editingFrame.js";
 
@@ -358,6 +357,10 @@ const isInTheText = (edit: EditedText, texts: readonly Text[], range: Range): bo
   texts.includes(range.endContainer as Text) &&
   !reachesBeyondTheText(edit, range);
 
+const isInside = (text: Range, range: Range): boolean =>
+  range.compareBoundaryPoints(Range.START_TO_START, text) >= 0 &&
+  range.compareBoundaryPoints(Range.END_TO_END, text) <= 0;
+
 const keepSelectionInTheText = (edit: EditedText): void => {
   const selection = edit.editedElement.ownerDocument.getSelection();
   if (!selection || selection.rangeCount === 0) return;
@@ -366,10 +369,21 @@ const keepSelectionInTheText = (edit: EditedText): void => {
   const [first] = texts;
   const last = texts.at(-1);
   if (!first || !last || !edit.editedElement.contains(range.commonAncestorContainer)) return;
-  if (isInTheText(edit, texts, range)) return;
-  if (!range.collapsed) selection.setBaseAndExtent(first, 0, last, last.length);
-  else if (range.comparePoint(first, 0) === POINT_AFTER_THE_RANGE) selection.collapse(first, 0);
-  else selection.collapse(last, last.length);
+  if (range.collapsed) {
+    if (isInTheText(edit, texts, range)) return;
+    if (range.comparePoint(first, 0) === POINT_AFTER_THE_RANGE) selection.collapse(first, 0);
+    else selection.collapse(last, last.length);
+    return;
+  }
+  const text = textRangeOf(edit);
+  if (!text || (isInTheText(edit, texts, range) && isInside(text, range))) return;
+  const narrowed = clampedTo(text, range);
+  selection.setBaseAndExtent(
+    narrowed.startContainer,
+    narrowed.startOffset,
+    narrowed.endContainer,
+    narrowed.endOffset
+  );
 };
 
 const putBackWhatTheDeletionTook = (edit: Edit): void => {
@@ -612,7 +626,7 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
       const doc = editedElement.ownerDocument;
       const isPlainTextOnly = takesPlainTextOnly(doc);
       const kept = keptBeside(editedElement, match.textNode);
-      const { after, before } = whitespaceAround(match.textNode, editedElement);
+      const { after, before } = tracker.whitespaceAround(match);
       const text = textOfEdit({ after, before, editedElement, kept });
       const edit: Edit = {
         after,

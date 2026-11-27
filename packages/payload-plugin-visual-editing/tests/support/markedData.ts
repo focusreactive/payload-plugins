@@ -5,7 +5,7 @@ import type { VeIdentity } from "../../src/shared/shared";
 import { isPlainObject } from "../../src/shared/plainObject";
 import { fromRichTextNodeMarker, toRichTextNodeMarker } from "../../src/shared/richText/nodeKey";
 import { fromStegaPayload, META_KEY, toStegaPayload } from "../../src/shared/shared";
-import { withMarker } from "../../src/shared/stegaText";
+import { leadingWhitespaceOf, withMarker } from "../../src/shared/stegaText";
 
 const DATA_PATH_SEPARATOR = ".";
 
@@ -55,7 +55,7 @@ export const everyMarkedTextIn = (data: unknown): string[] => {
 };
 
 export const markedText = (text: string, identity: VeIdentity): string =>
-  withMarker(text, toStegaPayload(identity));
+  withMarker(text, toStegaPayload(identity, leadingWhitespaceOf(text).length));
 
 export const markedTextNode = (text: string, address: string, shape: string): string =>
   withMarker(text, toRichTextNodeMarker(address, shape));

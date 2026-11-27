@@ -19,7 +19,7 @@ import { isPlainObject } from "../shared/plainObject.js";
 import { rootOf } from "../shared/richText/editorNodes.js";
 import { isRichTextNodeKey } from "../shared/richText/nodeKey.js";
 import { fieldReferenceOf, META_KEY, toStegaPayload } from "../shared/shared.js";
-import { withMarker, withoutMarker } from "../shared/stegaText.js";
+import { leadingWhitespaceOf, withMarker, withoutMarker } from "../shared/stegaText.js";
 import { fieldAddressOf, idOf } from "../shared/veDocument.js";
 import { markTextLeaves } from "../shared/richText/markTextLeaves.js";
 
@@ -181,7 +181,10 @@ const embedText = (marking: Marking, holder: Holder, field: HolderField): boolea
     if (typeof current !== "string") continue;
     if (current.trim() === "") continue;
     if (marking.excludeValues.some((match) => match(current))) continue;
-    holder.object[property] = withMarker(current, toStegaPayload(marker));
+    holder.object[property] = withMarker(
+      current,
+      toStegaPayload(marker, leadingWhitespaceOf(current).length)
+    );
     isEmbedded = true;
   }
   return isEmbedded;

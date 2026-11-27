@@ -313,6 +313,7 @@ describe("instant preview in the overlay", () => {
         fieldListener = listener;
         return vi.fn();
       },
+      whitespaceAround: vi.fn(() => ({ after: "", before: "" })),
     };
     const { stop } = createInstantPreview(tracker, () => ctx);
     postToAdmin.mockClear();
