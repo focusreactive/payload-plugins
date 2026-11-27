@@ -1,5 +1,6 @@
 import type { VeIdentity } from "../shared/shared.js";
 
+import { adminUrlIn } from "../shared/buildAdminEditUrl.js";
 import { VE_MESSAGE_TYPE } from "../shared/protocol.js";
 import type { VeOpenFieldMessage } from "../shared/protocol.js";
 import { veIdentityOf } from "../shared/shared.js";
@@ -10,9 +11,6 @@ export type OverlayClickContext = VeIdentity & {
   adminOrigin: string;
   locale?: string;
 };
-
-const adminUrlOf = ({ adminOrigin, href }: OverlayClickContext): string =>
-  adminOrigin ? new URL(href, adminOrigin).href : href;
 
 export const buildOverlayClickHandler =
   (ctx: OverlayClickContext, win: Window = window) =>
@@ -30,5 +28,5 @@ export const buildOverlayClickHandler =
       return;
     }
 
-    win.open(adminUrlOf(ctx), "_blank");
+    win.open(adminUrlIn(ctx.adminOrigin, ctx.href), "_blank");
   };
