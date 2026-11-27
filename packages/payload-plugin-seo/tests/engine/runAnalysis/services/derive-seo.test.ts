@@ -114,3 +114,26 @@ describe("deriveSeo — whitespace keyphrase behaves like empty", () => {
     expect(result.overall.seoScore).toBe(statusToRing(result.onPage.checks));
   });
 });
+
+describe("deriveSeo — keyphrase distribution", () => {
+  const distributionOf = (keyphrase: string) =>
+    deriveSeo(
+      buildPaper(makeInput(keyphrase)),
+      keyphrase,
+      analysisThresholds()
+    ).keyphrase.checks.find((check) => check.id === "keyphraseDistribution");
+
+  it("is not good when the keyphrase never appears in the text", () => {
+    expect(distributionOf("quantum blockchain")?.status).not.toBe("good");
+  });
+
+  it("is good when the keyphrase is spread across the text", () => {
+    expect(distributionOf("running shoes")?.status).toBe("good");
+  });
+
+  it("keeps the keyphrase positions for the distribution bar", () => {
+    const positions = distributionOf("running shoes")?.data?.positions;
+
+    expect(Array.isArray(positions) && positions.length).toBeGreaterThan(0);
+  });
+});

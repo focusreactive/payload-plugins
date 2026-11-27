@@ -57,6 +57,47 @@ describe("getRecommendation", () => {
   });
 });
 
+describe("getRecommendation — specific advice", () => {
+  const SPECIFIC_CHECKS = [
+    "keyphraseInSEOTitle",
+    "slugKeyword",
+    "subheadingsKeyword",
+    "subheadingsTooLong",
+    "textParagraphTooLong",
+    "textSentenceLength",
+    "sentenceBeginnings",
+    "textTransitionWords",
+  ];
+  const generic = [t("reco.generic.warn"), t("reco.generic.bad")];
+
+  it.each(SPECIFIC_CHECKS.flatMap((id) => [[id, "warn"] as const, [id, "bad"] as const]))(
+    "gives %s a specific %s recommendation",
+    (id, status) => {
+      const reco = getRecommendation(id, status, { thresholds: DEFAULT_SEO_THRESHOLDS });
+      const text = reco && t(reco.key, reco.vars);
+
+      expect(reco?.key).toBe(`reco.${id}.${status}`);
+      expect(generic).not.toContain(text);
+      expect(text).not.toContain("{{");
+    }
+  );
+
+  it("states the configured sentence length numbers", () => {
+    const thresholds = resolveThresholds({
+      textSentenceLength: { maxSentenceWords: 15, max: 20, acceptableMax: 35 },
+    });
+    const texts = (["warn", "bad"] as const).map((status) => {
+      const reco = getRecommendation("textSentenceLength", status, { thresholds });
+      return reco && t(reco.key, reco.vars);
+    });
+
+    for (const text of texts) {
+      expect(text).toContain("15 words");
+      expect(text).toContain("20%");
+    }
+  });
+});
+
 describe("directionalRecommendation", () => {
   const text = (id: string, data: Record<string, unknown>, status: "warn" | "bad" = "bad") => {
     const reco = directionalRecommendation(id, status, data, DEFAULT_SEO_THRESHOLDS);

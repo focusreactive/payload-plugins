@@ -3,6 +3,7 @@ import { commonJsDefault } from "./helpers/commonjs-default";
 
 export interface YoastResearcher {
   getResearch: (name: string) => unknown;
+  addResearch: (name: string, research: unknown) => void;
   getConfig?: (name: string) => unknown;
 }
 

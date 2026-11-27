@@ -3,6 +3,7 @@ import { getPluginConfig } from "../../config";
 import {
   LINK_RESOLVE_BATCH_SIZE,
   LINK_SUGGESTIONS_ENDPOINT_PATH,
+  MAX_LINKED_DOCS,
   MAX_LINK_SUGGESTIONS,
   MAX_RESOLVED_LINK_CANDIDATES,
 } from "../../constants";
@@ -16,6 +17,7 @@ import { byRelevance, findLinkCandidates } from "./findLinkCandidates";
 import type { LinkRequest, LinkedHref } from "./request";
 import { readLinkRequest } from "./request";
 import type { LinkSuggestion } from "../../links/types";
+import type { UsageDoc } from "../../keyphrases/usage";
 import { resolveLinkTargets } from "./resolveLinkTargets";
 import { resolveLinkedDocs } from "./resolveLinkedDocs";
 import { findLinkSourcePages } from "./sourceRows";
@@ -47,9 +49,21 @@ function internalSitesOf(req: PayloadRequest): (string | null)[] {
   return [siteOf(req.payload.config.serverURL ?? ""), siteOf(siteUrl), siteOf(req.origin ?? "")];
 }
 
-async function collectSuggestions(search: SuggestionSearch): Promise<LinkSuggestion[]> {
+interface CollectedSuggestions {
+  suggestions: LinkSuggestion[];
+  linkedByHref: UsageDoc[];
+}
+
+const toUsageDoc = ({ collection, id, title }: LinkSuggestion): UsageDoc => ({
+  collection,
+  id,
+  title,
+});
+
+async function collectSuggestions(search: SuggestionSearch): Promise<CollectedSuggestions> {
   const candidates = search.candidates.slice(0, MAX_RESOLVED_LINK_CANDIDATES);
   const found: LinkSuggestion[] = [];
+  const linkedByHref: UsageDoc[] = [];
   let start = 0;
   let batchSize = LINK_RESOLVE_BATCH_SIZE;
 
@@ -57,12 +71,26 @@ async function collectSuggestions(search: SuggestionSearch): Promise<LinkSuggest
     const batch = candidates.slice(start, start + batchSize);
     const resolved = await resolveLinkTargets(search.req, batch, search.locale);
 
-    found.push(...resolved.filter((suggestion) => !isLinked(suggestion, search)));
+    for (const suggestion of resolved) {
+      if (isLinked(suggestion, search)) linkedByHref.push(toUsageDoc(suggestion));
+      else found.push(suggestion);
+    }
     start += batchSize;
     batchSize *= 2;
   }
 
-  return found.slice(0, MAX_LINK_SUGGESTIONS);
+  return { suggestions: found.slice(0, MAX_LINK_SUGGESTIONS), linkedByHref };
+}
+
+function mergeLinked(...lists: UsageDoc[][]): UsageDoc[] {
+  const byKey = new Map<string, UsageDoc>();
+
+  for (const doc of lists.flat()) {
+    const key = docTargetKey(doc.collection, doc.id);
+    if (!byKey.has(key)) byKey.set(key, doc);
+  }
+
+  return [...byKey.values()].slice(0, MAX_LINKED_DOCS);
 }
 
 function unlinkedCandidates(
@@ -112,7 +140,7 @@ export function createLinkSuggestionsEndpoint(scope: KeyphraseScope): Endpoint {
         findUnlinkedCandidates(req, ref, scope.collections, request),
         resolveLinkedDocs(req, request.linkedDocs, ref.locale),
       ]);
-      const suggestions = await collectSuggestions({
+      const { suggestions, linkedByHref } = await collectSuggestions({
         req,
         candidates,
         locale: ref.locale,
@@ -120,7 +148,7 @@ export function createLinkSuggestionsEndpoint(scope: KeyphraseScope): Endpoint {
         sites: internalSitesOf(req),
       });
 
-      return Response.json({ suggestions, linked });
+      return Response.json({ suggestions, linked: mergeLinked(linked, linkedByHref) });
     },
   };
 }

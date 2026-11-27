@@ -93,7 +93,7 @@ registerContentExtractors({ '@/seo/extractPageContent#default': extractPageConte
 
 ## Important notes
 
-- The plugin reads UNSAVED form values, so analysis updates live as you type (debounced ~1s).
+- The plugin reads UNSAVED form values, so while the drawer is open the analysis updates live as you type (debounced ~1s). With the drawer closed, the score badge is refreshed on load, when the drawer opens and after each save.
 - Content extraction is done by YOUR registered extractor; extractContentPath is required and
   there is no built-in fallback. The extractor receives raw form values, a ctx
   ({ locale, apiRoute }), and a toolkit ({ resolveDocs, helpers }), and returns ContentNode[].
@@ -135,7 +135,7 @@ Document editor (configured collection)
    Tabs: Keyphrase · On-page SEO · Readability · Inclusive · Content vitals · SERP preview
 ```
 
-The analysis runs on a ~1 second debounce as form values change. **No document data is written** — the drawer is a read-only overlay on top of the editor's current state. Keyphrases are stored on the server by the [keyphrase index](#keyphrase-index), or kept in the browser with `keyphraseIndex: false`.
+While the drawer is open, the analysis runs on a ~1 second debounce as form values change; while it is closed, the score badge is refreshed on load, on open and after each save. **No document data is written** — the drawer is a read-only overlay on top of the editor's current state. Keyphrases are stored on the server by the [keyphrase index](#keyphrase-index), or kept in the browser with `keyphraseIndex: false`.
 
 ---
 

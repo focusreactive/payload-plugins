@@ -17,7 +17,7 @@ export const resolveLinks = (
     segment: {
       countLabel: `${follow} / ${total}`,
       filledPct: total ? (follow / total) * 100 : 0,
-      filledStatus: check.status === "good" ? "good" : "warn",
+      filledStatus: check.status,
       legend: [
         { tone: "good", label: { key: "viz.dofollow", vars: { count: follow } } },
         { tone: "muted", label: { key: "viz.nofollow", vars: { count: total - follow } } },
