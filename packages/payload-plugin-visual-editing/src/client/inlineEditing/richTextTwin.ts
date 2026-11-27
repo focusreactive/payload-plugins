@@ -13,11 +13,20 @@ export const DATA_VE_EDIT_STARTING_ATTR = "data-ve-edit-starting";
 
 export const DATA_VE_CARET_ON_ADDED_LINE_ATTR = "data-ve-caret-on-added-line";
 
+export const DATA_VE_RENDERED_EMPTY_ATTR = "data-ve-rendered-empty";
+
 const ADDED_LINE_BREAK_ATTR = "data-lexical-managed-linebreak";
 
 const HIDDEN_ADDED_LINE = `:not([${DATA_VE_CARET_ON_ADDED_LINE_ATTR}]) > br:not([${ADDED_LINE_BREAK_ATTR}]) + br[${ADDED_LINE_BREAK_ATTR}]`;
 
-export const ADDED_LINE_STYLE = `[${DATA_VE_EDITING_ATTR}] ${HIDDEN_ADDED_LINE},[${DATA_VE_EDITED_ATTR}] ${HIDDEN_ADDED_LINE}{display:none !important}`;
+const HIDDEN_LINE_OF_AN_EMPTY_BLOCK = `[${DATA_VE_RENDERED_EMPTY_ATTR}]:not([${DATA_VE_CARET_ON_ADDED_LINE_ATTR}]) > br[${ADDED_LINE_BREAK_ATTR}]:only-child`;
+
+const HIDDEN_LINES = [HIDDEN_ADDED_LINE, HIDDEN_LINE_OF_AN_EMPTY_BLOCK].flatMap((line) => [
+  `[${DATA_VE_EDITING_ATTR}] ${line}`,
+  `[${DATA_VE_EDITED_ATTR}] ${line}`,
+]);
+
+export const ADDED_LINE_STYLE = `${HIDDEN_LINES.join(",")}{display:none !important}`;
 
 const STARTING_STYLE_ID = "ve-rich-text-starting-style";
 const STARTING_STYLE = `[${DATA_VE_EDIT_STARTING_ATTR}]{outline:2px dashed var(${ACCENT_VAR}, ${DEFAULT_ACCENT}) !important;outline-offset:2px !important;cursor:progress !important}`;

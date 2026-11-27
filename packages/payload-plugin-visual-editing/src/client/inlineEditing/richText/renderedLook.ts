@@ -229,6 +229,21 @@ const fixedElementsOf = (rendered: Element, state: VeEditorState): (Element | nu
   );
 };
 
+const isRenderedEmpty = (element: Element): boolean =>
+  element.children.length === 0 && withoutMarker(element.textContent ?? "").trim() === "";
+
+const emptyNodesOf = (rendered: Element, state: VeEditorState): boolean[] | null => {
+  const topLevel = childrenOf(rootOf(state) ?? {});
+  const elements = [...rendered.children];
+  if (elements.length !== topLevel.length) return null;
+  return topLevel.map(
+    (node, position) =>
+      isEditableNode(node) &&
+      childrenOf(node).length === 0 &&
+      isRenderedEmpty(elements[position] as Element)
+  );
+};
+
 const collapsesSpaces = (shown: CSSStyleDeclaration): boolean => {
   const collapse = shown.getPropertyValue(WHITE_SPACE_COLLAPSE);
   if (collapse !== "") return collapse === COLLAPSED;
@@ -252,6 +267,7 @@ export const lookOf = (rendered: Element | null, state: VeEditorState): Rendered
   const fixed = (fixedElements ?? []).flatMap((element) => element ?? []);
   const site = { element: rendered, fixed };
   return {
+    emptyNodes: emptyNodesOf(rendered, state),
     fixedNodes: fixedElements && fixedElements.map((element) => element && shownFor(element)),
     lines: linesOf(rendered),
     style: styleOf(site),

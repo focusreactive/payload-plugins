@@ -77,7 +77,7 @@ import type { EditorNode } from "../../../shared/richText/editorNodes.js";
 import type { VeRichTextFormats } from "../../../shared/richText/formats.js";
 import type { TextPosition } from "../caret.js";
 
-import { DATA_VE_CARET_ON_ADDED_LINE_ATTR } from "../richTextTwin.js";
+import { DATA_VE_CARET_ON_ADDED_LINE_ATTR, DATA_VE_RENDERED_EMPTY_ATTR } from "../richTextTwin.js";
 
 import { forEachEditableNode } from "../../../shared/richText/editableNodes.js";
 import { rootOf } from "../../../shared/richText/editorNodes.js";
@@ -134,6 +134,7 @@ export type RenderedLook = {
   style?: string;
   lines?: RenderedLines;
   fixedNodes: readonly (HTMLElement | null)[] | null;
+  emptyNodes?: readonly boolean[] | null;
 };
 
 export const ITALIC_CLASS = "ve-rich-text-italic";
@@ -455,6 +456,16 @@ const $showFixedNodesAs = (elements: readonly (HTMLElement | null)[]): void => {
   }
 };
 
+const $markTheEmptyAsRendered = (editor: LexicalEditor, emptyNodes: readonly boolean[]): void => {
+  const topLevel = $getRoot().getChildren();
+  if (topLevel.length !== emptyNodes.length) return;
+  for (const [position, node] of topLevel.entries()) {
+    if (emptyNodes[position]) {
+      editor.getElementByKey(node.getKey())?.setAttribute(DATA_VE_RENDERED_EMPTY_ATTR, "");
+    }
+  }
+};
+
 const COLLAPSIBLE_SPACE = /[\t\n\f\r ]/u;
 const CODE_FORMAT = "code";
 
@@ -733,9 +744,10 @@ const $blockWithTheCaretOnItsAddedLine = (): string | null => {
   const { anchor } = selection;
   const block = anchor.getNode();
   if (anchor.type !== "element" || !$isElementNode(block)) return null;
-  const isAfterAnEndingBreak =
-    anchor.offset === block.getChildrenSize() && $isLineBreakNode(block.getLastChild());
-  return isAfterAnEndingBreak ? block.getKey() : null;
+  const isOnAnAddedLine =
+    anchor.offset === block.getChildrenSize() &&
+    (block.isEmpty() || $isLineBreakNode(block.getLastChild()));
+  return isOnAnAddedLine ? block.getKey() : null;
 };
 
 export function createPageEditor(
@@ -788,6 +800,8 @@ export function createPageEditor(
     return null;
   }
   isLoaded = true;
+  const { emptyNodes } = look;
+  if (emptyNodes) editor.getEditorState().read(() => $markTheEmptyAsRendered(editor, emptyNodes));
   const kept = editor.getEditorState().read($keptNodes);
 
   const $rangeToChange = (): RangeSelection | null => {

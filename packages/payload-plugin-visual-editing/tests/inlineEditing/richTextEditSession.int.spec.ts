@@ -646,6 +646,63 @@ describe("one edit of rich text", () => {
     });
   });
 
+  describe("an empty block", () => {
+    const WITH_AN_EMPTY_HEADING = stateOf(
+      paragraph(text("Before")),
+      heading("h2"),
+      paragraph(text("After"))
+    );
+
+    const lineOf = (tag: string) =>
+      twin.querySelector<HTMLElement>(`${tag} > br[data-lexical-managed-linebreak]`) as HTMLElement;
+
+    const placeCaretInTheHeading = () =>
+      update(() => {
+        const empty = $getRoot().getChildAtIndex(1);
+        if ($isElementNode(empty)) empty.select(0, 0);
+      });
+
+    it("adds no line to a block the site renders empty", () => {
+      start(WITH_AN_EMPTY_HEADING, EVERY_FORMAT, {
+        rendered: renderedBy("<p>Before</p><h2></h2><p>After</p>"),
+      });
+
+      expect(lineOf("h2")).not.toBeNull();
+      expect(isShown(lineOf("h2"))).toBe(false);
+    });
+
+    it("keeps the line of a block the site renders with one", () => {
+      start(
+        stateOf(paragraph(text("Before")), paragraph(), paragraph(text("After"))),
+        EVERY_FORMAT,
+        {
+          rendered: renderedBy("<p>Before</p><p><br></p><p>After</p>"),
+        }
+      );
+
+      expect(isShown(twin.querySelector("p > br[data-lexical-managed-linebreak]")!)).toBe(true);
+    });
+
+    it("keeps the line of an empty block when nothing the site rendered is known", () => {
+      start(WITH_AN_EMPTY_HEADING);
+
+      expect(isShown(lineOf("h2"))).toBe(true);
+    });
+
+    it("shows the line while the caret is in the block, and hides it once the caret leaves", () => {
+      start(WITH_AN_EMPTY_HEADING, EVERY_FORMAT, {
+        rendered: renderedBy("<p>Before</p><h2></h2><p>After</p>"),
+      });
+
+      placeCaretInTheHeading();
+      const isShownWithTheCaret = isShown(lineOf("h2"));
+      select(1, 0, 0);
+
+      expect(isShownWithTheCaret).toBe(true);
+      expect(isShown(lineOf("h2"))).toBe(false);
+    });
+  });
+
   describe("the direction of the text", () => {
     const LEFT_TO_RIGHT = { direction: "ltr" };
     const STORED_BLOCKS = [
