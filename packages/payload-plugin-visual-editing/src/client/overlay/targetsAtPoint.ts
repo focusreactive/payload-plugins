@@ -4,6 +4,8 @@ import { rectOf } from "./targetArea.js";
 
 export type Point = { x: number; y: number };
 
+export const pointOf = (event: MouseEvent): Point => ({ x: event.clientX, y: event.clientY });
+
 type Measured = readonly [HTMLElement, DOMRect];
 
 export interface TargetsAtPoint {

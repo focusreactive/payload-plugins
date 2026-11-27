@@ -53,7 +53,6 @@ describe("the badge of a target on a page whose overlay root is the body", () =>
   };
 
   const movePointer = (over: Element, { x, y }: Point) => {
-    over.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: x, clientY: y }));
     if (over !== under) {
       under.dispatchEvent(
         new MouseEvent("mouseleave", { clientX: x, clientY: y, relatedTarget: over })
@@ -62,6 +61,7 @@ describe("the badge of a target on a page whose overlay root is the body", () =>
         new MouseEvent("mouseenter", { clientX: x, clientY: y, relatedTarget: under })
       );
     }
+    over.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: x, clientY: y }));
     under = over;
     vi.advanceTimersByTime(MOVE_EVERY_MS);
   };

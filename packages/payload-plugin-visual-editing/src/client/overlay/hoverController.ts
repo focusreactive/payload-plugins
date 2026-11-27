@@ -5,6 +5,7 @@ import type { Point } from "./targetsAtPoint.js";
 
 import { areaOf } from "./targetArea.js";
 import { findTargetAncestor } from "./targetSelector.js";
+import { pointOf } from "./targetsAtPoint.js";
 
 export interface HoverController {
   attach(target: HTMLElement): void;
@@ -54,10 +55,9 @@ export function createHoverController(
   let pendingSwitch: ReturnType<typeof setTimeout> | null = null;
   let nextAfterGrace: HTMLElement | null = null;
   let lastPointOnTarget: Point | null = null;
-  let lastPoint: Point | null = null;
   const targetListeners = new Map<
     HTMLElement,
-    { area: HTMLElement; enter: () => void; leave: (event: MouseEvent) => void }
+    { area: HTMLElement; enter: (event: MouseEvent) => void; leave: (event: MouseEvent) => void }
   >();
 
   const cancelPendingSwitch = (): void => {
@@ -144,14 +144,14 @@ export function createHoverController(
   return {
     attach(target) {
       if (targetListeners.has(target)) return;
-      const enter = () => {
-        if (isShown(target)) request(target, lastPoint);
+      const enter = (event: MouseEvent) => {
+        if (isShown(target)) request(target, pointOf(event));
       };
       const leave = (event: MouseEvent) => {
         if (activeTarget !== target) return;
         const related = event.relatedTarget as Element | null;
         if (related && isOfBadge(related)) return;
-        request(related ? findTargetAncestor(related, isShown) : null, lastPoint);
+        request(related ? findTargetAncestor(related, isShown) : null, pointOf(event));
       };
       const area = areaOf(target);
       area.addEventListener("mouseenter", enter);
@@ -171,7 +171,6 @@ export function createHoverController(
       }
     },
     point(target, at) {
-      lastPoint = at;
       request(target, at);
       if (target && target === activeTarget) lastPointOnTarget = at;
     },

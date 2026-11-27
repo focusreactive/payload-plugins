@@ -14,7 +14,7 @@ import { createHoverController } from "./hoverController.js";
 import { groupNodesByPath, readMarkerFromAttrs } from "./markerExtractor.js";
 import { createTargetRegistry } from "./targetRegistry.js";
 import { findTargetAncestor, pickTargetForGroup, shownOncePerFrame } from "./targetSelector.js";
-import { createTargetsAtPoint, holds } from "./targetsAtPoint.js";
+import { createTargetsAtPoint, holds, pointOf } from "./targetsAtPoint.js";
 
 export const CLICK_LEFT_TO_THE_PAGE = "page";
 
@@ -56,8 +56,6 @@ const holdsContent = (element: Element): boolean =>
 
 const isPassedThrough = (element: Element, target: HTMLElement): boolean =>
   element.contains(target) || !holdsContent(element);
-
-const pointOf = (event: MouseEvent): Point => ({ x: event.clientX, y: event.clientY });
 
 const mediaOf = (control: Element): Element[] =>
   control.matches(MEDIA) ? [control] : Array.from(control.querySelectorAll(MEDIA));
