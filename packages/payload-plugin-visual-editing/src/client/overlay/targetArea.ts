@@ -34,7 +34,31 @@ export const areaOf = (target: HTMLElement): HTMLElement => {
   return area;
 };
 
-export const rectOf = (target: HTMLElement): DOMRect => areaOf(target).getBoundingClientRect();
+const isDrawn = ({ height, width }: DOMRect): boolean => width > 0 || height > 0;
+
+const textRectsOf = (target: HTMLElement): DOMRect[] => {
+  const range = target.ownerDocument.createRange();
+  range.selectNodeContents(target);
+  if (typeof range.getClientRects !== "function") return [];
+  return [...range.getClientRects()].filter(isDrawn);
+};
+
+const unionOf = ([first, ...rest]: readonly DOMRect[]): DOMRect => {
+  let { bottom, left, right, top } = first as DOMRect;
+  for (const rect of rest) {
+    bottom = Math.max(bottom, rect.bottom);
+    left = Math.min(left, rect.left);
+    right = Math.max(right, rect.right);
+    top = Math.min(top, rect.top);
+  }
+  return new DOMRect(left, top, right - left, bottom - top);
+};
+
+export const rectOf = (target: HTMLElement): DOMRect => {
+  const box = areaOf(target).getBoundingClientRect();
+  const drawn = [box, ...textRectsOf(target)].filter(isDrawn);
+  return drawn.length === 0 ? box : unionOf(drawn);
+};
 
 export const targetWithArea = (area: Element): HTMLElement | null => {
   let inside: Element | null = onlyElementOf(area);

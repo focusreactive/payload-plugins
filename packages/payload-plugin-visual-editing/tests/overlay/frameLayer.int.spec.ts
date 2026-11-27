@@ -66,6 +66,29 @@ describe("resting frames", () => {
     vi.restoreAllMocks();
   });
 
+  it("draws the frame around the glyphs of a heading whose line height is smaller than its text", () => {
+    vi.spyOn(main.querySelector("h1") as HTMLElement, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(0, 40, 400, 40)
+    );
+    Object.defineProperty(Range.prototype, "getClientRects", {
+      configurable: true,
+      value: () => [new DOMRect(0, 20, 380, 30), new DOMRect(0, 50, 200, 40)],
+    });
+
+    const overlay = createOverlay(main, () => overlayCtx({ mode: "always" }));
+
+    const frame = framesOnPage()[0] as HTMLElement;
+    expect([frame.style.transform, frame.style.width, frame.style.height]).toEqual([
+      "translate(-1.5px, 18.5px)",
+      "403px",
+      "73px",
+    ]);
+
+    overlay.dispose();
+    Reflect.deleteProperty(Range.prototype, "getClientRects");
+    vi.restoreAllMocks();
+  });
+
   it("draws no resting frames in hover mode", () => {
     const overlay = createOverlay(main, () => overlayCtx({ mode: "hover" }));
 
