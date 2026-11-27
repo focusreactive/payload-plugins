@@ -855,7 +855,7 @@ describe("editing text on the page", () => {
       click(heading);
       type(heading, "Hello world");
       await pause();
-      expect(statusLabel()).toBe("Unsaved changes");
+      expect(statusLabel()).toBe("In the admin form, not saved yet");
 
       postFromAdmin({ ...PAGE, locale: "en", type: VE_DOCUMENT_SAVED_TYPE });
 

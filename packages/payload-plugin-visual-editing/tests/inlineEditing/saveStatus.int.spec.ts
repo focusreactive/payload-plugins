@@ -37,6 +37,7 @@ describe("the save status", () => {
 
   it.each([
     ["unsaved", "Unsaved changes"],
+    ["in-form", "In the admin form, not saved yet"],
     ["saving", "Saving…"],
     ["saved", "Saved"],
     ["failed", "Not saved"],

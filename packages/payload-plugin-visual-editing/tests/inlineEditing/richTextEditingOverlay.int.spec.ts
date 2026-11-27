@@ -1301,11 +1301,11 @@ describe("editing rich text on the page", () => {
       click(wrapper);
       typeInto(twinOf(wrapper), "Hello there");
       pressOutside();
-      expect(statusLabel()).toBe("Unsaved changes");
+      expect(statusLabel()).toBe("In the admin form, not saved yet");
 
       postFromAdmin({ ...BODY, reason: "not-editable", type: VE_RICH_TEXT_STATE_REFUSED_TYPE });
 
-      expect(statusLabel()).toBe("Unsaved changes");
+      expect(statusLabel()).toBe("In the admin form, not saved yet");
     });
 
     it("edits once the state arrived and leaves the form where it is, so the frame of the page never moves", async () => {
@@ -1333,7 +1333,7 @@ describe("editing rich text on the page", () => {
           type: VE_RICH_TEXT_EDIT_TYPE,
         },
       ]);
-      expect(statusLabel()).toBe("Unsaved changes");
+      expect(statusLabel()).toBe("In the admin form, not saved yet");
     });
 
     it("removes the twin and shows the wrapper when the edit is committed", async () => {

@@ -473,7 +473,7 @@ describe("replacing an image on the page", () => {
 
       expect(image.getAttribute("src")).toBe(`${CMS}/api/media/file/lighthouse.jpg`);
       expect(image.hasAttribute("srcset")).toBe(false);
-      expect(statusLabel()).toBe("Unsaved changes");
+      expect(statusLabel()).toBe("In the admin form, not saved yet");
     });
 
     it("asks a new admin window again, whatever the window that was asked first never answered", () => {
@@ -646,7 +646,7 @@ describe("replacing an image on the page", () => {
         { ...IMAGE_FIELD, mediaId: 9, type: VE_PICK_MEDIA_TYPE },
         { ...IMAGE_FIELD, mediaId: 9, type: VE_PICK_MEDIA_TYPE },
       ]);
-      expect(statusLabel()).toBe("Unsaved changes");
+      expect(statusLabel()).toBe("In the admin form, not saved yet");
     });
 
     it("shows the media once the admin wrote the pick it was asked again", async () => {
@@ -663,7 +663,7 @@ describe("replacing an image on the page", () => {
       });
 
       expect(image.getAttribute("src")).toBe(`${CMS}/api/media/file/lighthouse.jpg`);
-      expect(statusLabel()).toBe("Unsaved changes");
+      expect(statusLabel()).toBe("In the admin form, not saved yet");
     });
 
     it("says so again when the form refuses the pick it was asked again", async () => {

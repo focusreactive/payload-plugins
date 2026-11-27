@@ -231,7 +231,10 @@ describe("the page and the admin, wired through their windows", () => {
       value: "New title",
     });
     expect(admin.setModified).toHaveBeenCalledWith(true);
-    expect(statuses).toEqual([["unsaved", undefined]]);
+    expect(statuses).toEqual([
+      ["unsaved", undefined],
+      ["in-form", undefined],
+    ]);
   });
 
   it("shows the reason the form refused a text edit", async () => {
@@ -304,7 +307,7 @@ describe("the page and the admin, wired through their windows", () => {
       url: LIGHTHOUSE.url,
       width: 800,
     });
-    expect(statuses).toEqual([["unsaved", undefined]]);
+    expect(statuses).toEqual([["in-form", undefined]]);
   });
 
   it("opens the field of an image the form refuses to pick for", async () => {

@@ -30,7 +30,7 @@ import { documentAddressOf, editedFieldAddressOf } from "../../shared/veDocument
 import { MEDIA_PICK_TIME_LIMIT_MS } from "./adminEditChannel.js";
 import { endpointAnswerOf } from "./endpointAnswer.js";
 
-export type EditStatus = "failed" | "saved" | "saving" | "unsaved";
+export type EditStatus = "failed" | "in-form" | "saved" | "saving" | "unsaved";
 
 export type EditTransportCtx = { payloadApi: string; onEdited?: () => void };
 
@@ -215,7 +215,8 @@ export function createEditTransport(
   };
 
   const statusAfterASave = (): EditStatus => {
-    if (waiting.size > 0 || unsavedInForm.size > 0) return "unsaved";
+    if (waiting.size > 0) return "unsaved";
+    if (unsavedInForm.size > 0) return "in-form";
     if (savesOnTheWay.size > 0) return "saving";
     return "saved";
   };
@@ -337,6 +338,7 @@ export function createEditTransport(
     if (!held) return;
     held.onDelivered?.();
     deliver(held.edit);
+    if (adminOf(held.edit)) report(statusAfterASave());
   };
 
   const supersede = (address: string) => {
@@ -376,13 +378,13 @@ export function createEditTransport(
     supersede(address);
     watchedSaves.set(address, onSaveEnded);
     deliver(edit);
-    report("unsaved");
+    report(statusAfterASave());
   };
 
   const holdInForm = (field: VeEditedField) => {
     failed.delete(editedFieldAddressOf(field));
     unsavedInForm.set(editedFieldAddressOf(field), field);
-    report("unsaved");
+    report("in-form");
   };
 
   const refuse = (field: VeEditedField, refusal: SaveRefusal) => {
@@ -558,7 +560,7 @@ export function createEditTransport(
         if ("edit" in failure) deliver(failure.edit);
         else failure.askAgain();
       }
-      if (unsavedInForm.size > 0) report("unsaved");
+      if (unsavedInForm.size > 0) report(statusAfterASave());
     },
   };
 }

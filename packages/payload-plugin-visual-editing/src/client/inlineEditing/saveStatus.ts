@@ -14,6 +14,7 @@ export const SAVED_SHOWN_MS = 2000;
 
 const LABELS: Record<EditStatus, string> = {
   failed: "Not saved",
+  "in-form": "In the admin form, not saved yet",
   saved: "Saved",
   saving: "Saving…",
   unsaved: "Unsaved changes",
