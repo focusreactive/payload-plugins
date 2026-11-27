@@ -1,3 +1,11 @@
+## @focus-reactive/payload-plugin-presets [0.13.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.13.0...@focus-reactive/payload-plugin-presets@0.13.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* **presets:** keep native field spacing below the blocks field ([15d1e9e](https://github.com/focusreactive/payload-plugins/commit/15d1e9e6cee8b6b33771f098dc20639f21e37dec))
+* **presets:** respect maxRows in the blocks field add-block button ([2699c9b](https://github.com/focusreactive/payload-plugins/commit/2699c9b7f3fa3bf5b7885ec29302423e3803a3ec))
+
 # @focus-reactive/payload-plugin-presets [0.13.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.12.1...@focus-reactive/payload-plugin-presets@0.13.0) (2026-11-17)
 
 
