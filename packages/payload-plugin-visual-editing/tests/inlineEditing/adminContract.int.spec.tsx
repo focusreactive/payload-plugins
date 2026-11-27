@@ -191,6 +191,7 @@ describe("the page and the admin, wired through their windows", () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.spyOn(window, "focus").mockImplementation(() => undefined);
     statuses = [];
     admin.fields = {
       body: { value: BODY_STATE },
@@ -215,6 +216,7 @@ describe("the page and the admin, wired through their windows", () => {
     admin.permissions = EVERY_FIELD;
     vi.unstubAllGlobals();
     vi.clearAllMocks();
+    vi.mocked(window.focus).mockRestore();
     vi.useRealTimers();
   });
 
