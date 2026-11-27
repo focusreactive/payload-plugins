@@ -19,7 +19,7 @@ describe("a field the editor types into", () => {
   let shown: string;
   let onShownAgain: ReturnType<typeof vi.fn>;
 
-  const textNode = () => heading.firstChild as Text;
+  const textNode = () => match.textNode;
 
   const type = async (text: string) => {
     shown = text;
@@ -171,10 +171,23 @@ describe("a field the editor types into", () => {
     expect(listener.onFields).toHaveBeenCalledWith(heading, [match]);
   });
 
-  it("does not start an edit of a text that sits next to an icon, which a select-all would delete", () => {
-    heading.append(document.createElement("svg"));
+  it("edits a text that sits next to an icon in an element of its own, so a select-all keeps the icon", async () => {
+    const icon = document.createElement("svg");
+    heading.append(icon);
 
-    expect(begin()).toBeNull();
+    const editedElement = begin();
+    await type("Hello world");
+
+    expect(editedElement?.parentElement).toBe(heading);
+    expect(editedElement?.textContent).toBe("Hello world");
+
+    tracker.endEdit(match, "Hello world");
+    await flushMutations();
+
+    expect(editedElement?.isConnected).toBe(false);
+    expect(Array.from(heading.childNodes)).toEqual([match.textNode, icon]);
+    expect(match.textNode.data).toBe("Hello world");
+    expect(listener.onNodesReleased).not.toHaveBeenCalled();
   });
 
   it("restores the marker of the latest render when the overlay stops", async () => {
@@ -200,5 +213,60 @@ describe("a field the editor types into", () => {
     const body = matches.find(({ path }) => path === "body")!;
 
     expect(tracker.beginEdit(body, { onShownAgain, shownText: () => shown })).toBeNull();
+  });
+
+  describe("in a line that holds the text of another field", () => {
+    let line: HTMLElement;
+    let tag: HTMLElement;
+    let matches: FieldMatch[];
+
+    const matchOf = (path: string) => matches.find((found) => found.path === path)!;
+
+    beforeEach(() => {
+      tracker.dispose();
+      line = document.createElement("div");
+      tag = document.createElement("span");
+      tag.append(document.createElement("img"), stega("SCALE EASILY", "tag"));
+      line.append(stega("WORDPRESS TO SANITY", "line"), " ", tag, "\n");
+      main.append(line);
+      tracker = createFieldTracker(main);
+      const onFields = vi.fn();
+      tracker.subscribe({ onFields });
+      [[, matches]] = onFields.mock.calls as [[Element, FieldMatch[]]];
+    });
+
+    it("edits the text of the line apart from the text of the other field", async () => {
+      const lineText = matchOf("line");
+
+      const editedElement = tracker.beginEdit(lineText, { onShownAgain, shownText: () => shown });
+      lineText.textNode.data = "WORDPRESS TO PAYLOAD";
+      await flushMutations();
+
+      expect(lineText.holder).toBe(line);
+      expect(editedElement?.textContent).toBe("WORDPRESS TO PAYLOAD");
+
+      tracker.endEdit(lineText, "WORDPRESS TO PAYLOAD");
+
+      expect(line.textContent).toBe("WORDPRESS TO PAYLOAD SCALE EASILY\n");
+      expect(line.firstChild).toBe(lineText.textNode);
+    });
+
+    it("edits the text of the other field in its own element", () => {
+      const tagText = matchOf("tag");
+
+      const editedElement = tracker.beginEdit(tagText, { onShownAgain, shownText: () => shown });
+
+      expect(tagText.holder).toBe(tag);
+      expect(editedElement?.parentElement).toBe(tag);
+      expect(editedElement?.textContent).toBe("SCALE EASILY");
+    });
+
+    it("leaves the other field in place when the page drops the text of the line", () => {
+      const lineText = matchOf("line");
+      lineText.textNode.remove();
+
+      expect(tracker.showTextInHolder(lineText, "Changed")).toBe(false);
+      expect(tag.isConnected).toBe(true);
+    });
   });
 });

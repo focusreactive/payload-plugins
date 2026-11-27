@@ -171,6 +171,37 @@ describe("editing text on the page", () => {
       expect(label.getAttribute("contenteditable")).toBe("true");
     });
 
+    it("edits the text of a line and the tag inside it apart, each in its own field", async () => {
+      const line = document.createElement("div");
+      const tag = document.createElement("span");
+      tag.append(document.createElement("img"), stega("SCALE EASILY", "tag"));
+      line.append(`\n  ${stega("WORDPRESS TO SANITY", "line")} `, tag);
+      main.append(line);
+      overlay.dispose();
+      start();
+
+      const onTheLine = click(line);
+      const lineHost = line.querySelector<HTMLElement>("[contenteditable]") as HTMLElement;
+      type(lineHost, "WORDPRESS TO PAYLOAD");
+      press(lineHost, "Enter");
+      click(tag);
+      const tagHost = tag.querySelector<HTMLElement>("[contenteditable]") as HTMLElement;
+      type(tagHost, "SCALE FAST");
+      press(tagHost, "Enter");
+      await flushMutations();
+
+      expect(onTheLine.defaultPrevented).toBe(true);
+      expect(lineHost.parentElement).toBeNull();
+      expect(tagHost.parentElement).toBeNull();
+      expect(line.textContent).toBe("\n  WORDPRESS TO PAYLOAD SCALE FAST");
+      expect(line.querySelector("img")?.parentElement).toBe(tag);
+      expect(sentToEndpoint().map(({ base, key, value }) => [key, base, value])).toEqual([
+        ["line", "WORDPRESS TO SANITY", "WORDPRESS TO PAYLOAD"],
+        ["tag", "SCALE EASILY", "SCALE FAST"],
+      ]);
+      expect(open).not.toHaveBeenCalled();
+    });
+
     it("keeps the lines of the text as the page broke them until the editor types", () => {
       click(heading);
 

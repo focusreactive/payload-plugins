@@ -130,13 +130,41 @@ const holderCandidateOf = (textNode: Text): Element | null => {
 const showsOnlyText = (element: Element, text: string) =>
   withoutMarker(element.textContent ?? "") === text;
 
+const isBlankText = (node: ChildNode): boolean => node instanceof Text && node.data.trim() === "";
+
+const isTheOnlyTextOf = (element: Element, textNode: Text): boolean =>
+  textNode.parentElement === element &&
+  Array.from(element.childNodes).every(
+    (child) => child === textNode || child instanceof Element || isBlankText(child)
+  );
+
+const EDITING_HOST_TAG = "span";
+
+const SURROUNDING_WHITESPACE = /^(\s*)(.*?)(\s*)$/su;
+
+const moveWhitespaceBeside = (textNode: Text): void => {
+  const [, before = "", text = "", after = ""] = SURROUNDING_WHITESPACE.exec(textNode.data) ?? [];
+  if (before) textNode.before(before);
+  if (after) textNode.after(after);
+  if (text !== textNode.data) textNode.data = text;
+};
+
+const editingHostAround = (textNode: Text): HTMLElement => {
+  moveWhitespaceBeside(textNode);
+  const host = textNode.ownerDocument.createElement(EDITING_HOST_TAG);
+  textNode.replaceWith(host);
+  host.append(textNode);
+  return host;
+};
+
 export function createFieldTracker(main: HTMLElement): FieldTracker {
   const texts = new Map<Text, TrackedText>();
   const attrOriginals = new Map<Element, Map<string, string | null>>();
   const holders = new Map<Element, HeldField>();
+  const sharedHolders = new WeakSet<Element>();
   const ownAttributeWrites = new Map<Element, number>();
   const listeners = new Set<FieldListener>();
-  const edits = new Map<Text, FieldEdit & { editedElement: HTMLElement }>();
+  const edits = new Map<Text, FieldEdit & { editedElement: HTMLElement; isInAHost: boolean }>();
 
   const writeIdentityAttr = (element: Element, attr: string, value: string | null) => {
     if (element.getAttribute(attr) === value) return;
@@ -168,6 +196,7 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
   const unstamp = (holder: Element) => {
     const originals = attrOriginals.get(holder);
     holders.delete(holder);
+    sharedHolders.delete(holder);
     if (!originals) return;
     for (const attr of VE_IDENTITY_ATTRS) {
       const value = originals.get(attr);
@@ -194,6 +223,10 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     const isStampedHere = holders.has(candidate);
     if (!isStampedHere && candidate.hasAttribute(DATA_VE_PATH_ATTR)) return null;
     if (showsOnlyText(candidate, textNode.data)) return candidate;
+    if (isTheOnlyTextOf(candidate, textNode)) {
+      sharedHolders.add(candidate);
+      return candidate;
+    }
     if (isStampedHere) unstamp(candidate);
     return null;
   };
@@ -350,6 +383,7 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       const { holder, textNode: _textNode, ...field } = match;
       const held = holder && holders.get(holder);
       if (!holder || !held || held.match !== match || edits.has(match.textNode)) return false;
+      if (sharedHolders.has(holder)) return false;
       if (main.contains(match.textNode) || !main.contains(holder)) return false;
       const textNode = document.createTextNode(text);
       const shown = { ...field, holder, textNode };
@@ -367,10 +401,11 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     beginEdit(match, edit) {
       const { holder, textNode } = match;
       const isHeld = holder !== undefined && holders.get(holder)?.match === match;
-      const editedElement = textNode.parentElement;
-      if (!isHeld || !editedElement || texts.get(textNode)?.match !== match) return null;
-      if (editedElement.childElementCount > 0) return null;
-      edits.set(textNode, { ...edit, editedElement });
+      const parent = textNode.parentElement;
+      if (!isHeld || !parent || texts.get(textNode)?.match !== match) return null;
+      const isInAHost = parent.childElementCount > 0;
+      const editedElement = isInAHost ? editingHostAround(textNode) : parent;
+      edits.set(textNode, { ...edit, editedElement, isInAHost });
       return editedElement;
     },
     endEdit(match, text) {
@@ -380,6 +415,7 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       edits.delete(textNode);
       if (!edit || !holder || !held || !main.contains(edit.editedElement)) return;
       showOnlyEditedText(edit.editedElement, textNode);
+      if (edit.isInAHost) edit.editedElement.replaceWith(textNode);
       const known = texts.get(textNode);
       const tracked = known ?? {
         match,
