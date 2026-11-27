@@ -177,20 +177,18 @@ export function createEditTargets(
     return target && isPassedThrough(element, target) ? target : null;
   };
 
-  const targetUnder = (event: MouseEvent): HTMLElement | null => {
-    const element = elementOf(event);
-    if (!element || isOfTheOverlay(element)) return null;
-    const point = pointOf(event);
-    const ancestor = findTargetAncestor(element, isShown);
-    return ancestor ? pointedTarget(ancestor, point) : targetBeneath(element, point);
-  };
-
   const hoveredTarget = (element: Element, point: Point): HTMLElement | null => {
     const ancestor = findTargetAncestor(element, isShown);
     if (ancestor) return pointedTarget(ancestor, point);
     const control = element.closest(INTERACTIVE);
     if (!control) return targetBeneath(element, point);
     return drawsAt(control, point) ? null : targetsAtPoint.innermostAt(point);
+  };
+
+  const targetUnder = (event: MouseEvent): HTMLElement | null => {
+    const element = elementOf(event);
+    if (!element || isOfTheOverlay(element)) return null;
+    return hoveredTarget(element, pointOf(event));
   };
 
   const hoverTargetBeneath = (event: MouseEvent) => {

@@ -152,7 +152,9 @@ describe("a target beneath a layer that takes the pointer", () => {
     });
 
     it("leaves a click on a link of the page to the page", () => {
-      const event = click(link, AT);
+      textOfLinksDrawnAt(new DOMRect(0, 70, 100, 20));
+      const event = click(link, { clientX: 50, clientY: 80 });
+      Reflect.deleteProperty(Range.prototype, "getClientRects");
 
       expect(open).not.toHaveBeenCalled();
       expect(event.defaultPrevented).toBe(false);
@@ -214,14 +216,14 @@ describe("a target beneath a layer that takes the pointer", () => {
       ["a div that acts as a button", { role: "button" }],
       ["a div that acts as a link", { role: "link" }],
       ["a div that takes the focus", { tabindex: "0" }],
-    ])("leaves a click on %s to the page", (_, attributes) => {
+    ])("opens the image beneath on a click on %s that draws nothing over it", (_, attributes) => {
       const arrow = document.createElement("div");
       for (const [name, value] of Object.entries(attributes)) arrow.setAttribute(name, value);
 
       const event = click(control(arrow), AT);
 
-      expect(open).not.toHaveBeenCalled();
-      expect(event.defaultPrevented).toBe(false);
+      expect(open).toHaveBeenCalledTimes(1);
+      expect(event.defaultPrevented).toBe(true);
     });
 
     it("leaves a click on a layer that draws an icon to the page", () => {
@@ -235,7 +237,9 @@ describe("a target beneath a layer that takes the pointer", () => {
     });
 
     it("leaves a click on a video of the page to the page", () => {
-      const event = click(control(document.createElement("video")), AT);
+      const video = document.createElement("video");
+      drawnAt(video, new DOMRect(0, 0, 400, 300));
+      const event = click(control(video), AT);
 
       expect(open).not.toHaveBeenCalled();
       expect(event.defaultPrevented).toBe(false);
@@ -264,9 +268,18 @@ describe("a target beneath a layer that takes the pointer", () => {
         expect(actionButton().textContent).toBe("Replace image");
       });
 
-      it("leaves a click on the link to the page", () => {
+      it("opens the image on a click on the link where the link draws nothing, so the page does not follow it", () => {
         pointerMovesOver(link);
         const event = click(link, AT);
+
+        expect(open).toHaveBeenCalledTimes(1);
+        expect(event.defaultPrevented).toBe(true);
+      });
+
+      it("leaves a click on the text of the link to the page", () => {
+        const onTheText = { clientX: 50, clientY: 290 };
+        pointerMovesOver(link, onTheText);
+        const event = click(link, onTheText);
 
         expect(open).not.toHaveBeenCalled();
         expect(event.defaultPrevented).toBe(false);
@@ -416,7 +429,7 @@ describe("a target beneath a layer that takes the pointer", () => {
         "squeezes it into a pixel",
         { height: "1px", overflowX: "hidden", overflowY: "hidden", width: "1px" },
       ],
-    ])("offers the image and leaves a click to the link when the page %s", (_, style) => {
+    ])("offers the image and opens it on a click on the link when the page %s", (_, style) => {
       Object.assign(hidden.style, style);
       drawnAt(hidden, new DOMRect(0, 0, 1, 1));
       start();
@@ -426,8 +439,8 @@ describe("a target beneath a layer that takes the pointer", () => {
 
       expect(badgeIsFor()).toBe("card.image");
       expect(actionButton().textContent).toBe("Replace image");
-      expect(open).not.toHaveBeenCalled();
-      expect(event.defaultPrevented).toBe(false);
+      expect(open).toHaveBeenCalledTimes(1);
+      expect(event.defaultPrevented).toBe(true);
     });
 
     it("offers the image when the letters of the text take no more than a pixel", () => {
@@ -484,8 +497,8 @@ describe("a target beneath a layer that takes the pointer", () => {
       const event = click(hidden, AT);
 
       expect(badgeIsFor()).toBe("card.image");
-      expect(open).not.toHaveBeenCalled();
-      expect(event.defaultPrevented).toBe(false);
+      expect(open).toHaveBeenCalledTimes(1);
+      expect(event.defaultPrevented).toBe(true);
     });
   });
 
