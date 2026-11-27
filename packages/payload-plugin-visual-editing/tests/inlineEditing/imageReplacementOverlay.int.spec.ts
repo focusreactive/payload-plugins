@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Overlay, OverlayCtx } from "../../src/client/createOverlay";
 
 import { createOverlay } from "../../src/client/createOverlay";
+import { MEDIA_PICK_TIME_LIMIT_MS } from "../../src/client/inlineEditing/adminEditChannel";
 import { DATA_VE_MEDIA_PICKER_ATTR } from "../../src/client/inlineEditing/mediaPicker";
 import { DATA_VE_SAVE_STATUS_ATTR } from "../../src/client/inlineEditing/saveStatus";
 import { DATA_VE_ACTION_ATTR } from "../../src/client/overlay/constants";
@@ -703,6 +704,10 @@ describe("replacing an image on the page", () => {
   describe("in the pop-up window of Live Preview", () => {
     const postToOpener = vi.fn();
 
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     const fromOpener = (data: unknown) => postFromAdmin(data, { source: window.opener });
 
     const picks = () => messagesOfType(postToOpener, VE_PICK_MEDIA_TYPE);
@@ -755,6 +760,37 @@ describe("replacing an image on the page", () => {
 
       expect(image.getAttribute("src")).toBe("/old.jpg");
       expect(messagesOfType(postToOpener, VE_MESSAGE_TYPE)).toMatchObject([{ path: "image" }]);
+    });
+
+    it("asks the editor to pick the image in the admin window, which the pop-up may cover", () => {
+      ask();
+
+      expect(statusLabel()).toBe("Pick the image in the admin window");
+    });
+
+    it("says nothing more once the editor cancelled the pick in the admin", () => {
+      ask();
+
+      fromOpener({ ...IMAGE_FIELD, type: VE_MEDIA_PICK_CANCELLED_TYPE });
+
+      expect(statusLabel()).toBeUndefined();
+    });
+
+    it("says nothing more once the form refused the pick", () => {
+      ask();
+
+      fromOpener({ ...IMAGE_FIELD, type: VE_FIELD_EDIT_REFUSED_TYPE });
+
+      expect(statusLabel()).toBeUndefined();
+    });
+
+    it("says nothing more once the admin did not answer in time", () => {
+      vi.useFakeTimers();
+      ask();
+
+      vi.advanceTimersByTime(MEDIA_PICK_TIME_LIMIT_MS);
+
+      expect(statusLabel()).toBeUndefined();
     });
   });
 });

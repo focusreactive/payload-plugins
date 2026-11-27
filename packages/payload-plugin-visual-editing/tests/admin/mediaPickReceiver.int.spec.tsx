@@ -1,4 +1,5 @@
 import type { Root } from "react-dom/client";
+import type { MockInstance } from "vitest";
 
 import { act } from "react";
 import { createRoot } from "react-dom/client";
@@ -136,8 +137,10 @@ describe("MediaPickReceiver", () => {
   let root: Root;
   let container: HTMLElement;
   let fetchMedia: ReturnType<typeof vi.fn>;
+  let focus: MockInstance<typeof window.focus>;
 
   beforeEach(() => {
+    focus = vi.spyOn(window, "focus").mockImplementation(() => undefined);
     fetchMedia = vi.fn(() =>
       Promise.resolve({ json: () => Promise.resolve(LIGHTHOUSE), ok: true } as Response)
     );
@@ -155,6 +158,7 @@ describe("MediaPickReceiver", () => {
     admin.drawer = null;
     vi.unstubAllGlobals();
     vi.clearAllMocks();
+    focus.mockRestore();
   });
 
   it("opens no drawer until the preview page asks for one", () => {
@@ -171,6 +175,22 @@ describe("MediaPickReceiver", () => {
     });
     expect(admin.openDrawer).toHaveBeenCalledTimes(1);
     expect(admin.drawer?.allowCreate).toBe(true);
+  });
+
+  it("brings the admin window to the front when it opens the drawer, as a pop-up of the preview may cover it", () => {
+    postRequest();
+
+    expect(focus).toHaveBeenCalledTimes(1);
+    expect(focus.mock.invocationCallOrder[0]).toBeLessThan(
+      admin.openDrawer.mock.invocationCallOrder[0] as number
+    );
+  });
+
+  it("does not bring the admin window to the front for media chosen on the page", async () => {
+    postRequest({ data: { ...REQUEST, mediaId: 9 } });
+    await act(() => flushMutations());
+
+    expect(focus).not.toHaveBeenCalled();
   });
 
   it("writes the selected document into the form and marks the form as changed", async () => {

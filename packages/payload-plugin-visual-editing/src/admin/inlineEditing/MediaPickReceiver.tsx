@@ -38,6 +38,7 @@ function MediaDrawer({ collection, onClosed, onDismissed, onPicked }: MediaDrawe
       if (!hasPicked.current) onDismissed();
       onClosed();
     } else {
+      window.focus();
       openDrawer();
     }
   }, [isDrawerOpen, onClosed, onDismissed, openDrawer]);

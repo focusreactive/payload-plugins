@@ -30,7 +30,7 @@ import { documentAddressOf, editedFieldAddressOf } from "../../shared/veDocument
 import { MEDIA_PICK_TIME_LIMIT_MS } from "./adminEditChannel.js";
 import { endpointAnswerOf } from "./endpointAnswer.js";
 
-export type EditStatus = "failed" | "in-form" | "saved" | "saving" | "unsaved";
+export type EditStatus = "failed" | "idle" | "in-form" | "picking" | "saved" | "saving" | "unsaved";
 
 export type EditTransportCtx = { payloadApi: string; onEdited?: () => void };
 
@@ -184,6 +184,7 @@ export function createEditTransport(
   const givenToForm = new Map<string, EditValue>();
   const latestQueued = new Map<string, VeEdit>();
   const savedWhenEditsEnd = new Set<string>();
+  const picksInAnotherWindow = new Map<string, ShownImage>();
   let saves: Promise<void> = Promise.resolve();
   let pageLeave = nextPageLeave();
   let openEdit: OpenEdit | null = null;
@@ -428,6 +429,13 @@ export function createEditTransport(
     if (adminWindow) channel.tell(adminWindow, message);
   };
 
+  const endPickInAnotherWindow = (field: VeEditedField, image: ShownImage) => {
+    const address = editedFieldAddressOf(field);
+    if (picksInAnotherWindow.get(address) !== image) return;
+    picksInAnotherWindow.delete(address);
+    report(isIdle() ? "idle" : statusAfterASave());
+  };
+
   const askAdmin = (
     adminWindow: Window,
     field: VeEditedField,
@@ -442,17 +450,30 @@ export function createEditTransport(
     };
     channel.mediaPicks.ask(adminWindow, request, {
       answered(picked) {
+        picksInAnotherWindow.delete(editedFieldAddressOf(field));
         image.show(picked);
         holdInForm(field);
       },
-      cancelled: releaseFinishedRoutes,
+      cancelled() {
+        endPickInAnotherWindow(field, image);
+        releaseFinishedRoutes();
+      },
       refused(refusal) {
+        endPickInAnotherWindow(field, image);
         if (chosen) refuseAsked(field, refusal, chosen.useAgain);
         image.openField();
       },
     });
-    setTimeout(releaseFinishedRoutes, MEDIA_PICK_TIME_LIMIT_MS);
-    if (chosen) holdInForm(field);
+    setTimeout(() => {
+      endPickInAnotherWindow(field, image);
+      releaseFinishedRoutes();
+    }, MEDIA_PICK_TIME_LIMIT_MS);
+    if (chosen) {
+      holdInForm(field);
+    } else if (adminWindow !== win.parent) {
+      picksInAnotherWindow.set(editedFieldAddressOf(field), image);
+      report("picking");
+    }
   };
 
   const saveMediaThroughEndpoint = (
