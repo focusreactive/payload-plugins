@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Overlay } from "../../src/client/createOverlay";
 
 import { createOverlay } from "../../src/client/createOverlay";
+import { withoutMarker } from "../../src/shared/stegaText";
 
 import { markedText } from "../support/markedData";
 import { click, overlayCtx } from "../support/overlay";
@@ -105,5 +106,94 @@ describe("text edited beside elements that React renders", () => {
     await render({ badge: "b", count: 2, title: stega("Title "), withIcon: false });
 
     expect(titleText().data).toBe("Title ");
+  });
+});
+
+type SplitHeadingProps = { title: string; isSplit: boolean };
+
+function SplitHeading({ isSplit, title }: SplitHeadingProps) {
+  const words = withoutMarker(title).split(" ");
+  return (
+    <h3>
+      {isSplit
+        ? words.map((word, index) => (
+            <span key={word}>
+              {index > 0 && " "}
+              {word}
+            </span>
+          ))
+        : title}
+    </h3>
+  );
+}
+
+describe("a heading React splits into words after the overlay found it", () => {
+  let main: HTMLElement;
+  let root: Root;
+  let overlay: Overlay;
+
+  const render = (props: SplitHeadingProps) =>
+    act(async () => {
+      root.render(<SplitHeading {...props} />);
+      await flushMutations();
+    });
+
+  const heading = () => main.querySelector("h3") as HTMLElement;
+
+  beforeEach(async () => {
+    document.body.innerHTML = "";
+    main = document.createElement("main");
+    document.body.append(main);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve({ json: () => Promise.resolve({ saved: true }), ok: true } as Response)
+      )
+    );
+    root = createRoot(main);
+    await render({ isSplit: false, title: stega("Read our story") });
+    overlay = createOverlay(main, () =>
+      overlayCtx({
+        inlineEditing: true,
+        instantPreview: true,
+        mode: "hover",
+        payloadApi: "https://cms.example.com/api",
+      })
+    );
+    await render({ isSplit: true, title: stega("Read our story") });
+  });
+
+  afterEach(() => {
+    overlay.dispose();
+    act(() => root.unmount());
+    restorePreviewWindow();
+    vi.unstubAllGlobals();
+    document.getSelection()?.removeAllRanges();
+  });
+
+  it("lets React render other words and the whole text again once the edit ended", async () => {
+    click(heading().querySelector("span") as Element);
+    const edited = heading().firstChild as Text;
+    edited.data = "Read the story";
+    heading().dispatchEvent(new Event("input", { bubbles: true }));
+    heading().dispatchEvent(
+      new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Enter" })
+    );
+    await flushMutations();
+
+    expect(edited.isConnected).toBe(false);
+
+    await render({ isSplit: true, title: stega("Read the story") });
+
+    expect(heading().textContent).toBe("Read the story");
+    expect(Array.from(heading().children).map(({ textContent }) => textContent)).toEqual([
+      "Read",
+      " the",
+      " story",
+    ]);
+
+    await render({ isSplit: false, title: stega("Read the story") });
+
+    expect(heading().textContent).toBe("Read the story");
   });
 });

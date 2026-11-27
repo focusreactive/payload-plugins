@@ -45,7 +45,7 @@ type Edit = {
   caret: number;
   saving: FieldEdit<string>;
   restored: ReadonlyMap<string, string | null>;
-  kept: ReadonlySet<ChildNode>;
+  kept: Set<ChildNode>;
   before: string;
   after: string;
   keptAside: ReadonlyMap<Element, string | null>;
@@ -168,7 +168,7 @@ const textOfEdit = (edit: EditedText): string =>
     ? withoutWhitespaceAround(ownNodesOf(edit).map(textOfNode).join(""), edit)
     : textOf(edit.editedElement);
 
-const keptBeside = (element: HTMLElement, textNode: Text): ReadonlySet<ChildNode> =>
+const keptBeside = (element: HTMLElement, textNode: Text): Set<ChildNode> =>
   new Set(
     element.childElementCount > 0
       ? Array.from(element.childNodes).filter((node) => node !== textNode)
@@ -590,7 +590,7 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
     putBackWhatTheDeletionTook(edit);
     edit.text = textOfEdit(edit);
     edit.caret = caretInTheText(edit);
-    if (sharesItsElement(edit)) rememberTextState(edit, inputType);
+    rememberTextState(edit, inputType);
     edit.saving.change(edit.text);
   };
 
@@ -652,6 +652,7 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
     const onPaste = (event: ClipboardEvent) => pastePlainText(edit, event);
     const onSelection = () => followCaret(edit);
     const onBeforeInput = (event: InputEvent) => {
+      if (!sharesItsElement(edit)) return;
       const historyStep = HISTORY_STEPS_OF_INPUTS.get(event.inputType);
       if (historyStep) {
         event.preventDefault();
@@ -663,8 +664,7 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
         edit.childrenBeforeDeletion = Array.from(editedElement.childNodes);
       }
     };
-    if (sharesItsElement(edit))
-      editedElement.addEventListener(FIRST_INPUT_EVENT, onBeforeInput, IN_CAPTURE_PHASE);
+    editedElement.addEventListener(FIRST_INPUT_EVENT, onBeforeInput, IN_CAPTURE_PHASE);
     editedElement.addEventListener("input", onInput);
     editedElement.addEventListener("keydown", onKey);
     editedElement.addEventListener("blur", commit);
@@ -688,6 +688,9 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
       commit();
 
       const editedElement = tracker.beginEdit(match, {
+        onSetAside: (nodes) => {
+          for (const node of nodes) editing?.kept.add(node);
+        },
         onShownAgain: () => {
           if (editing) placeCaretInTheText(editing);
         },

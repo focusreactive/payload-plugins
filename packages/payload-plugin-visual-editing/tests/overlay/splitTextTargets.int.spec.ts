@@ -208,6 +208,13 @@ const clickedAt = (letter: Text) =>
     },
   });
 
+const shownText = (element: HTMLElement = document.querySelector("h2") as HTMLElement) =>
+  Array.from(element.childNodes)
+    .filter((node) => !(node instanceof HTMLElement && node.style.display === "none"))
+    .map(({ textContent }) => textContent)
+    .join("")
+    .trim();
+
 const caret = () => {
   const selection = document.getSelection() as Selection;
   return [selection.focusNode, selection.focusOffset];
@@ -264,13 +271,15 @@ describe("a heading a site script splits into an element per letter, edited on t
     expect(event.defaultPrevented).toBe(true);
     expect(open).not.toHaveBeenCalled();
     expect(heading.getAttribute("contenteditable")).toBe("true");
-    expect(Array.from(heading.childNodes)).toEqual([heading.firstChild]);
-    expect(heading.textContent).toBe("How We Deliver");
+    expect(shownText()).toBe("How We Deliver");
+    expect(heading.firstChild).toBeInstanceOf(Text);
+    expect(letters.every(({ isConnected }) => isConnected)).toBe(true);
     expect(caret()).toEqual([heading.firstChild, "How ".length]);
   });
 
   it("saves the whole heading with the text typed where the letter was clicked", async () => {
     const letters = splitIntoLetters(heading);
+    const splitNodes = Array.from(heading.childNodes);
     await flushMutations();
     clickedAt(letters[3] as Text);
     click(letters[3]?.parentElement as Element);
@@ -286,7 +295,31 @@ describe("a heading a site script splits into an element per letter, edited on t
     expect(sentToEndpoint().map(({ base, value }) => [base, value])).toEqual([
       ["How We Deliver", "How XWe Deliver"],
     ]);
-    expect(heading.textContent).toBe("How XWe Deliver");
+    expect(Array.from(heading.childNodes)).toEqual(splitNodes);
+    expect(heading.textContent).toBe("How We Deliver");
+    expect(splitNodes.some((node) => node instanceof Element && node.hasAttribute("style"))).toBe(
+      false
+    );
+  });
+
+  it("gives the owner of the split back the very nodes it made, so it can move and remove them after the edit", async () => {
+    const letters = splitIntoLetters(heading);
+    const [first, space, second] = Array.from(heading.childNodes);
+    await flushMutations();
+    clickedAt(letters[0] as Text);
+    click(letters[0]?.parentElement as Element);
+    heading.dispatchEvent(
+      new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Escape" })
+    );
+    await flushMutations();
+
+    const removeChildOfTheOwner = Node.prototype.removeChild;
+    heading.insertBefore(second as Node, first as Node);
+    removeChildOfTheOwner.call(heading, space as Node);
+    removeChildOfTheOwner.call(heading, first as Node);
+
+    expect(Array.from(heading.childNodes).slice(0, 1)).toEqual([second]);
+    expect(heading.textContent).toBe("We Deliver");
   });
 
   it("keeps the typed text and the caret when the script splits the heading again while it is edited", async () => {
@@ -299,11 +332,12 @@ describe("a heading a site script splits into an element per letter, edited on t
     document.getSelection()?.collapse(edited, "How X".length);
     heading.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText" }));
 
+    heading.replaceChildren(edited.data);
     splitIntoLetters(heading);
     await flushMutations();
 
-    expect(Array.from(heading.childNodes)).toEqual([edited]);
-    expect(edited.data).toBe("How XWe Deliver");
+    expect(heading.firstChild).toBe(edited);
+    expect(shownText()).toBe("How XWe Deliver");
     expect(caret()).toEqual([edited, "How X".length]);
   });
 
@@ -316,10 +350,26 @@ describe("a heading a site script splits into an element per letter, edited on t
     splitIntoLetters(heading);
     await flushMutations();
 
-    expect(Array.from(heading.childNodes)).toEqual([edited]);
-    expect(edited.data).toBe("How We Deliver");
+    expect(heading.firstChild).toBe(edited);
+    expect(shownText()).toBe("How We Deliver");
     expect(caret()).toEqual([edited, "How We".length]);
     expect(heading.getAttribute("contenteditable")).toBe("true");
+  });
+
+  it("gives the split back as it was when the overlay is disposed during the edit", async () => {
+    const letters = splitIntoLetters(heading);
+    const splitNodes = Array.from(heading.childNodes);
+    await flushMutations();
+    clickedAt(letters[0] as Text);
+    click(letters[0]?.parentElement as Element);
+
+    overlay.dispose();
+    overlay = createOverlay(main, () => overlayCtx({ mode: "hover" }));
+
+    expect(Array.from(heading.childNodes)).toEqual(splitNodes);
+    expect(splitNodes.some((node) => node instanceof Element && node.hasAttribute("style"))).toBe(
+      false
+    );
   });
 
   it("leaves a split heading whose field the page cannot edit split, without asking where the click landed", async () => {

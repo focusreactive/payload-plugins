@@ -28,7 +28,8 @@ describe("a field the editor types into", () => {
     await flushMutations();
   };
 
-  const begin = () => tracker.beginEdit(match, { onShownAgain, shownText: () => shown });
+  const begin = () =>
+    tracker.beginEdit(match, { onSetAside: vi.fn(), onShownAgain, shownText: () => shown });
 
   beforeEach(() => {
     document.body.innerHTML = "";
@@ -162,7 +163,11 @@ describe("a field the editor types into", () => {
     await flushMutations();
     const [[, [cta]]] = listener.onFields.mock.calls as [[Element, [FieldMatch]]];
 
-    const editedElement = tracker.beginEdit(cta, { onShownAgain, shownText: () => shown });
+    const editedElement = tracker.beginEdit(cta, {
+      onSetAside: vi.fn(),
+      onShownAgain,
+      shownText: () => shown,
+    });
     (label.firstChild as Text).data = "Changed";
     await flushMutations();
     tracker.endEdit(cta, "Changed");
@@ -263,7 +268,9 @@ describe("a field the editor types into", () => {
     const [[, matches]] = onFields.mock.calls as [[Element, FieldMatch[]]];
     const body = matches.find(({ path }) => path === "body")!;
 
-    expect(tracker.beginEdit(body, { onShownAgain, shownText: () => shown })).toBeNull();
+    expect(
+      tracker.beginEdit(body, { onSetAside: vi.fn(), onShownAgain, shownText: () => shown })
+    ).toBeNull();
   });
 
   describe("in a line that holds the text of another field", () => {
@@ -289,7 +296,11 @@ describe("a field the editor types into", () => {
     it("edits the text of the line apart from the text of the other field", async () => {
       const lineText = matchOf("line");
 
-      const editedElement = tracker.beginEdit(lineText, { onShownAgain, shownText: () => shown });
+      const editedElement = tracker.beginEdit(lineText, {
+        onSetAside: vi.fn(),
+        onShownAgain,
+        shownText: () => shown,
+      });
       lineText.textNode.data = "OUR NEXT RELEASE";
       await flushMutations();
 
@@ -305,7 +316,11 @@ describe("a field the editor types into", () => {
     it("edits the text of the other field in its own element", () => {
       const tagText = matchOf("tag");
 
-      const editedElement = tracker.beginEdit(tagText, { onShownAgain, shownText: () => shown });
+      const editedElement = tracker.beginEdit(tagText, {
+        onSetAside: vi.fn(),
+        onShownAgain,
+        shownText: () => shown,
+      });
 
       expect(tagText.holder).toBe(tag);
       expect(editedElement).toBe(tag);
@@ -321,7 +336,7 @@ describe("a field the editor types into", () => {
       [[, matches]] = onFields.mock.calls as [[Element, FieldMatch[]]];
       const lineText = matchOf("line");
 
-      tracker.beginEdit(lineText, { onShownAgain, shownText: () => shown });
+      tracker.beginEdit(lineText, { onSetAside: vi.fn(), onShownAgain, shownText: () => shown });
       tracker.endEdit(lineText, "OUR NEXT RELEASE");
       await flushMutations();
 

@@ -41,6 +41,7 @@ export type FieldListener = {
 export type FieldEdit = {
   shownText(): string;
   onShownAgain(): void;
+  onSetAside(nodes: readonly ChildNode[]): void;
 };
 
 export type WhitespaceAround = { before: string; after: string };
@@ -67,6 +68,12 @@ type TrackedText = {
 };
 
 type HeldField = { match: FieldMatch; original: string };
+
+type SetAside = { shown: Text; styles: Map<HTMLElement | SVGElement, string | null> };
+
+const STYLE_ATTR = "style";
+
+const HIDDEN_DISPLAY = "none";
 
 const CLICKABLE = "a, button";
 
@@ -144,7 +151,7 @@ const isLeftByAnEdit = (child: ChildNode): boolean =>
 
 type TextEdit = FieldEdit & {
   editedElement: HTMLElement;
-  present: ReadonlySet<ChildNode>;
+  present: Set<ChildNode>;
   nextSibling: ChildNode | null;
   before: string;
   after: string;
@@ -168,6 +175,9 @@ const showsOnlyText = (element: Element, text: string) =>
   withoutMarker(element.textContent ?? "") === text;
 
 const isBlankText = (node: ChildNode): boolean => node instanceof Text && node.data.trim() === "";
+
+const holdsOnlyElementsAndBlankText = (element: Element): boolean =>
+  Array.from(element.childNodes).every((child) => child instanceof Element || isBlankText(child));
 
 const isTheOnlyTextOf = (element: Element, textNode: Text): boolean =>
   textNode.parentElement === element &&
@@ -201,6 +211,7 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
   const ownAttributeWrites = new Map<Element, number>();
   const listeners = new Set<FieldListener>();
   const edits = new Map<Text, TextEdit>();
+  const setAsideIn = new Map<Element, SetAside>();
 
   const whitespaceAround = (textNode: Text, editedElement: Element): WhitespaceAround =>
     editedElement.childElementCount === 0
@@ -209,6 +220,7 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
 
   const isSplitIntoPlainElements = (holder: Element, text: string): boolean => {
     if (holder.childElementCount === 0 || holder.querySelector(MARKED) !== null) return false;
+    if (!holdsOnlyElementsAndBlankText(holder)) return false;
     const pieces = [...visibleTextNodesIn(holder)];
     if (pieces.some((piece) => texts.has(piece) || hasMarker(piece.data))) return false;
     return comparableText(holder.textContent ?? "") === comparableText(text);
@@ -221,11 +233,41 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     return isSplitIntoPlainElements(holder, withoutMarker(held.original)) ? held : null;
   };
 
-  const showFieldInHolder = (holder: Element, held: HeldField, text: string): FieldMatch => {
+  const setAside = (holder: Element, textNode: Text): ChildNode[] => {
+    const aside = setAsideIn.get(holder) ?? { shown: textNode, styles: new Map() };
+    aside.shown = textNode;
+    const nodes = Array.from(holder.childNodes).filter((node) => node !== textNode);
+    holder.insertBefore(textNode, nodes[0] ?? null);
+    for (const node of nodes) {
+      if (!(node instanceof HTMLElement || node instanceof SVGElement)) continue;
+      if (!aside.styles.has(node)) aside.styles.set(node, node.getAttribute(STYLE_ATTR));
+      node.style.setProperty("display", HIDDEN_DISPLAY, "important");
+    }
+    setAsideIn.set(holder, aside);
+    return nodes;
+  };
+
+  const putBackWhatWasSetAside = (holder: Element): boolean => {
+    const aside = setAsideIn.get(holder);
+    if (!aside) return false;
+    setAsideIn.delete(holder);
+    for (const [element, style] of aside.styles) {
+      if (style === null) element.removeAttribute(STYLE_ATTR);
+      else element.setAttribute(STYLE_ATTR, style);
+    }
+    return true;
+  };
+
+  const showFieldInHolder = (
+    holder: Element,
+    held: HeldField,
+    text: string,
+    show: (textNode: Text) => void
+  ): FieldMatch => {
     const { holder: _holder, textNode: _textNode, ...field } = held.match;
     const textNode = document.createTextNode(text);
     const shown = { ...field, holder, textNode };
-    showOnlyText(holder, textNode);
+    show(textNode);
     texts.set(textNode, {
       match: shown,
       nodeMarker: null,
@@ -436,7 +478,9 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     if (!main.contains(editedElement) || !isSplitIntoPlainElements(editedElement, shown)) {
       return false;
     }
-    showOnlyText(editedElement, textNode);
+    const nodes = setAside(editedElement, textNode);
+    for (const node of nodes) edit.present.add(node);
+    edit.onSetAside(nodes);
     showEditedTextAgain(textNode, tracked, edit, tracked.original);
     return true;
   };
@@ -524,7 +568,7 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       if (!holder || !held || held.match !== match || edits.has(match.textNode)) return false;
       if (sharedHolders.has(holder)) return false;
       if (main.contains(match.textNode) || !main.contains(holder)) return false;
-      showFieldInHolder(holder, held, text);
+      showFieldInHolder(holder, held, text, (textNode) => showOnlyText(holder, textNode));
       return true;
     },
     splitFieldOf(holder) {
@@ -532,7 +576,12 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     },
     joinSplitText(holder) {
       const held = splitHeldFieldOf(holder);
-      return held && showFieldInHolder(holder, held, withoutMarker(held.original));
+      return (
+        held &&
+        showFieldInHolder(holder, held, withoutMarker(held.original), (textNode) =>
+          setAside(holder, textNode)
+        )
+      );
     },
     beginEdit(match, edit) {
       const { holder, textNode } = match;
@@ -553,6 +602,10 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       const held = holder && holders.get(holder);
       const edit = edits.get(textNode);
       edits.delete(textNode);
+      if (edit && putBackWhatWasSetAside(edit.editedElement)) {
+        textNode.remove();
+        return;
+      }
       if (!edit || !holder || !held || !main.contains(edit.editedElement)) return;
       showOnlyEditedText(edit, textNode);
       const known = texts.get(textNode);
@@ -582,6 +635,10 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       pipeline.dispose();
       listeners.clear();
       edits.clear();
+      for (const [holder, { shown }] of setAsideIn) {
+        putBackWhatWasSetAside(holder);
+        shown.remove();
+      }
       for (const [textNode, { original }] of texts) {
         if (textNode.isConnected) textNode.data = original;
       }
