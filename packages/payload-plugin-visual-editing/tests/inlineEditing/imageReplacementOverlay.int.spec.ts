@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Overlay, OverlayCtx } from "../../src/client/createOverlay";
 
 import { createOverlay } from "../../src/client/createOverlay";
+import { MEDIA_PICK_TIME_LIMIT_MS } from "../../src/client/inlineEditing/adminEditChannel";
 import { DATA_VE_MEDIA_PICKER_ATTR } from "../../src/client/inlineEditing/mediaPicker";
 import { DATA_VE_SAVE_STATUS_ATTR } from "../../src/client/inlineEditing/saveStatus";
 import { DATA_VE_ACTION_ATTR } from "../../src/client/overlay/constants";
@@ -45,6 +46,7 @@ const PAGE = { collectionSlug: "page", docId: "1", kind: "collection" } as const
 const IMAGE_FIELD = { ...PAGE, key: "image", locale: "en" };
 
 const LIGHTHOUSE = {
+  alt: "A lighthouse",
   filename: "lighthouse.jpg",
   id: 9,
   thumbnailUrl: "/api/media/file/lighthouse-small.jpg",
@@ -93,6 +95,7 @@ describe("replacing an image on the page", () => {
   let ctx: OverlayCtx;
   let fetchApi: ReturnType<typeof vi.fn>;
   let isSaved: boolean;
+  let listed: object[];
   let optionsStatus: number;
   let optionsRefusal: string | undefined;
   let open: MockInstance<typeof window.open>;
@@ -147,6 +150,7 @@ describe("replacing an image on the page", () => {
     image = mark(renderImage());
     main.append(heading, image);
     isSaved = true;
+    listed = [LIGHTHOUSE];
     optionsStatus = 200;
     optionsRefusal = undefined;
     fetchApi = vi.fn((url: string) => {
@@ -154,7 +158,7 @@ describe("replacing an image on the page", () => {
       const body = isListing
         ? {
             collection: "media",
-            documents: [LIGHTHOUSE],
+            documents: listed,
             hasNextPage: false,
             reason: optionsRefusal,
           }
@@ -232,6 +236,74 @@ describe("replacing an image on the page", () => {
       expect(offersReplacement(described)).toBe(false);
     });
 
+    it("offers to replace an image whose description names its upload field, and saves from the media it showed", async () => {
+      image.remove();
+      image = await render(renderImage("/images/harbour.jpg?width=1080"));
+      image.setAttribute("alt", stega("A harbour", "image", { valueId: "3" }));
+      await flushMutations();
+
+      expect(offersReplacement(image)).toBe(true);
+      expect(image.getAttribute(DATA_VE_VALUE_ID_ATTR)).toBe("3");
+
+      await useLighthouse();
+
+      expect(image.getAttribute("src")).toBe(`${CMS}/api/media/file/lighthouse.jpg`);
+      expect(requestsTo("/visual-editing/field-edit")).toEqual([
+        { ...IMAGE_FIELD, base: "3", value: "9" },
+      ]);
+    });
+
+    describe("whose description names its upload field", () => {
+      beforeEach(async () => {
+        image.remove();
+        image = await render(renderImage());
+        image.setAttribute("alt", stega("A harbour", "image", { valueId: "3" }));
+        await flushMutations();
+      });
+
+      it("shows the description of the picked media", async () => {
+        await useLighthouse();
+
+        expect(image.getAttribute("alt")).toBe("A lighthouse");
+      });
+
+      it("shows no description for picked media that has none", async () => {
+        const { alt: _alt, ...undescribed } = LIGHTHOUSE;
+        listed = [undescribed];
+
+        await useLighthouse();
+
+        expect(image.getAttribute("alt")).toBe("");
+      });
+
+      it("shows its own description again when the save is refused", async () => {
+        isSaved = false;
+
+        await useLighthouse();
+
+        expect(image.getAttribute("alt")).toBe("A harbour");
+      });
+    });
+
+    it("leaves the description of an image the page marked itself", async () => {
+      image.setAttribute("alt", "Old harbour");
+
+      await useLighthouse();
+
+      expect(image.getAttribute("alt")).toBe("Old harbour");
+    });
+
+    it("offers it for an element the page marked around one image whose description names the field too", async () => {
+      const figure = mark(document.createElement("figure"), "portrait");
+      const portrait = renderImage();
+      portrait.setAttribute("alt", stega("A portrait", "portrait", { valueId: "4" }));
+      figure.append(portrait);
+      await render(figure);
+
+      expect(portrait.hasAttribute(DATA_VE_PATH_ATTR)).toBe(false);
+      expect(offersReplacement(figure)).toBe(true);
+    });
+
     it("offers nothing for a value read in every locale", async () => {
       const localized = mark(renderImage(), "localizedImage");
       localized.setAttribute(DATA_VE_LOCALE_ATTR, "de");
@@ -278,6 +350,18 @@ describe("replacing an image on the page", () => {
       expect(image.hasAttribute("srcset")).toBe(false);
       expect(requestsTo("/visual-editing/field-edit")).toEqual([{ ...IMAGE_FIELD, value: "9" }]);
       expect(statusLabel()).toBe("Saved");
+    });
+
+    it("shows the picked media at the address the site gives for it", async () => {
+      const buildImageUrl = vi.fn(
+        ({ filename }: { filename?: string }) => `/images/${filename}?width=1080`
+      );
+      ctx = { ...ctx, buildImageUrl };
+
+      await useLighthouse();
+
+      expect(image.getAttribute("src")).toBe("/images/lighthouse.jpg?width=1080");
+      expect(buildImageUrl).toHaveBeenCalledWith(expect.objectContaining(LIGHTHOUSE));
     });
 
     it("names the media the page shows as the one the save began from", async () => {
@@ -473,7 +557,26 @@ describe("replacing an image on the page", () => {
 
       expect(image.getAttribute("src")).toBe(`${CMS}/api/media/file/lighthouse.jpg`);
       expect(image.hasAttribute("srcset")).toBe(false);
-      expect(statusLabel()).toBe("Unsaved changes");
+      expect(statusLabel()).toBe("In the admin form, not saved yet");
+    });
+
+    it("shows the media the admin picked at the address the site gives for it", () => {
+      const buildImageUrl = vi.fn(({ filename }: { filename?: string }) => `/images/${filename}`);
+      ctx = { ...ctx, buildImageUrl };
+      formOfThePage();
+      ask();
+
+      postFromAdmin(picked({ alt: "A lighthouse", filename: "lighthouse.jpg", id: 9 }));
+
+      expect(image.getAttribute("src")).toBe("/images/lighthouse.jpg");
+      expect(buildImageUrl).toHaveBeenCalledWith({
+        alt: "A lighthouse",
+        filename: "lighthouse.jpg",
+        height: 600,
+        id: 9,
+        url: "/api/media/file/lighthouse.jpg",
+        width: 800,
+      });
     });
 
     it("asks a new admin window again, whatever the window that was asked first never answered", () => {
@@ -601,11 +704,18 @@ describe("replacing an image on the page", () => {
   describe("in the pop-up window of Live Preview", () => {
     const postToOpener = vi.fn();
 
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     const fromOpener = (data: unknown) => postFromAdmin(data, { source: window.opener });
 
-    const refused = () => fromOpener({ ...IMAGE_FIELD, type: VE_FIELD_EDIT_REFUSED_TYPE });
-
     const picks = () => messagesOfType(postToOpener, VE_PICK_MEDIA_TYPE);
+
+    const ask = () => {
+      offersReplacement(image);
+      click(actionButton());
+    };
 
     beforeEach(() => {
       postToOpener.mockClear();
@@ -619,40 +729,17 @@ describe("replacing an image on the page", () => {
       });
     });
 
-    it("asks the admin to write the media picked on the page", async () => {
-      await useLighthouse();
+    it("asks the admin to pick media for the field and asks the API of the admin nothing itself", async () => {
+      ask();
+      await flushMutations();
 
-      expect(picks()).toEqual([{ ...IMAGE_FIELD, mediaId: 9, type: VE_PICK_MEDIA_TYPE }]);
-      expect(requestsTo("/visual-editing/field-edit")).toEqual([]);
+      expect(picks()).toEqual([{ ...IMAGE_FIELD, type: VE_PICK_MEDIA_TYPE }]);
+      expect(picker()).toBeNull();
+      expect(fetchApi).not.toHaveBeenCalled();
     });
 
-    it("says the pick was not saved when the form refuses it, and opens the field", async () => {
-      await useLighthouse();
-
-      refused();
-
-      expect(statusLabel()).toBe("Not saved");
-      expect(image.getAttribute("src")).toBe("/old.jpg");
-      expect(messagesOfType(postToOpener, VE_MESSAGE_TYPE)).toMatchObject([{ path: "image" }]);
-    });
-
-    it("asks the admin again for the same media on Retry, without a drawer", async () => {
-      await useLighthouse();
-      refused();
-
-      retry();
-
-      expect(picks()).toEqual([
-        { ...IMAGE_FIELD, mediaId: 9, type: VE_PICK_MEDIA_TYPE },
-        { ...IMAGE_FIELD, mediaId: 9, type: VE_PICK_MEDIA_TYPE },
-      ]);
-      expect(statusLabel()).toBe("Unsaved changes");
-    });
-
-    it("shows the media once the admin wrote the pick it was asked again", async () => {
-      await useLighthouse();
-      refused();
-      retry();
+    it("shows the media the admin picked and says the form holds unsaved changes", () => {
+      ask();
 
       fromOpener({
         ...IMAGE_FIELD,
@@ -663,18 +750,47 @@ describe("replacing an image on the page", () => {
       });
 
       expect(image.getAttribute("src")).toBe(`${CMS}/api/media/file/lighthouse.jpg`);
-      expect(statusLabel()).toBe("Unsaved changes");
+      expect(statusLabel()).toBe("In the admin form, not saved yet");
     });
 
-    it("says so again when the form refuses the pick it was asked again", async () => {
-      await useLighthouse();
-      refused();
-      retry();
+    it("opens the field when the form refuses the pick", () => {
+      ask();
 
-      refused();
+      fromOpener({ ...IMAGE_FIELD, type: VE_FIELD_EDIT_REFUSED_TYPE });
 
-      expect(statusLabel()).toBe("Not saved");
-      expect(retryButton()?.hidden).toBe(false);
+      expect(image.getAttribute("src")).toBe("/old.jpg");
+      expect(messagesOfType(postToOpener, VE_MESSAGE_TYPE)).toMatchObject([{ path: "image" }]);
+    });
+
+    it("asks the editor to pick the image in the admin window, which the pop-up may cover", () => {
+      ask();
+
+      expect(statusLabel()).toBe("Pick the image in the admin window");
+    });
+
+    it("says nothing more once the editor cancelled the pick in the admin", () => {
+      ask();
+
+      fromOpener({ ...IMAGE_FIELD, type: VE_MEDIA_PICK_CANCELLED_TYPE });
+
+      expect(statusLabel()).toBeUndefined();
+    });
+
+    it("says nothing more once the form refused the pick", () => {
+      ask();
+
+      fromOpener({ ...IMAGE_FIELD, type: VE_FIELD_EDIT_REFUSED_TYPE });
+
+      expect(statusLabel()).toBeUndefined();
+    });
+
+    it("says nothing more once the admin did not answer in time", () => {
+      vi.useFakeTimers();
+      ask();
+
+      vi.advanceTimersByTime(MEDIA_PICK_TIME_LIMIT_MS);
+
+      expect(statusLabel()).toBeUndefined();
     });
   });
 });

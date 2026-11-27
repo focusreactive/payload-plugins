@@ -204,9 +204,9 @@ describe("a draft read through Payload", () => {
   });
 
   describe("with a populated upload", () => {
-    it("marks the text of the media document as fields of that document", () => {
+    it("marks the text of the media document as fields of that document, and its description as the upload field", () => {
       expect(markersAt(home, "image.alt")).toEqual([
-        { collectionSlug: "media", docId: site.photo, kind: "collection", path: "alt" },
+        { ...page(site.home), path: "image", valueId: site.photo },
       ]);
       expect(markersAt(home, "image.credits.0.name")).toEqual([
         { collectionSlug: "media", docId: site.photo, kind: "collection", path: "credits.0.name" },
@@ -382,7 +382,7 @@ describe("a draft read through Payload", () => {
         path: "localizedRelated",
       });
       expect(markersAt(everyLocale, "localizedImage.en.alt")).toEqual([
-        { collectionSlug: "media", docId: site.photo, kind: "collection", path: "alt" },
+        { ...page(site.home), locale: "en", path: "localizedImage", valueId: site.photo },
       ]);
     });
 

@@ -1,4 +1,5 @@
 import type { Root } from "react-dom/client";
+import type { MockInstance } from "vitest";
 
 import { act } from "react";
 import { createRoot } from "react-dom/client";
@@ -52,11 +53,18 @@ vi.mock("@payloadcms/ui", async () => {
   return {
     useConfig: () => ({
       config: { blocksMap: {}, routes: { api: "/api" }, serverURL: "https://cms.example.com" },
-      getEntityConfig: () => ({
-        fields: [
-          { name: "title", type: "text" },
-          { name: "image", relationTo: "media", type: "upload" },
-        ],
+      getEntityConfig: ({ collectionSlug }: { collectionSlug: string }) => ({
+        fields:
+          collectionSlug === "media"
+            ? [
+                { name: "alt", type: "text" },
+                { fields: [{ name: "caption", type: "textarea" }], type: "row" },
+                { name: "credit", options: ["Staff"], type: "select" },
+              ]
+            : [
+                { name: "title", type: "text" },
+                { name: "image", relationTo: "media", type: "upload" },
+              ],
       }),
     }),
     useDocumentInfo: () => ({ collectionSlug: "page", docPermissions: admin.permissions, id: 7 }),
@@ -106,7 +114,14 @@ const FIELD = {
 
 const REQUEST = { ...FIELD, type: VE_PICK_MEDIA_TYPE };
 
-const LIGHTHOUSE = { height: 600, id: 9, url: "/api/media/file/lighthouse.png", width: 800 };
+const LIGHTHOUSE = {
+  alt: "A lighthouse",
+  filename: "lighthouse.png",
+  height: 600,
+  id: 9,
+  url: "/api/media/file/lighthouse.png",
+  width: 800,
+};
 
 const postRequest = ({
   data = REQUEST as object,
@@ -129,8 +144,10 @@ describe("MediaPickReceiver", () => {
   let root: Root;
   let container: HTMLElement;
   let fetchMedia: ReturnType<typeof vi.fn>;
+  let focus: MockInstance<typeof window.focus>;
 
   beforeEach(() => {
+    focus = vi.spyOn(window, "focus").mockImplementation(() => undefined);
     fetchMedia = vi.fn(() =>
       Promise.resolve({ json: () => Promise.resolve(LIGHTHOUSE), ok: true } as Response)
     );
@@ -148,6 +165,7 @@ describe("MediaPickReceiver", () => {
     admin.drawer = null;
     vi.unstubAllGlobals();
     vi.clearAllMocks();
+    focus.mockRestore();
   });
 
   it("opens no drawer until the preview page asks for one", () => {
@@ -166,6 +184,22 @@ describe("MediaPickReceiver", () => {
     expect(admin.drawer?.allowCreate).toBe(true);
   });
 
+  it("brings the admin window to the front when it opens the drawer, as a pop-up of the preview may cover it", () => {
+    postRequest();
+
+    expect(focus).toHaveBeenCalledTimes(1);
+    expect(focus.mock.invocationCallOrder[0]).toBeLessThan(
+      admin.openDrawer.mock.invocationCallOrder[0] as number
+    );
+  });
+
+  it("does not bring the admin window to the front for media chosen on the page", async () => {
+    postRequest({ data: { ...REQUEST, mediaId: 9 } });
+    await act(() => flushMutations());
+
+    expect(focus).not.toHaveBeenCalled();
+  });
+
   it("writes the selected document into the form and marks the form as changed", async () => {
     postRequest();
 
@@ -176,7 +210,7 @@ describe("MediaPickReceiver", () => {
     expect(admin.closeDrawer).toHaveBeenCalled();
   });
 
-  it("tells the preview page what to show for the selected document", async () => {
+  it("tells the preview page what to show for the selected document, and what it is", async () => {
     postRequest();
 
     await select({ id: 9 });
@@ -187,11 +221,51 @@ describe("MediaPickReceiver", () => {
     expect(admin.postToPreview).toHaveBeenCalledWith(
       {
         ...FIELD,
+        alt: "A lighthouse",
+        filename: "lighthouse.png",
         height: 600,
+        id: 9,
         type: VE_MEDIA_PICKED_TYPE,
         url: "/api/media/file/lighthouse.png",
         width: 800,
       },
+      PREVIEW_ORIGIN
+    );
+  });
+
+  it("tells the preview page the description from the field that describes the media", async () => {
+    const { alt, ...undescribed } = LIGHTHOUSE;
+    fetchMedia.mockResolvedValue({
+      json: () => Promise.resolve({ ...undescribed, caption: alt }),
+      ok: true,
+    } as Response);
+    act(() => root.render(<MediaPickReceiver imageDescriptionField="caption" />));
+    postRequest();
+
+    await select({ id: 9 });
+
+    expect(admin.postToPreview).toHaveBeenCalledWith(
+      expect.objectContaining({ alt: "A lighthouse", type: VE_MEDIA_PICKED_TYPE }),
+      PREVIEW_ORIGIN
+    );
+  });
+
+  it("tells the preview page no description from a field of the media that holds no text", async () => {
+    fetchMedia.mockResolvedValue({
+      json: () => Promise.resolve({ ...LIGHTHOUSE, credit: "Staff" }),
+      ok: true,
+    } as Response);
+    act(() => root.render(<MediaPickReceiver imageDescriptionField="credit" />));
+    postRequest();
+
+    await select({ id: 9 });
+
+    expect(admin.postToPreview).toHaveBeenCalledWith(
+      expect.not.objectContaining({ alt: expect.anything() }),
+      PREVIEW_ORIGIN
+    );
+    expect(admin.postToPreview).toHaveBeenCalledWith(
+      expect.objectContaining({ type: VE_MEDIA_PICKED_TYPE }),
       PREVIEW_ORIGIN
     );
   });
@@ -224,7 +298,7 @@ describe("MediaPickReceiver", () => {
     await select({ id: 9, url: "/from-the-list.png" });
 
     expect(admin.postToPreview).toHaveBeenCalledWith(
-      { ...FIELD, type: VE_MEDIA_PICKED_TYPE, url: "/from-the-list.png" },
+      { ...FIELD, id: 9, type: VE_MEDIA_PICKED_TYPE, url: "/from-the-list.png" },
       PREVIEW_ORIGIN
     );
   });

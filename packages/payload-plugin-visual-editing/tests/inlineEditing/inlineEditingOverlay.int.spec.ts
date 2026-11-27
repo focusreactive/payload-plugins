@@ -43,6 +43,16 @@ const type = (element: HTMLElement, text: string) => {
   element.dispatchEvent(new Event("input", { bubbles: true }));
 };
 
+const textIn = (element: Element) =>
+  Array.from(element.childNodes).find(
+    (node): node is Text => node instanceof Text && node.data.trim() !== ""
+  ) as Text;
+
+const typeInto = (element: HTMLElement, text: string) => {
+  textIn(element).data = text;
+  element.dispatchEvent(new Event("input", { bubbles: true }));
+};
+
 const press = (element: HTMLElement, key: string, init: KeyboardEventInit = {}) => {
   const event = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key, ...init });
   element.dispatchEvent(event);
@@ -169,6 +179,476 @@ describe("editing text on the page", () => {
 
       expect(onTheText.defaultPrevented).toBe(true);
       expect(label.getAttribute("contenteditable")).toBe("true");
+    });
+
+    describe("beside an icon the editor cannot change", () => {
+      let line: HTMLElement;
+      let icon: SVGSVGElement;
+
+      const showLine = (text: string, marker: object = {}) => {
+        line = document.createElement("h2");
+        icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        icon.setAttribute("contenteditable", "false");
+        line.append(icon, stega(text, "line", marker));
+        main.append(line);
+        overlay.dispose();
+        start();
+        click(line);
+      };
+
+      const deleteBack = (inputType: string, from: number, to: number) => {
+        const lineText = textIn(line);
+        document.getSelection()?.collapse(lineText, to);
+        const reach = document.createRange();
+        reach.setStart(lineText, from);
+        reach.setEnd(lineText, to);
+        const event = new InputEvent("beforeinput", {
+          bubbles: true,
+          cancelable: true,
+          inputType,
+        });
+        Object.defineProperty(event, "getTargetRanges", { value: () => [reach] });
+        line.dispatchEvent(event);
+        return event;
+      };
+
+      it("leaves deleting a word inside the text to the browser", () => {
+        showLine("Hero foo.bar here");
+        const lineText = textIn(line);
+        const end = lineText.data.indexOf("bar") + "bar".length;
+
+        const event = deleteBack("deleteWordBackward", end - "bar".length, end);
+
+        expect(event.defaultPrevented).toBe(false);
+        expect(lineText.data).toContain("Hero foo.bar here");
+      });
+
+      it.each(["deleteWordBackward", "deleteSoftLineBackward"])(
+        "keeps the icon when %s reaches the start of the text",
+        async (inputType) => {
+          showLine("Hero title");
+          const lineText = textIn(line);
+          const hero = lineText.data.indexOf("Hero");
+
+          const event = deleteBack(inputType, hero, hero + "Hero ".length);
+          press(line, "Enter");
+          await flushMutations();
+
+          expect(event.defaultPrevented).toBe(true);
+          expect(Array.from(line.childNodes)).toEqual([icon, lineText]);
+          expect(sentToEndpoint().map(({ value }) => value)).toEqual(["title"]);
+        }
+      );
+
+      it("stops deleting a line at the line break of a text of several lines", () => {
+        showLine("First line\nSecond line", { multiline: true });
+        const lineText = textIn(line);
+        const second = lineText.data.indexOf("Second");
+
+        const event = deleteBack("deleteHardLineBackward", second, second + "Second".length);
+
+        expect(event.defaultPrevented).toBe(false);
+        expect(press(line, "Backspace", { metaKey: true }).defaultPrevented).toBe(false);
+      });
+
+      it.each([
+        ["not cancelable", { cancelable: false }],
+        ["composed by an input method", { isComposing: true }],
+      ])("leaves a deletion that is %s to the browser", (_, init) => {
+        showLine("Hero title");
+        const lineText = textIn(line);
+        const reach = document.createRange();
+        reach.setStart(lineText, 0);
+        reach.setEnd(lineText, "Hero ".length);
+        const event = new InputEvent("beforeinput", {
+          bubbles: true,
+          cancelable: true,
+          inputType: "deleteWordBackward",
+          ...init,
+        });
+        Object.defineProperty(event, "getTargetRanges", { value: () => [reach] });
+
+        line.dispatchEvent(event);
+
+        expect(lineText.data).toBe("Hero title");
+      });
+
+      describe("when the browser gives no range of what a deletion would change", () => {
+        let badge: HTMLElement;
+        let reachOfModify: number;
+
+        const deleteWithoutRanges = (inputType: string, caret: number) => {
+          document.getSelection()?.collapse(textIn(line), caret);
+          const event = new InputEvent("beforeinput", {
+            bubbles: true,
+            cancelable: true,
+            inputType,
+          });
+          Object.defineProperty(event, "getTargetRanges", { value: () => [] });
+          line.dispatchEvent(event);
+          return event;
+        };
+
+        beforeEach(() => {
+          showLine("Hero title");
+          badge = document.createElement("span");
+          badge.textContent = "NEW";
+          line.append(badge);
+          overlay.dispose();
+          start();
+          click(line);
+          Object.defineProperty(Selection.prototype, "modify", {
+            configurable: true,
+            value(this: Selection) {
+              this.extend(textIn(line), reachOfModify);
+            },
+          });
+        });
+
+        afterEach(() => Reflect.deleteProperty(Selection.prototype, "modify"));
+
+        it("deletes the word up to the start of the text and keeps the icon before it", () => {
+          reachOfModify = 0;
+
+          const event = deleteWithoutRanges("deleteWordBackward", "He".length);
+
+          const selection = document.getSelection() as Selection;
+          expect(event.defaultPrevented).toBe(true);
+          expect(Array.from(line.childNodes)).toEqual([icon, textIn(line), badge]);
+          expect(textIn(line).data).toBe("ro title");
+          expect([selection.focusNode, selection.focusOffset]).toEqual([textIn(line), 0]);
+        });
+
+        it("deletes the word up to the end of the text and keeps the badge after it", () => {
+          reachOfModify = "Hero title".length;
+
+          const event = deleteWithoutRanges("deleteWordForward", "Hero ti".length);
+
+          expect(event.defaultPrevented).toBe(true);
+          expect(Array.from(line.childNodes)).toEqual([icon, textIn(line), badge]);
+          expect(textIn(line).data).toBe("Hero ti");
+        });
+
+        it("leaves a word the browser would delete inside the text to it, with the caret where it was", () => {
+          reachOfModify = "Hero ".length;
+
+          const event = deleteWithoutRanges("deleteWordForward", "Hero ti".length);
+
+          const selection = document.getSelection() as Selection;
+          expect(event.defaultPrevented).toBe(false);
+          expect(textIn(line).data).toBe("Hero title");
+          expect([selection.anchorOffset, selection.focusOffset]).toEqual([
+            "Hero ti".length,
+            "Hero ti".length,
+          ]);
+        });
+
+        it("puts back the elements beside the text when the browser deleted them with it", () => {
+          Reflect.deleteProperty(Selection.prototype, "modify");
+          const lineText = textIn(line);
+
+          const event = deleteWithoutRanges("deleteWordBackward", "He".length);
+          icon.remove();
+          badge.remove();
+          lineText.deleteData(0, "He".length);
+          line.dispatchEvent(new InputEvent("input", { bubbles: true }));
+
+          expect(event.defaultPrevented).toBe(false);
+          expect(Array.from(line.childNodes)).toEqual([icon, lineText, badge]);
+        });
+      });
+    });
+
+    describe("in a line that holds other elements", () => {
+      let line: HTMLElement;
+      let tag: HTMLElement;
+      let icon: HTMLImageElement;
+
+      beforeEach(() => {
+        line = document.createElement("div");
+        tag = document.createElement("span");
+        icon = document.createElement("img");
+        tag.append(icon, stega("SCALE EASILY", "tag"));
+        line.append(`\n  ${stega("OUR FIRST RELEASE", "line")} `, tag);
+        main.append(line);
+        overlay.dispose();
+        start();
+      });
+
+      it("edits the text of a line and the tag inside it apart, each in its own field", async () => {
+        const lineText = textIn(line);
+        const tagText = textIn(tag);
+
+        const onTheLine = click(line);
+        typeInto(line, "OUR NEXT RELEASE");
+        press(line, "Enter");
+        click(tag);
+        typeInto(tag, "SCALE FAST");
+        press(tag, "Enter");
+        await flushMutations();
+
+        expect(onTheLine.defaultPrevented).toBe(true);
+        expect(Array.from(line.childNodes)).toEqual([lineText, tag]);
+        expect(Array.from(tag.childNodes)).toEqual([icon, tagText]);
+        expect(line.textContent).toBe("\n  OUR NEXT RELEASE SCALE FAST");
+        expect(sentToEndpoint().map(({ base, key, value }) => [key, base, value])).toEqual([
+          ["line", "OUR FIRST RELEASE", "OUR NEXT RELEASE"],
+          ["tag", "SCALE EASILY", "SCALE FAST"],
+        ]);
+        expect(open).not.toHaveBeenCalled();
+      });
+
+      it("makes the line editable and keeps the elements beside its text out of the edit", () => {
+        click(line);
+
+        expect(line.getAttribute("contenteditable")).toBe("true");
+        expect(tag.getAttribute("contenteditable")).toBe("false");
+
+        press(line, "Escape");
+
+        expect(line.hasAttribute("contenteditable")).toBe(false);
+        expect(tag.hasAttribute("contenteditable")).toBe(false);
+      });
+
+      it("keeps a deletion that would reach into the elements beside the text from happening", () => {
+        click(line);
+        const reach = document.createRange();
+        reach.setStart(textIn(line), 0);
+        reach.setEnd(tag, 1);
+        const event = new InputEvent("beforeinput", {
+          bubbles: true,
+          cancelable: true,
+          inputType: "deleteContentForward",
+        });
+        Object.defineProperty(event, "getTargetRanges", { value: () => [reach] });
+
+        line.dispatchEvent(event);
+
+        expect(event.defaultPrevented).toBe(true);
+      });
+
+      it("lets a deletion within the text happen", () => {
+        click(line);
+        const reach = document.createRange();
+        reach.setStart(textIn(line), 4);
+        reach.setEnd(textIn(line), 5);
+        const event = new InputEvent("beforeinput", {
+          bubbles: true,
+          cancelable: true,
+          inputType: "deleteContentBackward",
+        });
+        Object.defineProperty(event, "getTargetRanges", { value: () => [reach] });
+
+        line.dispatchEvent(event);
+
+        expect(event.defaultPrevented).toBe(false);
+      });
+
+      describe("when the browser gives no range of what an input would change", () => {
+        const withoutTargetRanges = (inputType: string) => {
+          const event = new InputEvent("beforeinput", {
+            bubbles: true,
+            cancelable: true,
+            inputType,
+          });
+          Object.defineProperty(event, "getTargetRanges", { value: () => [] });
+          line.dispatchEvent(event);
+          return event;
+        };
+
+        const putCaretAt = (offset: number) => {
+          click(line);
+          document.getSelection()?.collapse(textIn(line), offset);
+        };
+
+        const startOfTheText = () => textIn(line).data.indexOf("OUR");
+
+        const endOfTheText = () => textIn(line).data.indexOf("RELEASE") + "RELEASE".length;
+
+        it.each([
+          "deleteContentBackward",
+          "deleteWordBackward",
+          "deleteSoftLineBackward",
+          "deleteHardLineBackward",
+        ])("keeps %s at the start of the text from deleting the element before it", (inputType) => {
+          putCaretAt(startOfTheText());
+
+          expect(withoutTargetRanges(inputType).defaultPrevented).toBe(true);
+        });
+
+        it.each([
+          "deleteContentForward",
+          "deleteWordForward",
+          "deleteSoftLineForward",
+          "deleteHardLineForward",
+        ])("keeps %s at the end of the text from deleting the element after it", (inputType) => {
+          putCaretAt(endOfTheText());
+
+          expect(withoutTargetRanges(inputType).defaultPrevented).toBe(true);
+        });
+
+        it("keeps Backspace at the start and Delete at the end of the text to the text", () => {
+          putCaretAt(startOfTheText());
+          const backspace = press(line, "Backspace");
+          putCaretAt(endOfTheText());
+          const forwardDelete = press(line, "Delete");
+
+          expect([backspace.defaultPrevented, forwardDelete.defaultPrevented]).toEqual([
+            true,
+            true,
+          ]);
+        });
+
+        it("lets Backspace and Delete in the middle of the text happen", () => {
+          putCaretAt(startOfTheText() + 3);
+
+          expect(press(line, "Backspace").defaultPrevented).toBe(false);
+          expect(press(line, "Delete").defaultPrevented).toBe(false);
+          expect(withoutTargetRanges("deleteContentBackward").defaultPrevented).toBe(false);
+          expect(withoutTargetRanges("deleteContentForward").defaultPrevented).toBe(false);
+        });
+
+        describe("and the editor changes more than the text", () => {
+          let changed: [string, string | undefined, string][];
+
+          const selectBeyondTheText = () => {
+            click(line);
+            document.getSelection()?.setBaseAndExtent(textIn(line), startOfTheText(), tag, 1);
+          };
+
+          beforeEach(() => {
+            changed = [];
+            const execCommand = vi.fn((command: string, _ui: boolean, value?: string) => {
+              changed.push([command, value, document.getSelection()?.toString() ?? ""]);
+              return true;
+            });
+            Object.assign(document, { execCommand });
+          });
+
+          afterEach(() => Reflect.deleteProperty(document, "execCommand"));
+
+          it("types over the text alone when the selection reaches into the elements beside it", () => {
+            selectBeyondTheText();
+            const event = new InputEvent("beforeinput", {
+              bubbles: true,
+              cancelable: true,
+              data: "X",
+              inputType: "insertText",
+            });
+            Object.defineProperty(event, "getTargetRanges", { value: () => [] });
+
+            line.dispatchEvent(event);
+
+            expect(event.defaultPrevented).toBe(true);
+            expect(changed).toEqual([["insertText", "X", "OUR FIRST RELEASE"]]);
+          });
+
+          it("deletes the text alone when the selection reaches into the elements beside it", () => {
+            const lineText = textIn(line);
+            selectBeyondTheText();
+
+            expect(withoutTargetRanges("deleteContentBackward").defaultPrevented).toBe(true);
+            expect(changed).toEqual([]);
+            expect(Array.from(line.childNodes)).toEqual([lineText, tag]);
+            expect(lineText.data).toBe("\n   ");
+          });
+
+          it.each([
+            ["Option and Backspace", "Backspace", { altKey: true }],
+            ["Control and Backspace", "Backspace", { ctrlKey: true }],
+            ["Command and Backspace", "Backspace", { metaKey: true }],
+            ["Option and Delete", "Delete", { altKey: true }],
+            ["Command and Delete", "Delete", { metaKey: true }],
+          ])("leaves %s inside the text to the browser", (_, key, modifiers) => {
+            putCaretAt(startOfTheText() + "OUR FIRST REL".length);
+
+            expect(press(line, key, modifiers).defaultPrevented).toBe(false);
+            expect(changed).toEqual([]);
+          });
+
+          it("deletes nothing with Option and Backspace at the start of the text", () => {
+            putCaretAt(startOfTheText());
+
+            expect(press(line, "Backspace", { altKey: true }).defaultPrevented).toBe(true);
+            expect(changed).toEqual([]);
+          });
+
+          it("deletes the part of the text in the range the browser would delete beyond it", () => {
+            putCaretAt(startOfTheText() + "OUR FIRST REL".length);
+            const reach = document.createRange();
+            reach.setStart(textIn(line), startOfTheText() + "OUR FIRST REL".length);
+            reach.setEnd(tag, 1);
+            const event = new InputEvent("beforeinput", {
+              bubbles: true,
+              cancelable: true,
+              inputType: "deleteSoftLineForward",
+            });
+            Object.defineProperty(event, "getTargetRanges", { value: () => [reach] });
+
+            line.dispatchEvent(event);
+
+            expect(event.defaultPrevented).toBe(true);
+            expect(changed).toEqual([]);
+            expect(textIn(line).data).toBe("\n  OUR FIRST REL ");
+            expect(Array.from(line.childNodes)).toEqual([textIn(line), tag]);
+          });
+
+          it("lets an undo and a redo happen", () => {
+            selectBeyondTheText();
+
+            expect(withoutTargetRanges("historyUndo").defaultPrevented).toBe(false);
+            expect(withoutTargetRanges("historyRedo").defaultPrevented).toBe(false);
+          });
+        });
+
+        it("keeps a new paragraph from splitting the line", () => {
+          putCaretAt(startOfTheText() + 3);
+
+          expect(withoutTargetRanges("insertParagraph").defaultPrevented).toBe(true);
+        });
+      });
+
+      it("keeps the caret after the typed text when the page renders it again with the whitespace the browser dropped", async () => {
+        click(line);
+        const lineText = textIn(line);
+        lineText.data = "OUR FIRST RELEASEX ";
+        document.getSelection()?.collapse(lineText, "OUR FIRST RELEASEX".length);
+        line.dispatchEvent(new Event("input", { bubbles: true }));
+
+        lineText.data = `\n  ${stega("OUR FIRST RELEASEX", "line")} `;
+        await flushMutations();
+
+        const selection = document.getSelection() as Selection;
+        expect(lineText.data).toBe("\n  OUR FIRST RELEASEX ");
+        expect([selection.focusNode, selection.focusOffset]).toEqual([
+          lineText,
+          "\n  OUR FIRST RELEASEX".length,
+        ]);
+      });
+
+      it("narrows a selection of the whole line to its text", () => {
+        click(line);
+        document.getSelection()?.selectAllChildren(line);
+
+        document.dispatchEvent(new Event("selectionchange"));
+
+        const selection = document.getSelection() as Selection;
+        expect([selection.anchorNode, selection.focusNode]).toEqual([textIn(line), textIn(line)]);
+        expect(selection.toString()).toBe(textIn(line).data);
+      });
+
+      it("brings a caret put beside the elements of the line back into its text", () => {
+        click(line);
+        document.getSelection()?.collapse(line, 2);
+
+        document.dispatchEvent(new Event("selectionchange"));
+
+        const selection = document.getSelection() as Selection;
+        expect([selection.focusNode, selection.focusOffset]).toEqual([
+          textIn(line),
+          textIn(line).length,
+        ]);
+      });
     });
 
     it("keeps the lines of the text as the page broke them until the editor types", () => {
@@ -336,6 +816,23 @@ describe("editing text on the page", () => {
       });
 
       afterEach(() => Reflect.deleteProperty(document, "execCommand"));
+
+      it("keep the caret where the editor typed when the page renders the typed lines again", async () => {
+        click(summary);
+        const edited = textIn(summary);
+        edited.data = "es";
+        edited.before("Lin", "\n");
+        document.getSelection()?.collapse(edited, 0);
+        summary.dispatchEvent(new Event("input", { bubbles: true }));
+
+        summary.textContent = stega("Lin\nes", "summary", { multiline: true });
+        await flushMutations();
+
+        const selection = document.getSelection() as Selection;
+        expect(Array.from(summary.childNodes)).toEqual([edited]);
+        expect(edited.data).toBe("Lin\nes");
+        expect([selection.focusNode, selection.focusOffset]).toEqual([edited, "Lin\n".length]);
+      });
 
       it("are left to the page on Shift and Enter in a field of several lines", () => {
         click(summary);
@@ -824,7 +1321,7 @@ describe("editing text on the page", () => {
       click(heading);
       type(heading, "Hello world");
       await pause();
-      expect(statusLabel()).toBe("Unsaved changes");
+      expect(statusLabel()).toBe("In the admin form, not saved yet");
 
       postFromAdmin({ ...PAGE, locale: "en", type: VE_DOCUMENT_SAVED_TYPE });
 

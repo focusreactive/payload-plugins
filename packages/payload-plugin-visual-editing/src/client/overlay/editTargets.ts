@@ -6,12 +6,14 @@ import type { TargetConfig, TargetRegistryCtx } from "./targetRegistry.js";
 import { DATA_VE_PATH_ATTR } from "../../shared/protocol.js";
 import { documentAddressOf } from "../../shared/veDocument.js";
 import { LABEL_CLASS } from "./constants.js";
+import { isDrawnText } from "./drawnText.js";
 import { createEditBadge } from "./editBadge.js";
 import { createFrameLayer } from "./frameLayer.js";
 import { createHoverController } from "./hoverController.js";
 import { groupNodesByPath, readMarkerFromAttrs } from "./markerExtractor.js";
 import { createTargetRegistry } from "./targetRegistry.js";
-import { findTargetAncestor, pickTargetForGroup } from "./targetSelector.js";
+import { findTargetAncestor, pickTargetForGroup, shownOncePerFrame } from "./targetSelector.js";
+import { createTargetsAtPoint, holds } from "./targetsAtPoint.js";
 
 export const CLICK_LEFT_TO_THE_PAGE = "page";
 
@@ -27,6 +29,82 @@ const isPlainPrimaryClick = (event: MouseEvent) =>
   event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
 
 const hasTextSelection = () => document.getSelection()?.isCollapsed === false;
+
+const INTERACTIVE = [
+  "a",
+  "audio",
+  "button",
+  "input",
+  "label",
+  "select",
+  "summary",
+  "textarea",
+  "video",
+  "[contenteditable]",
+  "[role=button]",
+  "[role=link]",
+  '[tabindex]:not([tabindex="-1"])',
+].join(", ");
+
+const MEDIA = "audio, canvas, iframe, img, object, picture, svg, video";
+
+const holdsContent = (element: Element): boolean =>
+  (element.textContent ?? "").trim() !== "" ||
+  element.matches(MEDIA) ||
+  element.querySelector(MEDIA) !== null;
+
+const isPassedThrough = (element: Element, target: HTMLElement): boolean =>
+  element.contains(target) || !holdsContent(element);
+
+const pointOf = (event: MouseEvent) => ({ x: event.clientX, y: event.clientY });
+
+type Point = ReturnType<typeof pointOf>;
+
+const mediaOf = (control: Element): Element[] =>
+  control.matches(MEDIA) ? [control] : Array.from(control.querySelectorAll(MEDIA));
+
+const drawsTextAt = (control: Element, point: Point): boolean => {
+  const doc = control.ownerDocument;
+  const texts = doc.createTreeWalker(control, NodeFilter.SHOW_TEXT);
+  const range = doc.createRange();
+  if (typeof range.getClientRects !== "function") return false;
+  while (texts.nextNode()) {
+    const text = texts.currentNode as Text;
+    if (!isDrawnText(text, control, control)) continue;
+    range.selectNodeContents(text);
+    if ([...range.getClientRects()].some((rect) => holds(rect, point))) return true;
+  }
+  return false;
+};
+
+const NONE: ReadonlySet<string> = new Set(["", "none", "normal"]);
+
+const EMPTY_TEXT: ReadonlySet<string> = new Set(['""', "''"]);
+
+const PSEUDO_ELEMENTS = ["::before", "::after"];
+
+const paintsAnImage = ({ backgroundImage, maskImage }: CSSStyleDeclaration): boolean =>
+  !NONE.has(backgroundImage) || !NONE.has(maskImage);
+
+const pseudoElementPaints = (style: CSSStyleDeclaration): boolean =>
+  !NONE.has(style.content) && (!EMPTY_TEXT.has(style.content) || paintsAnImage(style));
+
+const paintsItself = (control: Element): boolean => {
+  const view = control.ownerDocument.defaultView;
+  if (!view) return false;
+  return (
+    paintsAnImage(view.getComputedStyle(control)) ||
+    PSEUDO_ELEMENTS.some((pseudo) => pseudoElementPaints(view.getComputedStyle(control, pseudo)))
+  );
+};
+
+const drawsAt = (control: Element, point: Point): boolean =>
+  (paintsItself(control) && holds(control.getBoundingClientRect(), point)) ||
+  mediaOf(control).some((media) => holds(media.getBoundingClientRect(), point)) ||
+  drawsTextAt(control, point);
+
+const elementOf = (event: MouseEvent): Element | null =>
+  event.target instanceof Element ? event.target : null;
 
 const isRepeatedClick = (event: MouseEvent) => event.detail > 1;
 
@@ -56,13 +134,42 @@ export function createEditTargets(
 
   const registry = createTargetRegistry();
   const badge = createEditBadge();
+  const textsOfTargets = new WeakMap<HTMLElement, readonly Text[]>();
+  const isShown = (target: HTMLElement): boolean => {
+    const texts = textsOfTargets.get(target);
+    return texts === undefined || texts.some((text) => isDrawnText(text, target, main));
+  };
   const hover = createHoverController(
     badge,
     registry,
-    (target) => getCtx().actionOf?.(target) ?? null
+    (target) => getCtx().actionOf?.(target) ?? null,
+    isShown
   );
-  const frames = getCtx().mode === "always" ? createFrameLayer() : null;
+  const isShownInThisFrame = shownOncePerFrame(isShown);
+  const frames = getCtx().mode === "always" ? createFrameLayer(main, isShownInThisFrame) : null;
   const wrapperTargets = new Set<HTMLElement>();
+  const targetsAtPoint = createTargetsAtPoint(registry.targets, isShownInThisFrame);
+
+  const targetBeneath = (element: Element, event: MouseEvent): HTMLElement | null => {
+    if (element.closest(INTERACTIVE)) return null;
+    const target = targetsAtPoint.innermostAt(pointOf(event));
+    return target && isPassedThrough(element, target) ? target : null;
+  };
+
+  const targetUnder = (event: MouseEvent): HTMLElement | null => {
+    const element = elementOf(event);
+    if (!element) return null;
+    return findTargetAncestor(element, isShown) ?? targetBeneath(element, event);
+  };
+
+  const hoverTargetBeneath = (event: MouseEvent) => {
+    const element = elementOf(event);
+    if (!element || findTargetAncestor(element, isShown)) return;
+    const control = element.closest(INTERACTIVE);
+    const point = pointOf(event);
+    if (!control) hover.point(targetBeneath(element, event));
+    else hover.point(drawsAt(control, point) ? null : targetsAtPoint.innermostAt(point));
+  };
 
   const registerTarget = (target: HTMLElement, marker: Marker) => {
     const existing = registry.get(target);
@@ -95,7 +202,9 @@ export function createEditTargets(
     const fieldMatches = matches.filter(({ richText }) => richText === undefined);
     for (const { nodes, ctx: marker } of groupNodesByPath(fieldMatches)) {
       const target = pickTargetForGroup(nodes, main);
-      if (target instanceof HTMLElement) registerTarget(target, marker);
+      if (!(target instanceof HTMLElement)) continue;
+      textsOfTargets.set(target, nodes);
+      registerTarget(target, marker);
     }
 
     for (const wrapper of pathWrappersIn(root)) {
@@ -119,7 +228,7 @@ export function createEditTargets(
 
   const openFieldOnTargetClick = (event: MouseEvent) => {
     if (!isPlainPrimaryClick(event)) return;
-    const target = findTargetAncestor(event.target instanceof Element ? event.target : null);
+    const target = targetUnder(event);
     const config = target ? registry.get(target) : undefined;
     if (!target || !config) return;
     const taken = getCtx().editInPlace?.(target, event, () => config.clickHandler(event));
@@ -139,9 +248,12 @@ export function createEditTargets(
     config.clickHandler(event);
   };
   main.addEventListener("click", openFieldOnTargetClick, true);
+  main.addEventListener("pointermove", hoverTargetBeneath, true);
 
   return () => {
     main.removeEventListener("click", openFieldOnTargetClick, true);
+    main.removeEventListener("pointermove", hoverTargetBeneath, true);
+    targetsAtPoint.dispose();
     stopTracking();
     hover.dispose();
     frames?.dispose();

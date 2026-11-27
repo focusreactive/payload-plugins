@@ -1,6 +1,5 @@
 import type { VisualEditingMode } from "./visualEditingMode.js";
 
-import { DATA_VE_HOVERING_ATTR } from "./overlay/constants.js";
 import { zoomOf } from "./overlay/zoom.js";
 import { VISUAL_EDITING_MODES } from "./visualEditingMode.js";
 
@@ -11,7 +10,6 @@ export interface Toggle {
 
 export const DATA_VE_TOGGLE_ATTR = "data-ve-toggle";
 
-const HIDDEN_ATTR = "data-hidden";
 const DRAGGING_ATTR = "data-dragging";
 const ON_ATTR = "data-on";
 
@@ -46,7 +44,6 @@ const TEMPLATE = `
     top: ${DEFAULT_POSITION.top}px;
     right: ${DEFAULT_POSITION.right}px;
     z-index: 2147483646;
-    transition: opacity 140ms ease, transform 140ms ease;
     --ve-surface: #ffffff;
     --ve-border: rgba(0, 0, 0, 0.1);
     --ve-track: rgba(0, 0, 0, 0.05);
@@ -68,11 +65,6 @@ const TEMPLATE = `
       --ve-thumb-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 1px 2px rgba(0, 0, 0, 0.4);
       --ve-focus: #f5f5f5;
     }
-  }
-  :host([${HIDDEN_ATTR}]:not([${DRAGGING_ATTR}])) {
-    opacity: 0;
-    transform: translateY(-6px);
-    pointer-events: none;
   }
   .card {
     display: inline-flex;
@@ -158,7 +150,7 @@ const TEMPLATE = `
     outline-offset: 1px;
   }
   @media (prefers-reduced-motion: reduce) {
-    :host, .card, button, .dot { transition: none; }
+    .card, button, .dot { transition: none; }
   }
 </style>
 <div class="card" title="Drag to move">
@@ -300,17 +292,12 @@ export function createToggle(doc: Document, onSelect: (mode: VisualEditingMode) 
   };
   win.addEventListener("resize", keepInView);
 
-  const followHovering = () =>
-    host.toggleAttribute(HIDDEN_ATTR, doc.body.hasAttribute(DATA_VE_HOVERING_ATTR));
-  const hovering = new MutationObserver(followHovering);
-  hovering.observe(doc.body, { attributeFilter: [DATA_VE_HOVERING_ATTR] });
   doc.body.append(host);
   const stored = readStoredPosition(win);
   if (stored) place(clampPosition(win, stored, host));
 
   return {
     remove() {
-      hovering.disconnect();
       win.removeEventListener("resize", keepInView);
       host.remove();
     },

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FieldMatch, FieldTracker } from "../../src/client/overlay/fieldTracker";
 
 import { createFieldTracker } from "../../src/client/overlay/fieldTracker";
+import { withoutMarker } from "../../src/shared/stegaText";
 
 import { markedText } from "../support/markedData";
 import { flushMutations } from "../support/time";
@@ -19,7 +20,7 @@ describe("a field the editor types into", () => {
   let shown: string;
   let onShownAgain: ReturnType<typeof vi.fn>;
 
-  const textNode = () => heading.firstChild as Text;
+  const textNode = () => match.textNode;
 
   const type = async (text: string) => {
     shown = text;
@@ -75,6 +76,47 @@ describe("a field the editor types into", () => {
     expect(heading.textContent).toBe("Hello world");
     expect(onShownAgain).toHaveBeenCalledTimes(1);
     expect(listener.onNodesReleased).not.toHaveBeenCalled();
+  });
+
+  describe("after the browser split the text into lines", () => {
+    let edited: Text;
+
+    beforeEach(async () => {
+      edited = textNode();
+      begin();
+      edited.data = "lo";
+      edited.before("Hel", "\n");
+      shown = "Hel\nlo";
+      await flushMutations();
+    });
+
+    it("shows the typed lines once, in the node of the edit, when the page writes the text into it", async () => {
+      edited.data = stega("Hel\nlo");
+      await flushMutations();
+
+      expect(Array.from(heading.childNodes)).toEqual([edited]);
+      expect(edited.data).toBe("Hel\nlo");
+      expect(onShownAgain).toHaveBeenCalledTimes(1);
+      expect(listener.onNodesReleased).not.toHaveBeenCalled();
+    });
+
+    it("keeps the node of the edit when the page replaces the lines with a text of its own", async () => {
+      heading.textContent = stega("Hel\nlo");
+      await flushMutations();
+
+      expect(Array.from(heading.childNodes)).toEqual([edited]);
+      expect(edited.data).toBe("Hel\nlo");
+      expect(onShownAgain).toHaveBeenCalledTimes(1);
+      expect(listener.onNodesReleased).not.toHaveBeenCalled();
+    });
+
+    it("leaves a text of another field the page puts in its place to that field", async () => {
+      heading.textContent = stega("Other", "subtitle");
+      await flushMutations();
+
+      expect(listener.onNodesReleased).toHaveBeenCalledWith([match]);
+      expect(onShownAgain).not.toHaveBeenCalled();
+    });
   });
 
   it("shows the text the edit ended with, in the node the page rendered", async () => {
@@ -171,10 +213,32 @@ describe("a field the editor types into", () => {
     expect(listener.onFields).toHaveBeenCalledWith(heading, [match]);
   });
 
-  it("does not start an edit of a text that sits next to an icon, which a select-all would delete", () => {
-    heading.append(document.createElement("svg"));
+  it("edits a text that sits next to an icon in its own element, without moving the text", async () => {
+    const icon = document.createElement("svg");
+    heading.append(icon);
 
-    expect(begin()).toBeNull();
+    const editedElement = begin();
+    await type("Hello world");
+    tracker.endEdit(match, "Hello world");
+    await flushMutations();
+
+    expect(editedElement).toBe(heading);
+    expect(Array.from(heading.childNodes)).toEqual([match.textNode, icon]);
+    expect(match.textNode.data).toBe("Hello world");
+    expect(listener.onNodesReleased).not.toHaveBeenCalled();
+  });
+
+  it("puts the text back in its place when the browser took it out during the edit", () => {
+    const icon = document.createElement("svg");
+    heading.append(icon);
+
+    begin();
+    match.textNode.remove();
+    heading.prepend("Hello again");
+    tracker.endEdit(match, "Hello again");
+
+    expect(Array.from(heading.childNodes)).toEqual([match.textNode, icon]);
+    expect(heading.textContent).toBe("Hello again");
   });
 
   it("restores the marker of the latest render when the overlay stops", async () => {
@@ -200,5 +264,82 @@ describe("a field the editor types into", () => {
     const body = matches.find(({ path }) => path === "body")!;
 
     expect(tracker.beginEdit(body, { onShownAgain, shownText: () => shown })).toBeNull();
+  });
+
+  describe("in a line that holds the text of another field", () => {
+    let line: HTMLElement;
+    let tag: HTMLElement;
+    let matches: FieldMatch[];
+
+    const matchOf = (path: string) => matches.find((found) => found.path === path)!;
+
+    beforeEach(() => {
+      tracker.dispose();
+      line = document.createElement("div");
+      tag = document.createElement("span");
+      tag.append(document.createElement("img"), stega("SCALE EASILY", "tag"));
+      line.append(stega("OUR FIRST RELEASE", "line"), " ", tag, "\n");
+      main.append(line);
+      tracker = createFieldTracker(main);
+      const onFields = vi.fn();
+      tracker.subscribe({ onFields });
+      [[, matches]] = onFields.mock.calls as [[Element, FieldMatch[]]];
+    });
+
+    it("edits the text of the line apart from the text of the other field", async () => {
+      const lineText = matchOf("line");
+
+      const editedElement = tracker.beginEdit(lineText, { onShownAgain, shownText: () => shown });
+      lineText.textNode.data = "OUR NEXT RELEASE";
+      await flushMutations();
+
+      expect(lineText.holder).toBe(line);
+      expect(editedElement).toBe(line);
+
+      tracker.endEdit(lineText, "OUR NEXT RELEASE");
+
+      expect(line.textContent).toBe("OUR NEXT RELEASE SCALE EASILY\n");
+      expect(line.firstChild).toBe(lineText.textNode);
+    });
+
+    it("edits the text of the other field in its own element", () => {
+      const tagText = matchOf("tag");
+
+      const editedElement = tracker.beginEdit(tagText, { onShownAgain, shownText: () => shown });
+
+      expect(tagText.holder).toBe(tag);
+      expect(editedElement).toBe(tag);
+      expect(tag.lastChild).toBe(tagText.textNode);
+    });
+
+    it("keeps the whitespace around the text of the line, and splits no node", async () => {
+      tracker.dispose();
+      line.replaceChildren(`\n  ${stega("OUR FIRST RELEASE", "line")}\n  `, tag);
+      tracker = createFieldTracker(main);
+      const onFields = vi.fn();
+      tracker.subscribe({ onFields });
+      [[, matches]] = onFields.mock.calls as [[Element, FieldMatch[]]];
+      const lineText = matchOf("line");
+
+      tracker.beginEdit(lineText, { onShownAgain, shownText: () => shown });
+      tracker.endEdit(lineText, "OUR NEXT RELEASE");
+      await flushMutations();
+
+      expect(Array.from(line.childNodes)).toEqual([lineText.textNode, tag]);
+      expect(line.textContent).toBe("\n  OUR NEXT RELEASE\n  SCALE EASILY");
+
+      tracker.dispose();
+
+      expect(Array.from(line.childNodes)).toEqual([lineText.textNode, tag]);
+      expect(withoutMarker(line.textContent ?? "")).toBe("\n  OUR FIRST RELEASE\n  SCALE EASILY");
+    });
+
+    it("leaves the other field in place when the page drops the text of the line", () => {
+      const lineText = matchOf("line");
+      lineText.textNode.remove();
+
+      expect(tracker.showTextInHolder(lineText, "Changed")).toBe(false);
+      expect(tag.isConnected).toBe(true);
+    });
   });
 });

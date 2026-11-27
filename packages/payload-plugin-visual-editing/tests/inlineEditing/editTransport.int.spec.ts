@@ -298,7 +298,7 @@ describe("the transport of an edit", () => {
       refusedByTheForm(TITLE);
       transport.retry();
 
-      expect(statuses).toEqual(["unsaved", "failed", "unsaved"]);
+      expect(statuses).toEqual(["unsaved", "in-form", "failed", "in-form"]);
       expect(postToAdmin).toHaveBeenCalledTimes(2);
     });
 
@@ -334,7 +334,7 @@ describe("the transport of an edit", () => {
 
       savedInTheAdmin({ ...TITLE, locale: "en" });
 
-      expect(statuses).toEqual(["unsaved", "saved"]);
+      expect(statuses).toEqual(["unsaved", "in-form", "saved"]);
     });
 
     it("stays unsaved when the admin saved another document", () => {
@@ -343,7 +343,7 @@ describe("the transport of an edit", () => {
 
       savedInTheAdmin({ ...TITLE, docId: "2" });
 
-      expect(statuses).toEqual(["unsaved"]);
+      expect(statuses).toEqual(["unsaved", "in-form"]);
     });
 
     it("keeps saying changes are unsaved after a save of the admin while the editor still types", () => {
@@ -363,7 +363,7 @@ describe("the transport of an edit", () => {
 
       savedInTheAdmin({});
 
-      expect(statuses).toEqual(["unsaved", "saved"]);
+      expect(statuses).toEqual(["unsaved", "in-form", "saved"]);
     });
 
     it("ignores a refusal of an edit it did not post", () => {
@@ -383,11 +383,13 @@ describe("the transport of an edit", () => {
       expect(edit.isUnsaved()).toBe(false);
     });
 
-    it("says the value is unsaved, because the form holds it", () => {
+    it("says the value is unsaved while it waits, and in the form once the form holds it", () => {
       beginEdit(TITLE, "Shown").change("Hello");
+      expect(statuses).toEqual(["unsaved"]);
+
       vi.advanceTimersByTime(EDIT_SEND_PAUSE_MS);
 
-      expect(statuses).toEqual(["unsaved"]);
+      expect(statuses).toEqual(["unsaved", "in-form"]);
     });
 
     describe("an image", () => {
@@ -407,11 +409,20 @@ describe("the transport of an edit", () => {
         postFromAdmin({ ...IMAGE, type: VE_MEDIA_PICKED_TYPE, url: LIGHTHOUSE.url, width: 640 });
 
         expect(image.show).toHaveBeenCalledWith({ url: LIGHTHOUSE.url, width: 640 });
-        expect(statuses).toEqual(["unsaved"]);
+        expect(statuses).toEqual(["in-form"]);
 
         savedInTheAdmin(TITLE);
 
-        expect(statuses).toEqual(["unsaved", "saved"]);
+        expect(statuses).toEqual(["in-form", "saved"]);
+      });
+
+      it("picked while text waits to be posted leaves the status unsaved", () => {
+        beginEdit(TITLE, "Shown").change("Hello");
+        transport.beginImageEdit(IMAGE, pageImage()).pickInTheDrawer();
+
+        postFromAdmin({ ...IMAGE, type: VE_MEDIA_PICKED_TYPE, url: LIGHTHOUSE.url, width: 640 });
+
+        expect(statuses).toEqual(["unsaved", "unsaved"]);
       });
 
       it("refused by the drawer opens the field and holds no failure", () => {
@@ -467,13 +478,13 @@ describe("the transport of an edit", () => {
 
       it("picked on the page is written by the admin and counted unsaved until the admin saved its document", () => {
         transport.beginImageEdit(IMAGE, pageImage("3")).use(LIGHTHOUSE);
-        expect(statuses).toEqual(["unsaved"]);
+        expect(statuses).toEqual(["in-form"]);
 
         savedInTheAdmin({ ...TITLE, docId: "2" });
-        expect(statuses).toEqual(["unsaved"]);
+        expect(statuses).toEqual(["in-form"]);
 
         savedInTheAdmin(TITLE);
-        expect(statuses).toEqual(["unsaved", "saved"]);
+        expect(statuses).toEqual(["in-form", "saved"]);
         expect(posted()).toEqual([{ ...IMAGE, mediaId: 9, type: VE_PICK_MEDIA_TYPE }]);
         expect(fetchEndpoint).not.toHaveBeenCalled();
       });
@@ -483,13 +494,13 @@ describe("the transport of an edit", () => {
         transport.beginImageEdit(IMAGE, image).use(LIGHTHOUSE);
 
         refusedByTheForm(IMAGE, "not-editable");
-        expect(statuses).toEqual(["unsaved", "failed"]);
+        expect(statuses).toEqual(["in-form", "failed"]);
         expect(refusals.at(-1)).toBe("not-editable");
         expect(image.openField).toHaveBeenCalledTimes(1);
 
         transport.retry();
 
-        expect(statuses.at(-1)).toBe("unsaved");
+        expect(statuses.at(-1)).toBe("in-form");
         expect(picks()).toEqual([
           { ...IMAGE, mediaId: 9, type: VE_PICK_MEDIA_TYPE },
           { ...IMAGE, mediaId: 9, type: VE_PICK_MEDIA_TYPE },
@@ -503,7 +514,7 @@ describe("the transport of an edit", () => {
         transport.beginImageEdit(IMAGE, pageImage()).use({ ...LIGHTHOUSE, id: 10 });
         transport.retry();
 
-        expect(statuses.at(-1)).toBe("unsaved");
+        expect(statuses.at(-1)).toBe("in-form");
         expect(picks().map((pick) => (pick as { mediaId: number }).mediaId)).toEqual([9, 10]);
       });
     });
@@ -656,11 +667,16 @@ describe("the transport of an edit", () => {
       expect(statuses.at(-1)).toBe("saved");
     });
 
-    it("asks no drawer of a window it is not framed by", () => {
+    it("asks the drawer of the admin that opened it once the admin holds a form", () => {
+      expect(transport.beginImageEdit(IMAGE, pageImage()).pickInTheDrawer()).toBe(false);
+
       holdsAnyForm = true;
 
-      expect(transport.beginImageEdit(IMAGE, pageImage()).pickInTheDrawer()).toBe(false);
-      expect(admin.postMessage).not.toHaveBeenCalled();
+      expect(transport.beginImageEdit(IMAGE, pageImage()).pickInTheDrawer()).toBe(true);
+      expect(admin.postMessage).toHaveBeenCalledWith(
+        { ...IMAGE, type: VE_PICK_MEDIA_TYPE },
+        expect.any(String)
+      );
     });
   });
 

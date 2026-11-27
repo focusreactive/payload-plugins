@@ -40,8 +40,21 @@ describe("createTargetRegistry", () => {
 
     expect(el.getAttribute("data-ve-target")).toBe("hero.title");
     expect(config.path).toBe("hero.title");
-    expect(config.href).toBe("/admin/edit?path=hero.title");
+    expect(config.href).toBe(`${ADMIN_ORIGIN}/admin/edit?path=hero.title`);
     expect(el.style.outline).toBe("2px dashed red");
+  });
+
+  it("links the Edit badge to the admin's origin, so a new tab opens the admin, not the site", () => {
+    const el = document.createElement("div");
+    document.body.append(el);
+    const registry = createTargetRegistry();
+
+    expect(registry.upsert(el, markerA, ctx).href).toBe(
+      `${ADMIN_ORIGIN}/admin/edit?path=hero.title`
+    );
+    expect(registry.upsert(el, markerB, { ...ctx, adminOrigin: "" }).href).toBe(
+      "/admin/edit?path=hero.subtitle"
+    );
   });
 
   it("re-upsert with a new marker path produces a fresh href and click handler (regression #8)", () => {
@@ -54,7 +67,7 @@ describe("createTargetRegistry", () => {
 
     expect(first.path).toBe("hero.title");
     expect(second.path).toBe("hero.subtitle");
-    expect(second.href).toBe("/admin/edit?path=hero.subtitle");
+    expect(second.href).toBe(`${ADMIN_ORIGIN}/admin/edit?path=hero.subtitle`);
     expect(second.clickHandler).not.toBe(first.clickHandler);
     expect(el.getAttribute(DATA_VE_PATH_ATTR)).toBeNull();
     expect(el.getAttribute("data-ve-target")).toBe("hero.subtitle");

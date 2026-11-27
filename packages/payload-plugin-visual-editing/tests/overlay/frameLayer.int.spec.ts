@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createOverlay } from "../../src/client/createOverlay";
 import { DATA_VE_FRAME_ATTR } from "../../src/client/overlay/constants";
+import { createFrameLayer } from "../../src/client/overlay/frameLayer";
+import { shownOncePerFrame } from "../../src/client/overlay/targetSelector";
 
 import { markedText } from "../support/markedData";
 import { overlayCtx } from "../support/overlay";
@@ -64,6 +66,136 @@ describe("resting frames", () => {
     overlay.dispose();
     zoomNoElement();
     vi.restoreAllMocks();
+  });
+
+  it("draws the frame around the glyphs of a heading whose line height is smaller than its text", () => {
+    vi.spyOn(main.querySelector("h1") as HTMLElement, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(0, 40, 400, 40)
+    );
+    Object.defineProperty(Range.prototype, "getClientRects", {
+      configurable: true,
+      value: () => [new DOMRect(0, 20, 380, 30), new DOMRect(0, 50, 200, 40)],
+    });
+
+    const overlay = createOverlay(main, () => overlayCtx({ mode: "always" }));
+
+    const frame = framesOnPage()[0] as HTMLElement;
+    expect([frame.style.transform, frame.style.width, frame.style.height]).toEqual([
+      "translate(-1.5px, 18.5px)",
+      "403px",
+      "73px",
+    ]);
+
+    overlay.dispose();
+    Reflect.deleteProperty(Range.prototype, "getClientRects");
+    vi.restoreAllMocks();
+  });
+
+  describe("when the page reveals its text later without changing its size", () => {
+    const nextFrame = () => vi.advanceTimersByTimeAsync(20);
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["requestAnimationFrame", "cancelAnimationFrame"] });
+      vi.spyOn(main.querySelector("h1") as HTMLElement, "getBoundingClientRect").mockReturnValue(
+        new DOMRect(0, 0, 400, 40)
+      );
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.restoreAllMocks();
+    });
+
+    it("shows the frame once a class or a style reveals the text", async () => {
+      const heading = main.querySelector("h1") as HTMLElement;
+      heading.style.opacity = "0";
+      const overlay = createOverlay(main, () => overlayCtx({ mode: "always" }));
+      const frame = framesOnPage()[0] as HTMLElement;
+      const hiddenFirst = frame.style.display;
+
+      heading.style.opacity = "1";
+      await nextFrame();
+
+      expect([hiddenFirst, frame.style.display]).toEqual(["none", "block"]);
+      overlay.dispose();
+    });
+
+    it("hides the frame once a transition or an animation of the page ends", async () => {
+      const overlay = createOverlay(main, () => overlayCtx({ mode: "always" }));
+      const frame = framesOnPage()[0] as HTMLElement;
+      const shownFirst = frame.style.display;
+      const hiding = document.createElement("style");
+      hiding.textContent = "h1 { visibility: hidden; }";
+      document.head.append(hiding);
+
+      main.querySelector("h1")?.dispatchEvent(new Event("transitionend", { bubbles: true }));
+      await nextFrame();
+      const afterTransition = frame.style.display;
+      hiding.remove();
+      main.querySelector("h1")?.dispatchEvent(new Event("animationend", { bubbles: true }));
+      await nextFrame();
+
+      expect([shownFirst, afterTransition, frame.style.display]).toEqual([
+        "block",
+        "none",
+        "block",
+      ]);
+      overlay.dispose();
+    });
+
+    it("hides the frame of a text the page hides in the frame its visibility was read in", async () => {
+      const heading = main.querySelector("h1") as HTMLElement;
+      let isHeadingShown = true;
+      const frames = createFrameLayer(
+        main,
+        shownOncePerFrame(() => isHeadingShown)
+      );
+      window.dispatchEvent(new Event("resize"));
+      frames.add(heading);
+      const frame = framesOnPage()[0] as HTMLElement;
+      const shownFirst = frame.style.display;
+
+      isHeadingShown = false;
+      await nextFrame();
+
+      expect([shownFirst, frame.style.display]).toEqual(["block", "none"]);
+      frames.dispose();
+    });
+
+    describe("and the page restyles an element", () => {
+      let readsOfTheHeading: () => number;
+
+      beforeEach(() => {
+        const heading = main.querySelector("h1") as HTMLElement;
+        readsOfTheHeading = () => vi.mocked(heading.getBoundingClientRect).mock.calls.length;
+      });
+
+      it("leaves the frames where they are when the element neither holds nor sits in a framed text", async () => {
+        const aside = document.createElement("aside");
+        main.append(aside);
+        const overlay = createOverlay(main, () => overlayCtx({ mode: "always" }));
+        await nextFrame();
+        const before = readsOfTheHeading();
+
+        aside.className = "spinning";
+        await nextFrame();
+
+        expect(readsOfTheHeading()).toBe(before);
+        overlay.dispose();
+      });
+
+      it("moves the frames when the element holds a framed text", async () => {
+        const overlay = createOverlay(main, () => overlayCtx({ mode: "always" }));
+        await nextFrame();
+        const before = readsOfTheHeading();
+
+        main.className = "shifted";
+        await nextFrame();
+
+        expect(readsOfTheHeading()).toBeGreaterThan(before);
+        overlay.dispose();
+      });
+    });
   });
 
   it("draws no resting frames in hover mode", () => {

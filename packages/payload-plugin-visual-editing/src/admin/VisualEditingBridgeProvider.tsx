@@ -11,6 +11,7 @@ import { VE_FOCUS_PARAM, VE_MESSAGE_TYPE } from "../shared/protocol.js";
 import type { DocKind } from "../shared/protocol.js";
 import type { VeOpenFieldMessage } from "../shared/protocol.js";
 import { expandAndFocus, expandAndShow } from "./expandAndFocus.js";
+import { answerFrameHellos } from "./frameSettings.js";
 import { openDocumentOf } from "./openField/openDocument.js";
 import { createOpenForms, currentFormPathOf, OpenFormsContext } from "./openField/openForms.js";
 import type { OpenForms } from "./openField/openForms.js";
@@ -221,6 +222,8 @@ export function VisualEditingBridgeProvider({
     window.addEventListener("message", handle);
     return () => window.removeEventListener("message", handle);
   }, [getEntityConfig, adminBasePath, openForms, previewPages, linkedFocus]);
+
+  useEffect(() => answerFrameHellos(window), []);
 
   return (
     <PreviewPagesContext.Provider value={announcePreviewPage}>

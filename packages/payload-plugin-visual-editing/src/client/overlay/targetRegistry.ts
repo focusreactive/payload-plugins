@@ -1,6 +1,7 @@
 import type { BuildAdminEditUrl } from "../../shared/buildAdminEditUrl.js";
 import type { Marker } from "./markerExtractor.js";
 
+import { adminUrlIn } from "../../shared/buildAdminEditUrl.js";
 import { spreadVeIdentity } from "../../shared/shared.js";
 import { documentAddressOf } from "../../shared/veDocument.js";
 import { buildOverlayClickHandler } from "../overlayClickHandler.js";
@@ -36,11 +37,14 @@ export function createTargetRegistry(): TargetRegistry {
 
   const buildBindings = (marker: Marker, ctx: TargetRegistryCtx) => {
     const locale = marker.locale ?? ctx.locale;
-    const href = ctx.buildAdminEditUrl({
-      ...spreadVeIdentity(marker),
-      locale,
-      adminBasePath: ctx.adminBasePath,
-    });
+    const href = adminUrlIn(
+      ctx.adminOrigin,
+      ctx.buildAdminEditUrl({
+        ...spreadVeIdentity(marker),
+        locale,
+        adminBasePath: ctx.adminBasePath,
+      })
+    );
     const clickHandler = buildOverlayClickHandler({
       ...spreadVeIdentity(marker),
       key: marker.key,

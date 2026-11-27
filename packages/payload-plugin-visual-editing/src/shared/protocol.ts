@@ -87,6 +87,29 @@ export type VeRenderedMessage<Type extends VeRenderedType> = {
   rendered: VeRenderedFields[];
 };
 
+export const DATA_VISUAL_EDITING_ATTR = "data-visual-editing";
+
+export const LIVE_PREVIEW_FRAME_ID = "live-preview-iframe";
+
+export const DATA_VISUAL_EDITING_ADMIN_ATTR = "data-visual-editing-admin";
+
+export const OPAQUE_ORIGIN = "null";
+
+export type FrameVisualEditing = "off" | "on";
+
+export const VE_FRAME_HELLO_TYPE = "ve:frame-hello";
+
+export type VeFrameHelloMessage = {
+  type: typeof VE_FRAME_HELLO_TYPE;
+};
+
+export const VE_FRAME_SETTINGS_TYPE = "ve:frame-settings";
+
+export type VeFrameSettingsMessage = {
+  type: typeof VE_FRAME_SETTINGS_TYPE;
+  visualEditing: FrameVisualEditing;
+};
+
 export const VE_ANNOUNCE_REQUEST_TYPE = "ve:announce-request";
 
 export type VeAnnounceRequestMessage = {
@@ -162,6 +185,12 @@ export type VeShownMedia = {
   height?: number;
 };
 
+export type VePickedMedia = VeShownMedia & {
+  id?: number | string;
+  filename?: string;
+  alt?: string;
+};
+
 export type VeMediaOption = VeShownMedia & {
   id: number | string;
   filename: string;
@@ -171,6 +200,7 @@ export type VeMediaOption = VeShownMedia & {
 
 export type VeMediaOptions = {
   collection: string | null;
+  descriptionField: string | null;
   documents: VeMediaOption[];
   hasNextPage: boolean;
 };
@@ -191,7 +221,7 @@ export type VeMediaPickCancelledMessage = VeEditedField & {
 export const VE_MEDIA_PICKED_TYPE = "ve:media-picked";
 
 export type VeMediaPickedMessage = VeEditedField &
-  VeShownMedia & {
+  VePickedMedia & {
     type: typeof VE_MEDIA_PICKED_TYPE;
   };
 

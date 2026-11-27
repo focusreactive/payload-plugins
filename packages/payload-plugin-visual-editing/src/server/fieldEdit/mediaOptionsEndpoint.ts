@@ -7,7 +7,7 @@ import type { DocumentToRead } from "../unsavedRichText/postedRequest.js";
 import type { SignedInRequest } from "./draftField.js";
 
 import { readEditedField } from "../../shared/fieldEdit.js";
-import { mediaOptionOf } from "../../shared/mediaOption.js";
+import { descriptionFieldOf, mediaOptionOf } from "../../shared/mediaOption.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import { VE_MEDIA_OPTIONS_PATH } from "../../shared/protocol.js";
 import { DOCUMENT_NOT_UPDATABLE, draftFieldEndpoint, FIELD_NOT_EDITABLE } from "./draftField.js";
@@ -19,10 +19,13 @@ const MAX_SEARCH_LENGTH = 200;
 const FIRST_PAGE = 1;
 const LATEST_ID_FIRST = "-id";
 const NEWEST_FIRST = ["-createdAt", LATEST_ID_FIRST];
-const DESCRIPTION_FIELD = "alt";
-const DESCRIPTION_FIELD_TYPE = "text";
 
-const NOTHING_LISTED: VeMediaOptions = { collection: null, documents: [], hasNextPage: false };
+const NOTHING_LISTED: VeMediaOptions = {
+  collection: null,
+  descriptionField: null,
+  documents: [],
+  hasNextPage: false,
+};
 
 const isPageNumber = (page: unknown): page is number =>
   typeof page === "number" && Number.isSafeInteger(page) && page >= FIRST_PAGE;
@@ -36,13 +39,6 @@ const readRequest = (body: unknown): VeMediaOptionsRequest | null => {
   const { page, search } = body;
   return isPageNumber(page) && isSearch(search) ? { ...field, page, search } : null;
 };
-
-const describesItsFiles = (payload: Payload, collection: string): boolean =>
-  Boolean(
-    payload.collections[collection]?.config.flattenedFields.some(
-      (field) => field.name === DESCRIPTION_FIELD && field.type === DESCRIPTION_FIELD_TYPE
-    )
-  );
 
 const orderOf = (payload: Payload, collection: string): string[] =>
   payload.collections[collection]?.config.timestamps === false ? [LATEST_ID_FIRST] : NEWEST_FIRST;
@@ -64,7 +60,8 @@ const mayUpdate = async (req: PayloadRequest, document: DocumentToRead): Promise
 const listMedia = async (
   { payload, user }: SignedInRequest,
   collection: string,
-  { locale, page, search }: VeMediaOptionsRequest
+  { locale, page, search }: VeMediaOptionsRequest,
+  descriptionField: string
 ): Promise<VeMediaOptions> => {
   const found = await payload.find({
     collection,
@@ -78,22 +75,27 @@ const listMedia = async (
     user,
     where: filesNamedLike(search),
   });
-  const hasDescription = describesItsFiles(payload, collection);
+  const shownDescription = descriptionFieldOf(
+    payload.collections[collection]?.config.flattenedFields ?? [],
+    descriptionField
+  );
   return {
     collection,
-    documents: found.docs.flatMap((media: unknown) => mediaOptionOf(media, hasDescription) ?? []),
+    descriptionField: shownDescription,
+    documents: found.docs.flatMap((media: unknown) => mediaOptionOf(media, shownDescription) ?? []),
     hasNextPage: found.hasNextPage,
   };
 };
 
-export const mediaOptionsEndpoint: Endpoint = draftFieldEndpoint({
-  answer: async ({ document, schema, shown }, request, req) => {
-    const collection = shownUploadCollectionOf(shown, schema, request.key);
-    if (collection === null) return FIELD_NOT_EDITABLE;
-    if (!(await mayUpdate(req, document))) return DOCUMENT_NOT_UPDATABLE;
-    return listMedia(req, collection, request);
-  },
-  path: VE_MEDIA_OPTIONS_PATH,
-  readAsked: readRequest,
-  refusedAnswer: NOTHING_LISTED,
-});
+export const mediaOptionsEndpoint = (imageDescriptionField: string): Endpoint =>
+  draftFieldEndpoint({
+    answer: async ({ document, schema, shown }, request, req) => {
+      const collection = shownUploadCollectionOf(shown, schema, request.key);
+      if (collection === null) return FIELD_NOT_EDITABLE;
+      if (!(await mayUpdate(req, document))) return DOCUMENT_NOT_UPDATABLE;
+      return listMedia(req, collection, request, imageDescriptionField);
+    },
+    path: VE_MEDIA_OPTIONS_PATH,
+    readAsked: readRequest,
+    refusedAnswer: NOTHING_LISTED,
+  });

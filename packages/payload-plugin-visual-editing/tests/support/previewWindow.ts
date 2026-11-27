@@ -2,17 +2,27 @@ export const ADMIN_ORIGIN = "https://admin.example.com";
 
 const originalParent = window.parent;
 const originalOpener = window.opener;
+const originalFrameElement = window.frameElement;
 
-const replaceWindow = (name: "opener" | "parent", value: unknown) =>
+const replaceWindow = (name: "frameElement" | "opener" | "parent", value: unknown) =>
   Object.defineProperty(window, name, { configurable: true, value });
 
 export const stubAdminWindow = (admin: unknown) => replaceWindow("parent", admin);
 
 export const stubOpenerWindow = (opener: unknown) => replaceWindow("opener", opener);
 
+export const stubFrameElement = (frame: unknown) => replaceWindow("frameElement", frame);
+
+export const frameTurnedOff = (): HTMLIFrameElement => {
+  const frame = document.createElement("iframe");
+  frame.setAttribute("data-visual-editing", "off");
+  return frame;
+};
+
 export const restorePreviewWindow = () => {
   replaceWindow("parent", originalParent);
   replaceWindow("opener", originalOpener);
+  replaceWindow("frameElement", originalFrameElement);
 };
 
 export type AdminMessageOptions = { origin?: string; source?: unknown };

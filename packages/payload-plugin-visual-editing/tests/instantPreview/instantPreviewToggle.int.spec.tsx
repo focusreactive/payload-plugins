@@ -12,7 +12,11 @@ import {
   VisualEditingProvider,
 } from "../../src/client/react/VisualEditingProvider";
 import { STORAGE_KEY } from "../../src/client/visualEditingMode";
-import { VE_FIELD_SNAPSHOT_TYPE, VE_FIELDS_RENDERED_TYPE } from "../../src/shared/protocol";
+import {
+  VE_FIELD_SNAPSHOT_TYPE,
+  VE_FIELDS_RENDERED_TYPE,
+  VE_FRAME_HELLO_TYPE,
+} from "../../src/shared/protocol";
 
 import { markedText } from "../support/markedData";
 import { postFromAdmin, restorePreviewWindow, stubAdminWindow } from "../support/previewWindow";
@@ -88,7 +92,11 @@ describe("instant preview and the visual editing toggle", () => {
     document.body.append(container);
     root = createRoot(container);
     postToAdmin = vi.fn();
-    stubAdminWindow({ postMessage: postToAdmin });
+    stubAdminWindow({
+      postMessage: (message: { type?: string }, targetOrigin: string) => {
+        if (message.type !== VE_FRAME_HELLO_TYPE) postToAdmin(message, targetOrigin);
+      },
+    });
   });
 
   afterEach(() => {

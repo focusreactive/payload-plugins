@@ -217,6 +217,7 @@ type Parts = {
 
 type OpenPick = {
   collection: string | null;
+  descriptionField: string | null;
   documents: VeMediaOption[];
   field: VeEditedField;
   focusedBefore: Element | null;
@@ -354,6 +355,7 @@ export function createMediaPicker(
     );
     open.page = page;
     open.collection = options.collection;
+    open.descriptionField = options.descriptionField;
     open.documents = withSelectedListed([...earlier, ...options.documents], open.selected);
     open.parts.more.hidden = !options.hasNextPage;
     open.parts.upload.disabled = options.collection === null;
@@ -372,11 +374,11 @@ export function createMediaPicker(
 
   const uploadChosenFile = async (open: OpenPick) => {
     const [file] = Array.from(open.parts.file.files ?? []);
-    const { collection } = open;
+    const { collection, descriptionField } = open;
     open.parts.file.value = "";
     if (!file || collection === null) return;
     open.parts.upload.disabled = true;
-    const answer = await library.upload(collection, file);
+    const answer = await library.upload(collection, descriptionField, file);
     if (pick !== open) return;
     open.parts.upload.disabled = false;
     open.parts.alert.textContent = "error" in answer ? answer.error : "";
@@ -429,6 +431,7 @@ export function createMediaPicker(
     shadow.innerHTML = TEMPLATE;
     const open: OpenPick = {
       collection: null,
+      descriptionField: null,
       documents: [],
       field,
       focusedBefore: doc.activeElement,

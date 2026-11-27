@@ -38,6 +38,7 @@ export function VisualEditingOverlay({
       () => latest.current.scope,
       () => latest.current.session,
       () => ({
+        buildImageUrl: latest.current.session.buildImageUrl,
         onEdited: latest.current.session.onEdited,
         richTextEditor: latest.current.session.richTextEditor,
       })

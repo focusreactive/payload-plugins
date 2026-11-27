@@ -13,6 +13,7 @@ import {
 import type { BuildAdminEditUrl } from "../../shared/buildAdminEditUrl.js";
 import type { AccentOptions } from "../accent.js";
 import type { RichTextEditorLoader } from "../inlineEditing/richTextEditor.js";
+import type { BuildImageUrl } from "../inlineEditing/shownImage.js";
 import type { RenderSources } from "../instantPreview/unsavedRender/renderSources.js";
 import type { Session } from "../session.js";
 import type { VisualEditingMode } from "../visualEditingMode.js";
@@ -36,6 +37,7 @@ type VisualEditingContextType = Session & {
   toggleEnabled: () => void;
   onEdited?: () => void;
   richTextEditor?: RichTextEditorLoader;
+  buildImageUrl?: BuildImageUrl;
 };
 
 const noop = (): void => undefined;
@@ -65,6 +67,7 @@ export function VisualEditingProvider({
   accentTextColor,
   onEdited,
   richTextEditor,
+  buildImageUrl,
   children,
 }: AccentOptions & {
   available?: boolean;
@@ -77,14 +80,11 @@ export function VisualEditingProvider({
   payloadApi?: string;
   onEdited?: () => void;
   richTextEditor?: RichTextEditorLoader;
+  buildImageUrl?: BuildImageUrl;
   children: React.ReactNode;
 }) {
   const [pageStore] = useState(createPageStore);
   const page = useSyncExternalStore(pageStore.subscribe, pageStore.read, readDetachedPage);
-
-  useEffect(() => {
-    pageStore.attach(window);
-  }, [pageStore]);
 
   useEffect(
     () => applyAccent(document, { accentColor, accentTextColor }),
@@ -93,11 +93,14 @@ export function VisualEditingProvider({
 
   const latestOnEdited = useRef(onEdited);
   const latestRichTextEditor = useRef(richTextEditor);
+  const latestBuildImageUrl = useRef(buildImageUrl);
+  const hasBuildImageUrl = buildImageUrl !== undefined;
   const hasRichTextEditor = richTextEditor !== undefined;
 
   useIsomorphicLayoutEffect(() => {
     latestOnEdited.current = onEdited;
     latestRichTextEditor.current = richTextEditor;
+    latestBuildImageUrl.current = buildImageUrl;
   });
 
   const value = useMemo((): VisualEditingContextType => {
@@ -116,6 +119,7 @@ export function VisualEditingProvider({
     );
     return {
       ...session,
+      buildImageUrl: hasBuildImageUrl ? (media) => latestBuildImageUrl.current?.(media) : undefined,
       onEdited: () => latestOnEdited.current?.(),
       richTextEditor: hasRichTextEditor
         ? () => latestRichTextEditor.current?.() ?? Promise.reject(new Error(NO_EDITOR))
@@ -131,6 +135,7 @@ export function VisualEditingProvider({
     framedOnly,
     inlineEditing,
     instantPreview,
+    hasBuildImageUrl,
     hasRichTextEditor,
     namedPayloadApi,
     page,
@@ -145,6 +150,13 @@ export function VisualEditingProvider({
   useIsomorphicLayoutEffect(() => {
     latestAdminOrigin.current = value.adminOrigin;
   });
+
+  useIsomorphicLayoutEffect(() => pageStore.attach(window), [pageStore]);
+
+  useIsomorphicLayoutEffect(() => {
+    if (!available) return;
+    return pageStore.hearItsFrame(window, () => latestAdminOrigin.current);
+  }, [pageStore, available]);
 
   useIsomorphicLayoutEffect(() => {
     if (!isInstantPreviewOn || !payloadApi) return;

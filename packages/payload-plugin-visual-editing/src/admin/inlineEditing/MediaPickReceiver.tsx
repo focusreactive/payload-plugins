@@ -8,7 +8,11 @@ import type { MediaPick } from "./mediaPick.js";
 import type { OpenDocumentForm } from "./useOpenDocumentForm.js";
 
 import { NOT_EDITABLE, SAVE_FAILED } from "../../shared/fieldEdit.js";
-import { shownMediaOf } from "../../shared/mediaOption.js";
+import {
+  DEFAULT_IMAGE_DESCRIPTION_FIELD,
+  descriptionFieldOf,
+  pickedMediaOf,
+} from "../../shared/mediaOption.js";
 import { VE_MEDIA_PICK_CANCELLED_TYPE, VE_MEDIA_PICKED_TYPE } from "../../shared/protocol.js";
 import { idOf } from "../../shared/veDocument.js";
 import { chosenMediaOf, fetchPickedMedia, mediaPickOf, pickOfDocument } from "./mediaPick.js";
@@ -38,6 +42,7 @@ function MediaDrawer({ collection, onClosed, onDismissed, onPicked }: MediaDrawe
       if (!hasPicked.current) onDismissed();
       onClosed();
     } else {
+      window.focus();
       openDrawer();
     }
   }, [isDrawerOpen, onClosed, onDismissed, openDrawer]);
@@ -55,8 +60,14 @@ function MediaDrawer({ collection, onClosed, onDismissed, onPicked }: MediaDrawe
   );
 }
 
-export function MediaPickReceiver({ excludeFieldNames }: { excludeFieldNames?: string[] }) {
-  const { config } = useConfig();
+export function MediaPickReceiver({
+  excludeFieldNames,
+  imageDescriptionField = DEFAULT_IMAGE_DESCRIPTION_FIELD,
+}: {
+  excludeFieldNames?: string[];
+  imageDescriptionField?: string;
+}) {
+  const { config, getEntityConfig } = useConfig();
   const apiUrl = `${config.serverURL}${config.routes.api}`;
   const [asked, setAsked] = useState<AskedPick | null>(null);
   const requests = useRef(0);
@@ -69,13 +80,17 @@ export function MediaPickReceiver({ excludeFieldNames }: { excludeFieldNames?: s
 
   const writePicked = (
     form: OpenDocumentForm,
-    { field, path }: MediaPick,
+    { collection, field, path }: MediaPick,
     mediaId: number | string,
     media: unknown
   ) => {
     if (!form.isOpen()) return;
     form.write({ path, value: mediaId });
-    const shown = shownMediaOf(media);
+    const describedBy = descriptionFieldOf(
+      getEntityConfig({ collectionSlug: collection })?.fields ?? [],
+      imageDescriptionField
+    );
+    const shown = pickedMediaOf(media, describedBy);
     if (!shown) {
       tellPickCancelled(form, field);
       return;

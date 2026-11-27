@@ -3,6 +3,7 @@ import type { CollectionConfig, GlobalConfig, Plugin } from "payload";
 import type { ValueExcludePredicate } from "./excludeValues.js";
 import type { Enrichment } from "./server/markedReads.js";
 
+import { DEFAULT_IMAGE_DESCRIPTION_FIELD } from "./shared/mediaOption.js";
 import { PACKAGE_NAME } from "./shared/packageName.js";
 import { defaultExcludeValues } from "./excludeValues.js";
 import { createReadHooks } from "./server/hooks/readHooks.js";
@@ -75,6 +76,7 @@ export type VisualEditingPluginConfig = {
   inlineEditing?: boolean;
   renderHtml?: RenderHtml;
   readWholeDocument?: boolean;
+  imageDescriptionField?: string;
 };
 
 export type { RenderHtml } from "./server/endpoints.js";
@@ -90,8 +92,11 @@ export const visualEditingPlugin =
     const instantPreview = pluginConfig.instantPreview ?? false;
     const inlineEditing = instantPreview && (pluginConfig.inlineEditing ?? false);
     const excludeFieldNames = pluginConfig.excludeFieldNames ?? [];
+    const imageDescriptionField =
+      pluginConfig.imageDescriptionField ?? DEFAULT_IMAGE_DESCRIPTION_FIELD;
     const documentControlsOptions = {
       excludeFieldNames,
+      imageDescriptionField,
       inlineEditing,
       instantPreview,
       rootLivePreview: config.admin?.livePreview,
@@ -103,7 +108,10 @@ export const visualEditingPlugin =
       excludeValues,
       adminBasePath,
       enrichment,
+      excludeFieldNames,
+      imageDescriptionField,
       instantPreview,
+      unmarkedCollections: skipCols,
     });
     const stripStega = createStripStegaHook();
     const unsavedRichText = instantPreview ? [createUnsavedRichTextHook(schemaCache)] : [];
@@ -117,6 +125,7 @@ export const visualEditingPlugin =
         ? [
             ...(config.endpoints ?? []),
             ...visualEditingEndpoints({
+              imageDescriptionField,
               inlineEditing,
               readWholeDocument: pluginConfig.readWholeDocument,
               renderHtml: pluginConfig.renderHtml,

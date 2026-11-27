@@ -41,6 +41,7 @@ const PIER = media(3, "pier");
 
 const listed = (documents: VeMediaOption[], hasNextPage = false): VeMediaOptions => ({
   collection: "media",
+  descriptionField: "alt",
   documents,
   hasNextPage,
 });
@@ -404,7 +405,7 @@ describe("the media picker of a page of its own", () => {
       chooseFile(file);
       await flushMutations();
 
-      expect(upload).toHaveBeenCalledWith("media", file);
+      expect(upload).toHaveBeenCalledWith("media", "alt", file);
       expect(names()).toEqual(["pier.jpg", "harbour.jpg", "lighthouse.jpg"]);
       expect(options()[0]!.getAttribute("aria-pressed")).toBe("true");
 

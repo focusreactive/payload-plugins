@@ -305,6 +305,7 @@ describe("instant preview in the overlay", () => {
       beginEdit: vi.fn(() => null),
       dispose: vi.fn(),
       endEdit: vi.fn(),
+      namesUploadOf: vi.fn(() => false),
       isIdentifiedByThePage: vi.fn(() => false),
       showText: vi.fn(),
       showTextInHolder: vi.fn(() => false),

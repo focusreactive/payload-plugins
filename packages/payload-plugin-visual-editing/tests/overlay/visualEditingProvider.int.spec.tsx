@@ -1,25 +1,43 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   useVisualEditing,
   VisualEditingProvider,
 } from "../../src/client/react/VisualEditingProvider";
+import { VE_FRAME_SETTINGS_TYPE } from "../../src/shared/protocol";
+import {
+  ADMIN_ORIGIN,
+  frameTurnedOff,
+  postFromAdmin,
+  restorePreviewWindow,
+  stubAdminWindow,
+  stubFrameElement,
+} from "../support/previewWindow";
 
 let container: HTMLDivElement;
 let root: Root;
 const originalTop = window.top;
 
+let chooseMode: ReturnType<typeof useVisualEditing>["setMode"] = () => undefined;
+
 function Probe() {
-  const { available } = useVisualEditing();
-  return <span data-testid="available">{String(available)}</span>;
+  const { available, mode, setMode } = useVisualEditing();
+  chooseMode = setMode;
+  return (
+    <>
+      <span data-testid="available">{String(available)}</span>
+      <span data-testid="mode">{mode}</span>
+    </>
+  );
 }
 
 function renderProvider(props: {
   available?: boolean;
   framedOnly?: boolean;
+  adminOrigin?: string;
   accentColor?: string;
   accentTextColor?: string;
 }) {
@@ -40,6 +58,7 @@ function setFramed(framed: boolean) {
 }
 
 const availableText = () => container.querySelector('[data-testid="available"]')?.textContent;
+const modeText = () => container.querySelector('[data-testid="mode"]')?.textContent;
 
 beforeEach(() => {
   container = document.createElement("div");
@@ -52,6 +71,7 @@ afterEach(() => {
   container.remove();
   Object.defineProperty(window, "top", { configurable: true, value: originalTop });
   localStorage.clear();
+  restorePreviewWindow();
 });
 
 describe("VisualEditingProvider — framedOnly", () => {
@@ -77,6 +97,65 @@ describe("VisualEditingProvider — framedOnly", () => {
     setFramed(true);
     renderProvider({ available: false, framedOnly: true });
     expect(availableText()).toBe("false");
+  });
+});
+
+describe("VisualEditingProvider — a frame that turns visual editing off", () => {
+  it("is never available in a frame of its own origin with the attribute", () => {
+    setFramed(true);
+    stubFrameElement(frameTurnedOff());
+
+    renderProvider({ available: true, framedOnly: true });
+
+    expect(availableText()).toBe("false");
+  });
+
+  it("turns off when the admin answers that its frame turns it off", () => {
+    setFramed(true);
+    stubAdminWindow({ postMessage: vi.fn() });
+    renderProvider({ adminOrigin: ADMIN_ORIGIN, available: true, framedOnly: true });
+    expect(availableText()).toBe("true");
+
+    act(() => postFromAdmin({ type: VE_FRAME_SETTINGS_TYPE, visualEditing: "off" }));
+
+    expect(availableText()).toBe("false");
+  });
+
+  it("stays off as the admin answered when drafts turn off and on again", () => {
+    setFramed(true);
+    stubAdminWindow({ postMessage: vi.fn() });
+    renderProvider({ adminOrigin: ADMIN_ORIGIN, available: true, framedOnly: true });
+    act(() => postFromAdmin({ type: VE_FRAME_SETTINGS_TYPE, visualEditing: "off" }));
+
+    renderProvider({ adminOrigin: ADMIN_ORIGIN, available: false, framedOnly: true });
+    renderProvider({ adminOrigin: ADMIN_ORIGIN, available: true, framedOnly: true });
+
+    expect(availableText()).toBe("false");
+  });
+
+  it("stays available when the admin answers on", () => {
+    setFramed(true);
+    stubAdminWindow({ postMessage: vi.fn() });
+    renderProvider({ adminOrigin: ADMIN_ORIGIN, available: true, framedOnly: true });
+
+    act(() => postFromAdmin({ type: VE_FRAME_SETTINGS_TYPE, visualEditing: "on" }));
+
+    expect(availableText()).toBe("true");
+  });
+});
+
+describe("VisualEditingProvider — drafts turning on", () => {
+  it("keeps the mode the editor chose on a page whose storage is full", () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("full", "QuotaExceededError");
+    });
+    renderProvider({ available: false });
+    act(() => chooseMode("hover"));
+
+    renderProvider({ available: true });
+    vi.restoreAllMocks();
+
+    expect(modeText()).toBe("hover");
   });
 });
 

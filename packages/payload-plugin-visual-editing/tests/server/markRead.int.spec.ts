@@ -3,10 +3,14 @@ import { describe, expect, it } from "vitest";
 import type { ReadOfDocument } from "../../src/server/markRead";
 import type { PlainObject } from "../../src/shared/plainObject";
 
+import type { Field } from "payload";
+
 import { defaultExcludeValues, isUrl } from "../../src/excludeValues";
 import { markRead } from "../../src/server/markRead";
+import { buildEditableSchema } from "../../src/shared/editableSchema/editableSchema";
 import { isPlainObject } from "../../src/shared/plainObject";
-import { META_KEY } from "../../src/shared/shared";
+import { META_KEY, toStegaPayload } from "../../src/shared/shared";
+import { withMarker, withoutMarker } from "../../src/shared/stegaText";
 
 import { paragraphsOf } from "../support/editorState";
 import { markerIn } from "../support/markedData";
@@ -165,6 +169,117 @@ describe("a marked read", () => {
         terminal: true,
       });
       expect(page.image.value.alt).toBe("pic");
+    });
+  });
+
+  describe("with an image of an upload field", () => {
+    const inMedia = { collectionSlug: "media", docId: "m-1", kind: "collection" } as const;
+    const mediaAlt = (alt: string) => withMarker(alt, toStegaPayload({ ...inMedia, path: "alt" }));
+    const schema = buildEditableSchema([
+      { name: "image", relationTo: "media", type: "upload" },
+      { name: "gallery", hasMany: true, relationTo: "media", type: "upload" },
+      {
+        name: "layout",
+        type: "blocks",
+        blocks: [
+          { slug: "hero", fields: [{ name: "image", relationTo: "media", type: "upload" }] },
+        ],
+      },
+    ] as Field[]);
+    const markWithUploads = <Document extends PlainObject>(
+      page: Document,
+      read: Partial<ReadOfDocument> = {}
+    ) => markPage(page, { schema, ...read });
+
+    it("describes the image by the field of the page, with the id of the media", () => {
+      const page = markWithUploads({ image: { alt: mediaAlt("A lighthouse"), id: "m-1" } });
+
+      expect(withoutMarker(page.image.alt)).toBe("A lighthouse");
+      expect(markerOf(page.image.alt)).toEqual({ ...inPage, path: "image", valueId: "m-1" });
+    });
+
+    it("names the row of a block the image is in", () => {
+      const page = markWithUploads(
+        { layout: [{ blockType: "hero", id: "row-1", image: { alt: "Sea", id: 7 } }] },
+        { instantPreview: true }
+      );
+
+      expect(markerOf(page.layout[0]?.image.alt)).toEqual({
+        ...inPage,
+        key: "layout.row-1.image",
+        path: "layout.0.image",
+        valueId: "7",
+      });
+    });
+
+    it.each([null, "", " "])(
+      "leaves a description of %j as it is, so a check of the alt on the page keeps its answer",
+      (alt) => {
+        const page = markWithUploads({ image: { alt, id: "m-1" } });
+
+        expect(page.image.alt).toBe(alt);
+      }
+    );
+
+    it("leaves the description to the media when its field is excluded", () => {
+      const page = markWithUploads(
+        { image: { alt: "A lighthouse", id: "m-1" } },
+        { excludeFieldNames: ["alt"] }
+      );
+
+      expect(page.image.alt).toBe("A lighthouse");
+    });
+
+    it("leaves a description that matches excludeValues as it is", () => {
+      const page = markWithUploads(
+        { image: { alt: "https://example.com/lighthouse", id: "m-1" } },
+        { excludeValues: [isUrl] }
+      );
+
+      expect(page.image.alt).toBe("https://example.com/lighthouse");
+    });
+
+    it("describes one media document read into several fields by each field, apart", () => {
+      const media = { alt: mediaAlt("A lighthouse"), id: "m-1" };
+      const read = {
+        image: media,
+        layout: [{ blockType: "hero", id: "row-1", image: media }],
+      };
+
+      const page = markWithUploads(read);
+      const other = markRead(read, {
+        identity: { ...inPage, docId: "p-2" },
+        schema,
+      });
+
+      expect(markerOf(page.image.alt)).toEqual({ ...inPage, path: "image", valueId: "m-1" });
+      expect(markerOf(page.layout[0]?.image.alt)).toEqual({
+        ...inPage,
+        path: "layout.0.image",
+        valueId: "m-1",
+      });
+      expect(markerOf(other.image.alt)).toEqual({
+        ...inPage,
+        docId: "p-2",
+        path: "image",
+        valueId: "m-1",
+      });
+      expect(media.alt).toBe(mediaAlt("A lighthouse"));
+    });
+
+    it("reads the description from the field the media names it in", () => {
+      const page = markWithUploads(
+        { image: { caption: "A lighthouse", id: "m-1" } },
+        { imageDescriptionField: "caption" }
+      );
+
+      expect(markerOf(page.image.caption)).toEqual({ ...inPage, path: "image", valueId: "m-1" });
+    });
+
+    it("leaves the images of a hasMany upload described by their media", () => {
+      const page = markWithUploads({ gallery: [{ alt: mediaAlt("First"), id: "m-1" }] });
+
+      expect(markerOf(page.gallery[0]?.alt)).toEqual({ ...inMedia, path: "alt" });
     });
   });
 

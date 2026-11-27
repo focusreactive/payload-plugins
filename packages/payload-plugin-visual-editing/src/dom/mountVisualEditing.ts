@@ -1,10 +1,12 @@
 import type { AccentOptions } from "../client/accent.js";
 import type { RichTextEditorLoader } from "../client/inlineEditing/richTextEditor.js";
+import type { BuildImageUrl } from "../client/inlineEditing/shownImage.js";
 import type { OverlayScope } from "../client/overlayScope.js";
 import type { SessionOptions } from "../client/session.js";
 import type { RenderRichTextHtml, RenderRichTextValue } from "./liveRichTextElements.js";
 
 import { applyAccent } from "../client/accent.js";
+import { hearNothing } from "../client/frameSettings.js";
 import { listenToRenderSources } from "../client/instantPreview/unsavedRender/renderSources.js";
 import { savedShapesWithin } from "../client/overlayScope.js";
 import { listenToSaves } from "../client/saveEvents.js";
@@ -24,10 +26,32 @@ export type MountVisualEditingOptions = SessionOptions &
     onSave?: () => void;
     onEdited?: () => void;
     richTextEditor?: RichTextEditorLoader;
+    buildImageUrl?: BuildImageUrl;
   };
 
 export interface VisualEditing {
   destroy(): void;
+}
+
+interface RunWhile {
+  sync(): void;
+  stop(): void;
+}
+
+function runWhile(shouldRun: () => boolean, start: () => () => void): RunWhile {
+  let stopRunning: (() => void) | null = null;
+  const stop = () => {
+    stopRunning?.();
+    stopRunning = null;
+  };
+  return {
+    sync() {
+      const runs = shouldRun();
+      if (runs && !stopRunning) stopRunning = start();
+      if (!runs) stop();
+    },
+    stop,
+  };
 }
 
 export function mountVisualEditing({
@@ -41,6 +65,7 @@ export function mountVisualEditing({
   onSave,
   onEdited,
   richTextEditor,
+  buildImageUrl,
   accentColor,
   accentTextColor,
   ...sessionOptions
@@ -51,26 +76,42 @@ export function mountVisualEditing({
     payloadApi: namedPayloadApi,
   });
   const pageStore = createPageStore();
-  pageStore.attach(window);
   const session = () =>
     sessionOf(
       { available: true, ...sessionOptions, payloadApi: namedPayloadApi },
       pageStore.read()
     );
   const adminOrigin = () => session().adminOrigin;
+  pageStore.attach(window);
+  const stopHearingTheFrame = session().isDraft
+    ? pageStore.hearItsFrame(window, adminOrigin)
+    : hearNothing;
   const scope: OverlayScope = { locale, savedShapes: savedShapesWithin(null) };
 
-  const renderSources = session().isInstantPreviewOn
-    ? listenToRenderSources({ adminOrigin, payloadApi, rendersOnThePage: optimistic })
-    : null;
-  const stopLiveRichTexts =
-    renderSources &&
-    startLiveRichTextElements(root, scope, adminOrigin, renderSources, {
-      render: renderRichText ?? renderSources.htmlOfPayload,
-      renderValue: renderRichTextValue,
-    });
+  const instantPreview = runWhile(
+    () => session().isInstantPreviewOn,
+    () => {
+      const renderSources = listenToRenderSources({
+        adminOrigin,
+        payloadApi,
+        rendersOnThePage: optimistic,
+      });
+      const stopLiveRichTexts = startLiveRichTextElements(root, scope, adminOrigin, renderSources, {
+        render: renderRichText ?? renderSources.htmlOfPayload,
+        renderValue: renderRichTextValue,
+      });
+      return () => {
+        stopLiveRichTexts();
+        renderSources.stop();
+      };
+    }
+  );
+  const saves = runWhile(
+    () => Boolean(onSave) && session().available,
+    () => listenToSaves(adminOrigin, () => onSave?.())
+  );
 
-  const pageEditing = { onEdited, richTextEditor };
+  const pageEditing = { buildImageUrl, onEdited, richTextEditor };
   const overlay = startSessionOverlay(
     root,
     () => scope,
@@ -79,21 +120,23 @@ export function mountVisualEditing({
   );
   const toggle = showsToggle ? startSessionToggle(document, session, pageStore.setMode) : null;
   const followSession = () => {
+    instantPreview.sync();
+    saves.sync();
     overlay.sync();
     toggle?.sync();
   };
 
   const stopFollowing = pageStore.subscribe(followSession);
-  const stopListeningToSaves =
-    onSave && session().available ? listenToSaves(adminOrigin, () => onSave()) : null;
+  instantPreview.sync();
+  saves.sync();
 
   return {
     destroy() {
       removeAccent();
       stopFollowing();
-      stopListeningToSaves?.();
-      stopLiveRichTexts?.();
-      renderSources?.stop();
+      stopHearingTheFrame();
+      saves.stop();
+      instantPreview.stop();
       overlay.dispose();
       toggle?.dispose();
     },

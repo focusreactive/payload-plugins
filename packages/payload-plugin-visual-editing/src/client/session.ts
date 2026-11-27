@@ -3,6 +3,7 @@ import type { VisualEditingMode } from "./visualEditingMode.js";
 
 import { defaultBuildAdminEditUrl } from "../shared/buildAdminEditUrl.js";
 import { findAdminWindow } from "./adminWindow.js";
+import { hearFrameSettings, isTurnedOffByItsFrame } from "./frameSettings.js";
 import { STORAGE_KEY } from "./visualEditingMode.js";
 
 export type SessionOptions = {
@@ -34,6 +35,7 @@ export type Session = {
 export type PageState = {
   chosenMode: VisualEditingMode | null;
   isFramed: boolean;
+  isTurnedOffByFrame: boolean;
   pageOrigin: string;
 };
 
@@ -41,12 +43,14 @@ export interface PageStore {
   read(): PageState;
   subscribe(listener: () => void): () => void;
   attach(win: Window): void;
+  hearItsFrame(win: Window, adminOrigin: () => string): () => void;
   setMode(mode: VisualEditingMode): void;
 }
 
 export const DETACHED_PAGE: PageState = {
   chosenMode: "off",
   isFramed: false,
+  isTurnedOffByFrame: false,
   pageOrigin: "",
 };
 
@@ -130,8 +134,14 @@ export function createPageStore(): PageStore {
       change({
         chosenMode: readStoredMode(win),
         isFramed: win.self !== win.top || findAdminWindow(win) !== null,
+        isTurnedOffByFrame: isTurnedOffByItsFrame(win),
         pageOrigin: win.location.origin,
       });
+    },
+    hearItsFrame(win, adminOrigin) {
+      return hearFrameSettings(win, adminOrigin, (isTurnedOffByFrame) =>
+        change({ ...state, isTurnedOffByFrame })
+      );
     },
     setMode(mode) {
       change({ ...state, chosenMode: mode });
@@ -142,7 +152,7 @@ export function createPageStore(): PageStore {
 
 export const sessionOf = (options: SessionOptions, page: PageState): Session => {
   const isDraft = Boolean(options.available);
-  const available = isDraft && (!options.framedOnly || page.isFramed);
+  const available = isDraft && !page.isTurnedOffByFrame && (!options.framedOnly || page.isFramed);
   const instantPreview = options.instantPreview ?? true;
   const adminOrigin = originOf(options.adminOrigin) ?? page.pageOrigin;
   const inlineEditing = available && Boolean(options.inlineEditing);

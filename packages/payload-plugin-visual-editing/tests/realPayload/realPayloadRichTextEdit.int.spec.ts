@@ -1,7 +1,7 @@
 import type { Access, FieldAccess, Payload, PayloadRequest } from "payload";
 
 import { createLocalReq } from "payload";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { VE_FIELD_EDIT_PATH, VE_RICH_TEXT_VALUE_PATH } from "../../src/shared/protocol";
 import { MAX_POSTED_EDITOR_STATE_LENGTH } from "../../src/shared/richText/postedEditorState";
@@ -225,6 +225,58 @@ describe("editing rich text through the endpoints", () => {
       expect(answer).toMatchObject({ status: 200, value: richText("Note") });
     });
 
+    it.each([
+      ["a row of a list", { list: [{ label: "Row", note: richText("Note") }] }, "list.new.note"],
+      ["the first row of a list", {}, "list.new.note"],
+      ["a block", {}, "layout.new.body"],
+    ])(
+      "is nothing yet, and no refusal, for %s the draft does not hold yet",
+      async (_name, data, key) => {
+        const docId = await create({ label: "Label", ...data });
+
+        const answer = await valueOf({ ...page(docId), key });
+
+        expect(answer).toEqual({ reason: undefined, status: 200, value: null });
+      }
+    );
+
+    it("is not answered for a row another editor removed from the draft", async () => {
+      const docId = await create({ list: [{ label: "Row", note: richText("Note") }] });
+      const [row] = (await read(docId)).list as Row[];
+      await payload.update({ collection: "pages", data: { list: [] }, draft: true, id: docId });
+
+      const answer = await valueOf({ ...page(docId), key: `list.${row!.id}.note` });
+
+      expect(answer).toEqual({ reason: "not-editable", status: 422, value: null });
+    });
+
+    it("finds the removed row in the field of the latest versions alone", async () => {
+      const docId = await create({ list: [{ label: "Row", note: richText("Note") }] });
+      const [row] = (await read(docId)).list as Row[];
+      await payload.update({ collection: "pages", data: { list: [] }, draft: true, id: docId });
+      const findVersions = vi.spyOn(payload, "findVersions");
+
+      const answer = await valueOf({ ...page(docId), key: `list.${row!.id}.note` });
+
+      expect(answer).toMatchObject({ reason: "not-editable", status: 422 });
+      expect(findVersions).toHaveBeenCalledWith(
+        expect.objectContaining({
+          limit: 20,
+          select: { version: { list: true } },
+          sort: "-updatedAt",
+        })
+      );
+      findVersions.mockRestore();
+    });
+
+    it("is not answered for a field of a group the user may not read", async () => {
+      const docId = await create({ guardedGroup: { note: richText("Guarded") } });
+
+      const answer = await valueOf({ ...page(docId), key: "guardedGroup.note" }, writer);
+
+      expect(answer).toEqual({ reason: "not-editable", status: 422, value: null });
+    });
+
     it("leaves out the fields of a block the user may not read", async () => {
       const docId = await create({ story: story() });
 
@@ -288,6 +340,7 @@ describe("editing rich text through the endpoints", () => {
         ["a field that is not rich text", "label"],
         ["a field the schema does not have", "missing"],
         ["a rich text that holds nothing yet", "localizedBody"],
+        ["a row inside a field that holds no rows", "label.new.note"],
       ])("for %s", async (_name, key) => {
         expect(await valueOf({ ...page(docId), key })).toEqual({
           reason: "not-editable",

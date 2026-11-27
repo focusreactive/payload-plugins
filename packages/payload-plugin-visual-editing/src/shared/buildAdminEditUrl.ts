@@ -14,6 +14,9 @@ const TRAILING_SLASHES = /\/+$/u;
 export const adminBaseOf = (adminBasePath: string): string =>
   adminBasePath.replace(TRAILING_SLASHES, "");
 
+export const adminUrlIn = (adminOrigin: string, href: string): string =>
+  adminOrigin ? new URL(href, adminOrigin).href : href;
+
 export const defaultBuildAdminEditUrl: BuildAdminEditUrl = ({
   docId,
   collectionSlug,

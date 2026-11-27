@@ -1,7 +1,7 @@
 import type { ActionOf, EditBadge } from "./editBadge.js";
 import type { TargetRegistry } from "./targetRegistry.js";
+import type { IsShown } from "./targetSelector.js";
 
-import { DATA_VE_HOVERING_ATTR } from "./constants.js";
 import { areaOf } from "./targetArea.js";
 import { findTargetAncestor } from "./targetSelector.js";
 
@@ -9,24 +9,17 @@ export interface HoverController {
   attach(target: HTMLElement): void;
   detach(target: HTMLElement): void;
   refresh(target: HTMLElement): void;
+  point(target: HTMLElement | null): void;
   dispose(): void;
 }
 
-const setHoverFlag = (on: boolean): void => {
-  const body = typeof document === "undefined" ? null : document.body;
-  if (!body) return;
-  if (on) body.setAttribute(DATA_VE_HOVERING_ATTR, "true");
-  else body.removeAttribute(DATA_VE_HOVERING_ATTR);
-};
-
 const CLEAR_GRACE_MS = 250;
-
-const offersNoAction: ActionOf = () => null;
 
 export function createHoverController(
   badge: EditBadge,
   registry: TargetRegistry,
-  actionOf: ActionOf = offersNoAction
+  actionOf: ActionOf,
+  isShown: IsShown
 ): HoverController {
   const badgeElements: HTMLElement[] = [badge.labelElement, badge.actionElement];
   const isOfBadge = (element: Element): boolean =>
@@ -53,7 +46,6 @@ export function createHoverController(
       if (config) badge.show(next, config, actionOf(next));
     }
     activeTarget = next;
-    setHoverFlag(next !== null);
   };
 
   const scheduleClear = (): void => {
@@ -69,7 +61,7 @@ export function createHoverController(
     const related = event.relatedTarget as Element | null;
     if (related && areaOf(activeTarget).contains(related)) return;
     if (related && isOfBadge(related)) return;
-    const nextTarget = related ? findTargetAncestor(related) : null;
+    const nextTarget = related ? findTargetAncestor(related, isShown) : null;
     if (nextTarget) setActive(nextTarget);
     else scheduleClear();
   };
@@ -94,12 +86,14 @@ export function createHoverController(
   return {
     attach(target) {
       if (targetListeners.has(target)) return;
-      const enter = () => setActive(target);
+      const enter = () => {
+        if (isShown(target)) setActive(target);
+      };
       const leave = (event: MouseEvent) => {
         if (activeTarget !== target) return;
         const related = event.relatedTarget as Element | null;
         if (related && isOfBadge(related)) return;
-        const nextTarget = related ? findTargetAncestor(related) : null;
+        const nextTarget = related ? findTargetAncestor(related, isShown) : null;
         if (nextTarget) setActive(nextTarget);
         else scheduleClear();
       };
@@ -118,8 +112,11 @@ export function createHoverController(
         cancelPendingClear();
         badge.hide();
         activeTarget = null;
-        setHoverFlag(false);
       }
+    },
+    point(target) {
+      if (target) setActive(target);
+      else if (activeTarget) scheduleClear();
     },
     refresh(target) {
       if (activeTarget !== target) return;
@@ -144,7 +141,6 @@ export function createHoverController(
         badge.hide();
         activeTarget = null;
       }
-      setHoverFlag(false);
     },
   };
 }

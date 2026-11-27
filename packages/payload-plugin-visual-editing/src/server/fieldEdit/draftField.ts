@@ -20,6 +20,7 @@ import { jsonBodyOf } from "../endpointJson.js";
 import { isLocaleOf } from "../localeCodesKeyingValues.js";
 import { schemaCacheOf } from "../schemaCache.js";
 import { documentOf } from "../unsavedRichText/postedRequest.js";
+import { holdsRowAt } from "./editedField.js";
 
 export type SignedInRequest = PayloadRequest & { user: NonNullable<PayloadRequest["user"]> };
 
@@ -29,6 +30,7 @@ export type DraftField = {
   schema: EditableSchema;
   shown: unknown;
   readStored(): Promise<unknown>;
+  heldRowBefore(rowKey: string): Promise<boolean>;
   save(data: Record<string, unknown>): Promise<unknown>;
 };
 
@@ -91,6 +93,8 @@ const refusalOfFailure = (error: unknown): Refusal => {
 
 const isRefusal = (answered: object): answered is Refusal => "reason" in answered;
 
+const LATEST_VERSIONS_TO_READ = 20;
+
 const AS_THE_EDITOR_SEES_IT = { overrideAccess: false, showHiddenFields: false };
 
 const AS_IT_IS_STORED = {
@@ -149,6 +153,33 @@ const readDraft = (
     : payload.findByID({ ...options, collection: document.collection, id: document.id });
 };
 
+const heldRowBefore = async (
+  { payload }: SignedInRequest,
+  document: DocumentToRead,
+  { locale }: VeEditedField,
+  rowKey: string
+): Promise<boolean> => {
+  const options = {
+    depth: 0,
+    fallbackLocale: false as const,
+    limit: LATEST_VERSIONS_TO_READ,
+    locale,
+    overrideAccess: true,
+    pagination: false,
+    select: { version: { [topLevelNameOf(rowKey)]: true as const } },
+    sort: "-updatedAt",
+  };
+  const { docs } =
+    document.kind === "global"
+      ? await payload.findGlobalVersions({ ...options, slug: document.slug })
+      : await payload.findVersions({
+          ...options,
+          collection: document.collection,
+          where: { parent: { equals: document.id } },
+        });
+  return docs.some(({ version }) => holdsRowAt(version, rowKey));
+};
+
 const saveDraft = (
   { payload, user }: SignedInRequest,
   document: DocumentToRead,
@@ -193,6 +224,7 @@ const draftFieldOf = async (
   return {
     autosave,
     document,
+    heldRowBefore: (row) => heldRowBefore(req, document, asked, row),
     readStored: () => readDraft(req, document, asked, AS_IT_IS_STORED),
     save: (data) => saveDraft(req, document, asked, { autosave, data }),
     schema,

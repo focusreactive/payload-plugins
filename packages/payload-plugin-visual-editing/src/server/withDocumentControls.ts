@@ -14,6 +14,7 @@ type RootLivePreview = NonNullable<Config["admin"]>["livePreview"];
 export type DocumentControlsOptions = {
   rootLivePreview: RootLivePreview;
   excludeFieldNames: string[];
+  imageDescriptionField: string;
   inlineEditing: boolean;
   instantPreview: boolean;
 };
@@ -35,7 +36,12 @@ const hasLivePreview = (
 const documentControlsOf = (
   entity: PreviewableEntity,
   slugsPreviewedByRoot: readonly string[] | undefined,
-  { excludeFieldNames, inlineEditing, instantPreview }: DocumentControlsOptions
+  {
+    excludeFieldNames,
+    imageDescriptionField,
+    inlineEditing,
+    instantPreview,
+  }: DocumentControlsOptions
 ): CustomComponent[] => {
   const isPreviewed = hasLivePreview(entity, slugsPreviewedByRoot);
   const clientProps = { excludeFieldNames };
@@ -48,7 +54,10 @@ const documentControlsOf = (
     ...(inlineEditing && isPreviewed
       ? [
           { clientProps, path: INLINE_EDIT_RECEIVER_PATH },
-          { clientProps, path: MEDIA_PICK_RECEIVER_PATH },
+          {
+            clientProps: { ...clientProps, imageDescriptionField },
+            path: MEDIA_PICK_RECEIVER_PATH,
+          },
           { clientProps, path: RICH_TEXT_EDIT_RECEIVER_PATH },
         ]
       : []),

@@ -113,10 +113,13 @@ const unsavedRichTextEndpoint = ({
 });
 
 export const visualEditingEndpoints = ({
+  imageDescriptionField,
   inlineEditing,
   ...options
-}: UnsavedRichTextEndpointOptions): Endpoint[] => [
+}: UnsavedRichTextEndpointOptions & { imageDescriptionField: string }): Endpoint[] => [
   grantEndpoint,
   unsavedRichTextEndpoint(options),
-  ...(inlineEditing ? [fieldEditEndpoint, mediaOptionsEndpoint, richTextValueEndpoint] : []),
+  ...(inlineEditing
+    ? [fieldEditEndpoint, mediaOptionsEndpoint(imageDescriptionField), richTextValueEndpoint]
+    : []),
 ];

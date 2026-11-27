@@ -191,6 +191,7 @@ describe("the page and the admin, wired through their windows", () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.spyOn(window, "focus").mockImplementation(() => undefined);
     statuses = [];
     admin.fields = {
       body: { value: BODY_STATE },
@@ -215,6 +216,7 @@ describe("the page and the admin, wired through their windows", () => {
     admin.permissions = EVERY_FIELD;
     vi.unstubAllGlobals();
     vi.clearAllMocks();
+    vi.mocked(window.focus).mockRestore();
     vi.useRealTimers();
   });
 
@@ -231,7 +233,10 @@ describe("the page and the admin, wired through their windows", () => {
       value: "New title",
     });
     expect(admin.setModified).toHaveBeenCalledWith(true);
-    expect(statuses).toEqual([["unsaved", undefined]]);
+    expect(statuses).toEqual([
+      ["unsaved", undefined],
+      ["in-form", undefined],
+    ]);
   });
 
   it("shows the reason the form refused a text edit", async () => {
@@ -301,10 +306,11 @@ describe("the page and the admin, wired through their windows", () => {
     expect(admin.dispatchFields).toHaveBeenCalledWith({ path: "image", type: "UPDATE", value: 9 });
     expect(image.show).toHaveBeenCalledWith({
       height: 600,
+      id: 9,
       url: LIGHTHOUSE.url,
       width: 800,
     });
-    expect(statuses).toEqual([["unsaved", undefined]]);
+    expect(statuses).toEqual([["in-form", undefined]]);
   });
 
   it("opens the field of an image the form refuses to pick for", async () => {

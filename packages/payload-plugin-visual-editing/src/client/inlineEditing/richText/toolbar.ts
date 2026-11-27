@@ -10,6 +10,7 @@ import {
 } from "../../../shared/richText/formats.js";
 import { isAllowedLinkUrl, linkUrlOf } from "../../../shared/richText/linkUrls.js";
 import { zoomOf } from "../../overlay/zoom.js";
+import { DATA_VE_TOGGLE_ATTR } from "../../toggle.js";
 
 export type ToolbarEvents = {
   onToggle(action: ToolbarAction): void;
@@ -44,6 +45,7 @@ const LINK_PROBLEM =
   "Use an address that starts with http:, https:, mailto: or tel:, or a relative one.";
 const HIDDEN_DISPLAY = "none";
 const SHOWN_DISPLAY = "block";
+const OUT_OF_VIEW = "hidden";
 const TOGGLES: readonly ToolbarAction[] = [
   "bold",
   "italic",
@@ -196,17 +198,41 @@ const isToggle = (action: string | null): action is ToolbarAction =>
 const within = (value: number, min: number, max: number): number =>
   Math.max(min, Math.min(value, max));
 
-const positionOf = (host: HTMLElement, edited: DOMRect, win: Window) => {
-  const { height, width } = host.getBoundingClientRect();
-  return {
-    left: within(edited.left, VIEWPORT_MARGIN_PX, win.innerWidth - width - VIEWPORT_MARGIN_PX),
-    top: within(
-      edited.top - height - GAP_PX,
-      VIEWPORT_MARGIN_PX,
-      win.innerHeight - height - VIEWPORT_MARGIN_PX
-    ),
+type Position = { left: number; top: number };
+
+const covers = ({ left, top }: Position, { height, width }: DOMRect, toggle: DOMRect): boolean =>
+  left < toggle.right &&
+  left + width > toggle.left &&
+  top < toggle.bottom &&
+  top + height > toggle.top;
+
+const toggleRectIn = (doc: Document): DOMRect | null =>
+  doc.querySelector(`[${DATA_VE_TOGGLE_ATTR}]`)?.getBoundingClientRect() ?? null;
+
+const positionOf = (host: HTMLElement, edited: DOMRect, win: Window): Position => {
+  const size = host.getBoundingClientRect();
+  const leftWithin = (left: number) =>
+    within(left, VIEWPORT_MARGIN_PX, win.innerWidth - size.width - VIEWPORT_MARGIN_PX);
+  const topWithin = (top: number) =>
+    within(top, VIEWPORT_MARGIN_PX, win.innerHeight - size.height - VIEWPORT_MARGIN_PX);
+  const topAbove = edited.top - size.height - GAP_PX;
+  const isBelow =
+    topAbove < VIEWPORT_MARGIN_PX &&
+    edited.bottom + GAP_PX + size.height <= win.innerHeight - VIEWPORT_MARGIN_PX;
+  const placed = {
+    left: leftWithin(edited.left),
+    top: topWithin(isBelow ? edited.bottom + GAP_PX : topAbove),
   };
+  const toggle = toggleRectIn(win.document);
+  if (!toggle || !covers(placed, size, toggle)) return placed;
+  const beside = { ...placed, left: leftWithin(toggle.left - size.width - GAP_PX) };
+  if (!covers(beside, size, toggle)) return beside;
+  const edge = isBelow ? edited.bottom : edited.top;
+  return { ...placed, top: topWithin(Math.max(edge, toggle.bottom) + GAP_PX) };
 };
+
+const isInView = (edited: DOMRect, win: Window): boolean =>
+  edited.bottom > 0 && edited.top < win.innerHeight;
 
 export function createToolbar(
   doc: Document,
@@ -230,9 +256,13 @@ export function createToolbar(
   let shownLink: string | null = null;
   let placedAt: DOMRect | null = null;
 
+  const isEditingLink = () => linkInput !== null && !linkInput.hidden;
+
   const place = (selection: DOMRect) => {
     placedAt = selection;
-    const { left, top } = positionOf(host, selection, doc.defaultView ?? window);
+    const win = doc.defaultView ?? window;
+    host.style.visibility = isInView(selection, win) || isEditingLink() ? "" : OUT_OF_VIEW;
+    const { left, top } = positionOf(host, selection, win);
     const zoom = zoomOf(host);
     host.style.transform = `translate(${left / zoom}px, ${top / zoom}px)`;
   };
@@ -254,8 +284,6 @@ export function createToolbar(
   const press = (action: string, isPressed: boolean) => {
     shadow.querySelector(actionSelector(action))?.setAttribute(PRESSED_ATTR, String(isPressed));
   };
-
-  const isEditingLink = () => linkInput !== null && !linkInput.hidden;
 
   const closeLink = () => {
     if (!linkInput || linkInput.hidden) return;

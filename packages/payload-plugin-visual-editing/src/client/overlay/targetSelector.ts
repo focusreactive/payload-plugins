@@ -16,10 +16,36 @@ function walkAncestors<T>(
   return null;
 }
 
-export function findTargetAncestor(el: Element | null): HTMLElement | null {
-  return walkAncestors(el, (cur) =>
-    cur instanceof HTMLElement && cur.hasAttribute(DATA_VE_TARGET_ATTR) ? cur : targetWithArea(cur)
-  );
+export type IsShown = (target: HTMLElement) => boolean;
+
+export type ShownInAFrame = IsShown & { forget(): void };
+
+export const shownOncePerFrame = (isShown: IsShown): ShownInAFrame => {
+  let shown = new WeakMap<HTMLElement, boolean>();
+  let frameRequest = 0;
+  const forget = () => {
+    shown = new WeakMap();
+    frameRequest = 0;
+  };
+  const isShownInThisFrame = (target: HTMLElement) => {
+    const known = shown.get(target);
+    if (known !== undefined) return known;
+    const isTargetShown = isShown(target);
+    shown.set(target, isTargetShown);
+    if (frameRequest === 0) frameRequest = requestAnimationFrame(forget);
+    return isTargetShown;
+  };
+  return Object.assign(isShownInThisFrame, { forget });
+};
+
+export function findTargetAncestor(el: Element | null, isShown: IsShown): HTMLElement | null {
+  return walkAncestors(el, (cur) => {
+    const target =
+      cur instanceof HTMLElement && cur.hasAttribute(DATA_VE_TARGET_ATTR)
+        ? cur
+        : targetWithArea(cur);
+    return target && isShown(target) ? target : null;
+  });
 }
 
 function findButtonOrAnchor(start: Element | null, boundary: Element): Element | null {

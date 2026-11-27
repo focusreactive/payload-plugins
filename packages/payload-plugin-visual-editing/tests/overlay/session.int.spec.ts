@@ -8,6 +8,21 @@ import {
   toggledMode,
 } from "../../src/client/session";
 import { STORAGE_KEY } from "../../src/client/visualEditingMode";
+import {
+  DATA_VISUAL_EDITING_ADMIN_ATTR,
+  LIVE_PREVIEW_FRAME_ID,
+  VE_FRAME_HELLO_TYPE,
+  VE_FRAME_SETTINGS_TYPE,
+} from "../../src/shared/protocol";
+import {
+  ADMIN_ORIGIN,
+  frameTurnedOff,
+  postFromAdmin,
+  restorePreviewWindow,
+  stubAdminWindow,
+  stubFrameElement,
+  stubOpenerWindow,
+} from "../support/previewWindow";
 
 const originalTop = window.top;
 
@@ -28,6 +43,7 @@ const pageWithBlockedStorage = (): Window =>
 afterEach(() => {
   Object.defineProperty(window, "top", { configurable: true, value: originalTop });
   localStorage.clear();
+  restorePreviewWindow();
 });
 
 describe("page store", () => {
@@ -46,6 +62,7 @@ describe("page store", () => {
 
     expect(store.read()).toEqual({
       isFramed: true,
+      isTurnedOffByFrame: false,
       chosenMode: "hover",
       pageOrigin: window.location.origin,
     });
@@ -129,11 +146,120 @@ describe("page store", () => {
   });
 });
 
+describe("page store in a frame that turns visual editing off", () => {
+  const stops: (() => void)[] = [];
+
+  const attached = () => {
+    const store = createPageStore();
+    store.attach(window);
+    stops.push(store.hearItsFrame(window, () => ADMIN_ORIGIN));
+    return store;
+  };
+
+  const settings = (visualEditing: string) => ({ type: VE_FRAME_SETTINGS_TYPE, visualEditing });
+
+  afterEach(() => {
+    for (const stop of stops.splice(0)) stop();
+  });
+
+  it("reads the attribute of a frame of its own origin as soon as it is attached", () => {
+    stubFrameElement(frameTurnedOff());
+
+    expect(attached().read().isTurnedOffByFrame).toBe(true);
+  });
+
+  it("reads the Live Preview frame of its own origin as one that leaves it on", () => {
+    const frame = document.createElement("iframe");
+    frame.id = LIVE_PREVIEW_FRAME_ID;
+    stubFrameElement(frame);
+
+    expect(attached().read().isTurnedOffByFrame).toBe(false);
+  });
+
+  it("reads any other frame of the admin without the attribute as one that turns it off", () => {
+    document.documentElement.setAttribute(DATA_VISUAL_EDITING_ADMIN_ATTR, "");
+    stubFrameElement(document.createElement("iframe"));
+
+    expect(attached().read().isTurnedOffByFrame).toBe(true);
+    document.documentElement.removeAttribute(DATA_VISUAL_EDITING_ADMIN_ATTR);
+  });
+
+  it("stays on in a frame of its own origin that is not the admin", () => {
+    stubFrameElement(document.createElement("iframe"));
+
+    expect(attached().read().isTurnedOffByFrame).toBe(false);
+  });
+
+  it("asks nothing of its frame from an opaque origin, such as a sandboxed iframe", () => {
+    const postToAdmin = vi.fn();
+    stubAdminWindow({ postMessage: postToAdmin });
+
+    stops.push(createPageStore().hearItsFrame(window, () => "null"));
+
+    expect(postToAdmin).not.toHaveBeenCalled();
+  });
+
+  it("stays on in a frame of another origin until the admin answers", () => {
+    stubFrameElement(null);
+
+    expect(attached().read().isTurnedOffByFrame).toBe(false);
+  });
+
+  it("asks the admin about its frame and follows the answer", () => {
+    const postToAdmin = vi.fn();
+    stubAdminWindow({ postMessage: postToAdmin });
+    const store = attached();
+    const listener = vi.fn();
+    store.subscribe(listener);
+
+    expect(postToAdmin).toHaveBeenCalledWith({ type: VE_FRAME_HELLO_TYPE }, ADMIN_ORIGIN);
+    expect(store.read().isTurnedOffByFrame).toBe(false);
+
+    postFromAdmin(settings("off"));
+    expect(store.read().isTurnedOffByFrame).toBe(true);
+    expect(listener).toHaveBeenCalledOnce();
+
+    postFromAdmin(settings("on"));
+    expect(store.read().isTurnedOffByFrame).toBe(false);
+  });
+
+  it("ignores frame settings from another origin or another window", () => {
+    stubAdminWindow({ postMessage: vi.fn() });
+    const store = attached();
+
+    postFromAdmin(settings("off"), { origin: "https://elsewhere.example" });
+    postFromAdmin(settings("off"), { source: {} });
+
+    expect(store.read().isTurnedOffByFrame).toBe(false);
+  });
+
+  it("stops hearing the admin once it is detached", () => {
+    stubAdminWindow({ postMessage: vi.fn() });
+    const store = createPageStore();
+    store.attach(window);
+    store.hearItsFrame(window, () => ADMIN_ORIGIN)();
+
+    postFromAdmin(settings("off"));
+
+    expect(store.read().isTurnedOffByFrame).toBe(false);
+  });
+
+  it("asks nothing in a window of its own", () => {
+    const postToOpener = vi.fn();
+    stubOpenerWindow({ closed: false, postMessage: postToOpener });
+
+    attached();
+
+    expect(postToOpener).not.toHaveBeenCalled();
+  });
+});
+
 const NO_ORIGINS = ["cms.example.com", "localhost:3000", "//cms.example.com", "file:///cms"];
 
 describe("session", () => {
   const framedPage = {
     isFramed: true,
+    isTurnedOffByFrame: false,
     chosenMode: "always" as const,
     pageOrigin: "https://site.example",
   };
@@ -141,6 +267,17 @@ describe("session", () => {
   it("is available only when the site makes it available", () => {
     expect(sessionOf({}, framedPage).available).toBe(false);
     expect(sessionOf({ available: true }, framedPage).available).toBe(true);
+  });
+
+  it("is not available in a frame that turns it off, with nothing to preview or edit", () => {
+    const turnedOff = { ...framedPage, isTurnedOffByFrame: true };
+
+    expect(sessionOf({ available: true, inlineEditing: true }, turnedOff)).toMatchObject({
+      available: false,
+      enabled: false,
+      inlineEditing: false,
+      isInstantPreviewOn: false,
+    });
   });
 
   it("is not available outside a frame when it is framed only", () => {
@@ -227,6 +364,7 @@ describe("session", () => {
 describe("editing on the page", () => {
   const page = {
     isFramed: false,
+    isTurnedOffByFrame: false,
     chosenMode: "hover" as const,
     pageOrigin: "https://site.example",
   };

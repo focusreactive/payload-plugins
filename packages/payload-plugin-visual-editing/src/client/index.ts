@@ -14,7 +14,12 @@ export type {
   LiveRichTextRenderValue,
 } from "./react/useUnsavedRender.js";
 export { type LiveRichTextIdentity, liveRichTextOf } from "./instantPreview/liveRichTextOf.js";
-export type { LiveRichTextField, LiveRichTextRequest } from "../shared/protocol.js";
+export type {
+  LiveRichTextField,
+  LiveRichTextRequest,
+  VePickedMedia as PickedMedia,
+} from "../shared/protocol.js";
+export type { BuildImageUrl } from "./inlineEditing/shownImage.js";
 export { useVisualEditing } from "./react/VisualEditingProvider.js";
 export { withVisualEditingPath } from "./withVisualEditingPath.js";
 

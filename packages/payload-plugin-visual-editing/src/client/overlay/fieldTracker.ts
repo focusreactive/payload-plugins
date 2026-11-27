@@ -6,6 +6,7 @@ import { vercelStegaDecode } from "@vercel/stega";
 import {
   DATA_VE_LOCALE_ATTR,
   DATA_VE_PATH_ATTR,
+  DATA_VE_VALUE_ID_ATTR,
   VE_IDENTITY_ATTRS,
 } from "../../shared/protocol.js";
 import { fieldKeyOfMarker } from "../../shared/fieldKey.js";
@@ -44,6 +45,7 @@ export interface FieldTracker {
   beginEdit(match: FieldMatch, edit: FieldEdit): HTMLElement | null;
   endEdit(match: FieldMatch, text: string): void;
   isIdentifiedByThePage(element: Element): boolean;
+  namesUploadOf(element: Element): boolean;
   dispose(): void;
 }
 
@@ -81,7 +83,18 @@ const isSameNodeKey = (known: FieldMatch | null, match: FieldMatch) =>
   known.key === match.key &&
   documentAddressOf(known) === documentAddressOf(match);
 
+const isSameField = (one: VeIdentity, other: VeIdentity): boolean =>
+  fieldKeyOfMarker(one) === fieldKeyOfMarker(other) &&
+  one.locale === other.locale &&
+  documentAddressOf(one) === documentAddressOf(other);
+
 const IMAGE_DESCRIPTION_ATTR = "alt";
+
+const IMAGES = "img";
+
+const MARKED = `[${DATA_VE_PATH_ATTR}]`;
+
+const IMAGE_IDENTITY_ATTRS = [...VE_IDENTITY_ATTRS, DATA_VE_VALUE_ID_ATTR];
 
 const isWrittenByThePage = (element: Element, attr: string, original: string): boolean =>
   hasMarker(original) && element.getAttribute(attr) !== withoutMarker(original);
@@ -95,7 +108,11 @@ const restoreAttrs = (element: Element, originals: ReadonlyMap<string, string | 
 
 const identityOfDescription = (value: string): Record<string, string | undefined> => {
   const field = fromStegaPayload(payloadIn(value));
-  return field ? identityAttrsOf(field) : {};
+  if (!field) return {};
+  return {
+    ...identityAttrsOf(field),
+    ...(field.valueId !== undefined && { [DATA_VE_VALUE_ID_ATTR]: field.valueId }),
+  };
 };
 
 const textBearingChildrenOf = (element: Element): ChildNode[] =>
@@ -115,11 +132,21 @@ const LINE_BREAK_TAG = "BR";
 const isLeftByAnEdit = (child: ChildNode): boolean =>
   child instanceof Text || (child instanceof Element && child.tagName === LINE_BREAK_TAG);
 
-const showOnlyEditedText = (editedElement: Element, textNode: Text): void => {
+type TextEdit = FieldEdit & {
+  editedElement: HTMLElement;
+  present: ReadonlySet<ChildNode>;
+  nextSibling: ChildNode | null;
+  before: string;
+  after: string;
+};
+
+const showOnlyEditedText = ({ editedElement, nextSibling, present }: TextEdit, textNode: Text) => {
   for (const child of Array.from(editedElement.childNodes)) {
-    if (child !== textNode && isLeftByAnEdit(child)) child.remove();
+    if (child !== textNode && !present.has(child) && isLeftByAnEdit(child)) child.remove();
   }
-  if (textNode.parentNode !== editedElement) editedElement.prepend(textNode);
+  if (textNode.parentNode === editedElement) return;
+  if (nextSibling?.parentNode === editedElement) nextSibling.before(textNode);
+  else editedElement.append(textNode);
 };
 
 const holderCandidateOf = (textNode: Text): Element | null => {
@@ -130,13 +157,30 @@ const holderCandidateOf = (textNode: Text): Element | null => {
 const showsOnlyText = (element: Element, text: string) =>
   withoutMarker(element.textContent ?? "") === text;
 
+const isBlankText = (node: ChildNode): boolean => node instanceof Text && node.data.trim() === "";
+
+const isTheOnlyTextOf = (element: Element, textNode: Text): boolean =>
+  textNode.parentElement === element &&
+  Array.from(element.childNodes).every(
+    (child) => child === textNode || child instanceof Element || isBlankText(child)
+  );
+
+const SURROUNDING_WHITESPACE = /^(\s*).*?(\s*)$/su;
+
+export const whitespaceAround = (textNode: Text, editedElement: Element) => {
+  if (editedElement.childElementCount === 0) return { after: "", before: "" };
+  const [, before = "", after = ""] = SURROUNDING_WHITESPACE.exec(textNode.data) ?? [];
+  return { after, before };
+};
+
 export function createFieldTracker(main: HTMLElement): FieldTracker {
   const texts = new Map<Text, TrackedText>();
   const attrOriginals = new Map<Element, Map<string, string | null>>();
   const holders = new Map<Element, HeldField>();
+  const sharedHolders = new WeakSet<Element>();
   const ownAttributeWrites = new Map<Element, number>();
   const listeners = new Set<FieldListener>();
-  const edits = new Map<Text, FieldEdit & { editedElement: HTMLElement }>();
+  const edits = new Map<Text, TextEdit>();
 
   const writeIdentityAttr = (element: Element, attr: string, value: string | null) => {
     if (element.getAttribute(attr) === value) return;
@@ -168,6 +212,7 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
   const unstamp = (holder: Element) => {
     const originals = attrOriginals.get(holder);
     holders.delete(holder);
+    sharedHolders.delete(holder);
     if (!originals) return;
     for (const attr of VE_IDENTITY_ATTRS) {
       const value = originals.get(attr);
@@ -194,6 +239,10 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     const isStampedHere = holders.has(candidate);
     if (!isStampedHere && candidate.hasAttribute(DATA_VE_PATH_ATTR)) return null;
     if (showsOnlyText(candidate, textNode.data)) return candidate;
+    if (isTheOnlyTextOf(candidate, textNode)) {
+      sharedHolders.add(candidate);
+      return candidate;
+    }
     if (isStampedHere) unstamp(candidate);
     return null;
   };
@@ -213,6 +262,20 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     return tracked;
   };
 
+  const isIdentifiedByThePage = (element: Element): boolean => {
+    const isWrittenHere = attrOriginals.get(element)?.get(DATA_VE_PATH_ATTR) === null;
+    return element.hasAttribute(DATA_VE_PATH_ATTR) && !isWrittenHere;
+  };
+
+  const isWrappedByThePage = (image: Element): boolean => {
+    const wrapper = image.parentElement?.closest(MARKED) ?? null;
+    return (
+      wrapper !== null &&
+      isIdentifiedByThePage(wrapper) &&
+      wrapper.querySelectorAll(IMAGES).length === 1
+    );
+  };
+
   const identifyImage = (
     element: Element,
     originals: Map<string, string | null>,
@@ -220,8 +283,9 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
   ) => {
     const isIdentifiedHere = originals.get(DATA_VE_PATH_ATTR) === null && !holders.has(element);
     if (!isIdentifiedHere && element.hasAttribute(DATA_VE_PATH_ATTR)) return;
+    if (isWrappedByThePage(element)) return;
     const identity = identityOfDescription(value);
-    for (const attr of VE_IDENTITY_ATTRS) {
+    for (const attr of IMAGE_IDENTITY_ATTRS) {
       const shown = identity[attr];
       if (shown !== undefined) {
         originals.set(attr, null);
@@ -267,10 +331,51 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     for (const listener of listeners) listener.onFields(root, found);
   };
 
+  const showEditedTextAgain = (
+    textNode: Text,
+    tracked: TrackedText,
+    edit: TextEdit,
+    rendered = textNode.data
+  ) => {
+    tracked.original = rendered;
+    const holder = tracked.match?.holder;
+    if (holder && tracked.match) holders.set(holder, { match: tracked.match, original: rendered });
+    showOnlyEditedText(edit, textNode);
+    const shown = `${edit.before}${edit.shownText()}${edit.after}`;
+    if (textNode.data !== shown) {
+      tracked.ownWritesToObserve += 1;
+      textNode.data = shown;
+    }
+    edit.onShownAgain();
+  };
+
+  const isRenderOf = (tracked: TrackedText, child: ChildNode): child is Text => {
+    if (!(child instanceof Text) || texts.has(child)) return false;
+    const field = fromStegaPayload(payloadIn(child.data));
+    return field !== null && tracked.match !== null && isSameField(tracked.match, field);
+  };
+
+  const renderedInsteadOf = (tracked: TrackedText, { editedElement }: TextEdit) =>
+    Array.from(editedElement.childNodes).find((child) => isRenderOf(tracked, child));
+
+  const showEditedTextInsteadOfTheRender = (
+    textNode: Text,
+    tracked: TrackedText,
+    edit: TextEdit
+  ): boolean => {
+    const rendered = main.contains(edit.editedElement) && renderedInsteadOf(tracked, edit);
+    if (!rendered) return false;
+    rendered.replaceWith(textNode);
+    showEditedTextAgain(textNode, tracked, edit, rendered.data);
+    return true;
+  };
+
   const releaseDetachedNodes = () => {
     const released: FieldMatch[] = [];
     for (const [textNode, tracked] of texts) {
       if (main.contains(textNode)) continue;
+      const edit = edits.get(textNode);
+      if (edit && showEditedTextInsteadOfTheRender(textNode, tracked, edit)) continue;
       textNode.data = tracked.original;
       texts.delete(textNode);
       if (tracked.match) released.push(tracked.match);
@@ -296,16 +401,6 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
   const forgetUnlessEdited = (textNode: Text) => {
     if (isOwnWrite(textNode) || edits.has(textNode)) return;
     forget(textNode);
-  };
-
-  const showEditedTextAgain = (textNode: Text, tracked: TrackedText, edit: FieldEdit) => {
-    tracked.original = textNode.data;
-    const holder = tracked.match?.holder;
-    if (holder && tracked.match)
-      holders.set(holder, { match: tracked.match, original: textNode.data });
-    tracked.ownWritesToObserve += 1;
-    textNode.data = edit.shownText();
-    edit.onShownAgain();
   };
 
   const forgetUnlessEditedOrOwnWrite = (textNode: Text) => {
@@ -350,6 +445,7 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       const { holder, textNode: _textNode, ...field } = match;
       const held = holder && holders.get(holder);
       if (!holder || !held || held.match !== match || edits.has(match.textNode)) return false;
+      if (sharedHolders.has(holder)) return false;
       if (main.contains(match.textNode) || !main.contains(holder)) return false;
       const textNode = document.createTextNode(text);
       const shown = { ...field, holder, textNode };
@@ -369,8 +465,13 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       const isHeld = holder !== undefined && holders.get(holder)?.match === match;
       const editedElement = textNode.parentElement;
       if (!isHeld || !editedElement || texts.get(textNode)?.match !== match) return null;
-      if (editedElement.childElementCount > 0) return null;
-      edits.set(textNode, { ...edit, editedElement });
+      edits.set(textNode, {
+        ...edit,
+        ...whitespaceAround(textNode, editedElement),
+        editedElement,
+        nextSibling: textNode.nextSibling,
+        present: new Set(editedElement.childNodes),
+      });
       return editedElement;
     },
     endEdit(match, text) {
@@ -379,7 +480,7 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       const edit = edits.get(textNode);
       edits.delete(textNode);
       if (!edit || !holder || !held || !main.contains(edit.editedElement)) return;
-      showOnlyEditedText(edit.editedElement, textNode);
+      showOnlyEditedText(edit, textNode);
       const known = texts.get(textNode);
       const tracked = known ?? {
         match,
@@ -387,19 +488,18 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
         original: held.original,
         ownWritesToObserve: 0,
       };
-      if (textNode.data !== text) {
+      const shown = `${edit.before}${text}${edit.after}`;
+      if (textNode.data !== shown) {
         tracked.ownWritesToObserve += 1;
-        textNode.data = text;
+        textNode.data = shown;
       }
       if (known) return;
       texts.set(textNode, tracked);
       holders.set(holder, { match, original: held.original });
       for (const listener of listeners) listener.onFields(holder, [match]);
     },
-    isIdentifiedByThePage(element) {
-      const isWrittenHere = attrOriginals.get(element)?.get(DATA_VE_PATH_ATTR) === null;
-      return element.hasAttribute(DATA_VE_PATH_ATTR) && !isWrittenHere;
-    },
+    isIdentifiedByThePage,
+    namesUploadOf: (element) => attrOriginals.get(element)?.get(DATA_VE_VALUE_ID_ATTR) === null,
     dispose() {
       pipeline.dispose();
       listeners.clear();

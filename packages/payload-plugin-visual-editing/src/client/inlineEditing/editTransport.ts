@@ -9,7 +9,7 @@ import type {
   VePickMediaMessage,
   VeRichTextEditEndedMessage,
   VeRichTextEditMessage,
-  VeShownMedia,
+  VePickedMedia,
 } from "../../shared/protocol.js";
 import type { AdminEditChannel, DocumentNews } from "./adminEditChannel.js";
 import type { EditRoutes } from "./editRoutes.js";
@@ -30,7 +30,7 @@ import { documentAddressOf, editedFieldAddressOf } from "../../shared/veDocument
 import { MEDIA_PICK_TIME_LIMIT_MS } from "./adminEditChannel.js";
 import { endpointAnswerOf } from "./endpointAnswer.js";
 
-export type EditStatus = "failed" | "saved" | "saving" | "unsaved";
+export type EditStatus = "failed" | "idle" | "in-form" | "picking" | "saved" | "saving" | "unsaved";
 
 export type EditTransportCtx = { payloadApi: string; onEdited?: () => void };
 
@@ -49,7 +49,7 @@ export interface FieldEdit<Value extends EditValue> {
 
 export type ShownImage = {
   shownMediaId: string | null;
-  show(media: VeShownMedia): (() => void) | null;
+  show(media: VePickedMedia): (() => void) | null;
   openField(): void;
 };
 
@@ -184,6 +184,7 @@ export function createEditTransport(
   const givenToForm = new Map<string, EditValue>();
   const latestQueued = new Map<string, VeEdit>();
   const savedWhenEditsEnd = new Set<string>();
+  const picksInAnotherWindow = new Map<string, ShownImage>();
   let saves: Promise<void> = Promise.resolve();
   let pageLeave = nextPageLeave();
   let openEdit: OpenEdit | null = null;
@@ -215,7 +216,8 @@ export function createEditTransport(
   };
 
   const statusAfterASave = (): EditStatus => {
-    if (waiting.size > 0 || unsavedInForm.size > 0) return "unsaved";
+    if (waiting.size > 0) return "unsaved";
+    if (unsavedInForm.size > 0) return "in-form";
     if (savesOnTheWay.size > 0) return "saving";
     return "saved";
   };
@@ -337,6 +339,7 @@ export function createEditTransport(
     if (!held) return;
     held.onDelivered?.();
     deliver(held.edit);
+    if (adminOf(held.edit)) report(statusAfterASave());
   };
 
   const supersede = (address: string) => {
@@ -376,13 +379,13 @@ export function createEditTransport(
     supersede(address);
     watchedSaves.set(address, onSaveEnded);
     deliver(edit);
-    report("unsaved");
+    report(statusAfterASave());
   };
 
   const holdInForm = (field: VeEditedField) => {
     failed.delete(editedFieldAddressOf(field));
     unsavedInForm.set(editedFieldAddressOf(field), field);
-    report("unsaved");
+    report(statusAfterASave());
   };
 
   const refuse = (field: VeEditedField, refusal: SaveRefusal) => {
@@ -426,6 +429,13 @@ export function createEditTransport(
     if (adminWindow) channel.tell(adminWindow, message);
   };
 
+  const endPickInAnotherWindow = (field: VeEditedField, image: ShownImage) => {
+    const address = editedFieldAddressOf(field);
+    if (picksInAnotherWindow.get(address) !== image) return;
+    picksInAnotherWindow.delete(address);
+    report(isIdle() ? "idle" : statusAfterASave());
+  };
+
   const askAdmin = (
     adminWindow: Window,
     field: VeEditedField,
@@ -440,17 +450,30 @@ export function createEditTransport(
     };
     channel.mediaPicks.ask(adminWindow, request, {
       answered(picked) {
+        picksInAnotherWindow.delete(editedFieldAddressOf(field));
         image.show(picked);
         holdInForm(field);
       },
-      cancelled: releaseFinishedRoutes,
+      cancelled() {
+        endPickInAnotherWindow(field, image);
+        releaseFinishedRoutes();
+      },
       refused(refusal) {
+        endPickInAnotherWindow(field, image);
         if (chosen) refuseAsked(field, refusal, chosen.useAgain);
         image.openField();
       },
     });
-    setTimeout(releaseFinishedRoutes, MEDIA_PICK_TIME_LIMIT_MS);
-    if (chosen) holdInForm(field);
+    setTimeout(() => {
+      endPickInAnotherWindow(field, image);
+      releaseFinishedRoutes();
+    }, MEDIA_PICK_TIME_LIMIT_MS);
+    if (chosen) {
+      holdInForm(field);
+    } else if (adminWindow !== win.parent) {
+      picksInAnotherWindow.set(editedFieldAddressOf(field), image);
+      report("picking");
+    }
   };
 
   const saveMediaThroughEndpoint = (
@@ -528,9 +551,9 @@ export function createEditTransport(
       const opened = open(field);
       return {
         pickInTheDrawer() {
-          const drawerWindow = routes.drawerOf(field);
-          if (!drawerWindow) return false;
-          askAdmin(drawerWindow, field, image);
+          const adminWindow = adminOf(field);
+          if (!adminWindow) return false;
+          askAdmin(adminWindow, field, image);
           close(opened);
           return true;
         },
@@ -558,7 +581,7 @@ export function createEditTransport(
         if ("edit" in failure) deliver(failure.edit);
         else failure.askAgain();
       }
-      if (unsavedInForm.size > 0) report("unsaved");
+      if (unsavedInForm.size > 0) report(statusAfterASave());
     },
   };
 }
