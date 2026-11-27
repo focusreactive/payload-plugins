@@ -190,6 +190,10 @@ describe("a target beneath a layer that takes the pointer", () => {
       start();
     });
 
+    afterEach(() => {
+      Reflect.deleteProperty(Range.prototype, "getClientRects");
+    });
+
     it.each([
       ["a div that acts as a button", { role: "button" }],
       ["a div that acts as a link", { role: "link" }],
@@ -251,6 +255,30 @@ describe("a target beneath a layer that takes the pointer", () => {
         expect(open).not.toHaveBeenCalled();
         expect(event.defaultPrevented).toBe(false);
       });
+    });
+
+    it("offers the action of the image over the line of a label the link holds for screen readers only", () => {
+      const link = document.createElement("a");
+      link.href = "#project";
+      const label = document.createElement("span");
+      label.textContent = "Read the case";
+      Object.assign(label.style, {
+        clip: "rect(0px, 0px, 0px, 0px)",
+        height: "1px",
+        overflowX: "hidden",
+        overflowY: "hidden",
+        position: "absolute",
+        whiteSpace: "nowrap",
+        width: "1px",
+      });
+      link.append(label);
+      control(link);
+      textOfLinksDrawnAt(new DOMRect(0, 0, 400, 60));
+
+      pointerMovesOver(label);
+
+      expect(isBadgeShown()).toBe(true);
+      expect(badgeIsFor()).toBe("hero.image");
     });
 
     it("offers the action of the image while the pointer is over an empty link stretched over the card", () => {

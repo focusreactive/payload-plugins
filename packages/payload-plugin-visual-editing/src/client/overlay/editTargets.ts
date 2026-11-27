@@ -69,7 +69,9 @@ const drawsTextAt = (control: Element, point: Point): boolean => {
   const range = doc.createRange();
   if (typeof range.getClientRects !== "function") return false;
   while (texts.nextNode()) {
-    range.selectNodeContents(texts.currentNode);
+    const text = texts.currentNode as Text;
+    if (!isDrawnText(text, control, control)) continue;
+    range.selectNodeContents(text);
     if ([...range.getClientRects()].some((rect) => holds(rect, point))) return true;
   }
   return false;
