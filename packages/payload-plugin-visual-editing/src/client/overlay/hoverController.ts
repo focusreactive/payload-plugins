@@ -5,7 +5,7 @@ import type { Point } from "./targetsAtPoint.js";
 
 import { areaOf, isWithin, rectOf } from "./targetArea.js";
 import { findTargetAncestor } from "./targetSelector.js";
-import { pointOf } from "./targetsAtPoint.js";
+import { holds, pointOf } from "./targetsAtPoint.js";
 
 export type PointedTarget = (target: HTMLElement, at: Point) => HTMLElement;
 
@@ -134,17 +134,21 @@ export function createHoverController(
 
   const scheduleClear = (): void => switchAfterGrace(null);
 
-  const badgeRectsOutside = (target: HTMLElement): DOMRect[] => {
+  const badgeRectsOnTheWay = (target: HTMLElement, at: Point): DOMRect[] => {
     const area = rectOf(target);
+    const isStillOverTheTarget = holds(area, at);
     return badgeElements
       .map((part) => part.getBoundingClientRect())
-      .filter((rect) => rect.width > 0 && rect.height > 0 && !isWithin(rect, area));
+      .filter(
+        (rect) =>
+          rect.width > 0 && rect.height > 0 && (isStillOverTheTarget || !isWithin(rect, area))
+      );
   };
 
   const isOnTheWayToBadge = (target: HTMLElement, at: Point | null): boolean => {
     const from = lastPointOnTarget;
     if (!from || !at || isSamePoint(from, at)) return false;
-    return badgeRectsOutside(target).some((rect) => isOnTheWay(from, rect, at));
+    return badgeRectsOnTheWay(target, at).some((rect) => isOnTheWay(from, rect, at));
   };
 
   const request = (next: HTMLElement | null, at: Point | null): void => {

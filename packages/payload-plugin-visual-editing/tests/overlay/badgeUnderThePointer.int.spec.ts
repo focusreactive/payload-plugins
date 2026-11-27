@@ -16,6 +16,7 @@ import { createFieldTracker } from "../../src/client/overlay/fieldTracker";
 import { holds } from "../../src/client/overlay/targetsAtPoint";
 import { DATA_VE_COLLECTION_ATTR, DATA_VE_PATH_ATTR } from "../../src/shared/protocol";
 
+import { markedText } from "../support/markedData";
 import { click, overlayCtx } from "../support/overlay";
 
 const CLEAR_GRACE_MS = 250;
@@ -184,6 +185,40 @@ describe("the badge of a target on a page whose overlay root is the body", () =>
     movePointer(caption, { x: 320, y: 90 });
 
     expect(badgeIsFor()).toBe("caption");
+  });
+
+  it("keeps the Replace image button while the pointer crosses a text drawn over the image on the way to it", () => {
+    const tag = document.createElement("span");
+    tag.textContent = markedText("Payload CMS", {
+      collectionSlug: "page",
+      docId: "1",
+      kind: "collection",
+      path: "tag",
+    });
+    document.body.append(tag);
+    drawnAt(tag, new DOMRect(150, 130, 120, 30));
+    removeEditTargets();
+    tracker.dispose();
+    tracker = createFieldTracker(document.body);
+    removeEditTargets = createEditTargets(document.body, tracker, () => ({
+      ...overlayCtx({ mode: "hover" }),
+      actionOf: (target) => (target === photo ? replacePhoto : null),
+      mode: "hover",
+    }));
+    drawnAt(editLabel(), new DOMRect(350, 70, 52, 24));
+    drawnAt(actionButton(), new DOMRect(108, 108, 100, 24));
+    movePointer(photo, { x: 300, y: 200 });
+
+    movePointer(tag, { x: 230, y: 150 });
+
+    expect(badgeIsFor()).toBe("image");
+
+    movePointer(actionButton(), { x: 190, y: 125 });
+    vi.advanceTimersByTime(1000);
+
+    expect(badgeIsFor()).toBe("image");
+    expect(click(actionButton(), { clientX: 190, clientY: 125 }).defaultPrevented).toBe(true);
+    expect(run).toHaveBeenCalledTimes(1);
   });
 
   it("runs the action of the button clicked after the pointer reached it", () => {
