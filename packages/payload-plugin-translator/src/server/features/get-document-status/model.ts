@@ -1,51 +1,41 @@
 import { z } from "zod";
 import type { CollectionSlug } from "payload";
 
-import { JobIdSchema, toClientErrorMessage } from "../../shared/index.js";
-import type { Task, TaskStatus } from "../../modules/task-runner/index.js";
+import { DocumentIdSchema } from "../../shared/index.js";
+import type { TaskStatus } from "../../modules/task-runner/index.js";
+import { lastTouched } from "../../modules/runs/index.js";
+import type { ReportedRun } from "../../modules/runs/index.js";
 
 /**
  * Input validation schema.
  *
- * `collection_id` accepts any of the shapes Payload allows as a document ID
- * (integer autoincrement, UUID, MongoDB ObjectId, etc.). See JobIdSchema for
- * the rationale.
+ * `collection_id` accepts any shape Payload allows as a document id — see
+ * {@link DocumentIdSchema}.
  */
 export const GetDocumentStatusInputSchema = z.object({
-  collection_id: JobIdSchema,
+  collection_id: DocumentIdSchema,
   collection_slug: z.string().nonempty(),
 });
 
 export type GetDocumentStatusInput = z.infer<typeof GetDocumentStatusInputSchema>;
 
-/**
- * Translation task status (re-export for backwards compatibility)
- */
-export type TranslationTaskStatus = TaskStatus;
-
-/**
- * Input format for API response (backwards compatible with Payload Jobs format)
- */
-export type JobInputOutput = {
+/** What one status item is about: the document and the pair of locales. */
+export type DocumentStatusItemInput = {
   collection: {
     relationTo: CollectionSlug;
     value: string;
   };
   source_lng: string;
   target_lng: string;
-  strategy?: string;
 };
 
-/**
- * Normalized job output (snake_case for client compatibility)
- */
-export type JobStatusOutput = {
-  id: string;
+/** One target locale of one run, snake_case because the admin reads it off the wire. */
+export type DocumentStatusItem = {
   status: TaskStatus;
   created_at: string;
   updated_at: string;
   completed_at?: string;
-  input: JobInputOutput;
+  input: DocumentStatusItemInput;
   error?: { message: string };
   cancelled: boolean;
 };
@@ -57,49 +47,22 @@ export type GetDocumentStatusConfig = {
   availableCollections: Set<CollectionSlug>;
 };
 
-const isNewerTask = (candidate: Task, current: Task): boolean =>
-  candidate.createdAt !== current.createdAt
-    ? candidate.createdAt > current.createdAt
-    : candidate.updatedAt > current.updatedAt;
-
 /**
- * Reduce a document's jobs to the latest one per target locale.
- *
- * `findByCollection` returns every job for the document across all target locales (plus any superseded
- * jobs not yet cancelled). The status panel shows one row per target locale, so we keep — per
- * `targetLng` — the most recently created job (tie-break: most recently updated). Without this the
- * caller sees a single arbitrary job and every other in-flight locale looks idle, which is the
- * concurrent re-translate bug (a second re-translate appearing to overwrite the first's status).
+ * `error` is passed through rather than sanitised: the text is cleaned before it is stored, and a
+ * second pass would collapse a named reason's own copy to the generic line.
  */
-export function latestTaskPerTargetLocale(tasks: Task[]): Task[] {
-  const byLocale = new Map<string, Task>();
-  for (const task of tasks) {
-    const current = byLocale.get(task.input.targetLng);
-    if (!current || isNewerTask(task, current)) byLocale.set(task.input.targetLng, task);
-  }
-  return [...byLocale.values()];
-}
-
-/**
- * Transforms a Task to API output format (snake_case for client compatibility)
- */
-export function taskToJobStatusOutput(task: Task): JobStatusOutput {
+export function runToStatusItem({ row, status }: ReportedRun): DocumentStatusItem {
   return {
-    id: task.id,
-    status: task.status,
-    created_at: task.createdAt,
-    updated_at: task.updatedAt,
-    completed_at: task.completedAt,
+    status,
+    created_at: row.queuedAt,
+    updated_at: lastTouched(row),
+    completed_at: row.outcome === "delivered" ? (row.settledAt ?? undefined) : undefined,
     input: {
-      collection: {
-        relationTo: task.input.collectionSlug,
-        value: task.input.collectionId,
-      },
-      source_lng: task.input.sourceLng,
-      target_lng: task.input.targetLng,
-      strategy: task.input.strategy,
+      collection: { relationTo: row.collectionSlug, value: row.collectionId },
+      source_lng: row.sourceLng,
+      target_lng: row.targetLng,
     },
-    error: task.error ? { message: toClientErrorMessage(task.error.message) } : undefined,
-    cancelled: task.cancelled,
+    error: row.error === null ? undefined : { message: row.error },
+    cancelled: false,
   };
 }

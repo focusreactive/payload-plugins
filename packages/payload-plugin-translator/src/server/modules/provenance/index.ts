@@ -9,11 +9,13 @@ export { PayloadProvenanceStore } from "./Provenance.store.js";
 export type { ProvenanceStoreFactory } from "./Provenance.store.js";
 export { injectProvenanceCleanup, makeProvenanceCleanupHook } from "./ProvenanceCleanup.hook.js";
 export { assertProvenanceSlugFree } from "./slugGuard.js";
-export { ProvenanceService } from "./Provenance.service.js";
-export type { StalenessLocale } from "./Provenance.service.js";
-export { configureProvenance, provenanceIo } from "./Provenance.wiring.js";
+export { ProvenanceRecorder } from "./ProvenanceRecorder.service.js";
+export { DocumentStaleness } from "./DocumentStaleness.service.js";
+export type { LocaleStaleness } from "./DocumentStaleness.service.js";
+export { PROVENANCE_MODULE, provenanceModule } from "./Provenance.module.js";
+export { configureProvenance, documentStalenessIo, recorderIo } from "./Provenance.wiring.js";
 export type {
-  ProvenanceModule,
+  DocumentStalenessFactory,
   ProvenanceOption,
-  ProvenanceServiceFactory,
+  ProvenanceRecorderFactory,
 } from "./Provenance.wiring.js";

@@ -1,23 +1,18 @@
-import type {
-  TranslationInput,
-  TranslationOutput,
-} from "../../core/domain/translation-providers/index.js";
 import { isObject } from "../../core/kernel/utils/isObject.js";
 import { KeySetMismatchError, UnparseableReplyError } from "./errors/index.js";
+import { SECTION_NAMES, emptySections, indexOfKey } from "./wire/index.js";
+import type { Sections } from "./wire/index.js";
 
-export type ParsedReply = {
-  translations: TranslationOutput;
-  missingInputKeys: number[];
-  unrequestedReplyKeys: string[];
+type Harvest = {
+  kept: Sections;
+  keysAsked: number;
+  keysPresentInReply: number;
+  stringValuesKept: number;
+  missing: Set<number>;
+  unrequested: string[];
 };
 
-/**
- * Parses an untrusted reply into a {@link TranslationOutput} and reports the key-set gap.
- *
- * A partial answer is applied, not rejected — the gap is returned so the caller can report it. Only
- * a reply that answers nothing is a failure ({@link KeySetMismatchError}).
- */
-export function parseAndValidateReply(input: TranslationInput, raw: string): ParsedReply {
+function asObject(raw: string): Record<string, unknown> {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
@@ -25,37 +20,65 @@ export function parseAndValidateReply(input: TranslationInput, raw: string): Par
     throw new UnparseableReplyError("The provider's reply was not valid JSON.", { cause });
   }
 
-  // `isObject` admits arrays: `["a"]` has key "0", so a 0-based input would accept it by coincidence.
   if (!isObject(parsed) || Array.isArray(parsed)) {
     throw new UnparseableReplyError("The provider's reply was JSON, but not an object.");
   }
 
-  const expectedKeys = new Set(Object.keys(input));
-  const translations: TranslationOutput = {};
-  const missingInputKeys: number[] = [];
+  return parsed;
+}
 
-  for (const key of expectedKeys) {
-    const value = parsed[key];
-    if (typeof value === "string") {
-      translations[Number(key)] = value;
-    } else {
-      missingInputKeys.push(Number(key));
+function harvest(sent: Sections, parsed: Record<string, unknown>): Harvest {
+  const kept = emptySections();
+  const missing = new Set<number>();
+  const unrequested = Object.keys(parsed).filter(
+    (key) => !(SECTION_NAMES as readonly string[]).includes(key)
+  );
+  let keysAsked = 0;
+  let keysPresentInReply = 0;
+  let stringValuesKept = 0;
+
+  for (const name of SECTION_NAMES) {
+    const answer = parsed[name];
+    const section = isObject(answer) ? answer : {};
+    const askedKeys = new Set(Object.keys(sent[name]));
+
+    for (const key of askedKeys) {
+      keysAsked += 1;
+      if (Object.hasOwn(section, key)) keysPresentInReply += 1;
+
+      const value = section[key];
+      if (typeof value === "string") {
+        kept[name][key] = value;
+        stringValuesKept += 1;
+      } else {
+        missing.add(indexOfKey(key));
+      }
     }
+
+    unrequested.push(...Object.keys(section).filter((key) => !askedKeys.has(key)));
   }
 
-  const unrequestedReplyKeys = Object.keys(parsed).filter((key) => !expectedKeys.has(key));
+  return { kept, keysAsked, keysPresentInReply, stringValuesKept, missing, unrequested };
+}
 
-  if (expectedKeys.size > 0 && Object.keys(translations).length === 0) {
-    const answeredAnyKey = [...expectedKeys].some((key) => Object.hasOwn(parsed, key));
+function refuseIfNothingKept(harvested: Harvest): void {
+  if (harvested.keysAsked === 0 || harvested.stringValuesKept > 0) return;
 
-    throw new KeySetMismatchError(
-      answeredAnyKey
-        ? `The provider's reply carried the requested keys, but none of the ${expectedKeys.size} values was a string.`
-        : `The provider's reply answered none of the ${expectedKeys.size} requested keys.`,
-      missingInputKeys,
-      unrequestedReplyKeys
-    );
-  }
+  throw new KeySetMismatchError(
+    harvested.keysPresentInReply > 0
+      ? `The provider's reply carried the requested keys, but none of the ${harvested.keysAsked} values was a string.`
+      : `The provider's reply answered none of the ${harvested.keysAsked} requested keys.`,
+    [...harvested.missing],
+    harvested.unrequested
+  );
+}
 
-  return { translations, missingInputKeys, unrequestedReplyKeys };
+/** A partial reply is returned; only one answering none of the sent keys throws {@link KeySetMismatchError}. */
+export function parseAndValidateReply(sent: Sections, raw: string): Sections {
+  const parsed = asObject(raw);
+  const harvested = harvest(sent, parsed);
+
+  refuseIfNothingKept(harvested);
+
+  return harvested.kept;
 }

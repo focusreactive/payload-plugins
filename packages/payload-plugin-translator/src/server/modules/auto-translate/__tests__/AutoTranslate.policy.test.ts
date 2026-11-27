@@ -1,21 +1,24 @@
 import { describe, it, expect } from "vitest";
 
+import { resolveWorld } from "../../../../core/domain/world/index.js";
+
 import {
   buildAutoTranslateTasks,
-  extractLocaleCodes,
   filterPolicyToKnownLocales,
   makeCollectionPolicyResolver,
   normalizeAutoTranslateConfig,
   passesPublishGate,
-  resolvePublishOnTranslation,
 } from "../AutoTranslate.policy.js";
 import type { NormalizedAutoTranslatePolicy } from "../AutoTranslate.policy.js";
+
+const READS = { latest: "the latest read", published: "the published read" };
+const FLAT = resolveWorld({ drafts: false, autosave: false }, READS);
+const LAYERED = resolveWorld({ drafts: true, autosave: false }, READS);
 
 const policy = (
   over: Partial<NormalizedAutoTranslatePolicy> = {}
 ): NormalizedAutoTranslatePolicy => ({
   targets: ["de", "fr"],
-  strategy: "overwrite",
   debounceMs: 0,
   ...over,
 });
@@ -24,7 +27,6 @@ describe("normalizeAutoTranslateConfig", () => {
   it("applies defaults (strategy overwrite, debounce 0)", () => {
     expect(normalizeAutoTranslateConfig({ targets: ["de"] })).toEqual({
       targets: ["de"],
-      strategy: "overwrite",
       debounceMs: 0,
       sourceLocale: undefined,
     });
@@ -34,15 +36,14 @@ describe("normalizeAutoTranslateConfig", () => {
     expect(
       normalizeAutoTranslateConfig({
         targets: ["de"],
-        strategy: "skip_existing",
         debounceMs: 1000,
         sourceLocale: "en",
       })
-    ).toEqual({ targets: ["de"], strategy: "skip_existing", debounceMs: 1000, sourceLocale: "en" });
+    ).toEqual({ targets: ["de"], debounceMs: 1000, sourceLocale: "en" });
   });
 
   // Guards the call site (not just the shared primitive): a duplicate in config.targets must collapse
-  // so one misconfigured [de, de] never enqueues two racing jobs for the same (doc, locale).
+  // so one misconfigured [de, de] never enqueues two racing runs for the same (doc, locale).
   it("de-duplicates config targets", () => {
     expect(normalizeAutoTranslateConfig({ targets: ["de", "de", "fr"] }).targets).toEqual([
       "de",
@@ -61,35 +62,13 @@ describe("makeCollectionPolicyResolver (v1 — doc ignored)", () => {
 
 describe("passesPublishGate (D8)", () => {
   it("no-drafts collection: any save qualifies", () => {
-    expect(passesPublishGate({}, false)).toBe(true);
-    expect(passesPublishGate({ _status: "draft" }, false)).toBe(true);
+    expect(passesPublishGate({}, FLAT)).toBe(true);
+    expect(passesPublishGate({ _status: "draft" }, FLAT)).toBe(true);
   });
   it("drafts collection: only a published doc qualifies", () => {
-    expect(passesPublishGate({ _status: "published" }, true)).toBe(true);
-    expect(passesPublishGate({ _status: "draft" }, true)).toBe(false);
-    expect(passesPublishGate({}, true)).toBe(false);
-  });
-});
-
-describe("resolvePublishOnTranslation (D9 — mirror source)", () => {
-  it("mirrors the source status", () => {
-    expect(resolvePublishOnTranslation({ _status: "published" }, true)).toBe(true);
-    expect(resolvePublishOnTranslation({ _status: "draft" }, true)).toBe(false);
-    expect(resolvePublishOnTranslation({}, false)).toBe(true);
-  });
-});
-
-describe("extractLocaleCodes", () => {
-  it("returns null when localization is disabled/absent", () => {
-    expect(extractLocaleCodes(false)).toBeNull();
-    expect(extractLocaleCodes(undefined)).toBeNull();
-  });
-
-  it("reads codes from both the string and object locale forms", () => {
-    expect(extractLocaleCodes({ locales: ["en", "de"] })).toEqual(new Set(["en", "de"]));
-    expect(extractLocaleCodes({ locales: [{ code: "en" }, { code: "fr" }] })).toEqual(
-      new Set(["en", "fr"])
-    );
+    expect(passesPublishGate({ _status: "published" }, LAYERED)).toBe(true);
+    expect(passesPublishGate({ _status: "draft" }, LAYERED)).toBe(false);
+    expect(passesPublishGate({}, LAYERED)).toBe(false);
   });
 });
 
@@ -129,7 +108,7 @@ describe("buildAutoTranslateTasks", () => {
       documentId: "1",
       sourceLocale: "en",
       doc: { _status: "published" },
-      hasDrafts: true,
+      world: LAYERED,
       now: 0,
     });
     expect(tasks.map((t) => t.targetLng)).toEqual(["de", "fr"]);
@@ -137,7 +116,6 @@ describe("buildAutoTranslateTasks", () => {
       collectionSlug: "posts",
       collectionId: "1",
       sourceLng: "en",
-      strategy: "overwrite",
       publishOnTranslation: true,
     });
     expect(tasks[0].waitUntil).toBeUndefined();
@@ -150,7 +128,7 @@ describe("buildAutoTranslateTasks", () => {
       documentId: "1",
       sourceLocale: "en",
       doc: { _status: "published" },
-      hasDrafts: true,
+      world: LAYERED,
       now: 1000,
     });
     expect(tasks[0].waitUntil).toEqual(new Date(6000));

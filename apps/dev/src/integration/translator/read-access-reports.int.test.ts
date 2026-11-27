@@ -108,7 +108,7 @@ describe("a report shows only what its caller may read", () => {
   });
 
   it('queues nothing for "translate everything" when the caller may read nothing', async () => {
-    const { data } = await callEndpoint(ctx.payload, "post", "/translate/enqueue", {
+    const { data } = await callEndpoint(ctx.payload, "post", "/translate/enqueue-list", {
       user: refused as never,
       body: {
         collection_slug: "docs",

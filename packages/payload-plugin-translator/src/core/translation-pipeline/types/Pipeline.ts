@@ -1,7 +1,9 @@
+import type { LeafAddress } from "../../domain/content-projection/idPath.js";
 import type { IdPath } from "../../domain/content-projection/idPath.js";
 import type { FieldLike } from "../../kernel/field-traversal/index.js";
-import type { ChangedLeaves } from "../../domain/provenance/staleness.js";
-import type { DocumentRef } from "../../domain/translation-providers/index.js";
+import type { RegisteredLanguage } from "../../../traversal/index.js";
+import type { DocumentRef, ValueFailureCode } from "../../domain/translation-providers/index.js";
+import type { AnsweredSegment } from "../../kernel/lexical/checkSegments.js";
 
 export type PipelineConfig = {
   schema: FieldLike[];
@@ -10,14 +12,28 @@ export type PipelineConfig = {
   sourceLng: string;
   targetLng: string;
   document: DocumentRef;
-  sourceChangedByLeaf?: ChangedLeaves;
+  selection: readonly LeafAddress[];
+  languages: readonly RegisteredLanguage[];
+  readonly hostLanguageId: string;
 };
 
-export type PipelineResult = {
-  translatedData: Record<string, unknown>;
-  /**
-   * The leaves actually sent for translation, by the same address a provenance receipt is keyed on.
-   * A caller writing a receipt may only claim these — see `ProvenanceService.record`.
-   */
-  translatedPaths: IdPath[];
-};
+export type LeafFailureCode = ValueFailureCode | "not-answered";
+
+export type LeafFailure = { code: LeafFailureCode; message?: string };
+
+export type SettledAnswer =
+  | { kind: "text"; text: string }
+  | { kind: "segments"; segments: AnsweredSegment[] }
+  | { kind: "failed"; failure: LeafFailure };
+
+export type LeafOutcome =
+  | { idPath: IdPath; answered: true }
+  | { idPath: IdPath; answered: false; failures: readonly LeafFailure[] };
+
+export type PipelineResult =
+  | { sent: false }
+  | {
+      sent: true;
+      translatedData: Record<string, unknown>;
+      leaves: readonly LeafOutcome[];
+    };

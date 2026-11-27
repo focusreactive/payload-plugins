@@ -8,9 +8,14 @@ import { seoPlugin as seoAnalysisPlugin } from "@focus-reactive/payload-plugin-s
 import { stackedEditing } from "@focus-reactive/payload-plugin-stacked-editing";
 import {
   translatorPlugin,
-  createOpenAIProvider,
+  documentTranslation,
+  translateDocumentControl,
+  bulkTranslationDashboard,
   createSyncRunner,
+  createTranslationProvider,
+  askOpenAI,
 } from "@focus-reactive/payload-plugin-translator";
+import type { AskModel } from "@focus-reactive/payload-plugin-translator";
 import { visualEditingPlugin } from "@focus-reactive/payload-plugin-visual-editing";
 import { nestedDocsPlugin } from "@payloadcms/plugin-nested-docs";
 import { redirectsPlugin } from "@payloadcms/plugin-redirects";
@@ -126,6 +131,39 @@ const resolveAnalyticsPagePath = async (ref: string, req: PayloadRequest): Promi
 };
 
 const ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
+
+let translationAsk: Promise<AskModel> | undefined;
+
+/**
+ * The SDK's own default is ten minutes, which would hold a live editor request that long.
+ */
+const OPENAI_TIMEOUT_MS = 60_000;
+
+const buildTranslationAsk = async (): Promise<AskModel> => {
+  const { default: OpenAI } = await import("openai");
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: OPENAI_TIMEOUT_MS });
+
+  return askOpenAI({ client, params: { model: "gpt-4o-mini" } });
+};
+
+/**
+ * Loaded on the first translation, not at config load: the `openai` constructor throws without
+ * OPENAI_API_KEY, which `apps/cms/README.md` documents as optional, and evaluating the module
+ * costs ~55ms / ~7MB (openai@4.104.0, measured 2026-11).
+ */
+const askTranslationModel: AskModel = async (request) => {
+  translationAsk ??= buildTranslationAsk();
+
+  let ask: AskModel;
+  try {
+    ask = await translationAsk;
+  } catch (cause) {
+    translationAsk = undefined;
+    throw cause;
+  }
+
+  return await ask(request);
+};
 
 const runAfter = (earlier: Plugin, plugin: Plugin): Plugin =>
   Object.assign(plugin, { order: (earlier.order ?? 0) + 1 });
@@ -379,10 +417,10 @@ export const plugins: Plugin[] = [
     ),
     access: { check: ({ req }) => Boolean(req.user) },
     runner: createSyncRunner(),
-    translationProvider: createOpenAIProvider({
-      apiKey: process.env.OPENAI_API_KEY!,
-      dryRun: false,
-      model: "gpt-4o-mini",
+    modules: [documentTranslation()],
+    components: [translateDocumentControl(), bulkTranslationDashboard()],
+    translationProvider: createTranslationProvider({
+      askModel: askTranslationModel,
       systemPrompt: ({ defaultPrompt }) =>
         `${defaultPrompt}\nUse formal language. Keep brand names unchanged.`,
     }),

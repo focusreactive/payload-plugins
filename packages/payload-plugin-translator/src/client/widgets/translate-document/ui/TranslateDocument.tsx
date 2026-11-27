@@ -1,131 +1,71 @@
 "use client";
 
-import { toast, useLocale } from "@payloadcms/ui";
-import { useEffect, useMemo } from "react";
+import { useId, useMemo, useState } from "react";
 
+import type { DocumentId } from "../../../../types/wire/primitives.js";
 import {
-  AutoTranslateMarker,
-  buildTranslationStatusRows,
-  deriveDocumentRunStatus,
-  derivePanelStatus,
-  TranslationsApi,
-  TranslationStatusList,
+  describePanelStatus,
+  documentPanelStatus,
+  PanelStatusMarker,
+  useDocumentTranslationState,
 } from "../../../entities/translation/index.js";
-import type { AutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary.js";
-import type { TargetSelectionMode } from "../../../../types/TargetSelection.js";
-import { OpenDocumentTranslationPopup } from "../../../features/open-document-translation-popup/index.js";
-import {
-  DocumentTranslationForm,
-  FORM_FIELDS,
-} from "../../../features/translate-document-form/index.js";
-import type { FormValues } from "../../../features/translate-document-form/index.js";
-import { DocumentTranslationFormModel } from "../../../features/translate-document-form/index.client.js";
-import { handleFormError } from "../../../shared/lib/forms/handle-form-error.js";
-import { useCollectionDocumentUrlParams } from "../../../shared/lib/payload/hooks/useCollectionDocumentUrlParams.js";
+import { LanguageTranslateIcon } from "../../../shared/lib/assets/icons/LanguageTranslateIcon.js";
+import Button from "../../../shared/ui/Button/index.js";
+import SideDrawer from "../../../shared/ui/SideDrawer/index.js";
+import type { LocaleChoice } from "../../../entities/translation/index.js";
+import { TranslationsPanel } from "./TranslationsPanel.js";
+import { useRefetchOnSave } from "./useRefetchOnSave.js";
 
 import styles from "./styles.module.scss";
 
 type TranslateDocumentProps = {
-  hasDrafts: boolean;
-  autoTranslate: AutoTranslateSummary | null;
-  targetSelection: TargetSelectionMode;
+  collection: string;
+  id: DocumentId;
+  /** The host's locales, source and targets alike. */
+  locales: readonly LocaleChoice[];
 };
 
-const TranslateDocument = ({
-  hasDrafts,
-  autoTranslate,
-  targetSelection,
-}: TranslateDocumentProps) => {
-  const locale = useLocale();
-  const params = useCollectionDocumentUrlParams();
+const TranslateDocument = ({ collection, id, locales }: TranslateDocumentProps) => {
+  const document = useMemo(() => ({ collection, id }), [collection, id]);
+  const read = useDocumentTranslationState(document);
+  useRefetchOnSave(read.refetch);
 
-  const queueTranslationApi = TranslationsApi.useQueueDocumentTranslation();
-  const { data, error, isLoading } = TranslationsApi.useDocumentTranslation(params);
-  const { data: staleness } = TranslationsApi.useDocumentStaleness(params);
+  const [open, setOpen] = useState(false);
+  const headingId = useId();
 
-  useEffect(() => {
-    if (error) {
-      toast.error(error.message);
-    }
-  }, [error]);
+  const source = read.data?.sourceLocale ?? locales[0]?.code ?? "";
+  const status = read.data ? documentPanelStatus(read.data.locales) : undefined;
+  const { tone, title } = describePanelStatus(status, "Translate this document");
 
-  const staleLocales = useMemo(
-    () => (staleness?.locales ?? []).filter((l) => l.is_stale).map((l) => l.target_lng),
-    [staleness]
-  );
-  // The panel trigger shows one aggregate marker; the popup shows the full per-locale list.
-  const panelStatus = useMemo(
-    () => derivePanelStatus({ runStatus: deriveDocumentRunStatus(data), staleLocales }),
-    [data, staleLocales]
-  );
-  const statusRows = useMemo(
-    () => buildTranslationStatusRows({ staleness, runs: data }),
-    [staleness, data]
-  );
-
-  const initialValues = useMemo(
-    () => ({
-      [FORM_FIELDS.SOURCE_LNG]: locale.code,
-      // Multi mode binds an array; single mode a string. Seed the matching empty value.
-      [FORM_FIELDS.TARGET_LNG]: targetSelection === "multi" ? [] : "",
-      [FORM_FIELDS.HIDDEN_COLLECTION_SLUG]: params.collection,
-      [FORM_FIELDS.HIDDEN_COLLECTION_ID]: params.id,
-    }),
-    [locale.code, params.collection, params.id, targetSelection]
-  );
-
-  const { form } = DocumentTranslationFormModel.useForm({ initialValues });
-
-  const handleSubmit = async (formData: FormValues, onSuccess?: () => void) => {
-    try {
-      await queueTranslationApi.mutateAsync({
-        ...formData,
-        collection_id: [formData[FORM_FIELDS.HIDDEN_COLLECTION_ID]],
-      });
-      onSuccess?.();
-    } catch (e) {
-      handleFormError(e, form);
-    }
-  };
-
-  // Vertical stack: title → Translate (form) → Status (unified per-locale list). No columns, no
-  // corner chip — one consistent system so the popup stays calm as the plugin grows.
   return (
-    <OpenDocumentTranslationPopup isLoading={isLoading} status={panelStatus}>
-      {({ close }) => (
-        <>
-          <div className={styles.header}>
-            <h4 className={styles.title}>Translate document</h4>
-            {autoTranslate && (
-              <AutoTranslateMarker
-                targets={autoTranslate.targets}
-                sourceLocale={autoTranslate.sourceLocale}
-              />
-            )}
-          </div>
-
-          <section className={styles.section}>
-            <DocumentTranslationForm
-              form={form}
-              onSubmit={(formData) => handleSubmit(formData, close)}
-              hasDrafts={hasDrafts}
-              targetSelection={targetSelection}
-            />
-          </section>
-
-          {statusRows.length > 0 && (
-            <section className={`${styles.section} ${styles["section--status"]}`}>
-              <h5 className={styles.eyebrow}>Status</h5>
-              <TranslationStatusList
-                rows={statusRows}
-                collection={params.collection}
-                id={params.id}
-              />
-            </section>
-          )}
-        </>
-      )}
-    </OpenDocumentTranslationPopup>
+    <>
+      <Button
+        // Explicit: the trigger sits inside Payload's document form, where a bare button submits.
+        type="button"
+        $size="md"
+        $variant="outlined-light"
+        $isIconButton
+        className={styles.trigger}
+        aria-label={`Open translations — ${title}`}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        title={title}
+        onClick={() => setOpen(true)}
+      >
+        <LanguageTranslateIcon />
+        <PanelStatusMarker tone={tone} />
+      </Button>
+      <SideDrawer open={open} onClose={() => setOpen(false)} labelledBy={headingId}>
+        <TranslationsPanel
+          headingId={headingId}
+          document={document}
+          read={read}
+          locales={locales}
+          source={source}
+          onClose={() => setOpen(false)}
+        />
+      </SideDrawer>
+    </>
   );
 };
 

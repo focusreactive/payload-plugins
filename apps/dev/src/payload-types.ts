@@ -77,6 +77,7 @@ export interface Config {
     comments: Comment;
     'comment-reads': CommentRead;
     'translator-provenance': TranslatorProvenance;
+    'translator-runs': TranslatorRun;
     'audit-events': AuditEvent;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
@@ -96,6 +97,7 @@ export interface Config {
     comments: CommentsSelect<false> | CommentsSelect<true>;
     'comment-reads': CommentReadsSelect<false> | CommentReadsSelect<true>;
     'translator-provenance': TranslatorProvenanceSelect<false> | TranslatorProvenanceSelect<true>;
+    'translator-runs': TranslatorRunsSelect<false> | TranslatorRunsSelect<true>;
     'audit-events': AuditEventsSelect<false> | AuditEventsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
@@ -107,11 +109,7 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale:
-    | ('false' | 'none' | 'null')
-    | false
-    | null
-    | ('en' | 'de' | 'fr' | 'es')
-    | ('en' | 'de' | 'fr' | 'es')[];
+    ('false' | 'none' | 'null') | false | null | ('en' | 'de' | 'fr' | 'es') | ('en' | 'de' | 'fr' | 'es')[];
   globals: {
     header: Header;
     _abManifest: _AbManifest;
@@ -749,7 +747,30 @@ export interface TranslatorProvenance {
   sourceLocale: string;
   sourceFingerprint: string;
   translatedAt: string;
-  dismissedFingerprint?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "translator-runs".
+ */
+export interface TranslatorRun {
+  id: number;
+  handle: string;
+  collectionSlug: string;
+  collectionId: string;
+  sourceLng: string;
+  targetLng: string;
+  filters?: string | null;
+  publishOnTranslation: boolean;
+  requesterId?: string | null;
+  requesterCollection?: string | null;
+  queuedAt: string;
+  startedAt?: string | null;
+  settledAt?: string | null;
+  outcome?: string | null;
+  error?: string | null;
+  attempts?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -969,6 +990,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'translator-provenance';
         value: number | TranslatorProvenance;
+      } | null)
+    | ({
+        relationTo: 'translator-runs';
+        value: number | TranslatorRun;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1360,7 +1385,29 @@ export interface TranslatorProvenanceSelect<T extends boolean = true> {
   sourceLocale?: T;
   sourceFingerprint?: T;
   translatedAt?: T;
-  dismissedFingerprint?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "translator-runs_select".
+ */
+export interface TranslatorRunsSelect<T extends boolean = true> {
+  handle?: T;
+  collectionSlug?: T;
+  collectionId?: T;
+  sourceLng?: T;
+  targetLng?: T;
+  filters?: T;
+  publishOnTranslation?: T;
+  requesterId?: T;
+  requesterCollection?: T;
+  queuedAt?: T;
+  startedAt?: T;
+  settledAt?: T;
+  outcome?: T;
+  error?: T;
+  attempts?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1552,28 +1599,8 @@ export interface CollectionsWidget {
  */
 export interface TaskTranslateDocument {
   input: {
-    collection_slug: string;
-    collection_id: string;
-    /**
-     * Deprecated. See docs/DEPRECATIONS.md#jobs-input-collection-field
-     */
-    collection?:
-      | ({
-          relationTo: 'pages';
-          value: number | Page;
-        } | null)
-      | ({
-          relationTo: 'articles';
-          value: number | Article;
-        } | null)
-      | ({
-          relationTo: 'playground';
-          value: number | Playground;
-        } | null);
-    source_lng: string;
+    handle: string;
     target_lng: string;
-    strategy: string;
-    publish_on_translation?: boolean | null;
   };
   output?: unknown;
 }
@@ -1608,28 +1635,8 @@ export interface TaskSchedulePublish {
  */
 export interface WorkflowTranslateDocumentLocales {
   input: {
-    collection_slug: string;
-    collection_id: string;
-    /**
-     * Deprecated. See docs/DEPRECATIONS.md#jobs-input-collection-field
-     */
-    collection?:
-      | ({
-          relationTo: 'pages';
-          value: number | Page;
-        } | null)
-      | ({
-          relationTo: 'articles';
-          value: number | Article;
-        } | null)
-      | ({
-          relationTo: 'playground';
-          value: number | Playground;
-        } | null);
-    source_lng: string;
-    strategy: string;
-    publish_on_translation?: boolean | null;
-    target_lngs:
+    handle: string;
+    locales:
       | {
           [k: string]: unknown;
         }
@@ -1638,8 +1645,6 @@ export interface WorkflowTranslateDocumentLocales {
       | number
       | boolean
       | null;
-    requester_id?: string | null;
-    requester_collection?: string | null;
   };
 }
 /**

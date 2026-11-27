@@ -1,60 +1,95 @@
 import type { CollectionSlug, Endpoint } from "payload";
 
-import type { TranslationContext } from "../modules/translation-levels/index.js";
+import type { ConfigTimeContext, ProvenanceAccess } from "../modules/plugin-config/index.js";
+import type { SourceFingerprinter } from "../../core/domain/content-projection/sourceFingerprinter.js";
+import type { TranslatableTextPresence } from "../../core/domain/content-projection/holdsTranslatableText.js";
+import type { CollectionCanHoldText } from "./_lib/index.js";
 
-import { createEnqueueRoute } from "./enqueue-translation/index.js";
+import { createEnqueueListRoute, createEnqueueRoute } from "./enqueue-translation/index.js";
 import { createRunRoute } from "./run-translation/index.js";
 import { createCancelRoute } from "./cancel/index.js";
-import { createCancelByCollectionRoute } from "./cancel-by-collection/index.js";
 import { createGetDocumentStatusRoute } from "./get-document-status/index.js";
 import { createGetCollectionStatusRoute } from "./get-collection-status/index.js";
-import { createGetDocumentStalenessRoute, createDismissStalenessRoute } from "./staleness/index.js";
+import { createGetDocumentStateRoute } from "./get-document-state/index.js";
+import { createGetListStateRoute } from "./get-list-state/index.js";
 
 export type TranslationRoutesDeps = Pick<
-  TranslationContext,
-  "taskRunnerFactory" | "access" | "provenanceServiceFactory" | "settings"
+  ConfigTimeContext,
+  "taskRunnerFactory" | "runRecordStoreFactory" | "access" | "settings" | "schemaMap"
 > & {
-  /** Collections the plugin manages — gates which slugs the routes accept. */
-  collectionConfig: { availableCollections: Set<CollectionSlug> };
+  /** What a state read needs to say how a locale stands against its source. */
+  state: { fingerprintOf: SourceFingerprinter; provenance?: ProvenanceAccess };
+  holdsText: TranslatableTextPresence;
+  canHoldText: CollectionCanHoldText;
+  collectionConfig: {
+    availableCollections: Set<CollectionSlug>;
+  };
 };
 
-/**
- * The translator's HTTP surface as one shared bundle: the job-API endpoints
- * (enqueue / run / cancel / cancel-by-collection / document-status /
- * collection-status) plus the provenance-backed staleness endpoints
- * (document-staleness / dismiss), all wired to the same access guard.
- *
- * Extracted from the plugin's `init()` so registration is a single unit. The
- * document and collection levels each contribute this bundle via the level
- * context; the plugin deduplicates by method + path, so it registers exactly
- * once. The staleness endpoints always register; when provenance is disabled
- * (`provenanceServiceFactory` absent) they simply report no staleness.
- */
 export function createTranslationRoutes({
   taskRunnerFactory,
+  runRecordStoreFactory,
   collectionConfig,
+  schemaMap,
+  state,
+  holdsText,
+  canHoldText,
   access,
   settings,
-  provenanceServiceFactory,
 }: TranslationRoutesDeps): Endpoint[] {
   const { basePath, failedWindowMs } = settings;
-  const stalenessConfig = {
-    availableCollections: collectionConfig.availableCollections,
-    provenanceServiceFactory,
-  };
+  const { stop, run } = taskRunnerFactory.capabilities;
+  const enqueueConfig = { ...collectionConfig, holdsText, canHoldText };
+
   return [
-    createEnqueueRoute(taskRunnerFactory, collectionConfig, access, basePath),
-    createRunRoute(taskRunnerFactory, access, basePath),
-    createCancelRoute(taskRunnerFactory, access, basePath),
-    createCancelByCollectionRoute(collectionConfig, taskRunnerFactory, access, basePath),
-    createGetDocumentStatusRoute(collectionConfig, taskRunnerFactory, access, basePath),
-    createGetCollectionStatusRoute(
-      { ...collectionConfig, failedWindowMs },
+    createEnqueueRoute(taskRunnerFactory, runRecordStoreFactory, enqueueConfig, access, basePath),
+    createEnqueueListRoute(
       taskRunnerFactory,
+      runRecordStoreFactory,
+      enqueueConfig,
       access,
       basePath
     ),
-    createGetDocumentStalenessRoute(stalenessConfig, access, basePath),
-    createDismissStalenessRoute(stalenessConfig, access, basePath),
+    ...(run
+      ? [
+          createRunRoute(
+            collectionConfig,
+            taskRunnerFactory,
+            runRecordStoreFactory,
+            access,
+            basePath
+          ),
+        ]
+      : []),
+    ...(stop
+      ? [
+          createCancelRoute(
+            collectionConfig,
+            taskRunnerFactory,
+            runRecordStoreFactory,
+            access,
+            basePath
+          ),
+        ]
+      : []),
+    createGetDocumentStatusRoute(collectionConfig, runRecordStoreFactory, access, basePath),
+    createGetDocumentStateRoute(
+      { ...collectionConfig, schemaMap, holdsText, ...state },
+      runRecordStoreFactory,
+      access,
+      basePath
+    ),
+    createGetCollectionStatusRoute(
+      { ...collectionConfig, failedWindowMs },
+      runRecordStoreFactory,
+      access,
+      basePath
+    ),
+    createGetListStateRoute(
+      { ...collectionConfig, failedWindowMs, holdsText, ...state },
+      runRecordStoreFactory,
+      access,
+      basePath
+    ),
   ];
 }

@@ -1,4 +1,5 @@
 import { defineConfig } from "oxlint";
+import type { DummyRuleMap, OxlintOverride } from "oxlint";
 import core from "ultracite/oxlint/core";
 import next from "ultracite/oxlint/next";
 
@@ -33,7 +34,7 @@ const TEST_SEAM = {
 // src/core/** is the consolidated framework-agnostic surface (slice 7, Option C):
 // no Payload, no React/Next, and no downward edges into the plugin adapter
 // (src/server, src/client). The cheap in-repo backstop is
-// src/core/no-payload-boundary.test.ts; this lint makes the boundary fail at edit
+// src/core/__tests__/no-payload-boundary.test.ts; this lint makes the boundary fail at edit
 // time too. Test files in this zone are exempt (the conformance test deliberately
 // imports payload types to assert structural compatibility).
 const TRANSLATOR = "packages/payload-plugin-translator";
@@ -49,6 +50,21 @@ const TRANSLATOR_CORE_PATHS = [
   },
   { name: "next", message: "translator-core must stay framework-agnostic — no next import." },
 ];
+// ── The traversal engine (payload-plugin-translator/src/traversal) ────────
+// The engine depends on nothing: not a library, not the plugin wrapped around it. That is two
+// bans, and only one of them a glob can state at every depth. The framework ban can. The "nothing
+// above your own folder" ban cannot — `*` does not cross `/`, and no glob counts how far a `..`
+// climbs — so it is written one directory at a time, and what the depths miss is caught by
+// src/traversal/__tests__/depends-on-nothing.test.ts, which resolves each path over the files the
+// engine ships. Its tests and fixtures are exempt here and held by the two scans that read them.
+const ENGINE_ESCAPE = "The traversal engine imports nothing above its own folder.";
+const ENGINE_BARREL_ONLY = {
+  group: ["**/traversal/**", "!**/traversal/index.js"],
+  message: "Enter the traversal engine through traversal/index.js; its internals are its own.",
+};
+const ENGINE_ROOT_ESCAPE = { group: ["../**"], message: ENGINE_ESCAPE };
+const ENGINE_NESTED_ESCAPE = { group: ["../../**"], message: ENGINE_ESCAPE };
+
 const TRANSLATOR_CORE_PATTERNS = [
   {
     group: ["payload/*"],
@@ -69,6 +85,142 @@ const TRANSLATOR_CORE_PATTERNS = [
   {
     group: ["**/client/**"],
     message: "translator-core (src/core) may not depend on the plugin adapter (src/client).",
+  },
+];
+
+// ── payload-plugin-translator: client layers (app > widgets > features > entities > shared) ──
+// The written rules are in the package CLAUDE.md, "Client layers". A glob sees a specifier only as
+// text, so a sibling slice reached as `../../other-feature` is caught by
+// src/client/__tests__/layersHold.test.ts, not here.
+const TRANSLATOR_CLIENT = `${TRANSLATOR}/src/client`;
+type ClientLayer = "app" | "widgets" | "features" | "entities" | "shared";
+const CLIENT_LAYERS: readonly ClientLayer[] = ["app", "widgets", "features", "entities", "shared"];
+
+const CLIENT_ROOTS = {
+  group: ["**/core/**", "**/server/**", "**/composition/**"],
+  message:
+    "The admin client does not import the core, the server or the composition; only boundary files (*.server.ts(x), *.export.ts(x)) may reach server/shared and core/domain.",
+};
+const BOUNDARY_ROOTS = {
+  group: [
+    "**/core/**",
+    "!**/core/domain/**",
+    "**/server/**",
+    "!**/server/shared/**",
+    "**/composition/**",
+  ],
+  message: "A boundary file may reach only server/shared and core/domain outside the client.",
+};
+const CLIENT_TYPES = {
+  group: ["**/types/**", "!**/types/wire/**"],
+  allowTypeImports: true,
+  message:
+    "The admin client imports values only from src/types/wire; the rest of src/types is `import type`.",
+};
+const upward = (layer: ClientLayer, message: string) => ({
+  group: [`**/${layer}/**`],
+  message,
+});
+const CLIENT_LAYER_BANS: Record<ClientLayer, object[]> = {
+  app: [],
+  widgets: [
+    upward("app", "A widget does not import the app layer."),
+    upward("widgets", "A widget does not import another widget."),
+  ],
+  features: [
+    upward("app", "A feature does not import the app layer."),
+    upward("widgets", "A feature does not import a widget."),
+    upward("features", "A feature does not import another feature."),
+  ],
+  entities: [
+    upward("app", "An entity does not import the app layer."),
+    upward("widgets", "An entity does not import a widget."),
+    upward("features", "An entity does not import a feature."),
+    {
+      ...upward("entities", "An entity takes only types from another entity."),
+      allowTypeImports: true,
+    },
+  ],
+  shared: (["app", "widgets", "features", "entities"] as const).map((layer) =>
+    upward(layer, "shared imports no layer above it.")
+  ),
+};
+// Keeping Payload out of the entity's data path is what lets its hooks and repository run in vitest
+// without mocking @payloadcms/ui.
+const PAYLOAD_RUNTIME_PATH = {
+  name: "payload",
+  allowTypeImports: true,
+  message: "An entity's model, api, queries and mutations take only types from Payload.",
+};
+const PAYLOAD_RUNTIME_PATTERN = {
+  group: ["payload/**", "@payloadcms/**"],
+  allowTypeImports: true,
+  message: "An entity's model, api, queries and mutations take only types from Payload.",
+};
+const OFETCH = {
+  name: "ofetch",
+  message: "Talk to the server through client/shared/api, not ofetch directly.",
+};
+
+type ClientZone = {
+  layer: ClientLayer;
+  boundary?: boolean;
+  payloadFree?: boolean;
+  fetches?: boolean;
+};
+const clientImportRules = ({
+  layer,
+  boundary,
+  payloadFree,
+  fetches,
+}: ClientZone): DummyRuleMap => ({
+  "no-restricted-imports": [
+    "error",
+    {
+      paths: [...(fetches ? [] : [OFETCH]), ...(payloadFree ? [PAYLOAD_RUNTIME_PATH] : [])],
+      patterns: [
+        boundary ? BOUNDARY_ROOTS : CLIENT_ROOTS,
+        CLIENT_TYPES,
+        ...CLIENT_LAYER_BANS[layer],
+        ...(payloadFree ? [PAYLOAD_RUNTIME_PATTERN] : []),
+      ],
+    },
+  ],
+});
+const sourcesIn = (dir: string) => [`${dir}/**/*.ts`, `${dir}/**/*.tsx`];
+const boundaryFilesIn = (dir: string) =>
+  ["server.ts", "server.tsx", "export.ts", "export.tsx"].map((tag) => `${dir}/**/*.${tag}`);
+const ENTITY_INTERNALS = ["model", "api", "queries", "mutations"].map(
+  (folder) => `${TRANSLATOR_CLIENT}/entities/*/${folder}`
+);
+
+// Broad → specific: options replace and the last matching override wins, so each zone restates
+// every restriction its files carry.
+const TRANSLATOR_CLIENT_ZONES: OxlintOverride[] = [
+  ...CLIENT_LAYERS.map((layer) => ({
+    files: sourcesIn(`${TRANSLATOR_CLIENT}/${layer}`),
+    rules: clientImportRules({ layer }),
+  })),
+  {
+    files: sourcesIn(`${TRANSLATOR_CLIENT}/shared/api`),
+    rules: clientImportRules({ layer: "shared", fetches: true }),
+  },
+  {
+    files: ENTITY_INTERNALS.flatMap(sourcesIn),
+    rules: clientImportRules({ layer: "entities", payloadFree: true }),
+  },
+  ...CLIENT_LAYERS.map((layer) => ({
+    files: boundaryFilesIn(`${TRANSLATOR_CLIENT}/${layer}`),
+    rules: clientImportRules({ layer, boundary: true }),
+  })),
+  {
+    files: ENTITY_INTERNALS.flatMap(boundaryFilesIn),
+    rules: clientImportRules({ layer: "entities", boundary: true, payloadFree: true }),
+  },
+  // Client tests import fixtures, the stub and whatever they exercise.
+  {
+    files: [`${TRANSLATOR_CLIENT}/**/__tests__/**`],
+    rules: { "no-restricted-imports": "off" },
   },
 ];
 
@@ -399,7 +551,14 @@ export default defineConfig({
     // ── payload-plugin-translator: framework-agnostic core boundary ───────
     // Same last-match-wins / options-REPLACE semantics as the analytics zones
     // above: each region restates the full restriction set it needs.
-    // (T1) The consolidated payload-free core (slice 7, Option C): no payload /
+    // (T1) Everything in the package enters the traversal engine through its barrel.
+    {
+      files: [`${TRANSLATOR}/src/**/*.ts`, `${TRANSLATOR}/src/**/*.tsx`],
+      rules: {
+        "no-restricted-imports": ["error", { patterns: [ENGINE_BARREL_ONLY] }],
+      },
+    },
+    // (T2) The consolidated payload-free core (slice 7, Option C): no payload /
     //      react / next at all, and no downward edges into the plugin adapter
     //      (src/server, src/client). One zone now covers the whole surface —
     //      field-traversal, lexical, content-projection, field-config, utils,
@@ -409,16 +568,72 @@ export default defineConfig({
       rules: {
         "no-restricted-imports": [
           "error",
+          {
+            paths: TRANSLATOR_CORE_PATHS,
+            patterns: [...TRANSLATOR_CORE_PATTERNS, ENGINE_BARREL_ONLY],
+          },
+        ],
+      },
+    },
+    // (T3) The traversal engine at every depth: never a framework, never the plugin's own halves.
+    {
+      files: [`${TRANSLATOR}/src/traversal/**/*.ts`],
+      rules: {
+        "no-restricted-imports": [
+          "error",
           { paths: TRANSLATOR_CORE_PATHS, patterns: TRANSLATOR_CORE_PATTERNS },
         ],
       },
     },
-    // (T2) Test files in the core zone are exempt — the conformance/boundary tests
-    //      deliberately import payload types to assert structural compatibility.
+    // (T4) The engine's own files, at its root — and nothing above the folder.
     {
-      files: [`${TRANSLATOR}/src/core/**/*.test.ts`],
+      files: [`${TRANSLATOR}/src/traversal/*.ts`],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            paths: TRANSLATOR_CORE_PATHS,
+            patterns: [...TRANSLATOR_CORE_PATTERNS, ENGINE_ROOT_ESCAPE],
+          },
+        ],
+      },
+    },
+    // (T5) The same, one directory down.
+    {
+      files: [`${TRANSLATOR}/src/traversal/*/*.ts`],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            paths: TRANSLATOR_CORE_PATHS,
+            patterns: [...TRANSLATOR_CORE_PATTERNS, ENGINE_NESTED_ESCAPE],
+          },
+        ],
+      },
+    },
+    // (T6) Tests are exempt throughout: the conformance/boundary tests deliberately import
+    //      payload types to assert structural compatibility, and a language's tests read what
+    //      a walk collected through the engine's own fixtures.
+    {
+      files: [`${TRANSLATOR}/src/**/*.test.ts`, `${TRANSLATOR}/src/**/*.test.tsx`],
       rules: { "no-restricted-imports": "off" },
     },
+    // (T3) The wire contracts sit below the client and the server alike, so they import nothing
+    //      but each other: any other import would drag one side's code into the other.
+    {
+      files: [`${TRANSLATOR}/src/types/wire/*.ts`],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            patterns: [
+              { group: ["**", "!./*"], message: "Wire contracts import only each other." },
+            ],
+          },
+        ],
+      },
+    },
+    ...TRANSLATOR_CLIENT_ZONES,
     {
       files: [`${VISUAL_EDITING}/server/**`],
       rules: {

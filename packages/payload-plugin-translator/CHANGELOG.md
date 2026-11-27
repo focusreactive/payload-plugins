@@ -1,3 +1,135 @@
+# @focus-reactive/payload-plugin-translator [1.0.0-next.12](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.11...@focus-reactive/payload-plugin-translator@1.0.0-next.12) (2026-11-25)
+
+
+* feat!: the document's translations open in a side panel driven by its state ([5452bdf](https://github.com/focusreactive/payload-plugins/commit/5452bdf727d3e923bef269bca144c51235f079ab))
+* feat!: the old admin is swept away, and targetSelection with it ([a936864](https://github.com/focusreactive/payload-plugins/commit/a9368640991b8f3fad9401ea9824574b87dd848c))
+
+
+### Bug Fixes
+
+* **translator:** a row with no news says so ([84e0ee9](https://github.com/focusreactive/payload-plugins/commit/84e0ee9804887cea1de28990a3475c1b4bdc0223))
+* **translator:** a run always ends, and its ending names what happened ([b2b161f](https://github.com/focusreactive/payload-plugins/commit/b2b161f24f599441ac9dcb8a8b479daa352ff1c4))
+* **translator:** a run that never started says so too ([692cac6](https://github.com/focusreactive/payload-plugins/commit/692cac6ef98ec33eddf5c9189dc30e28900776a2))
+* **translator:** a translation that landed is not bought again ([d43c69a](https://github.com/focusreactive/payload-plugins/commit/d43c69aff32c809ed38eac51a470bd62541396ea))
+* **translator:** auto-translate compares against the last publish ([c47c6a5](https://github.com/focusreactive/payload-plugins/commit/c47c6a5e2d4484fbff76f72665bf1b378d334abf))
+* **translator:** cancelling closes the run record, not just the queue ([9faa11b](https://github.com/focusreactive/payload-plugins/commit/9faa11b725eb5dfc7bb6f395d166afe619291e18))
+* **translator:** emptiness is decided from the values, not from a query ([b3c6ec6](https://github.com/focusreactive/payload-plugins/commit/b3c6ec6411e9810a6fe3914908991716c46c927e))
+* **translator:** one question decides what the queue adapter registered ([cc1fcfd](https://github.com/focusreactive/payload-plugins/commit/cc1fcfdf09e5d8f400193b0e034ef9fd95e42959))
+* what the branch review found across the admin steps ([034426b](https://github.com/focusreactive/payload-plugins/commit/034426b085074d3fd2ac27f56994201f1b7e7465))
+
+
+### Features
+
+* a stub module serves the 1.0 admin from memory ([193f857](https://github.com/focusreactive/payload-plugins/commit/193f85732290e9200f5360a174ac9947ed3e95e9))
+* a Translations column in the collection list, and a bulk panel on its selection ([75ae1a2](https://github.com/focusreactive/payload-plugins/commit/75ae1a2e66c3238c39c474f682e10939778f20a2))
+* hooks read a document's and a page's translation state ([d0a06ac](https://github.com/focusreactive/payload-plugins/commit/d0a06ac7de4be1648a2632d0f7f476219718b4a8))
+* the admin and the server share one description of what crosses between them ([bcd90d1](https://github.com/focusreactive/payload-plugins/commit/bcd90d1d81f5c6d921ab9436faf02b8d81d1b757))
+* the admin client's layers are enforced, not just named ([f812594](https://github.com/focusreactive/payload-plugins/commit/f812594fe5a88f4df89fdd205630ca36103fe1cc))
+* the admin is told which actions this installation can serve ([b673515](https://github.com/focusreactive/payload-plugins/commit/b6735155e8a453d1e3de1b3b4b18c34854a55d6e))
+* the admin provider builds the repository, and actions refresh on settle ([ef039f1](https://github.com/focusreactive/payload-plugins/commit/ef039f15c85ce074084c40f0eb0fc6a47f1ed2f4))
+* the admin reads and acts through one repository contract, proven red first ([823b0a9](https://github.com/focusreactive/payload-plugins/commit/823b0a9cb6bf6140a336b28c1039225001861c5b))
+* the admin talks to the plugin's endpoints through an HTTP repository ([fdfa887](https://github.com/focusreactive/payload-plugins/commit/fdfa8876dc0b6176a51518c43ec14420e6e3bcca))
+* the field control translates in place, with its states inline ([6294a8c](https://github.com/focusreactive/payload-plugins/commit/6294a8cb48b11fdd17271c9f40a48ba68542b080))
+* **translator:** one document, or a list, but never both ([790e45a](https://github.com/focusreactive/payload-plugins/commit/790e45a44a4ec22115fb60f627c5a3cdd2f6772b)), closes [docs/DEPRECATIONS.md#enqueue-splits-into-two-routes](https://github.com/docs/DEPRECATIONS.md/issues/enqueue-splits-into-two-routes)
+* **translator:** the admin stub stops being a published surface ([d09073a](https://github.com/focusreactive/payload-plugins/commit/d09073ac3561aad7cee24dfda593a4438907d4dc))
+* **translator:** the config refuses what the plugin cannot serve ([25c6aa6](https://github.com/focusreactive/payload-plugins/commit/25c6aa6da3b66627bb6da760e37f919a0fc5048b))
+* **translator:** the host's config becomes the plugin's own rules ([0f64c92](https://github.com/focusreactive/payload-plugins/commit/0f64c9258d3211e8bef702c0de3999fa2555aacf))
+* **translator:** the state reads answer from the host's own data ([921ebe5](https://github.com/focusreactive/payload-plugins/commit/921ebe58ebedeb4a14b9448c00effd1610bff10a))
+
+
+### BREAKING CHANGES
+
+* **translator:** `POST {basePath}/enqueue` now accepts exactly one
+document, and the two sizes of request are two routes.
+1. A caller naming several documents there is refused with 400. Send
+   them to `POST {basePath}/enqueue-list`.
+2. `select_all` is refused by `/enqueue` at any value, `false` included,
+   which the old route accepted. A request for a whole collection goes
+   to the list route. Dropping the key instead would have answered
+   success for a run over the one document `collection_id` carried.
+3. An access guard that answers by an explicit list of action names
+   refuses `/enqueue-list` until it adds `enqueue-list` to that list.
+   The refusal is a 403, which in the admin looks like bulk translation
+   quietly doing nothing. Guards answering a predicate are unaffected.
+The list route takes rule filters only: `{ kind: "rule", name }` is a
+question the server answers per document, while
+`{ kind: "leaves", addresses }` names the one document it was read from.
+Clients of the package: `EnqueueRequest` is replaced by
+`EnqueueDocumentRequest` and `EnqueueListRequest`, and the admin
+repository's `enqueue` by `enqueueDocument` and `enqueueList`.
+
+Refs: docs/plans/2026-11-25-one-document-or-a-list.task.md,
+* **translator:** the `@focus-reactive/payload-plugin-translator/stub` entry point
+is removed. It served an in-memory fake for developing against the plugin's
+admin and was never documented. Nothing replaces it.
+* **translator:** a project that sets `versions.drafts.localizeStatus` on a
+collection passed to the translator, together with `experimental.localizeStatus`
+at the root, no longer starts. Turn the setting off for that collection, or stop
+passing the collection to the translator. A collection whose auto-translate
+targets are all unknown to the project no longer starts either; give it a target
+the project declares, or drop `withAutoTranslate` from it.
+* the `targetSelection` option and the `TargetSelectionMode`
+type are removed — the document panel acts per locale and the collection
+panel always offers locales as checkboxes.
+* manual translations are always saved as drafts — the
+"publish after translation" checkbox is gone from the document panel; the
+popover form and its target-selection control are replaced by the panel.
+
+# @focus-reactive/payload-plugin-translator [1.0.0-next.11](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.10...@focus-reactive/payload-plugin-translator@1.0.0-next.11) (2026-11-18)
+
+
+### Features
+
+* **translator:** the admin stops naming the run ([0ebed65](https://github.com/focusreactive/payload-plugins/commit/0ebed6594d609418f692db39ce1172bc199466bd))
+* **translator:** the job row carries only a pointer ([a8c66cd](https://github.com/focusreactive/payload-plugins/commit/a8c66cd5f22c74f9c89ad21d3bdb57056e362f45))
+
+
+### BREAKING CHANGES
+
+* **translator:** `DELETE {basePath}/cancel` no longer accepts `{ ids }`;
+it takes `{ collection_slug, collection_id, select_all? }`.
+`DELETE {basePath}/cancel-by-collection/:collection_slug` is removed --
+send `select_all: true` to `/cancel` instead. `POST {basePath}/run/:id`
+is now `POST {basePath}/run/:collection_slug/:collection_id`. The status
+payloads no longer carry the run's `id`. The `cancel-by-collection`
+action stays in `TranslatorAction` so existing guards keep working.
+* **translator:** a translation job queued before 1.0 will not run after
+upgrading. Let the queue drain before upgrading to 1.0. Such a job is
+logged against its job id and skipped; it is not retried, and nothing is
+translated for it.
+
+# @focus-reactive/payload-plugin-translator [1.0.0-next.10](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.9...@focus-reactive/payload-plugin-translator@1.0.0-next.10) (2026-11-18)
+
+
+### Bug Fixes
+
+* configuring a field twice no longer undoes the first call ([a6f8163](https://github.com/focusreactive/payload-plugins/commit/a6f816357e301e61cb2e726af84520644cab3bcf))
+* the change gate and the stored hash measure the same content ([5fff038](https://github.com/focusreactive/payload-plugins/commit/5fff0383c40aa60a3fc623bb614de4c24bbda0ba))
+
+
+### Code Refactoring
+
+* a language describes a position, the plugin writes the address ([75c860d](https://github.com/focusreactive/payload-plugins/commit/75c860d71ba93b445618405d5df6ec0a6d3388c3))
+
+
+### Features
+
+* block definitions can be handed to the plugin for rich-text embeds ([9599484](https://github.com/focusreactive/payload-plugins/commit/9599484ece69c0d5c572ac374418b33c28304160))
+* text inside a block embedded in a rich text is translated ([5978a22](https://github.com/focusreactive/payload-plugins/commit/5978a2256d5f5a6b457e613e4bdee230a1979a89))
+* the rich-text language cuts a container, not a text node ([7ec05b6](https://github.com/focusreactive/payload-plugins/commit/7ec05b6fbaa96d29b641eb254f3e31126e208b33))
+* **translator:** bring the translation popups in line with the Payload admin ([23a5109](https://github.com/focusreactive/payload-plugins/commit/23a51093bd9c77f384989f1604d397b286916fe6))
+
+
+### BREAKING CHANGES
+
+* `PathSegment` is now `unknown` rather than `string | number`. It reaches the
+published declarations through `TranslationModule` → `ConfigTimeContext` → `LanguageTable`, so
+anyone reading address tokens along that chain must narrow before use.
+* a rich text holding an embedded block hashes differently and reads out of
+date once, because its embedded text was never translated and the receipt never said so. A
+rich text whose only text sits inside such a block gains a fingerprint entry it never had. A
+field with nothing embedded in it is unchanged.
+
 # @focus-reactive/payload-plugin-translator [0.19.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.18.1...@focus-reactive/payload-plugin-translator@0.19.0) (2026-11-17)
 
 
@@ -5,12 +137,186 @@
 
 * **translator:** bring the translation popups in line with the Payload admin ([23a5109](https://github.com/focusreactive/payload-plugins/commit/23a51093bd9c77f384989f1604d397b286916fe6))
 
+# @focus-reactive/payload-plugin-translator [1.0.0-next.9](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.8...@focus-reactive/payload-plugin-translator@1.0.0-next.9) (2026-11-06)
+
+
+* feat!: a locale a run never attempted is not reported as failed ([53cf160](https://github.com/focusreactive/payload-plugins/commit/53cf1607e7e7192cb665e0b081ad7b5ae3abb4f7))
+* feat!: a provider's failure reaches a person as a reason, not one generic sentence ([5ce4d40](https://github.com/focusreactive/payload-plugins/commit/5ce4d40227c391cdd82efbac6eeef17b8e67d5cf))
+* feat!: every provider receives rich text by container ([082d177](https://github.com/focusreactive/payload-plugins/commit/082d17703a10108a812f74c26117937309f49895))
+* feat!: the deprecated provider surface leaves with the major ([6179d08](https://github.com/focusreactive/payload-plugins/commit/6179d0867b55ff8e00f079bb7524fee70cf7ae3f))
+* feat!: the OpenAI adapter asks a model, and takes the request body whole ([c21256d](https://github.com/focusreactive/payload-plugins/commit/c21256d75bd9d90e8c7fedd7cd2fc45010bf8208))
+* feat!: the port carries segments, and a value may fail on its own ([9e741ac](https://github.com/focusreactive/payload-plugins/commit/9e741ac8fcf1751fb8fcb0709eb65c6ef16ceda4))
+* feat!: the provider port takes one request, and failure is thrown ([fd2724a](https://github.com/focusreactive/payload-plugins/commit/fd2724af9729b67a788c4aa2066a46c284055c86))
+
+
+### BREAKING CHANGES
+
+* `onFailed` no longer fires for a locale a run never attempted;
+`onAbandoned` fires instead. A host counting closed locales through `onFailed`
+keeps compiling and will see fewer calls.
+* `openAIComplete` is now `askOpenAI`, `CompletionFn` is
+`AskModel`, `CompletionRequest` is `ModelRequest`, and `OpenAISamplingParams` is
+replaced by `OpenAIParams`, which carries the model alongside the sampling
+fields. `openAIComplete({ client, model, sampling })` becomes
+`askOpenAI({ client, params })`.
+* `createOpenAIProvider`, `OpenAITranslationProvider`,
+`OpenAIProviderConfig` and `loadOpenAIClient` are removed. Build a provider with
+`createTranslationProvider` over `openAIComplete` and a client you construct
+yourself. A positional language argument is no longer accepted. `sourceLng` must
+name a language; `''` no longer means auto-detect.
+* a provider failure that reaches a host through the pipeline is
+now a `TranslationFailed` carrying the same `code`, not the provider's own error
+class. `error instanceof TranslationProviderError` no longer matches it; the typed
+error travels on `cause`.
+* a provider no longer receives and returns plain strings. `TranslatableValue`
+arrives as `{ kind: "text" }` or `{ kind: "segments" }` and must be answered in the same kind;
+`TranslationInput` is `Readonly` and the stage hands over a copy. `ValueFailureCode` lets one value
+fail without failing the call. The `experimental.dryRun` option is removed. A provider that returned
+a marked string can keep doing so with the exported `encodeSegments`, `decodeSegments`,
+`canEncodeSegments` and `inlineMarksInstruction`.
+* `TranslationProvider.capabilities` and `TranslationProviderConfig.capabilities` are
+removed. A provider now receives every formatted paragraph as one marked string and must return each
+mark exactly once; a reply that does not is left in the source language and logged. Step 4 of the
+same release gives a provider without a language model a way to translate the pieces on its own.
+* a custom `TranslationProvider` implements `translate(input, request)` and reads
+the languages from `request.sourceLng` / `request.targetLng`. Returning `null` no longer reports a
+failure; throw instead.
+
+# @focus-reactive/payload-plugin-translator [1.0.0-next.8](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.7...@focus-reactive/payload-plugin-translator@1.0.0-next.8) (2026-11-01)
+
+
+### Bug Fixes
+
+* **translator:** translate blocks wired through blockReferences ([55e619a](https://github.com/focusreactive/payload-plugins/commit/55e619a60d757561a568dcd8f5011f7dd1bdc225)), closes [#222](https://github.com/focusreactive/payload-plugins/issues/222)
+
+# @focus-reactive/payload-plugin-translator [1.0.0-next.7](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.6...@focus-reactive/payload-plugin-translator@1.0.0-next.7) (2026-10-28)
+
 ## @focus-reactive/payload-plugin-translator [0.18.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.18.0...@focus-reactive/payload-plugin-translator@0.18.1) (2026-10-29)
 
 
 ### Bug Fixes
 
 * **translator:** translate blocks wired through blockReferences ([55e619a](https://github.com/focusreactive/payload-plugins/commit/55e619a60d757561a568dcd8f5011f7dd1bdc225)), closes [#222](https://github.com/focusreactive/payload-plugins/issues/222)
+
+# @focus-reactive/payload-plugin-translator [1.0.0-next.6](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.5...@focus-reactive/payload-plugin-translator@1.0.0-next.6) (2026-10-26)
+
+
+* feat!: a request names the fields to translate, not a strategy ([a13052d](https://github.com/focusreactive/payload-plugins/commit/a13052d8a5a5cbc91baaed1458b891ac7678b360))
+* feat!: a runner must be able to place its own handles ([93dfeb8](https://github.com/focusreactive/payload-plugins/commit/93dfeb882e51f32a8f375827d0b505c7384f130b))
+* feat!: auto-translate loses the strategy option ([1fa6e5d](https://github.com/focusreactive/payload-plugins/commit/1fa6e5d2d61a992101b10010c747588db6f1b2fa))
+* feat!: the queue takes only work the rules were asked about ([8d6b18b](https://github.com/focusreactive/payload-plugins/commit/8d6b18bdc50b2973e247240d3a14509ec74ecc82))
+
+
+### Bug Fixes
+
+* a read that names no reader no longer compiles, and the error wrapper drops its cast ([2baa4e4](https://github.com/focusreactive/payload-plugins/commit/2baa4e4c8bfc16ecf6e4242319f21a2c3c6a7d5f))
+* an actor the project cannot name is refused before anything is asked ([40bd9ce](https://github.com/focusreactive/payload-plugins/commit/40bd9ce589a4ca117a9c80e46b5f696e4014f77b))
+* the rules are asked about a document, not about one of its languages ([4b00f6e](https://github.com/focusreactive/payload-plugins/commit/4b00f6e7f76384c4838917b1709ca47075c9fca7))
+
+
+### Features
+
+* a chain module can no longer write the document being translated ([ab0cf12](https://github.com/focusreactive/payload-plugins/commit/ab0cf1256618b7351c7de6dab52314543adca6e0))
+* a job is resolved to its document before anyone may touch it ([d15b0d5](https://github.com/focusreactive/payload-plugins/commit/d15b0d5ea47b187c330e52bdb7142a06a2fb7ad5))
+* an actor we cannot name stops being read as no actor ([53d3d08](https://github.com/focusreactive/payload-plugins/commit/53d3d08148da04e819131f98c880d091dea31114))
+* enqueue asks whether the caller may change each document ([442d480](https://github.com/focusreactive/payload-plugins/commit/442d4802bd86cf129e2cb1fac7254f239568347a))
+* provenance answers the drift rule and keeps unsent claims ([7195218](https://github.com/focusreactive/payload-plugins/commit/7195218ac60b8e4b273e86ed1c398330453529ed))
+* the admin forms stop asking for a strategy ([1fc96d4](https://github.com/focusreactive/payload-plugins/commit/1fc96d42eed57cc3eddc9afb6713cd5fcc1054cf))
+* the conformance suite ships, so a runner author can run it ([7904a46](https://github.com/focusreactive/payload-plugins/commit/7904a46d0105d81ccdbac6b570ed7a917b3fd6f3))
+* the guard is asked what the caller wants to do ([1d9fd55](https://github.com/focusreactive/payload-plugins/commit/1d9fd556e76d4e7bf6e445fb9cd38d18ee189089))
+* the pipeline is handed the leaves to translate ([1a143e7](https://github.com/focusreactive/payload-plugins/commit/1a143e71cc6327459d005156bef91feaf2f28aa2))
+* the run carries one list of filters and one context ([a8cbfdf](https://github.com/focusreactive/payload-plugins/commit/a8cbfdfa43579658919c418239596b379b45dea5))
+* two routes ask before they read or spend ([7773aa3](https://github.com/focusreactive/payload-plugins/commit/7773aa3806a2590263ef90618e1745407eea636f))
+
+
+### BREAKING CHANGES
+
+* `TaskRunner.assignmentsOf` is required. A custom runner
+stops compiling until it is added. Its parameter is `readonly JobHandle[]`,
+an alias of `string`, so nothing about assignability moves. The `@since`
+tag is dropped — `TaskRunner` is not re-exported from `src/index.ts`, only
+`TaskRunnerProvider` is. See docs/DEPRECATIONS.md, "one permission
+decision point".
+* code that calls TaskRunner.enqueue, cancel or run
+directly must obtain its argument from one of those paths. Implementing
+TaskRunner is unaffected: TypeScript compares method parameters
+bivariantly, so a runner declaring the wider types still satisfies the
+interface.
+* `AutoTranslateStrategy` is no longer exported and
+`AutoTranslateConfig.strategy` is removed. A host that set `skip_existing` had
+automatic runs that left translated fields alone; those runs now re-translate
+whole documents, at full provider cost, over reviewed text. The option is refused
+rather than ignored. See docs/DEPRECATIONS.md#the-strategy-leaves-the-run.
+* `POST /enqueue` refuses a body still carrying `strategy`,
+`selection` or `criteria` with a 400 that names what to send instead. See
+docs/DEPRECATIONS.md#the-strategy-leaves-the-run.
+
+# @focus-reactive/payload-plugin-translator [1.0.0-next.5](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.4...@focus-reactive/payload-plugin-translator@1.0.0-next.5) (2026-10-23)
+
+
+* feat!: provenance becomes an ordinary module on a run seam ([17f9c16](https://github.com/focusreactive/payload-plugins/commit/17f9c1623953abbe05d0a9acdb0c224c6dc1d30e)), closes [#198](https://github.com/focusreactive/payload-plugins/issues/198)
+
+
+### BREAKING CHANGES
+
+* the `levels` plugin option is removed, along with
+`documentLevel()`, `collectionLevel()`, `fieldLevel()` and the
+`TranslationLevel` type. Replace `levels: [documentLevel(), collectionLevel()]`
+with `modules: [documentTranslation()]` and
+`components: [translateDocumentControl(), bulkTranslationDashboard()]`;
+`levels: [fieldLevel()]` becomes `modules: [fieldTranslation()]`. Both lists are
+required and either may be empty — an omitted option used to mean two surfaces
+silently, and now fails at boot with the replacement in the message.
+See docs/DEPRECATIONS.md for the full table.
+
+# @focus-reactive/payload-plugin-translator [1.0.0-next.4](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.3...@focus-reactive/payload-plugin-translator@1.0.0-next.4) (2026-10-22)
+
+
+### Bug Fixes
+
+* **translator:** the receipt stops guessing who wrote the target text ([d0bc719](https://github.com/focusreactive/payload-plugins/commit/d0bc719b6c6f36d412b88727a0b84e2d585b3ba0)), closes [#198](https://github.com/focusreactive/payload-plugins/issues/198)
+
+# @focus-reactive/payload-plugin-translator [1.0.0-next.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.2...@focus-reactive/payload-plugin-translator@1.0.0-next.3) (2026-10-21)
+
+
+### Bug Fixes
+
+* **translator:** record the leaf a run sent and never got back ([69f1bda](https://github.com/focusreactive/payload-plugins/commit/69f1bda205165fa75552e0b8db3306d7c2f96739)), closes [#197](https://github.com/focusreactive/payload-plugins/issues/197)
+
+# @focus-reactive/payload-plugin-translator [1.0.0-next.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.1...@focus-reactive/payload-plugin-translator@1.0.0-next.2) (2026-10-19)
+
+
+### Features
+
+* **translator:** let the provider decide how rich text is translated ([4733046](https://github.com/focusreactive/payload-plugins/commit/47330467ecf0601a1c8666880f87ac820688d99d))
+
+
+### BREAKING CHANGES
+
+* **translator:** `translatorPlugin({ experimental: { inlineMarks } })` is
+removed, and `experimental` with it. Container-granular rich text is now
+selected by a provider declaring `capabilities.inlineMarks` — which the bundled
+OpenAI provider does. An install that left the setting off or unset while using
+such a provider will translate rich text one container at a time after this
+upgrade, which can reorder the pieces of a paragraph. To keep the per-node
+behaviour, use a provider that does not declare the capability.
+
+# @focus-reactive/payload-plugin-translator [1.0.0-next.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.18.0-next.1...@focus-reactive/payload-plugin-translator@1.0.0-next.1) (2026-10-19)
+
+
+### Features
+
+* **translator:** remove the names nothing calls ([6db3ca6](https://github.com/focusreactive/payload-plugins/commit/6db3ca6e771b7269f62da07c66de9ae5141a8f46))
+
+
+### BREAKING CHANGES
+
+* **translator:** `TranslateCollectionPlugin`, `TranslateCollectionPluginConfig`,
+`createTranslatePlugin`, `translateKitField` and `TranslateKitFieldConfig` are
+removed. Use `translatorPlugin`, `TranslatorPluginConfig`,
+`withFieldTranslation` and `FieldTranslationConfig` instead.
+
+# @focus-reactive/payload-plugin-translator [0.18.0-next.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.17.0...@focus-reactive/payload-plugin-translator@0.18.0-next.1) (2026-10-19)
 
 # @focus-reactive/payload-plugin-translator [0.18.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.17.0...@focus-reactive/payload-plugin-translator@0.18.0) (2026-10-22)
 

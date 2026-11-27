@@ -1,37 +1,172 @@
-// Title row: the section heading on the left, ambient markers (e.g. auto-translate) pushed to the
-// right edge so they stay out of the popup's main vertical flow.
-.header {
+.toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 
-// Admin rem is 13px, so sizes are in px to match Payload's own popups exactly.
-.title {
+.error {
   margin: 0;
-  font-size: 15px;
-  line-height: 20px;
+  font-size: 0.75rem;
+  color: var(--theme-error-650, var(--theme-error-600));
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--theme-elevation-100);
+}
+
+.heading {
+  flex-grow: 1;
+  margin: 0;
+  font-size: 1.25rem;
   font-weight: 600;
-  color: var(--theme-text, #222);
+}
+
+.from {
+  font-size: 0.8125rem;
+  color: var(--theme-elevation-600);
+}
+
+.close,
+.remove {
+  padding: 0.25rem;
+  border: 0;
+  background: transparent;
+  color: var(--theme-elevation-600);
+  font-size: 1rem;
+  line-height: 0;
+  cursor: pointer;
+}
+
+.remove {
+  font-size: 0.8125rem;
+}
+
+.body {
+  flex-grow: 1;
+  overflow: auto;
 }
 
 .section {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--theme-elevation-50);
+}
+
+.eyebrow {
+  margin: 0 0 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--theme-elevation-600);
+}
+
+.picks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.625rem 1rem;
+}
+
+.pick {
+  display: flex;
+  align-items: center;
+  gap: 0.4375rem;
+  font-size: 0.8125rem;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 1rem;
+}
+
+.documents {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.document {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.6875rem 0;
+  border-bottom: 1px solid var(--theme-elevation-50);
+}
+
+.title {
+  flex-grow: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skipped {
+  font-size: 0.75rem;
+  color: var(--theme-elevation-500);
+}
+
+.lead,
+.text {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--theme-elevation-600);
+}
+
+.lead {
+  padding: 1.25rem 1.5rem 0;
+}
+
+.way {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 1rem 1.5rem 0;
+  padding: 1rem;
+  border: 1px solid var(--theme-elevation-100);
+  border-radius: var(--style-radius-s);
 }
 
-// One eyebrow style shared by every section header, so the sections read as one system.
-.eyebrow {
+.wayTitle {
   margin: 0;
-  font-size: 13px;
-  line-height: 20px;
+  font-size: 0.875rem;
   font-weight: 600;
-  color: var(--theme-text, #222);
 }
 
-.section--status {
-  padding-top: 16px;
-  border-top: 1px solid var(--theme-elevation-150, #ddd);
+.link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--theme-text);
+  font-size: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.foot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--theme-elevation-100);
+}
+
+.summary {
+  font-size: 0.75rem;
+  color: var(--theme-elevation-600);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }

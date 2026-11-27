@@ -26,6 +26,7 @@ import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BlocksFieldWithPresets as BlocksFieldWithPresets_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { VariantsField as VariantsField_1e5bf2338fb8c7d4f6284f3e67c93951 } from '@focus-reactive/payload-plugin-ab/admin/VariantsField'
+import { default as default_a7f99f38985a6ad6f8c42704e6593502 } from '@focus-reactive/payload-plugin-translator/client/widgets/translation-status-column/ui/TranslationStatusCell'
 import { default as default_5a9e6bfe3379b31c0258f532ec5399fb } from '@focus-reactive/payload-plugin-translator/client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.server'
 import { default as default_587142b484744b5573788fdf4a68522a } from '@focus-reactive/payload-plugin-translator/client/widgets/translate-document/ui/TranslateDocument.server'
 import { SeoButton as SeoButton_0275c4dc7702e5d88e7eb977a6a3d442 } from '@focus-reactive/payload-plugin-seo/components/SeoButton'
@@ -75,6 +76,7 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@focus-reactive/payload-plugin-presets/client#BlocksFieldWithPresets": BlocksFieldWithPresets_f0a4a6f21f15d606fa328a5e35f17d11,
   "@focus-reactive/payload-plugin-ab/admin/VariantsField#VariantsField": VariantsField_1e5bf2338fb8c7d4f6284f3e67c93951,
+  "@focus-reactive/payload-plugin-translator/client/widgets/translation-status-column/ui/TranslationStatusCell#default": default_a7f99f38985a6ad6f8c42704e6593502,
   "@focus-reactive/payload-plugin-translator/client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.server#default": default_5a9e6bfe3379b31c0258f532ec5399fb,
   "@focus-reactive/payload-plugin-translator/client/widgets/translate-document/ui/TranslateDocument.server#default": default_587142b484744b5573788fdf4a68522a,
   "@focus-reactive/payload-plugin-seo/components/SeoButton#SeoButton": SeoButton_0275c4dc7702e5d88e7eb977a6a3d442,

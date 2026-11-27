@@ -1,7 +1,7 @@
 # Translator plugin — feature dependency graph
 
 **Status:** Reference map (Phase 1 — capture only) · **Date:** 2026-07-24 · **Scope:** `@focus-reactive/payload-plugin-translator`
-**Provenance:** built + reconciled by an independent architecture-mapping pass (3 read-only agents over config-time wiring, the server feature surface, and the client), cross-checked against a first-pass draft. Edges below carry `file:line` evidence in the code.
+**Provenance:** built from three separate read-only mappings (config-time wiring, the server feature surface, and the client), cross-checked against a first draft. Edges below carry `file:line` evidence in the code.
 
 Purpose: make the growing web of inter-feature dependencies + cross-feature rules **explicit**, so a
 contributor can see — before adding a feature — what depends on what, what each capability produces and

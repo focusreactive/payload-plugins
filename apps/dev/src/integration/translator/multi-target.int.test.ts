@@ -6,8 +6,7 @@ import { callEndpoint } from "./callEndpoint";
 
 // #46 — multi-target fan-out through the real POST /translate/enqueue. The endpoint accepts
 // `target_lng` as a string OR string[]; an array fans out one translation task per (document ×
-// target locale). Locale validation, de-dup and source-exclusion run server-side regardless of the
-// UI `targetSelection` mode. Provenance (one row per target) is the durable per-target record, so it
+// target locale). Locale validation, de-dup and source-exclusion run server-side. Provenance (one row per target) is the durable per-target record, so it
 // doubles as the assertion that every queued target is tracked independently.
 
 const tr = (locale: string, s: string) => (s.trim() ? `${locale}:${s}` : s);
@@ -35,13 +34,13 @@ const createDoc = async (ctx: TestPayload, title: string): Promise<string> => {
 };
 
 const enqueue = (ctx: TestPayload, ids: string[], targetLng: string | string[], sourceLng = "en") =>
-  callEndpoint(ctx.payload, "post", "/translate/enqueue", {
+  callEndpoint(ctx.payload, "post", "/translate/enqueue-list", {
     body: {
       source_lng: sourceLng,
       target_lng: targetLng,
       collection_slug: "docs",
       collection_id: ids,
-      strategy: "overwrite",
+
       publish_on_translation: true,
     },
   });

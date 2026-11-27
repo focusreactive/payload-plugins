@@ -5,7 +5,7 @@ import { freshReq } from "../../shared/payload/RequestScope.shapes.js";
 import type {
   ProvenanceKey,
   ProvenanceStore,
-  SourceFingerprint,
+  RecordedFingerprints,
   ProvenanceReceipt,
 } from "../../../core/domain/provenance/index.js";
 import {
@@ -25,6 +25,12 @@ function documentWhere(collectionSlug: string, documentId: string): Where {
   };
 }
 
+function documentsWhere(collectionSlug: string, documentIds: readonly string[]): Where {
+  return {
+    and: [{ collectionSlug: { equals: collectionSlug } }, { documentId: { in: [...documentIds] } }],
+  };
+}
+
 function keyWhere(key: ProvenanceKey): Where {
   return {
     and: [
@@ -35,10 +41,9 @@ function keyWhere(key: ProvenanceKey): Where {
   };
 }
 
-const readFingerprint = (stored: unknown): SourceFingerprint | null =>
+const readFingerprint = (stored: unknown): RecordedFingerprints | null =>
   parseSourceFingerprint(stored == null ? null : String(stored));
 
-/** The only place stored text becomes a {@link SourceFingerprint}. */
 function toRecord(doc: ProvenanceDoc): ProvenanceReceipt {
   return {
     collectionSlug: String(doc.collectionSlug),
@@ -47,7 +52,6 @@ function toRecord(doc: ProvenanceDoc): ProvenanceReceipt {
     sourceLocale: String(doc.sourceLocale),
     sourceFingerprint: readFingerprint(doc.sourceFingerprint),
     translatedAt: new Date(doc.translatedAt as string | number | Date).toISOString(),
-    dismissedFingerprint: readFingerprint(doc.dismissedFingerprint),
   };
 }
 
@@ -58,10 +62,6 @@ function toStoredData(record: ProvenanceReceipt): Record<string, unknown> {
       record.sourceFingerprint === null
         ? null
         : serializeSourceFingerprint(record.sourceFingerprint),
-    dismissedFingerprint:
-      record.dismissedFingerprint === null
-        ? null
-        : serializeSourceFingerprint(record.dismissedFingerprint),
   };
 }
 
@@ -130,14 +130,32 @@ export class PayloadProvenanceStore implements ProvenanceStore {
     return (result.docs as ProvenanceDoc[]).map(toRecord);
   }
 
-  async dismiss(key: ProvenanceKey, dismissedFingerprint: SourceFingerprint): Promise<void> {
+  async findByDocuments(
+    collectionSlug: string,
+    documentIds: readonly string[]
+  ): Promise<ProvenanceReceipt[]> {
+    if (documentIds.length === 0) return [];
+    const result = await this.payload.find({
+      req: this.req(),
+      collection: this.collection,
+      where: documentsWhere(collectionSlug, documentIds),
+      depth: 0,
+      pagination: false,
+    });
+    return (result.docs as ProvenanceDoc[]).map(toRecord);
+  }
+
+  async rebaseSourceFingerprint(
+    key: ProvenanceKey,
+    sourceFingerprint: RecordedFingerprints
+  ): Promise<void> {
     const existing = await this.findDoc(key);
     if (existing === null) return;
     await this.payload.update({
       req: this.req(),
       collection: this.collection,
       id: existing.id,
-      data: { dismissedFingerprint: serializeSourceFingerprint(dismissedFingerprint) },
+      data: { sourceFingerprint: serializeSourceFingerprint(sourceFingerprint) },
     });
   }
 

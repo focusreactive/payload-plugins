@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { CollectionSlug, PayloadRequest } from "payload";
+import { storeDouble } from "../../../modules/runs/__tests__/fixtures/runRecordStore.js";
 
-import { EnqueueTranslationHandler } from "../handler.js";
+vi.mock("../../../shared/access/refusedTargets.js", () => ({
+  refusedTargets: vi.fn().mockResolvedValue(new Set<string>()),
+}));
+
+const { EnqueueTranslationHandler } = await import("../handler.js");
 
 const LOCALIZATION = { defaultLocale: "en", locales: ["en", "de"] };
 
@@ -10,7 +15,6 @@ const body = {
   target_lng: ["de"],
   collection_slug: "posts",
   collection_id: ["doc-1"],
-  strategy: "overwrite",
   publish_on_translation: false,
 };
 
@@ -18,7 +22,8 @@ function setup(user: unknown) {
   const enqueue = vi.fn().mockResolvedValue(undefined);
   const handler = new EnqueueTranslationHandler(
     { availableCollections: new Set(["posts" as CollectionSlug]) } as never,
-    { create: vi.fn().mockReturnValue({ enqueue }) } as never
+    { create: vi.fn().mockReturnValue({ enqueue }) } as never,
+    () => storeDouble()
   );
 
   const req = {
@@ -33,16 +38,13 @@ function setup(user: unknown) {
   return { handler, enqueue, req };
 }
 
-// The manual Translate button is the path an editor actually presses. Queueing without recording who
-// pressed it would leave every manual translation unattributed — and unattributed means the write is
-// made with access control off.
-describe("POST /enqueue — who the queued translation is attributed to", () => {
+describe("POST /enqueue — the queued run carries its caller, because an unattributed write is made with access control off", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("records the caller who pressed Translate", async () => {
     const { handler, enqueue, req } = setup({ id: "anna", collection: "users" });
 
-    await handler.handle(req);
+    await handler.handleDocument(req);
 
     const [, scope] = enqueue.mock.calls[0] as [unknown, Record<string, unknown>];
     expect(scope).toMatchObject({ requester: { userId: "anna", userCollection: "users" } });
@@ -51,7 +53,7 @@ describe("POST /enqueue — who the queued translation is attributed to", () => 
   it("records nobody when the request carried no session", async () => {
     const { handler, enqueue, req } = setup(null);
 
-    await handler.handle(req);
+    await handler.handleDocument(req);
 
     const [, scope] = enqueue.mock.calls[0] as [unknown, Record<string, unknown>];
     expect(scope.requester).toBeNull();

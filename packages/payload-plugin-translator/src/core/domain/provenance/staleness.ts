@@ -1,85 +1,45 @@
 import type { FieldFingerprints } from "../content-projection/computeFieldFingerprints.js";
+import type { LeafAddress } from "../content-projection/idPath.js";
 
+import { isOwed, leafVerdicts } from "./leafVerdicts.js";
 import type { ProvenanceReceipt } from "./ProvenanceStore.interface.js";
-import type { RecordedFingerprints, SourceFingerprint } from "./SourceFingerprint.js";
 
-/** Per-leaf drift. An absent address means nothing could be determined — never "unchanged" ({@link leafSourceChanged}). */
-export type ChangedLeaves = Readonly<Record<string, boolean>>;
+import type { RecordedFingerprints } from "./SourceFingerprint.js";
 
-export type CurrentFingerprint = {
-  document: string;
-  fields: FieldFingerprints;
-};
+/** One entry per translatable leaf the source has now. */
+export type ChangedLeaves = Readonly<Record<LeafAddress, boolean>>;
 
-/** The hash a receipt entry claims, or `undefined` when it claims none. Positive test on purpose: a stored value neither reader understands must claim nothing, never drift. */
-const claimedHash = (recorded: string | null | undefined): string | undefined =>
-  typeof recorded === "string" ? recorded : undefined;
-
-const sameAddresses = (stored: RecordedFingerprints, current: FieldFingerprints): boolean =>
-  Object.keys(stored).length === Object.keys(current).length &&
-  Object.keys(stored).every((address) => address in current);
-
-const matchesClaim = (
-  recorded: string | null | undefined,
-  current: string | undefined
-): boolean => {
-  const claimed = claimedHash(recorded);
-  return claimed === undefined || claimed === current;
-};
-
-const sameFields = (stored: RecordedFingerprints, current: FieldFingerprints): boolean =>
-  sameAddresses(stored, current) &&
-  Object.entries(stored).every(([address, recorded]) => matchesClaim(recorded, current[address]));
-
-const describesCurrentSource = (
-  fingerprint: SourceFingerprint | null,
-  current: CurrentFingerprint
-): boolean => {
-  if (fingerprint === null) return false;
-  return fingerprint.kind === "document"
-    ? fingerprint.hash === current.document
-    : sameFields(fingerprint.hashes, current.fields);
-};
-
-/**
- * The #50 staleness rule in one place: out of date unless the receipt — or the editor's dismissal —
- * describes the source as it stands now. Dismissing stores the current fingerprint, so the flag
- * returns only when the source moves again.
- */
-export function isRecordStale(record: ProvenanceReceipt, current: CurrentFingerprint): boolean {
+const sameFields = (stored: RecordedFingerprints, current: FieldFingerprints): boolean => {
+  const addresses = Object.keys(stored);
   return (
-    !describesCurrentSource(record.sourceFingerprint, current) &&
-    !describesCurrentSource(record.dismissedFingerprint, current)
+    addresses.length === Object.keys(current).length &&
+    addresses.every((address) => stored[address] === current[address])
   );
-}
+};
 
-export const recordsEachLeaf = (
-  fingerprint: SourceFingerprint | null
-): fingerprint is { kind: "fields"; hashes: RecordedFingerprints } =>
-  fingerprint?.kind === "fields";
-
-/** `undefined` means *cannot tell* — callers must claim nothing; answering `true` on a guess overwrites a translation. */
-export function leafSourceChanged(
-  recorded: RecordedFingerprints,
-  currentFields: FieldFingerprints,
-  address: string
-): boolean | undefined {
-  const translatedFrom = claimedHash(recorded[address]);
-  if (translatedFrom === undefined) return undefined;
-  return translatedFrom !== currentFields[address];
+export function isRecordStale(
+  record: ProvenanceReceipt,
+  currentFields: FieldFingerprints
+): boolean {
+  const recorded = record.sourceFingerprint;
+  return recorded === null || !sameFields(recorded, currentFields);
 }
 
 export function changedLeaves(
-  stored: SourceFingerprint | null,
+  recorded: RecordedFingerprints,
   currentFields: FieldFingerprints
 ): ChangedLeaves {
-  if (!recordsEachLeaf(stored)) return {};
+  const verdicts = leafVerdicts(recorded, currentFields);
+  return Object.fromEntries(
+    Object.entries(verdicts).map(([address, verdict]) => [address, isOwed(verdict)])
+  );
+}
 
-  const addressesTheReceiptSaw = Object.keys(stored.hashes);
-  const answers: Record<string, boolean> = {};
-  for (const address of addressesTheReceiptSaw) {
-    const changed = leafSourceChanged(stored.hashes, currentFields, address);
-    if (changed !== undefined) answers[address] = changed;
-  }
-  return answers;
+export function driftedAddresses(
+  recorded: RecordedFingerprints,
+  currentFields: FieldFingerprints
+): LeafAddress[] {
+  return Object.entries(leafVerdicts(recorded, currentFields))
+    .filter(([, verdict]) => isOwed(verdict))
+    .map(([address]) => address);
 }

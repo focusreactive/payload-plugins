@@ -2,7 +2,7 @@ import type { Endpoint } from "payload";
 
 import { withErrorHandler, withAccessCheck } from "../../shared/index.js";
 import type { AccessGuard } from "../../shared/index.js";
-import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
+import type { RunRecordStoreFactory } from "../../modules/runs/index.js";
 
 import type { GetCollectionStatusConfig } from "./model.js";
 import { GetCollectionStatusHandler } from "./handler.js";
@@ -12,15 +12,19 @@ import { GetCollectionStatusHandler } from "./handler.js";
  */
 export function createGetCollectionStatusRoute(
   config: GetCollectionStatusConfig,
-  taskRunnerFactory: TaskRunnerFactory,
-  access?: AccessGuard,
+  runRecordStoreFactory: RunRecordStoreFactory,
+  access: AccessGuard,
   basePath = "/translate"
 ): Endpoint {
-  const handler = new GetCollectionStatusHandler(config, taskRunnerFactory);
+  const handler = new GetCollectionStatusHandler(config, runRecordStoreFactory);
 
   return {
     path: `${basePath}/collection/:collection_slug`,
     method: "get",
-    handler: withAccessCheck(withErrorHandler(handler.handle.bind(handler)), access),
+    handler: withAccessCheck(
+      withErrorHandler(handler.handle.bind(handler)),
+      access,
+      "collection-status"
+    ),
   };
 }

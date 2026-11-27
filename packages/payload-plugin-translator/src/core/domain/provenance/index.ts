@@ -4,11 +4,14 @@ export type {
   ProvenanceStore,
   TranslationProvenanceRecord,
 } from "./ProvenanceStore.interface.js";
-export type { CurrentFingerprint } from "./staleness.js";
-export { changedLeaves, isRecordStale, recordsEachLeaf } from "./staleness.js";
-export type { SourceFingerprint } from "./SourceFingerprint.js";
+export { isOwed, leafVerdicts } from "./leafVerdicts.js";
+export { receiptsByDocument } from "./receiptsByDocument.js";
+export type { ReceiptsByDocument } from "./receiptsByDocument.js";
+export type { LeafVerdict, LeafVerdicts } from "./leafVerdicts.js";
+export { changedLeaves, driftedAddresses, isRecordStale } from "./staleness.js";
+export type { RecordedClaim, RecordedFingerprints } from "./SourceFingerprint.js";
 export {
-  DECLINED,
+  UNANSWERED,
   parseSourceFingerprint,
   serializeSourceFingerprint,
 } from "./SourceFingerprint.js";

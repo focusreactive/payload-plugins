@@ -18,7 +18,7 @@ const enqueue = (ctx: TestPayload, id: string, opts: { publish: boolean; slug?: 
       target_lng: "de",
       collection_slug: opts.slug ?? "docs",
       collection_id: [id],
-      strategy: "overwrite",
+
       publish_on_translation: opts.publish,
     },
   });
@@ -85,7 +85,7 @@ describe("stale detection", () => {
     expect((await staleDe(ctx, String(created.id)))?.is_stale).toBe(true);
   });
 
-  // Pins `fetchSourceDocument`'s `draft: true`: a publish scoped to the target locale leaves the
+  // Pins `fetchDocumentLocale`'s latest read: a publish scoped to the target locale leaves the
   // source locale unpublished, and a published-row read of it hashes an empty document.
   it("is NOT stale when the source itself was never published", async () => {
     const created = await ctx.payload.create({

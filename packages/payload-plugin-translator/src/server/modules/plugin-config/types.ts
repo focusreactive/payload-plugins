@@ -1,0 +1,81 @@
+import type { CollectionConfig, Endpoint, Field } from "payload";
+
+import type { AccessGuard } from "../../../types/AccessGuard.js";
+import type { ConfigModifier } from "../../../types/ConfigModifier.js";
+import type { RawPayloadComponentExport } from "../../../types/PayloadComponentExport.js";
+import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
+import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
+import type { LanguageTable } from "../../../traversal/index.js";
+import type { TaskRunnerFactory } from "../task-runner/index.js";
+import type { RunRecordStoreFactory } from "../runs/index.js";
+import type { DocumentStalenessFactory, ProvenanceStoreFactory } from "../provenance/index.js";
+import type { ChainMember } from "../translation-run/index.js";
+import type { TranslatorSettings } from "../../../settings.js";
+
+export type CollectionAdminSlot = "beforeDocumentControls" | "beforeListTable";
+
+export type ProvenanceAccess = {
+  readonly storeFactory: ProvenanceStoreFactory;
+  readonly stalenessFactory: DocumentStalenessFactory;
+};
+
+export type ConfigTimeContext = {
+  readonly collections: CollectionConfig[];
+  readonly settings: TranslatorSettings;
+  readonly access: AccessGuard;
+  readonly taskRunnerFactory: TaskRunnerFactory;
+  readonly runRecordStoreFactory: RunRecordStoreFactory;
+  readonly provenance?: ProvenanceAccess;
+  readonly schemaMap: CollectionSchemaMap;
+  readonly translationProvider: TranslationProvider;
+  readonly walk: LanguageTable;
+};
+
+/**
+ * What a module may contribute while the config is being built.
+ * @internal
+ */
+export interface ModuleContext extends ConfigTimeContext {
+  /**
+   * A method + path another of the plugin's contributions already claimed throws
+   * `DuplicateEndpointError`; one the host's own config already holds stays the host's.
+   */
+  addEndpoints(endpoints: Endpoint[]): void;
+  addConfigModifier(modifier: ConfigModifier): void;
+}
+
+/**
+ * What an admin component may contribute: a slot or a field on each managed collection, nothing on
+ * the server.
+ * @internal
+ */
+export interface ComponentContext extends ConfigTimeContext {
+  addCollectionComponent(
+    slot: CollectionAdminSlot,
+    make: (collection: CollectionConfig) => RawPayloadComponentExport
+  ): void;
+  /**
+   * A list column is a field. Called once per collection, because Payload writes into the field
+   * configs it sanitizes. A name the collection already has throws `CollectionFieldClashError`.
+   */
+  addCollectionField(make: () => Field): void;
+}
+
+/**
+ * Create one with a built-in factory and list it in `translatorPlugin({ modules })`; writing your own
+ * is not supported yet.
+ *
+ * @since 1.0.0
+ */
+export interface TranslationModule extends ChainMember {
+  setup?(ctx: ModuleContext): void;
+}
+
+/**
+ * An admin control the plugin attaches to every managed collection.
+ *
+ * @since 1.0.0
+ */
+export interface TranslationComponent {
+  attach(ctx: ComponentContext): void;
+}

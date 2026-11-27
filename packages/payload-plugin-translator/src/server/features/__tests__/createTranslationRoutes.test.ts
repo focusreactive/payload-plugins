@@ -1,0 +1,47 @@
+import { describe, it, expect, vi } from "vitest";
+
+import { resolveSettings } from "../../../settings.js";
+import { createTranslationRoutes } from "../createTranslationRoutes.js";
+import type { TranslationRoutesDeps } from "../createTranslationRoutes.js";
+import { AnyAccessGuard } from "../../shared/access/AnyAccessGuard.js";
+import { storeDouble } from "../../modules/runs/__tests__/fixtures/runRecordStore.js";
+
+const OPEN_ON_PURPOSE = new AnyAccessGuard();
+// Bundle-contract test: pins that the shared route bundle stays complete and
+// ordered, and threads basePath into every endpoint. The bundle registers via
+// the doc + collection levels (deduped), so "all endpoints, right paths/methods"
+// must not drift. Each route's own wiring is pinned by its sibling route.test.ts.
+const deps = (basePath?: string): TranslationRoutesDeps => ({
+  taskRunnerFactory: { create: vi.fn(), capabilities: { stop: true, run: true }, report: vi.fn() },
+  runRecordStoreFactory: () => storeDouble(),
+  collectionConfig: { availableCollections: new Set() },
+  schemaMap: new Map(),
+  state: { fingerprintOf: () => null },
+  canHoldText: () => false,
+  holdsText: () => false,
+  access: OPEN_ON_PURPOSE,
+  settings: resolveSettings({ basePath }),
+});
+
+describe("createTranslationRoutes (bundle contract)", () => {
+  it("registers every endpoint with the expected method + path", () => {
+    const routes = createTranslationRoutes(deps("/translate"));
+
+    expect(routes.map((r) => `${r.method} ${r.path}`)).toEqual([
+      "post /translate/enqueue",
+      "post /translate/enqueue-list",
+      "post /translate/run/:collection_slug/:collection_id",
+      "delete /translate/cancel",
+      "get /translate/document/:collection_slug/:collection_id",
+      "get /translate/document-state/:collection_slug/:collection_id",
+      "get /translate/collection/:collection_slug",
+      "get /translate/list-state/:collection_slug",
+    ]);
+  });
+
+  it("threads a custom basePath into every endpoint", () => {
+    const routes = createTranslationRoutes(deps("/i18n"));
+
+    expect(routes.every((r) => r.path.startsWith("/i18n/"))).toBe(true);
+  });
+});

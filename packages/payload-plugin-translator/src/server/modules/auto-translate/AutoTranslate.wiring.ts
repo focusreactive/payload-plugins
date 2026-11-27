@@ -1,32 +1,34 @@
-import { getAutoTranslateConfig } from "../../../core/domain/auto-translate/index.js";
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
+import {
+  AUTO_TRANSLATE_CUSTOM_KEY,
+  getAutoTranslateConfig,
+} from "../../../core/domain/auto-translate/index.js";
+import { TranslatorConfigError } from "../../../core/errors/index.js";
+import { Locales } from "../../../core/domain/locales/index.js";
+import type { SourceFingerprinter } from "../../../core/domain/content-projection/sourceFingerprinter.js";
 import type { ConfigModifier } from "../../../types/ConfigModifier.js";
 import type { TaskRunnerFactory } from "../task-runner/index.js";
+import type { RunRecordStoreFactory } from "../runs/index.js";
 
 import {
-  extractLocaleCodes,
   filterPolicyToKnownLocales,
   makeCollectionPolicyResolver,
   normalizeAutoTranslateConfig,
 } from "./AutoTranslate.policy.js";
-import type { LocalizationLike, NormalizedAutoTranslatePolicy } from "./AutoTranslate.policy.js";
+import type { NormalizedAutoTranslatePolicy } from "./AutoTranslate.policy.js";
 import {
   injectAutoTranslateHook,
   makeAutoTranslateHook,
   propagateAutoTranslateCustom,
 } from "./AutoTranslateEnqueue.hook.js";
 
-/** A collection as the plugin receives it — only `slug` + `custom` are read to resolve the opt-in. */
 type ConfigurableCollection = { slug: string; custom?: Record<string, unknown> };
 
-/** Everything the auto-translate module contributes at config time (mirrors `ProvenanceModule`). */
 export type AutoTranslateModule = {
   configure(managedSlugs: Set<string>): ConfigModifier;
 };
 
 const NOOP: ConfigModifier = (config) => config;
 
-/** Emit one clear config-time warning per collection whose auto-translate config named unknown locales. */
 function warnDroppedLocales(
   slug: string,
   filtered: ReturnType<typeof filterPolicyToKnownLocales>,
@@ -45,17 +47,43 @@ function warnDroppedLocales(
   }
 }
 
+const asList = (locales: readonly string[]): string =>
+  locales.length > 0 ? locales.join(", ") : "none";
+
+/**
+ * Dropping the last target leaves the collection configured and inert, and the warning that covers
+ * a single mistyped locale cannot say so — from the outside it reads the same as the case where the
+ * other targets still work.
+ *
+ * An empty list the host wrote itself is left alone: it is a valid way to keep auto-translate off,
+ * and refusing it would stop a host whose targets come from the environment.
+ */
+function refuseACollectionLeftWithNoTarget(
+  slug: string,
+  filtered: ReturnType<typeof filterPolicyToKnownLocales>,
+  knownLocales: Set<string>
+): void {
+  if (filtered.droppedTargets.length === 0 || filtered.policy.targets.length > 0) return;
+
+  throw new TranslatorConfigError(
+    `[payload-plugin-translator] auto-translate on "${slug}" has no target locale left to ` +
+      `translate into — not declared by this project: ${asList(filtered.droppedTargets)} ` +
+      `(declared: ${asList([...knownLocales])}). Give it a target the project declares, or drop ` +
+      "`withAutoTranslate` from the collection."
+  );
+}
+
 /**
  * Runs while the config is still being built, so a locale nobody configured is dropped before the
  * first hook can enqueue a translation for it — after that it would cost provider calls and leave
  * translations under a locale the project cannot serve.
  */
 function dropLocalesTheProjectDoesNotHave(
-  config: { localization?: LocalizationLike },
+  config: { localization?: Locales.LocalizationLike },
   slugs: Set<string>,
   policies: Map<string, NormalizedAutoTranslatePolicy>
 ): void {
-  const knownLocales = extractLocaleCodes(config.localization);
+  const knownLocales = Locales.knownCodes(config.localization);
   if (!knownLocales) {
     if (slugs.size > 0) {
       console.warn(
@@ -68,8 +96,27 @@ function dropLocalesTheProjectDoesNotHave(
     const policy = policies.get(slug);
     if (!policy) continue;
     const filtered = filterPolicyToKnownLocales(policy, knownLocales);
+    refuseACollectionLeftWithNoTarget(slug, filtered, knownLocales);
     warnDroppedLocales(slug, filtered, knownLocales);
     policies.set(slug, filtered.policy);
+  }
+}
+
+/**
+ * A removed option must not become a silent no-op: `strategy: "skip_existing"` kept an automatic run
+ * to the drifted leaves, and a run now covers the whole document — so a host that believes the
+ * option still holds overwrites reviewed text on every source save.
+ * See docs/DEPRECATIONS.md#the-strategy-leaves-the-run
+ */
+function warnAboutTheRemovedStrategy(collections: ConfigurableCollection[]): void {
+  for (const collection of collections) {
+    const raw = collection.custom?.[AUTO_TRANSLATE_CUSTOM_KEY];
+    if (typeof raw !== "object" || raw === null) continue;
+    if (!("strategy" in raw)) continue;
+
+    console.warn(
+      `[payload-plugin-translator] auto-translate on "${collection.slug}": \`strategy\` was removed and is ignored. An automatic run now translates the whole document — see docs/DEPRECATIONS.md#the-strategy-leaves-the-run.`
+    );
   }
 }
 
@@ -82,9 +129,12 @@ function dropLocalesTheProjectDoesNotHave(
  */
 export function configureAutoTranslate(
   collections: ConfigurableCollection[],
-  schemaMap: CollectionSchemaMap,
-  taskRunnerFactory: TaskRunnerFactory
+  fingerprintOf: SourceFingerprinter,
+  taskRunnerFactory: TaskRunnerFactory,
+  runRecordStoreFactory: RunRecordStoreFactory
 ): AutoTranslateModule {
+  warnAboutTheRemovedStrategy(collections);
+
   const policies = new Map<string, NormalizedAutoTranslatePolicy>();
   for (const collection of collections) {
     const config = getAutoTranslateConfig(collection);
@@ -94,7 +144,12 @@ export function configureAutoTranslate(
 
   const enabledSlugs = new Set(policies.keys());
   const resolvePolicy = makeCollectionPolicyResolver(policies);
-  const hook = makeAutoTranslateHook({ resolvePolicy, schemaMap, taskRunnerFactory });
+  const hook = makeAutoTranslateHook({
+    resolvePolicy,
+    fingerprintOf,
+    taskRunnerFactory,
+    runRecordStoreFactory,
+  });
 
   return {
     configure:

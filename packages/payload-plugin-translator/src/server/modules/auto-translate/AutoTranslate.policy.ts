@@ -1,13 +1,12 @@
 import type { CollectionSlug } from "payload";
 
+import type { World } from "../../../core/domain/world/index.js";
 import type { AutoTranslateConfig } from "../../../core/domain/auto-translate/index.js";
 import { Locales } from "../../../core/domain/locales/index.js";
 import type { TaskInput } from "../task-runner/types.js";
 
-/** A collection's auto-translate rule with defaults resolved — the shape the hook consumes. */
 export type NormalizedAutoTranslatePolicy = {
   targets: string[];
-  strategy: "overwrite" | "skip_existing";
   debounceMs: number;
   sourceLocale?: string;
 };
@@ -23,38 +22,19 @@ export type AutoTranslatePolicyResolver = (
   doc: Record<string, unknown>
 ) => NormalizedAutoTranslatePolicy | null;
 
-/** Apply defaults to a raw config: strategy → "overwrite", debounce → 0. Duplicate target locales are
- * de-duplicated so a misconfigured `targets: ["de","de"]` never enqueues two racing jobs for the same
- * (document, locale) in one batch (the runner's supersession only dedupes against already-stored jobs). */
+/** De-duplicates `targets`: a misconfigured `["de","de"]` would enqueue two racing runs for one
+ * (document, locale) — the runner's supersession only dedupes against work already stored. */
 export function normalizeAutoTranslateConfig(
   config: AutoTranslateConfig
 ): NormalizedAutoTranslatePolicy {
   return {
     targets: Locales.dedupe(config.targets),
-    strategy: config.strategy ?? "overwrite",
     debounceMs: config.debounceMs ?? 0,
     sourceLocale: config.sourceLocale,
   };
 }
 
-/**
- * A minimal localization shape — the set of configured locale codes, in either form Payload accepts
- * (`"en"` or `{ code: "en" }`). Payload's `Config["localization"]` is structurally assignable, so the
- * caller passes it straight in with no adapter and tests pass a tiny literal.
- */
-export type LocalizationLike = false | { locales: Array<string | { code: string }> };
-
-/** Extract the configured locale codes, or `null` when localization is disabled/absent. */
-export function extractLocaleCodes(localization: LocalizationLike | undefined): Set<string> | null {
-  if (!localization) return null;
-  return new Set(
-    localization.locales.map((locale) => (typeof locale === "string" ? locale : locale.code))
-  );
-}
-
-/** Outcome of validating a policy's locales against the configured set — the filtered policy plus what
- * was dropped, so the caller can warn precisely. */
-export type PolicyLocaleFilter = {
+type PolicyLocaleFilter = {
   policy: NormalizedAutoTranslatePolicy;
   droppedTargets: string[];
   droppedSourceLocale: string | null;
@@ -95,33 +75,16 @@ export function makeCollectionPolicyResolver(
 }
 
 /**
- * Publish-gate (#51 D8): a drafts-enabled collection auto-translates only on a **published** save;
- * autosave/draft saves are ignored. A collection without drafts has no `_status`, so every save
- * qualifies. Applies uniformly to create and update.
+ * Publish-gate (#51 D8): a layered collection auto-translates only on a published save; a
+ * single-layer one has no `_status`, so every save qualifies.
  */
-export function passesPublishGate(doc: Record<string, unknown>, hasDrafts: boolean): boolean {
-  if (!hasDrafts) return true;
+export function passesPublishGate(doc: Record<string, unknown>, world: World<unknown>): boolean {
+  if (world.kind === "single-layer") return true;
   return doc._status === "published";
 }
 
 /**
- * Mirror the source document's status onto the translation (#51 D9). Combined with the publish-gate,
- * the source is published whenever we reach enqueue, so translations publish; a no-drafts collection
- * publishes too. Deliberately identical to {@link passesPublishGate} today — kept as a SEPARATE
- * function (not merged) because it diverges once a future document-level manager (R8) can bypass the
- * gate and translate a still-draft source; do not collapse the two.
- */
-export function resolvePublishOnTranslation(
-  doc: Record<string, unknown>,
-  hasDrafts: boolean
-): boolean {
-  if (!hasDrafts) return true;
-  return doc._status === "published";
-}
-
-/**
- * Build one {@link TaskInput} per configured target locale (the source locale is always excluded).
- * `waitUntil` encodes the debounce; `now` is injected so the timestamp is deterministic in tests.
+ * `now` is a parameter rather than `Date.now()`, so task timestamps are fixed under test.
  */
 export function buildAutoTranslateTasks(args: {
   policy: NormalizedAutoTranslatePolicy;
@@ -129,18 +92,17 @@ export function buildAutoTranslateTasks(args: {
   documentId: string;
   sourceLocale: string;
   doc: Record<string, unknown>;
-  hasDrafts: boolean;
+  world: World<unknown>;
   now: number;
 }): TaskInput[] {
-  const { policy, collectionSlug, documentId, sourceLocale, doc, hasDrafts, now } = args;
-  const publishOnTranslation = resolvePublishOnTranslation(doc, hasDrafts);
+  const { policy, collectionSlug, documentId, sourceLocale, doc, world, now } = args;
+  const publishOnTranslation = passesPublishGate(doc, world);
   const waitUntil = policy.debounceMs > 0 ? new Date(now + policy.debounceMs) : undefined;
   return Locales.excludeSource(policy.targets, sourceLocale).kept.map((target) => ({
     collectionSlug,
     collectionId: documentId,
     sourceLng: sourceLocale,
     targetLng: target,
-    strategy: policy.strategy,
     publishOnTranslation,
     waitUntil,
   }));

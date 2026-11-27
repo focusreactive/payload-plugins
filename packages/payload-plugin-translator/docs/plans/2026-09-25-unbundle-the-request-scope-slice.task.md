@@ -101,7 +101,7 @@ reachable from the published type graph as the second parameter of `TaskRunner.e
 accept a type it could not name. Reshaping it is therefore a breaking change for such a runner, not
 an internal one, and the export is what makes the parameter nameable.
 
-**Escalate?** No new seam, no data-model change, no behaviour change — but see **New surface**:
+**Scope:** no new seam, no data-model change, no behaviour change — but see **New surface**:
 the reshaped type is public, so the release decision is not a patch.
 
 ## Acceptance criteria
@@ -128,7 +128,7 @@ the reshaped type is public, so the release decision is not a patch.
 7. **Checks clean:** check-types across all five workspaces, lint at the 58-warning baseline, build
    green with 0 extensionless specifiers in `dist` and the entry loading under Node.
 
-## Human choices
+## Decisions by the owner
 
 - **Done now rather than after #144 merges.** Raised as a risk — it mixes a file reshuffle with an
   access-control change under review — and overruled deliberately: this is drift that compounds, and
@@ -160,20 +160,35 @@ the reshaped type is public, so the release decision is not a patch.
   No check was edited except for an import path, a `vi.mock` path, or D5's object shape — verified by
   filtering those out of `git diff -- '*.test.ts'` and finding nothing else.
 
-### 2026-09-25 · sp-review-deep · target=working-tree vs ed3460cc (packages/payload-plugin-translator + apps/dev)
-- **Vectors:** core (correctness · regression · intent) + security · contracts-types · architecture-fit · tests · abstractions-solid — dropped by cap: conventions
-- **Rounds:** 1 parallel 8-vector fan-out + 1 confidence-scoring batch + opus adversarial pass + 1 narrow follow-up fan-out (loop-until-dry, stopped after 3 rounds when the reopening count failed to fall: 3 → 1 → 2)
-- **Findings:** 8 distinct after dedup (≈22 raw mentions across reviewers) · 3 dropped (low confidence: <75) · 1 investigated-and-refuted (not a confidence judgment — a factual claim checked against Payload's own source and found false) · 3 reported (fix=off, so nothing was auto-fixed) · 0 unresolved
-- **Reported:**
-  - `RequestScope.shapes.ts` now exports 2 functions (`asRequester`, `freshReq`); AC1 as literally written requires 1, and this Review log's own prior entry still records "1 exported function" — stale. Same staleness: AC5's row here claims "unit 1583 in 131 files" (now 1591, `asRequester`'s own test block was never counted), and this doc's Placement paragraph promises `server/shared/payload/index.ts`, which does not exist in the working tree and whose absence (or reversal) this log never recorded.
-  - `RequestScope`'s shape change (the `{userId,userCollection}` → `{requester}` collapse) reaches the package's public type graph through `TaskRunnerProvider`/`TaskRunner` (exported from `src/index.ts`, documented in README as the required `runner` config, explicitly inviting third-party implementations) — contradicting this doc's own `**New surface:** none` / `**Escalate?** No` claims. The leak itself predates this diff, but a third-party runner built against the old shape now silently degrades to `checkTranslationPermission`'s `!requester → ALLOW_ALL` (permission check skipped) rather than failing to compile, because a variable-typed scope object bypasses TypeScript's excess-property check.
-  - The identity round-trip through the stored job row (`requesterOf` in `PayloadJobsRunnerProvider.ts`; the two write sites in `PayloadJobsTaskRunner.ts`) has zero unit-test coverage on both sides — proven by mutation (hardcoding any of the three to `null`/no-op leaves the full 1591-test unit suite green). The only guard is a Postgres integration test no CI workflow runs.
-- **Left open:**
-  - Out-of-scope follow-up: `killedTheCallersTransaction.test.ts`'s "MongoDB zero transaction id" case doesn't match either shipped adapter's real behaviour and inverts Payload's own truthy check in `killTransaction.js` — pre-existing (moved verbatim from `ed3460cc`), not introduced here.
-  - Dropped at the confidence gate (real per multiple reviewers, scored <75 by an independent re-check): the `asRequester` JSDoc's "producers cannot disagree" claim vs. `identityOf.ts`'s pre-existing truthy `if (user.collection)` gate (scored 50 — practically-unreachable trigger); the duplicate derivation of `requester_id`/`requester_collection` in `PayloadJobsTaskRunner.ts`'s `queueWorkflow` vs. the already-computed `RequestShape` (scored 60 — latent, not a live bug).
-- **Pin:** not set — the target is a shared working tree carrying two other people's uncommitted work; a stale-review gate would block them (explicit instruction for this run).
+### 2026-09-25 · review of the working tree against ed3460cc
 
-- 2026-09-25 — the deep review's three findings answered, and the numbers this contract had drifted
+Three findings, answered in the next entry:
+
+- `RequestScope.shapes.ts` now exports two functions (`asRequester`, `freshReq`), while AC1 as
+  written requires one and this log's prior entry still recorded one. The Placement paragraph
+  promised a `server/shared/payload/index.ts` that does not exist in the working tree.
+- `RequestScope`'s shape change reaches the package's public type graph through
+  `TaskRunnerProvider`/`TaskRunner`, contradicting this doc's original "New surface: none" claim.
+  The leak predates this diff, but a third-party runner built against the old shape silently
+  degrades to `checkTranslationPermission`'s `!requester → ALLOW_ALL` (permission check skipped)
+  rather than failing to compile, because a variable-typed scope object bypasses TypeScript's
+  excess-property check.
+- The identity round trip through the stored job row (`requesterOf` in
+  `PayloadJobsRunnerProvider.ts`; the two write sites in `PayloadJobsTaskRunner.ts`) had no unit
+  coverage on either side — proven by mutation. The only guard was a Postgres integration test no CI
+  workflow runs.
+
+Left open:
+
+- `killedTheCallersTransaction.test.ts`'s "MongoDB zero transaction id" case does not match either
+  shipped adapter's real behaviour and inverts Payload's own truthy check in `killTransaction.js` —
+  pre-existing (moved verbatim from `ed3460cc`), not introduced here.
+- Judged not worth acting on: the `asRequester` JSDoc's "producers cannot disagree" claim vs.
+  `identityOf.ts`'s pre-existing truthy `if (user.collection)` (practically unreachable trigger); the
+  duplicate derivation of `requester_id`/`requester_collection` in `PayloadJobsTaskRunner.ts`'s
+  `queueWorkflow` vs. the already-computed `RequestShape` (latent, not a live bug).
+
+- 2026-09-25 — the review's three findings answered, and the numbers this contract had drifted
   from corrected.
 
   **The public surface was misstated, and is now fixed rather than re-explained.** `RequestScope`
@@ -193,28 +208,27 @@ the reshaped type is public, so the release decision is not a patch.
       requester_id/_collection written as null       before: 1591 green   after: 1 file red
 
   The earlier fix closed the *decision* (`asRequester`); this closes the *wiring*, which is the half
-  the mutation audit could not see because no unit check reached it.
+  the earlier mutation testing could not see because no unit check reached it.
 
   **AC1 was amended rather than satisfied by moving code.** Two readings were open — move
   `asRequester` to `identityOf.ts`, or widen the criterion. The package's own precedent settles it:
   `makeIdPath` sits in the same file as `IdPath`, described there as "the sole constructor, so it can
   never drift". `asRequester` is the same thing for `Requester` and belongs beside it.
 
-  **Also corrected:** `server/shared/payload/index.ts` was created by this task and removed again in
-  the same session once the suite audit measured zero importers; the Placement paragraph no longer
+  **Also corrected:** `server/shared/payload/index.ts` was created by this task and removed again once a
+  check found zero importers; the Placement paragraph no longer
   promises it. Suite now 1599 in 132 files.
 
-- 2026-09-30 — second `/sp-red-test` audit and second `/sp-review-deep`, over the ten files changed
+- 2026-09-30 — a second test-suite review and a second code review, over the ten files changed
   after the first review. Both are recorded in
   `artifacts/2026-09-25-suite-audit-after-the-unbundle.txt`.
 
-  **The audit's reason for existing:** the three "let the contract carry it" rewrites were shipped on
+  **Why the test-suite review was needed:** the three "let the contract carry it" rewrites were shipped on
   a green suite and reported done; two of them turned out to be guarded by nothing. Eight mutations
   now hold all three, including a value-swap probe that answers whether `expect.objectContaining` is
   too loose — it is not, it asserts the values.
 
-  **The deep review came back clean** — 8 findings raised, 7 dropped at the confidence gate, 1
-  reported: `configureAutoTranslate`'s doc block had been orphaned above the newly spliced
+  **The code review found one defect:** `configureAutoTranslate`'s doc block had been orphaned above the newly spliced
   `dropLocalesTheProjectDoesNotHave`, leaving the module's only exported entry point undocumented.
   Fixed.
 
@@ -224,7 +238,7 @@ the reshaped type is public, so the release decision is not a patch.
   `updatedAt` breaks a tie between tasks — is also too wide: `latestTaskPerTargetLocale` has one
   caller, for one document, so no tie arises. What is real is narrower and still worth holding:
   `updatedAt` reaches the panel as `updated_at`, so a settled task used to display its start time.
-  Three independent passes have now failed to break that third reading.
+  Three independent reviews have now failed to break that third reading.
 
   **Still owed, and the owner's to write:** `README.md` needs the `Since v0.14.0` note this package's
   CLAUDE.md requires beside the `@since` on a newly exported symbol. The `RequestScope`/`Requester`

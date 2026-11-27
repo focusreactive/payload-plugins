@@ -52,10 +52,10 @@ an empty map when none parsed — two spellings of "nothing here" that no consum
 **Written contract?** One clause the signature cannot state: **an absent `reply` means the
 container keeps its source text** — it is the same outcome for "no reply came back" and "the reply
 could not be parsed", and the mutator must not distinguish them. Recorded in the field's docblock.
-Not enough to fire a blind-authoring run: this is a refactor of behaviour already covered, not a
+Not enough to write the tests from the contract first: this is a refactor of behaviour already covered, not a
 new contract others will implement.
 
-**Escalate?** No. One module, no new seam, no data-model change.
+**Scope:** one module, no new seam, no data-model change.
 
 ## Acceptance Criteria
 
@@ -90,11 +90,10 @@ new contract others will implement.
 - The container write path had no unit test before this change. That is why criterion 3 exists:
   without it the refactor would rest entirely on end-to-end coverage.
 
-## Human choices
+## Decisions by the owner
 
-- **2026-09-11 — the owner proposed this design and instructed the run**: *"Если тестами покрыто -
-  тогда запускай через /sp-task, потом подлей изменения в ветку"*. The Phase 2 gate is therefore
-  not re-asked: re-confirming the owner's own proposal would be a pause with no decision in it.
+- **2026-09-11 — the design was proposed by the owner**, with the decision to carry it out if the
+  behaviour is covered by tests and then merge it into the branch.
 - **2026-09-11 — breaking the "no stage writes a chunk" habit is accepted** (D3), on the grounds
   that the rule costs a fourth index-keyed column now and a fifth in the next change.
 
@@ -102,8 +101,8 @@ new contract others will implement.
 
 | Date | Pass | Outcome |
 |---|---|---|
-| 2026-09-11 | implementation self-verification | criteria 1-9 met by their declared checks; `sp-diff-checks` clean (5 checks); `sp-lint-delta` reports no introduced findings |
-| 2026-09-11 | fresh eyes on the diff | **no findings**. Confirmed no behaviour difference (an empty `ParsedMark[]` is truthy under both the old lookup and the new field read, and `undefined` propagates identically); no aliasing (chunks are rebuilt on every `execute()`); nothing left behind by the removal |
+| 2026-09-11 | verification | criteria 1-9 met by their declared checks |
+| 2026-09-11 | review of the diff | **no findings**. Confirmed no behaviour difference (an empty `ParsedMark[]` is truthy under both the old lookup and the new field read, and `undefined` propagates identically); no aliasing (chunks are rebuilt on every `execute()`); nothing left behind by the removal |
 
 ### Mutations
 
@@ -112,8 +111,8 @@ new contract others will implement.
 | the translation stage stops writing `chunk.reply` | 6 cases, incl. three end-to-end container tests |
 | apply an empty reply when none was parsed | the new `leaves the container untouched when no reply was parsed`, plus the end-to-end corrupt-reply case |
 
-**One correction worth recording.** The first attempt at the second mutation stayed green, and I
-briefly read that as a coverage gap. It was a bad mutation: it wrote each fragment's own text back
+**One correction worth recording.** The first attempt at the second mutation stayed green, and was
+briefly read as a coverage gap. It was a bad mutation: it wrote each fragment's own text back
 over itself, so nothing changed and there was nothing for a test to catch. Replaced with one that
 applies an empty reply, which discriminates.
 

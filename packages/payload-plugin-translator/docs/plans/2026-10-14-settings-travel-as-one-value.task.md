@@ -62,7 +62,7 @@ export const resolveSettings = (o: TranslatorSettingsOptions): TranslatorSetting
 
 and `plugin.ts` composing the public type: `TranslatorPluginConfig = TranslatorSettingsOptions & { …the other seven fields }`.
 
-**What lost, and why — two candidates, and the first is what the brief for this task assumed:**
+**What lost, and why — two candidates, and the first is what the original task description assumed:**
 
 - **`Required<Pick<TranslatorPluginConfig, …>>`.** Wrong, because the context's values are *resolved*,
   not raw: `basePath` is `normalizePath(rawBasePath)`, and `inlineMarks` is
@@ -85,7 +85,7 @@ factories keep receiving `basePath` as the positional argument they take today, 
 diff is empty. The four fixtures write `settings: resolveSettings({})` — one line, and a new setting
 costs them nothing, which is why no shared test fixture is needed.
 
-**What lost, and why:** pushing `settings` down to the leaf factories. It lost on the owner's
+**What lost, and why:** pushing `settings` down to the leaf factories. It lost on the project's
 standing rule — *demand only what you touch*: `createCancelRoute` uses `basePath` and nothing else,
 and a parameter whose other three fields it ignores is a signature that lies about what the answer
 depends on.
@@ -123,9 +123,9 @@ the rest.
 ### Written contract?
 
 **None.** `resolveSettings` is total, pure, and says everything in its signature except the four
-defaults, which `@default` tags on the option fields already carry. No `/sp-red-test` path.
+defaults, which `@default` tags on the option fields already carry. No contract-first tests needed.
 
-### Escalate to /sp-architect?
+### Does this need a separate design?
 
 **No.** It regroups fields on an internal type that four other internal types already derive from.
 No new seam, no dependency, no data-model change.
@@ -158,8 +158,7 @@ No new seam, no dependency, no data-model change.
 | AC8 | 0 · 0 · 2 | invariant |
 | AC9 | 46 warnings, 0 errors | invariant |
 
-AC1's pre-flight corrects the figure this contract first carried: I wrote 4 from memory, the grep
-returns 8, because `PluginConfigBuilder` restates every field the context declares.
+AC1's pre-flight corrects the figure this contract first carried: it said 4, the grep returns 8, because `PluginConfigBuilder` restates every field the context declares.
 
 ## Risk notes
 
@@ -167,8 +166,8 @@ returns 8, because `PluginConfigBuilder` restates every field the context declar
 deliberately unexported, and the docblock on `TranslationLevel` says so: *"not externally
 implementable yet, since LevelContext is intentionally not exported"*. Behaviour is unchanged, and
 every relay is typed, so a mis-wired field is a compile error rather than a runtime surprise. That
-buys one reviewer in Phase 5 rather than three, and a sweep over the four derived types rather than
-an evidenced sweep of everything.
+buys one review pass rather than three, and a sweep over the four derived types rather than an
+evidenced sweep of everything.
 
 **Hazards:**
 
@@ -185,17 +184,17 @@ an evidenced sweep of everything.
 - `StalenessConfig` picks `provenanceServiceFactory` — a dependency, not a setting. It must come
   through untouched; if it changes, the settings/dependency split was drawn wrong.
 
-## Human choices
+## Decisions by the owner
 
-- **2026-10-14** — do it now rather than defer: "Не хочу откладывать. И так много работы."
-- **2026-10-14** — no deprecation window for the context fields. Raised by the owner as an option;
-  dropped once the types were shown to be unexported, so there is no consumer to keep compatible.
-- **2026-10-14** — not a one-field first step. The owner asked whether to start with `failedWindowMs`
-  alone; rejected because it leaves two ways to pass a setting with nothing forcing the new one, and
+- **2026-10-14** — do it now rather than defer; the backlog is already large.
+- **2026-10-14** — no deprecation window for the context fields. Considered, and dropped once the
+  types were shown to be unexported, so there is no consumer to keep compatible.
+- **2026-10-14** — not a one-field first step. Starting with `failedWindowMs` alone was considered
+  and rejected, because it leaves two ways to pass a setting with nothing forcing the new one, and
   pays the full plumbing cost for none of the gain.
 
 - **2026-10-14** — the four option declarations move into `src/settings.ts` (D2 as written), chosen
-  at the Phase 2 gate over keeping them in `plugin.ts`. The owner accepted the readability cost named
+  before implementation over keeping them in `plugin.ts`. The owner accepted the readability cost named
   in the hazards — `plugin.ts` no longer shows `basePath` — in exchange for one declaration site per
   setting and no hand-written duplicate of the option shape.
 
@@ -230,7 +229,3 @@ each proven by a mutation that was reverted afterwards:
 
 The `??` mutation is the one worth having: `\|\|` would silently replace an explicit
 `failedWindowMs: 0` — "report no failures at all" — with the three-day default.
-
-## Review log
-
-(empty)

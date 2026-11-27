@@ -1,18 +1,6 @@
-import type { DocumentRef } from "../../core/domain/translation-providers/index.js";
+import type { DocumentRef, LanguageCode } from "../../core/domain/translation-providers/index.js";
 
-/**
- * Wording validated against 396 live translations (French, German, Japanese × four models) before
- * it shipped: the fallback rate was ~1% on gpt-4o and zero on newer models. Reword it only with
- * the same measurement in hand.
- *
- * A rule telling the model to keep each mark around the same words was measured and rejected: it
- * tightens mark boundaries at the cost of target word order. See
- * `docs/plans/2026-09-12-field-surface-inline-marks.task.md`.
- */
-const INLINE_MARKS_INSTRUCTION = `Some values contain numbered inline marks, written as <1>text</1> or <5/>. They carry formatting, not content.
-Return every mark exactly once, keeping its number, and put each mark where the translated sentence needs it — the order of marks may change.
-If a piece of text merges into a neighbouring mark, return the emptied mark as <2></2>; never omit a mark.
-Never introduce a mark into a value that has none, and never nest marks.`;
+export type PromptAddition = string;
 
 /**
  * Context handed to a {@link SystemPromptBuilder}.
@@ -20,17 +8,14 @@ Never introduce a mark into a value that has none, and never nest marks.`;
  * @since 0.11.0
  */
 export type SystemPromptContext = {
-  /** Source language code (e.g. 'en', 'de'). Empty when the provider should auto-detect. */
-  sourceLang: string;
-  targetLang: string;
+  sourceLang: LanguageCode;
+  targetLang: LanguageCode;
   defaultPrompt: string;
   /**
-   * Which document is being translated. Absent only when the provider was called without one —
-   * both translation surfaces name it.
-   *
    * @since 0.18.0
+   * @since 1.0.0 always present.
    */
-  document?: DocumentRef;
+  document: DocumentRef;
 };
 
 /**
@@ -51,19 +36,16 @@ export async function buildSystemPrompt(args: {
   sourceLng: string;
   targetLng: string;
   override?: SystemPromptBuilder;
-  document?: DocumentRef;
+  document: DocumentRef;
   /**
-   * Whether the values being sent carry inline marks. Appended **after** whatever `override`
-   * returns: a builder is free to ignore `defaultPrompt`, and the format must not depend on it
-   * remembering to include this rule.
+   * Joined after the override's result, one blank line between: an override may ignore
+   * `defaultPrompt`, so a rule the plugin must deliver cannot ride inside it.
    */
-  hasInlineMarks?: boolean;
+  alwaysAppend?: readonly PromptAddition[];
 }): Promise<string> {
-  const { sourceLng, targetLng, override, hasInlineMarks, document } = args;
+  const { sourceLng, targetLng, override, alwaysAppend = [], document } = args;
 
-  const defaultPrompt = `Translate the values from the JSON that the user will send you${
-    sourceLng ? ` from ${sourceLng}` : ""
-  } into ${targetLng}. Keep all JSON keys exactly as they are, only translate the values.
+  const defaultPrompt = `Translate the values from the JSON that the user will send you from ${sourceLng} into ${targetLng}. Keep all JSON keys exactly as they are, only translate the values.
 The response should be a valid JSON object with the same structure and keys as the input, but with translated values.
 Maintain any special formatting, placeholders, or variables within the values if they exist.`;
 
@@ -76,5 +58,5 @@ Maintain any special formatting, placeholders, or variables within the values if
       })
     : defaultPrompt;
 
-  return hasInlineMarks ? `${prompt}\n\n${INLINE_MARKS_INSTRUCTION}` : prompt;
+  return [prompt, ...alwaysAppend].join("\n\n");
 }

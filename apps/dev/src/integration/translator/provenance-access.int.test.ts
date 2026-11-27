@@ -63,7 +63,7 @@ describe("the translation receipts are closed to the outside", () => {
         ctx.payload.update({
           collection: "translator-provenance" as "pages",
           id: rowId,
-          data: { dismissedFingerprint: "forged" } as never,
+          data: { sourceFingerprint: "forged" },
           overrideAccess: false,
           user: SIGNED_IN,
         })

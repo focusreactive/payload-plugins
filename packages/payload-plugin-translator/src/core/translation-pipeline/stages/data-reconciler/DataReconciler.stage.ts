@@ -10,7 +10,7 @@ export class DataReconcilerStage implements PipelineStage {
     const reconciler = new DataReconciler(ctx.schema);
     return {
       ...ctx,
-      filteredData: reconciler.reconcile(ctx.sourceData, ctx.targetData),
+      reconciledData: reconciler.reconcile(ctx.sourceData, ctx.targetData),
     };
   }
 }

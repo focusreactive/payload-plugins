@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  toast,
   useConfig,
   useDocumentInfo,
   useField,
@@ -9,222 +8,236 @@ import {
   useFormFields,
   useLocale,
 } from "@payloadcms/ui";
-import { useState } from "react";
+import * as Popover from "@radix-ui/react-popover";
+import { useMemo, useState } from "react";
 
-import { useTranslateField } from "../../../entities/translation/api/mutations/useTranslateField.js";
+import type { LocaleCode } from "../../../../types/wire/primitives.js";
+import { localeChoicesOf, useTranslateField } from "../../../entities/translation/index.js";
+import { useTranslateKitConfig } from "../../../shared/config/index.js";
 import { LanguageTranslateIcon } from "../../../shared/lib/assets/icons/LanguageTranslateIcon.js";
-import { ReloadIcon } from "../../../shared/lib/assets/icons/ReloadIcon.js";
-import { SendIcon } from "../../../shared/lib/assets/icons/SendIcon.js";
-import { useLocaleOptions } from "../../../shared/lib/payload/hooks/useLocaleOptions.js";
-import { useToggle } from "../../../shared/lib/utils/react/useToggle.js";
 import Button from "../../../shared/ui/Button/index.js";
-import Popup from "../../../shared/ui/Popup/index.js";
-import Select from "../../../shared/ui/Select/index.js";
-import Tooltip from "../../../shared/ui/Tooltip/index.js";
+import InfoPopover from "../../../shared/ui/InfoPopover/index.js";
+import type { ControlOutcome, SourceChoice } from "../model/fieldControl.js";
+import {
+  fieldControlView,
+  outcomeOf,
+  showsSourceMenu,
+  sourceChoicesOf,
+} from "../model/fieldControl.js";
 
 import styles from "./styles.module.scss";
 
+const SAVE_HINT = "Save the document to pull from another locale.";
+const LOCALIZED_LIST_HINT =
+  "Every locale has its own blocks here, so this block cannot be traced to an English one. Translate the whole document from the panel.";
+
+const asError = (reason: unknown): Error =>
+  reason instanceof Error ? reason : new Error(String(reason));
+
+function SourceMenu({
+  sources,
+  onPick,
+}: {
+  sources: readonly SourceChoice[];
+  onPick: (source: LocaleCode) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover.Root open={open} onOpenChange={setOpen}>
+      <Popover.Trigger asChild>
+        <button
+          type="button"
+          className={`${styles.part} ${styles.caret}`}
+          aria-label="Choose another source locale"
+        >
+          <svg width="9" height="9" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+            <path d="M1 3l4 4 4-4" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+        </button>
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content className={styles.menu} align="end" sideOffset={4} aria-label="Pull from">
+          {sources.map((source) => (
+            <button
+              key={source.code}
+              type="button"
+              className={styles.menuItem}
+              aria-label={`Translate from ${source.label}`}
+              onClick={() => {
+                setOpen(false);
+                onPick(source.code);
+              }}
+            >
+              <span className={source.panels ? styles.panels : undefined}>{source.label}</span>
+              {source.panels && <span className={styles.panelsMark}> · the panel&rsquo;s</span>}
+            </button>
+          ))}
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
+function DisabledTranslate({ hint }: { hint: string }) {
+  return (
+    <>
+      <InfoPopover label={hint} content={hint} />
+      <Button type="button" $variant="outlined-light" $size="sm" disabled>
+        Translate
+      </Button>
+    </>
+  );
+}
+
 /**
- * Per-field Translate control, injected into the field's `admin.components.beforeInput`.
- * The trigger is an icon button; clicking it opens a compact popup that reuses the plugin's
- * recognizable `source → target` direction pattern (as on the document/collection level):
- * a small **source** locale `Select`, an arrow, then the **current** locale (the target).
+ * Per-field Translate control, injected into the field's `admin.components.beforeInput`. It pulls
+ * the field's saved value from another locale into the locale being edited and writes the answer
+ * into the form only: Payload's own Save persists it.
  *
- * **Direction.** The target is *always* the locale the user is editing (`useLocale()`) — never
- * derived from the picker; only the **source** is chosen. This is the reverse of the
- * document/collection level (translate *from* the current locale *to* a chosen target): here we
- * pull content *into* where the user stands. Deliberate, and field-level only for now.
- *
- * The source is an explicit locale (no "auto-detect": the field reads the chosen locale's *saved*
- * value, so it needs a saved document — the control is **hidden entirely while creating** a new
- * one). It defaults to Payload's configured `defaultLocale` when
- * that isn't the current locale, otherwise the user picks. On success the result is written back
- * (see {@link writeFieldValue}) and an **Undo** restores the previous value. Field `value` + `path`
- * come from `useField()` via the field path context (`beforeInput` renders inside it — no `path`
- * prop).
- *
- * **Write-back** is one path for every supported field type: a form `UPDATE` bumping both `value`
- * and `initialValue`. A Lexical (`richText`) editor owns its state and only re-reads on
- * `initialValue` change, so it re-mounts with the new content; `text` / `textarea` inputs just
- * re-render from `value`. So no per-type flag is needed.
+ * Write-back is a form `UPDATE` of both `value` and `initialValue`: a Lexical editor re-reads only on
+ * `initialValue` change, so it re-mounts with the new content; plain inputs re-render from `value`.
  */
 const TranslateFieldControl = () => {
-  const { value, path } = useField();
+  const { abilities } = useTranslateKitConfig();
+  const { value, path } = useField<unknown>();
   const locale = useLocale();
   const { collectionSlug, id } = useDocumentInfo();
   const { config } = useConfig();
-  const { setModified } = useForm();
+  const { setModified, setProcessing } = useForm();
   const dispatchFields = useFormFields(([, dispatch]) => dispatch);
-  const localeOptions = useLocaleOptions();
-  const { mutateAsync, isPending } = useTranslateField();
+  const { mutateAsync } = useTranslateField();
+  const [outcome, setOutcome] = useState<ControlOutcome>({ kind: "idle" });
 
-  // `config.localization` is `false | {…}`, so the truthy check is load-bearing (not just a nil guard).
-  const defaultLocale = config.localization ? config.localization.defaultLocale : undefined;
-
-  // `useLocale()` is typed `Locale` but actually returns `false | {} | Locale` until the admin's
-  // locale provider resolves (see the V4 TODO on the hook in @payloadcms/ui), so `code` can be absent.
-  const targetCode = locale?.code ?? "";
-
-  const [isOpen, popup] = useToggle();
-  const [sourceLng, setSourceLng] = useState(() =>
-    defaultLocale && defaultLocale !== targetCode ? defaultLocale : ""
+  const target = locale?.code ?? "";
+  const { localization } = config;
+  const sources = useMemo(
+    () =>
+      localization
+        ? sourceChoicesOf({
+            locales: localeChoicesOf(localization.locales),
+            defaultLocale: localization.defaultLocale,
+            target,
+          })
+        : [],
+    [localization, target]
   );
-  // `null` = no undo available; an object wraps the value so a legitimately `undefined` field value
-  // (a real pre-translation state) stays distinguishable from "nothing to undo".
-  const [undo, setUndo] = useState<{ value: unknown } | null>(null);
+  const saved = collectionSlug !== undefined && id !== undefined && id !== null;
+  const view = fieldControlView({ allowed: abilities.translateField, saved, sources, outcome });
 
-  // fieldLevel is off while creating a document: from-locale reads the *saved* document's value,
-  // which doesn't exist yet — so the control is hidden entirely on a new/unsaved doc. (Re-enable
-  // once translating the unsaved value in place is supported.) All hooks above run unconditionally.
-  if (id === undefined || id === null) return null;
-
-  // Source options: every locale except the one being edited (it's the fixed target).
-  const sourceLocaleOptions = localeOptions.filter((option) => option.value !== targetCode);
-  const canTranslate = sourceLng !== "" && !isPending;
-
-  // One write path for every supported field type: a form UPDATE bumping value AND initialValue.
-  // A Lexical (richText) editor re-mounts on the initialValue change so it shows the new content;
-  // text/textarea inputs just re-render from value. setModified keeps the form dirty/savable, since
-  // value === initialValue would otherwise read as unchanged.
   const writeFieldValue = (next: unknown) => {
     dispatchFields({ type: "UPDATE", path, value: next, initialValue: next });
     setModified(true);
   };
 
-  const handleTranslate = async () => {
-    if (!(collectionSlug && canTranslate)) return;
-    const previous = value;
-
+  const translate = async (source: LocaleCode, previous: unknown) => {
+    if (!saved) return;
+    setOutcome({ kind: "translating", source, previous });
+    setProcessing(true);
     try {
-      const { data } = await mutateAsync({
+      const answer = await mutateAsync({
         collectionSlug,
         fieldPath: path,
-        targetLng: targetCode, // always the current edit locale — never derived from the source picker
-        sourceLng,
-        docId: id, // non-null here: the control early-returns on create (no document id)
+        targetLng: target,
+        sourceLng: source,
+        docId: id,
       });
-
-      if (data.status === "translated") {
-        setUndo({ value: previous });
-        writeFieldValue(data.value);
-        toast.success("Field translated");
-        return;
-      }
-
-      const notify = data.notice.level === "warning" ? toast.warning : toast.info;
-      notify(data.notice.message);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Translation failed");
+      if (answer.status === "translated") writeFieldValue(answer.value);
+      setOutcome(outcomeOf(answer, { source, previous }));
+    } catch (reason) {
+      setOutcome({ kind: "failed", source, previous, error: asError(reason) });
+    } finally {
+      setProcessing(false);
     }
   };
 
-  const handleUndo = () => {
-    if (!undo) return;
-    writeFieldValue(undo.value);
-    setUndo(null);
+  const repeat = () => {
+    if (outcome.kind === "translated" || outcome.kind === "failed") {
+      void translate(outcome.source, outcome.previous);
+    }
   };
 
-  return (
-    <Popup
-      $align="center"
-      $side="right"
-      open={isOpen}
-      onOpenChange={popup.setValue}
-      // Don't auto-focus the first button on open — it's a Tooltip trigger, and Radix tooltips
-      // open on focus, so autofocus would flash the Translate button's tooltip immediately.
-      onOpenAutoFocus={(event) => event.preventDefault()}
-      $trigger={
-        <div className={styles.trigger}>
-          <Tooltip content="Translate field">
-            <Button
-              type="button"
-              $variant="light"
-              $size="sm"
-              $isIconButton
-              $isLoading={isPending && !isOpen}
-              aria-label="Translate field"
-              onClick={popup.setTrue}
-            >
-              <LanguageTranslateIcon />
+  const undo = () => {
+    if (outcome.kind !== "translated") return;
+    writeFieldValue(outcome.previous);
+    setOutcome({ kind: "idle" });
+  };
+
+  const body = () => {
+    switch (view.kind) {
+      case "hidden":
+        return null;
+      case "unsaved":
+        return <DisabledTranslate hint={SAVE_HINT} />;
+      case "localized-list":
+        return <DisabledTranslate hint={LOCALIZED_LIST_HINT} />;
+      case "translating":
+        return (
+          <span role="status" className={styles.progress}>
+            <span aria-hidden="true" className={styles.spinner} />
+            Translating
+          </span>
+        );
+      case "translated":
+        return (
+          <>
+            <Button type="button" $variant="outlined-light" $size="sm" onClick={undo}>
+              Undo
             </Button>
-          </Tooltip>
-        </div>
-      }
-    >
-      <div className={styles.popup}>
-        <div className={styles.row}>
-          {/* The from → to pair as one labeled unit, so a screen reader announces the direction
-              together (mirrors the TranslationDirection entity used at the doc/collection level). */}
-          <div
-            aria-label={`Translation direction: from ${sourceLng || "a source locale"} into ${targetCode}`}
-            className={styles.direction}
-            role="group"
-          >
-            <Select
-              $fullWidth={false}
-              $size="sm"
-              aria-label="Source locale"
-              value={sourceLng}
-              onChange={(event) => setSourceLng(event.target.value)}
-              disabled={isPending}
-            >
-              {sourceLng === "" && (
-                <Select.SelectOption value="" disabled>
-                  —
-                </Select.SelectOption>
-              )}
-              {sourceLocaleOptions.map((option) => (
-                <Select.SelectOption key={option.value} value={option.value}>
-                  {option.value.toLowerCase()}
-                </Select.SelectOption>
-              ))}
-            </Select>
-
-            <span aria-hidden="true" className={styles.arrow}>
-              →
-            </span>
-            <span
-              aria-label={`Target locale: ${targetCode} (the locale you're editing)`}
-              className={styles.current}
-            >
-              {targetCode.toLowerCase()}
-            </span>
-          </div>
-
-          <Tooltip content="Translate">
-            <Button
-              type="button"
-              $variant="filled"
-              $size="sm"
-              $isIconButton
-              $isLoading={isPending}
-              disabled={!canTranslate}
-              aria-label={`Translate from ${sourceLng || "the selected locale"} into ${targetCode}`}
-              onClick={handleTranslate}
-            >
-              <SendIcon />
+            <Button type="button" $variant="outlined-light" $size="sm" onClick={repeat}>
+              Again
             </Button>
-          </Tooltip>
-
-          {undo && (
-            <Tooltip content="Undo translation">
-              <Button
-                type="button"
-                $variant="light"
-                $size="sm"
-                $isIconButton
-                aria-label="Undo translation"
-                disabled={isPending}
-                onClick={handleUndo}
+          </>
+        );
+      case "failed":
+        return (
+          <>
+            <span role="alert" className={styles.error} title={view.error.message}>
+              <span aria-hidden="true">!</span> Couldn&rsquo;t translate
+            </span>
+            <Button type="button" $variant="outlined-light" $size="sm" onClick={repeat}>
+              Try again
+            </Button>
+          </>
+        );
+      case "ready": {
+        const [primary] = sources;
+        if (!primary) return null;
+        return (
+          <>
+            {view.notice && (
+              <span
+                role="status"
+                className={view.notice.level === "warning" ? styles.warning : styles.notice}
               >
-                <ReloadIcon />
-              </Button>
-            </Tooltip>
-          )}
-        </div>
-      </div>
-    </Popup>
-  );
+                {view.notice.message}
+              </span>
+            )}
+            <span className={styles.split}>
+              <button
+                type="button"
+                className={`${styles.part} ${styles.main}`}
+                title={`From ${primary.label}`}
+                onClick={() => void translate(primary.code, value)}
+              >
+                <LanguageTranslateIcon />
+                Translate
+              </button>
+              {showsSourceMenu(sources) && (
+                <SourceMenu sources={sources} onPick={(source) => void translate(source, value)} />
+              )}
+            </span>
+          </>
+        );
+      }
+      default: {
+        const exhaustive: never = view;
+        return exhaustive;
+      }
+    }
+  };
+
+  const content = body();
+  return content && <div className={styles.control}>{content}</div>;
 };
 
 export default TranslateFieldControl;

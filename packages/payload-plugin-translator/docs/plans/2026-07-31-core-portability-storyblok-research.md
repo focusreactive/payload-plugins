@@ -39,21 +39,20 @@ at all.
 
 ---
 
-## Phase 1 — parsing the request
+## The request
 
-- Input type: a single spoken question, no ticket.
-- Stakeholder: the developer themself; the motive is to probe whether the core can be paid back by
-  a second product.
-- Explicit asks: (1) assess how coupled the core is to data structures; (2) assess applicability to
+- Motive: probe whether the core can be paid back by a second product.
+- Asks: (1) assess how coupled the core is to data structures; (2) assess applicability to
   Storyblok.
-- Implicit expectation: not a yes/no, but a concrete list of sites and a cost estimate.
-- Inaccuracy in the input: "we made the core as a separate package" — there is no separate package,
-  there is an internal directory with a hard boundary. This matters for the estimate.
+- Expected output: not a yes/no, but a concrete list of sites and a cost estimate.
+- Correction to the premise: the request assumed the core is a separate package — there is no
+  separate package, there is an internal directory with a hard boundary. This matters for the
+  estimate.
 - Constraint: the plugin is already published (0.10.2); the public surface must not change.
 
 ---
 
-## Phase 2 — codebase map
+## Codebase map
 
 ### Layer sizes (excluding tests)
 
@@ -87,7 +86,7 @@ at all.
 
 ---
 
-## Phase 3 — where exactly the core depends on data structure
+## Where exactly the core depends on data structure
 
 ### Axis 1 — schema declaration shape
 
@@ -224,11 +223,11 @@ than on `workspace:*`).
 
 ---
 
-## Clarifications (received 2026-07-31)
+## Clarifications (decided by the owner, 2026-07-31)
 
 | Question | Answer |
 | --- | --- |
-| Purpose of this work | **Exploratory** — "is it possible in principle"; the product decision comes later |
+| Purpose of this work | **Exploratory** — whether it is possible in principle; the product decision comes later |
 | Target Storyblok translation mode | **Both** — folder-level and field-level |
 
 Consequences:
@@ -269,28 +268,18 @@ Questions 1 and 2 are resolved — see Clarifications above. The rest remain ope
    fields inside) are a real case, and picking the wrong mode silently writes the translation to the
    wrong place.
 
-## Consistency self-check
-
-- Both halves of the question (structural coupling + Storyblok applicability) are covered by
-  "Axis 1–3" and "What it would take".
-- The discrepancy with the input's wording (separate package) is recorded in Phase 1.
-- No conclusion contradicts a decision already taken (option C; the deferred identity port).
-- Item 5 of the work list is new — it is not in the existing roadmap.
-- The "both modes" answer is worked through in Clarifications and produced exactly one new open
-  question (#6).
-
-## Comprehension: 9/10
+## Confidence
 
 The core's code and Storyblok's data model were examined concretely and cross-checked against the
 actual component-schema description from the Management API; purpose and scope are now settled. The
 missing point is that the `__i18n__` layer (split and merge inside nested bloks) was assessed from
 the model description rather than against live space data.
 
-## Suggested next step
+## Next step
 
-Done — this was exploratory work, and the report is the deliverable. No code was changed.
+None — this was exploratory work, and the report is the deliverable. No code was changed.
 
-If the decision later becomes "build the product", the entry point is `/sp-architect` on the content
+If the decision later becomes "build the product", the entry point is a design of the content
 codec port (theme 3) and the identity port: they change the boundaries of an already-published core
 and must be designed before any code. The `__i18n__` layer is designed separately, on the Storyblok
 adapter side; it does not touch the core.

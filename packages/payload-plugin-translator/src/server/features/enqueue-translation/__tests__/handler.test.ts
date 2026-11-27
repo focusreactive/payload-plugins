@@ -3,14 +3,19 @@ import type { Payload, PayloadRequest, CollectionSlug } from "payload";
 import { EnqueueTranslationHandler } from "../handler.js";
 import type { EnqueueConfig } from "../model.js";
 import type { TaskRunnerFactory, TaskRunner } from "../../../modules/task-runner/index.js";
+import { storeDouble } from "../../../modules/runs/__tests__/fixtures/runRecordStore.js";
 
-// Mock collection-utils
 vi.mock("../../_lib/collection-utils.js", () => ({
   isCollectionAvailable: vi.fn((slug: string, available: Set<string>) =>
     available.has(slug) ? slug : null
   ),
+}));
+
+vi.mock("../../../shared/payload/collections.js", () => ({
   getAllCollectionIds: vi.fn().mockResolvedValue(["doc-1", "doc-2", "doc-3"]),
 }));
+
+const leaves = (...addresses: string[]) => [{ kind: "leaves", addresses }];
 
 describe("EnqueueTranslationHandler", () => {
   let handler: EnqueueTranslationHandler;
@@ -19,19 +24,19 @@ describe("EnqueueTranslationHandler", () => {
   let config: EnqueueConfig;
   const warn = vi.fn();
 
-  // Bare request: no localization configured. Used for the validation, collection-availability, and
-  // localization-guard paths — all of which reject before any locale resolution.
-  const createMockRequest = (body: unknown): PayloadRequest =>
+  const requestWithoutLocalization = (body: unknown): PayloadRequest =>
     ({
-      payload: {} as Payload,
+      payload: { collections: {} } as unknown as Payload,
       json: vi.fn().mockResolvedValue(body),
     }) as unknown as PayloadRequest;
 
-  // Request whose payload carries a configured locale set + logger. Translation is meaningless without
-  // localization, so every success-path test runs against this.
   const createLocalizedRequest = (body: unknown): PayloadRequest =>
     ({
       payload: {
+        collections: {
+          posts: { config: { versions: { drafts: true } } },
+          pages: { config: { versions: { drafts: true } } },
+        },
         config: { localization: { locales: ["en", "de", "fr", "es"] } },
         logger: { warn },
       },
@@ -46,20 +51,23 @@ describe("EnqueueTranslationHandler", () => {
 
     mockTaskRunner = {
       enqueue: vi.fn().mockResolvedValue(undefined),
-      cancel: vi.fn(),
+      stop: vi.fn(),
       run: vi.fn(),
-      findByCollection: vi.fn(),
     };
 
     mockTaskRunnerFactory = {
       create: vi.fn().mockReturnValue(mockTaskRunner),
+      capabilities: { stop: true, run: true },
+      report: vi.fn(),
     };
 
     config = {
       availableCollections: new Set(["posts", "pages"] as CollectionSlug[]),
+      canHoldText: () => true,
+      holdsText: () => true,
     };
 
-    handler = new EnqueueTranslationHandler(config, mockTaskRunnerFactory);
+    handler = new EnqueueTranslationHandler(config, mockTaskRunnerFactory, () => storeDouble());
   });
 
   describe("locale validation", () => {
@@ -74,7 +82,7 @@ describe("EnqueueTranslationHandler", () => {
         collection_id: ["doc-1"],
       });
 
-      const response = await handler.handle(req);
+      const response = await handler.handleDocument(req);
 
       expect(response.status).toBe(400);
       expect(mockTaskRunner.enqueue).not.toHaveBeenCalled();
@@ -83,21 +91,21 @@ describe("EnqueueTranslationHandler", () => {
 
   describe("validation", () => {
     it("returns validation error for missing required fields", async () => {
-      const req = createMockRequest({});
+      const req = requestWithoutLocalization({});
 
-      const response = await handler.handle(req);
+      const response = await handler.handleDocument(req);
 
       expect(response.status).toBe(400);
     });
 
     it("returns validation error for missing source_lng", async () => {
-      const req = createMockRequest({
+      const req = requestWithoutLocalization({
         target_lng: "de",
         collection_slug: "posts",
         collection_id: ["doc-1"],
       });
 
-      const response = await handler.handle(req);
+      const response = await handler.handleDocument(req);
 
       expect(response.status).toBe(400);
     });
@@ -105,15 +113,14 @@ describe("EnqueueTranslationHandler", () => {
 
   describe("collection availability", () => {
     it("returns bad request for unavailable collection", async () => {
-      const req = createMockRequest({
+      const req = requestWithoutLocalization({
         source_lng: "en",
         target_lng: "de",
         collection_slug: "users",
         collection_id: ["doc-1"],
-        strategy: "overwrite",
       });
 
-      const response = await handler.handle(req);
+      const response = await handler.handleDocument(req);
 
       expect(response.status).toBe(400);
       const body = await response.json();
@@ -125,15 +132,14 @@ describe("EnqueueTranslationHandler", () => {
     // Without localization there is no valid target locale: a phantom locale would either orphan rows
     // or, with no localization at all, overwrite the single unlocalized field — wiping the source.
     it("returns 400 and enqueues nothing when localization is not enabled", async () => {
-      const req = createMockRequest({
+      const req = requestWithoutLocalization({
         source_lng: "en",
         target_lng: "de",
         collection_slug: "posts",
         collection_id: ["doc-1"],
-        strategy: "overwrite",
       });
 
-      const response = await handler.handle(req);
+      const response = await handler.handleDocument(req);
 
       expect(response.status).toBe(400);
       const body = await response.json();
@@ -149,10 +155,9 @@ describe("EnqueueTranslationHandler", () => {
         target_lng: "de",
         collection_slug: "posts",
         collection_id: ["doc-1", "doc-2"],
-        strategy: "overwrite",
       });
 
-      const response = await handler.handle(req);
+      const response = await handler.handleList(req);
 
       expect(response.status).toBe(200);
       const body = await response.json();
@@ -165,10 +170,9 @@ describe("EnqueueTranslationHandler", () => {
         target_lng: "fr",
         collection_slug: "posts",
         collection_id: ["doc-123"],
-        strategy: "skip_existing",
       });
 
-      await handler.handle(req);
+      await handler.handleDocument(req);
 
       expect(mockTaskRunner.enqueue).toHaveBeenCalledWith(
         [
@@ -177,7 +181,7 @@ describe("EnqueueTranslationHandler", () => {
             collectionId: "doc-123",
             sourceLng: "en",
             targetLng: "fr",
-            strategy: "skip_existing",
+            filters: [],
             publishOnTranslation: false,
           },
         ],
@@ -199,11 +203,10 @@ describe("EnqueueTranslationHandler", () => {
         target_lng: "de",
         collection_slug: "posts",
         collection_id: ["doc-1"],
-        strategy: "overwrite",
       });
       (req as any).payload = mockPayload;
 
-      await handler.handle(req);
+      await handler.handleDocument(req);
 
       expect(mockTaskRunnerFactory.create).toHaveBeenCalledWith(mockPayload);
     });
@@ -218,7 +221,7 @@ describe("EnqueueTranslationHandler", () => {
         collection_id: ["doc-1", "doc-2"],
       });
 
-      const response = await handler.handle(req);
+      const response = await handler.handleList(req);
 
       expect(response.status).toBe(200);
       expect((await response.json()).data.queued).toBe(4);
@@ -240,7 +243,7 @@ describe("EnqueueTranslationHandler", () => {
         collection_id: ["doc-1"],
       });
 
-      await handler.handle(req);
+      await handler.handleDocument(req);
 
       const tasks = enqueuedTasks();
       expect(tasks.map((t: any) => t.targetLng)).toEqual(["de"]);
@@ -256,7 +259,7 @@ describe("EnqueueTranslationHandler", () => {
         collection_id: ["doc-1"],
       });
 
-      await handler.handle(req);
+      await handler.handleDocument(req);
 
       expect(enqueuedTasks().map((t: any) => t.targetLng)).toEqual(["de", "fr"]);
     });
@@ -269,7 +272,7 @@ describe("EnqueueTranslationHandler", () => {
         collection_id: ["doc-1"],
       });
 
-      await handler.handle(req);
+      await handler.handleDocument(req);
 
       expect(enqueuedTasks().map((t: any) => t.targetLng)).toEqual(["de"]);
     });
@@ -282,7 +285,7 @@ describe("EnqueueTranslationHandler", () => {
         collection_id: ["doc-1"],
       });
 
-      const response = await handler.handle(req);
+      const response = await handler.handleDocument(req);
 
       expect(response.status).toBe(400);
       expect(mockTaskRunner.enqueue).not.toHaveBeenCalled();
@@ -296,7 +299,7 @@ describe("EnqueueTranslationHandler", () => {
         collection_id: ["doc-1"],
       });
 
-      await handler.handle(req);
+      await handler.handleDocument(req);
 
       expect(enqueuedTasks()).toEqual([
         {
@@ -304,10 +307,217 @@ describe("EnqueueTranslationHandler", () => {
           collectionId: "doc-1",
           sourceLng: "en",
           targetLng: "de",
-          strategy: "overwrite",
+          filters: [],
           publishOnTranslation: false,
         },
       ]);
+    });
+  });
+
+  describe("filters", () => {
+    const asked = (body: Record<string, unknown>) =>
+      handler.handleDocument(
+        createLocalizedRequest({
+          source_lng: "en",
+          target_lng: "de",
+          collection_slug: "posts",
+          collection_id: ["doc-1"],
+          ...body,
+        })
+      );
+
+    const askedOfTheList = (body: Record<string, unknown>) =>
+      handler.handleList(
+        createLocalizedRequest({
+          source_lng: "en",
+          target_lng: "de",
+          collection_slug: "posts",
+          collection_id: ["doc-1", "doc-2"],
+          ...body,
+        })
+      );
+
+    it("carries the addresses through to every task of the document it names", async () => {
+      const response = await asked({
+        target_lng: ["de", "fr"],
+        filters: leaves("title", "content.#0.heading"),
+      });
+
+      const asksFor = leaves("title", "content.#0.heading");
+      expect(response.status).toBe(200);
+      expect(mockTaskRunner.enqueue).toHaveBeenCalledWith(
+        [
+          expect.objectContaining({ targetLng: "de", filters: asksFor }),
+          expect.objectContaining({ targetLng: "fr", filters: asksFor }),
+        ],
+        expect.anything()
+      );
+    });
+
+    it("refuses a body naming more than one document", async () => {
+      const response = await asked({ collection_id: ["doc-1", "doc-2"] });
+
+      expect(response.status).toBe(400);
+      expect(mockTaskRunner.enqueue).not.toHaveBeenCalled();
+    });
+
+    it("refuses a whole-collection request on the single-document route", async () => {
+      expect((await asked({ select_all: true })).status).toBe(400);
+    });
+
+    it("refuses addresses on the list route", async () => {
+      expect((await askedOfTheList({ filters: leaves("title") })).status).toBe(400);
+    });
+
+    it("refuses addresses on the list route asking for the whole collection", async () => {
+      const response = await askedOfTheList({ select_all: true, filters: leaves("title") });
+
+      expect(response.status).toBe(400);
+    });
+
+    it("carries a rule through the list route", async () => {
+      const response = await askedOfTheList({ filters: [{ kind: "rule", name: "stale" }] });
+
+      expect(response.status).toBe(200);
+    });
+
+    it("refuses an empty leaves filter rather than reading it as nothing", async () => {
+      const response = await asked({ filters: [{ kind: "leaves", addresses: [] }] });
+
+      expect(response.status).toBe(400);
+    });
+
+    it("accepts an empty filter list, which asks for every translatable leaf", async () => {
+      const response = await asked({ filters: [] });
+
+      expect(response.status).toBe(200);
+      expect(mockTaskRunner.enqueue).toHaveBeenCalledWith(
+        [expect.objectContaining({ filters: [] })],
+        expect.anything()
+      );
+    });
+  });
+
+  describe("asking for named fields where the write is live", () => {
+    const requestHolding = (
+      holding: readonly string[],
+      body: Record<string, unknown>,
+      collections: Record<string, unknown> = {}
+    ) =>
+      ({
+        payload: {
+          collections,
+          config: { localization: { locales: ["en", "de", "fr", "es"] } },
+          logger: { warn },
+          find: vi.fn(async ({ locale }: { locale: string }) => ({
+            docs: holding.includes(locale) ? [{ id: "doc-1" }] : [],
+          })),
+        },
+        json: vi.fn().mockResolvedValue({
+          source_lng: "en",
+          target_lng: "de",
+          collection_slug: "posts",
+          collection_id: ["doc-1"],
+          ...body,
+        }),
+      }) as unknown as PayloadRequest;
+
+    const asked = (
+      holding: readonly string[],
+      body: Record<string, unknown>,
+      collections?: Record<string, unknown>
+    ) =>
+      new EnqueueTranslationHandler(
+        {
+          availableCollections: config.availableCollections,
+          canHoldText: () => true,
+          holdsText: () => true,
+        },
+        mockTaskRunnerFactory,
+        () => storeDouble()
+      ).handleDocument(requestHolding(holding, body, collections));
+
+    it("refuses a locale holding nothing, which the write would leave with empty required fields", async () => {
+      const response = await asked([], { filters: leaves("title") });
+
+      expect(response.status).toBe(400);
+      expect((await response.json()).message).toContain("Nothing is written yet in de");
+      expect(mockTaskRunner.enqueue).not.toHaveBeenCalled();
+    });
+
+    it("takes a locale that already holds content, whoever wrote it", async () => {
+      const response = await asked(["de"], { filters: leaves("title") });
+
+      expect(response.status).toBe(200);
+      expect(mockTaskRunner.enqueue).toHaveBeenCalled();
+    });
+
+    it("decides per locale, and names only the one that holds nothing", async () => {
+      const response = await asked(["de"], { target_lng: ["de", "fr"], filters: leaves("title") });
+
+      expect(response.status).toBe(400);
+      expect((await response.json()).message).toContain("Nothing is written yet in fr,");
+    });
+
+    it("takes a collection with nothing translatable, where no field could hold anything", async () => {
+      const response = await new EnqueueTranslationHandler(
+        {
+          availableCollections: config.availableCollections,
+          canHoldText: () => false,
+          holdsText: () => false,
+        },
+        mockTaskRunnerFactory,
+        () => storeDouble()
+      ).handleDocument(requestHolding([], { filters: leaves("title") }));
+
+      expect(response.status).toBe(200);
+    });
+
+    it("takes an empty locale where the collection keeps drafts, since a draft is not validated", async () => {
+      const response = await asked(
+        [],
+        { filters: leaves("title") },
+        {
+          posts: { config: { versions: { drafts: true } } },
+        }
+      );
+
+      expect(response.status).toBe(200);
+    });
+
+    it("takes a rule into an empty locale, which answers every leaf with no record to read", async () => {
+      const response = await asked([], { filters: [{ kind: "rule", name: "stale" }] });
+
+      expect(response.status).toBe(200);
+    });
+
+    it("takes the whole document", async () => {
+      const response = await asked([], { filters: [] });
+
+      expect(response.status).toBe(200);
+    });
+  });
+
+  describe("a rule name", () => {
+    const asked = (names: string[]) =>
+      handler.handleList(
+        createLocalizedRequest({
+          source_lng: "en",
+          target_lng: "de",
+          collection_slug: "posts",
+          collection_id: ["doc-1"],
+          filters: names.map((name) => ({ kind: "rule", name })),
+        })
+      );
+
+    it("queues an unknown rule name as given; the run resolves it against the criteria it has then", async () => {
+      const response = await asked(["nobody-answers"]);
+
+      expect(response.status).toBe(200);
+      expect(mockTaskRunner.enqueue).toHaveBeenCalledWith(
+        [expect.objectContaining({ filters: [{ kind: "rule", name: "nobody-answers" }] })],
+        expect.anything()
+      );
     });
   });
 });
