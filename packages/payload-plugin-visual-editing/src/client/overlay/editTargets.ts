@@ -29,10 +29,33 @@ const isPlainPrimaryClick = (event: MouseEvent) =>
 
 const hasTextSelection = () => document.getSelection()?.isCollapsed === false;
 
-const INTERACTIVE = "a, button, input, select, textarea, label, [contenteditable]";
+const INTERACTIVE = [
+  "a",
+  "audio",
+  "button",
+  "input",
+  "label",
+  "select",
+  "summary",
+  "textarea",
+  "video",
+  "[contenteditable]",
+  "[role=button]",
+  "[role=link]",
+  '[tabindex]:not([tabindex="-1"])',
+].join(", ");
+
+const MEDIA = "audio, canvas, iframe, img, object, picture, svg, video";
+
+const holdsContent = (element: Element): boolean =>
+  (element.textContent ?? "").trim() !== "" ||
+  element.matches(MEDIA) ||
+  element.querySelector(MEDIA) !== null;
 
 const isPassedThrough = (element: Element, target: HTMLElement): boolean =>
-  element.contains(target) || (element.textContent ?? "").trim() === "";
+  element.contains(target) || !holdsContent(element);
+
+const pointOf = (event: MouseEvent) => ({ x: event.clientX, y: event.clientY });
 
 const elementOf = (event: MouseEvent): Element | null =>
   event.target instanceof Element ? event.target : null;
@@ -76,7 +99,7 @@ export function createEditTargets(
 
   const targetBeneath = (element: Element, event: MouseEvent): HTMLElement | null => {
     if (element.closest(INTERACTIVE)) return null;
-    const target = targetsAtPoint.innermostAt({ x: event.clientX, y: event.clientY });
+    const target = targetsAtPoint.innermostAt(pointOf(event));
     return target && isPassedThrough(element, target) ? target : null;
   };
 
@@ -89,7 +112,11 @@ export function createEditTargets(
   const hoverTargetBeneath = (event: MouseEvent) => {
     const element = elementOf(event);
     if (!element || findTargetAncestor(element)) return;
-    hover.point(targetBeneath(element, event));
+    hover.point(
+      element.closest(INTERACTIVE)
+        ? targetsAtPoint.innermostAt(pointOf(event))
+        : targetBeneath(element, event)
+    );
   };
 
   const registerTarget = (target: HTMLElement, marker: Marker) => {

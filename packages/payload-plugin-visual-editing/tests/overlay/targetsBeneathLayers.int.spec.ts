@@ -158,6 +158,125 @@ describe("a target beneath a layer that takes the pointer", () => {
     });
   });
 
+  describe("under controls of the page drawn over an image", () => {
+    let figure: HTMLElement;
+
+    const control = (element: HTMLElement) => {
+      figure.append(element);
+      return element;
+    };
+
+    beforeEach(() => {
+      figure = document.createElement("figure");
+      const image = marked("img", "hero.image");
+      figure.append(image);
+      main.append(figure);
+      drawnAt(image, new DOMRect(0, 0, 400, 300));
+      start();
+    });
+
+    it.each([
+      ["a div that acts as a button", { role: "button" }],
+      ["a div that acts as a link", { role: "link" }],
+      ["a div that takes the focus", { tabindex: "0" }],
+    ])("leaves a click on %s to the page", (_, attributes) => {
+      const arrow = document.createElement("div");
+      for (const [name, value] of Object.entries(attributes)) arrow.setAttribute(name, value);
+
+      const event = click(control(arrow), AT);
+
+      expect(open).not.toHaveBeenCalled();
+      expect(event.defaultPrevented).toBe(false);
+    });
+
+    it("leaves a click on a layer that draws an icon to the page", () => {
+      const icon = document.createElement("div");
+      icon.append(document.createElementNS("http://www.w3.org/2000/svg", "svg"));
+
+      const event = click(control(icon), AT);
+
+      expect(open).not.toHaveBeenCalled();
+      expect(event.defaultPrevented).toBe(false);
+    });
+
+    it("leaves a click on a video of the page to the page", () => {
+      const event = click(control(document.createElement("video")), AT);
+
+      expect(open).not.toHaveBeenCalled();
+      expect(event.defaultPrevented).toBe(false);
+    });
+
+    describe("such as a link over the whole card", () => {
+      let link: HTMLAnchorElement;
+
+      beforeEach(() => {
+        link = document.createElement("a");
+        link.href = "#project";
+        link.textContent = "Read the case";
+        control(link);
+      });
+
+      it("offers the action of the image while the pointer is over the link", () => {
+        pointerMovesOver(link);
+
+        expect(isBadgeShown()).toBe(true);
+        expect(badgeIsFor()).toBe("hero.image");
+        expect(actionButton().textContent).toBe("Replace image");
+      });
+
+      it("leaves a click on the link to the page", () => {
+        pointerMovesOver(link);
+        const event = click(link, AT);
+
+        expect(open).not.toHaveBeenCalled();
+        expect(event.defaultPrevented).toBe(false);
+      });
+    });
+  });
+
+  describe("among targets drawn over each other", () => {
+    let image: HTMLElement;
+    let caption: HTMLElement;
+    let layer: HTMLElement;
+
+    beforeEach(() => {
+      const figure = document.createElement("figure");
+      image = marked("img", "hero.image");
+      caption = marked("p", "hero.caption");
+      caption.style.pointerEvents = "none";
+      caption.textContent = "Caption";
+      layer = document.createElement("div");
+      figure.append(image, caption, layer);
+      main.append(figure);
+      drawnAt(image, new DOMRect(0, 0, 400, 300));
+      drawnAt(caption, new DOMRect(0, 0, 400, 60));
+    });
+
+    afterEach(() => {
+      Reflect.deleteProperty(document, "elementsFromPoint");
+    });
+
+    it("takes the one that comes later in the page", () => {
+      start();
+
+      pointerMovesOver(layer);
+
+      expect(badgeIsFor()).toBe("hero.caption");
+    });
+
+    it("takes the one the browser paints on top", () => {
+      Object.defineProperty(document, "elementsFromPoint", {
+        configurable: true,
+        value: () => [layer, image, caption],
+      });
+      start();
+
+      pointerMovesOver(layer);
+
+      expect(badgeIsFor()).toBe("hero.image");
+    });
+  });
+
   describe("in a card that cuts off the text of its title", () => {
     let card: HTMLElement;
 
