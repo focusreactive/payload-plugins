@@ -120,9 +120,15 @@ const textsOf = (edit: EditedText): Text[] =>
     ? ownNodesOf(edit).filter((node): node is Text => node instanceof Text)
     : textNodesIn(edit.editedElement);
 
+const withoutWhitespaceAround = (text: string, { after, before }: EditedText): string => {
+  const start = text.startsWith(before) ? before.length : 0;
+  const end = text.endsWith(after) ? text.length - after.length : text.length;
+  return text.slice(start, Math.max(start, end));
+};
+
 const textOfEdit = (edit: EditedText): string =>
   sharesItsElement(edit)
-    ? ownNodesOf(edit).map(textOfNode).join("").trim()
+    ? withoutWhitespaceAround(ownNodesOf(edit).map(textOfNode).join(""), edit)
     : textOf(edit.editedElement);
 
 const keptBeside = (element: HTMLElement, textNode: Text): ReadonlySet<ChildNode> =>

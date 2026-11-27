@@ -96,4 +96,14 @@ describe("text edited beside elements that React renders", () => {
     expect(heading().textContent).toBe("Title saved3");
     expect(heading().querySelectorAll("small")).toHaveLength(1);
   });
+
+  it("keeps a space the editor typed at the end of the text when React renders the text again", async () => {
+    click(heading());
+    titleText().data = "Title ";
+    heading().dispatchEvent(new Event("input", { bubbles: true }));
+
+    await render({ badge: "b", count: 2, title: stega("Title "), withIcon: false });
+
+    expect(titleText().data).toBe("Title ");
+  });
 });
