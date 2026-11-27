@@ -62,6 +62,7 @@ export interface FieldTracker {
 
 type TrackedText = {
   original: string;
+  leadingWhitespaceOfTheValue?: number;
   ownWritesToObserve: number;
   nodeMarker: RichTextNodeMarker | null;
   match: FieldMatch | null;
@@ -193,9 +194,12 @@ const NO_WHITESPACE_AROUND: WhitespaceAround = { after: "", before: "" };
 
 const TRAILING_WHITESPACE = /\s*$/u;
 
-const whitespaceAroundTheValue = (shown: string, original: string): WhitespaceAround => {
+const whitespaceAroundTheValue = (
+  shown: string,
+  original: string,
+  leadingOfTheValue: number
+): WhitespaceAround => {
   const leading = leadingWhitespaceOf(shown);
-  const leadingOfTheValue = leadingWhitespaceOfPayload(payloadIn(original));
   const before = leading.slice(0, Math.max(0, leading.length - leadingOfTheValue));
   const [trailing = ""] = TRAILING_WHITESPACE.exec(textAfterMarker(original) ?? shown) ?? [];
   const isBesideTheValue =
@@ -213,10 +217,14 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
   const edits = new Map<Text, TextEdit>();
   const setAsideIn = new Map<Element, SetAside>();
 
-  const whitespaceAround = (textNode: Text, editedElement: Element): WhitespaceAround =>
-    editedElement.childElementCount === 0
-      ? NO_WHITESPACE_AROUND
-      : whitespaceAroundTheValue(textNode.data, texts.get(textNode)?.original ?? textNode.data);
+  const whitespaceAround = (textNode: Text, editedElement: Element): WhitespaceAround => {
+    if (editedElement.childElementCount === 0) return NO_WHITESPACE_AROUND;
+    const tracked = texts.get(textNode);
+    const original = tracked?.original ?? textNode.data;
+    const leadingOfTheValue =
+      tracked?.leadingWhitespaceOfTheValue ?? leadingWhitespaceOfPayload(payloadIn(original));
+    return whitespaceAroundTheValue(textNode.data, original, leadingOfTheValue);
+  };
 
   const isSplitIntoPlainElements = (holder: Element, text: string): boolean => {
     if (holder.childElementCount === 0 || holder.querySelector(MARKED) !== null) return false;
@@ -616,6 +624,7 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
         ownWritesToObserve: 0,
       };
       const shown = `${edit.before}${text}${edit.after}`;
+      tracked.leadingWhitespaceOfTheValue = leadingWhitespaceOf(text).length;
       if (textNode.data !== shown) {
         tracked.ownWritesToObserve += 1;
         textNode.data = shown;

@@ -225,6 +225,24 @@ describe("editing text on the page", () => {
         expect(line.textContent).toBe(" Read more now");
       });
 
+      it("keeps the space the editor put at the start of the value when the text is edited again before the page renders it", async () => {
+        showLine("Read more");
+        typeInto(line, " Read more");
+        await flushMutations();
+        press(line, "Enter");
+        await flushMutations();
+
+        click(line);
+        typeInto(line, " Read more now");
+        press(line, "Enter");
+        await flushMutations();
+
+        expect(sentToEndpoint().map(({ base, value }) => [base, value])).toEqual([
+          ["Read more", " Read more"],
+          [" Read more", " Read more now"],
+        ]);
+      });
+
       it("keeps the space a value ends with before the badge after it when the editor changes it", async () => {
         line = document.createElement("h2");
         const badge = document.createElement("i");
