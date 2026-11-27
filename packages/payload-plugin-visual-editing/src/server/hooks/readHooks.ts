@@ -23,6 +23,7 @@ export type ReadHooksOptions = MarkedReadsOptions & {
   excludeValues: readonly ValueExcludePredicate[];
   instantPreview: boolean;
   imageDescriptionField?: string;
+  excludeFieldNames?: readonly string[];
   unmarkedCollections?: ReadonlySet<string>;
 };
 
@@ -33,6 +34,7 @@ export const createReadHooks = (options: ReadHooksOptions) => {
   const markedReads = createMarkedReads(options);
 
   const readOf = (req: PayloadRequest, identity: VeDocument): ReadOfDocument => ({
+    excludeFieldNames: options.excludeFieldNames,
     excludeValues: options.excludeValues,
     identity,
     imageDescriptionField: options.imageDescriptionField,

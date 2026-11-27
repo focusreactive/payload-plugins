@@ -212,11 +212,59 @@ describe("a marked read", () => {
       });
     });
 
-    it("describes an image without a description too", () => {
-      const page = markWithUploads({ image: { alt: null, id: "m-1" } });
+    it.each([null, "", " "])(
+      "leaves a description of %j as it is, so a check of the alt on the page keeps its answer",
+      (alt) => {
+        const page = markWithUploads({ image: { alt, id: "m-1" } });
 
-      expect(withoutMarker(String(page.image.alt))).toBe("");
+        expect(page.image.alt).toBe(alt);
+      }
+    );
+
+    it("leaves the description to the media when its field is excluded", () => {
+      const page = markWithUploads(
+        { image: { alt: "A lighthouse", id: "m-1" } },
+        { excludeFieldNames: ["alt"] }
+      );
+
+      expect(page.image.alt).toBe("A lighthouse");
+    });
+
+    it("leaves a description that matches excludeValues as it is", () => {
+      const page = markWithUploads(
+        { image: { alt: "https://example.com/lighthouse", id: "m-1" } },
+        { excludeValues: [isUrl] }
+      );
+
+      expect(page.image.alt).toBe("https://example.com/lighthouse");
+    });
+
+    it("describes one media document read into several fields by each field, apart", () => {
+      const media = { alt: mediaAlt("A lighthouse"), id: "m-1" };
+      const read = {
+        image: media,
+        layout: [{ blockType: "hero", id: "row-1", image: media }],
+      };
+
+      const page = markWithUploads(read);
+      const other = markRead(read, {
+        identity: { ...inPage, docId: "p-2" },
+        schema,
+      });
+
       expect(markerOf(page.image.alt)).toEqual({ ...inPage, path: "image", valueId: "m-1" });
+      expect(markerOf(page.layout[0]?.image.alt)).toEqual({
+        ...inPage,
+        path: "layout.0.image",
+        valueId: "m-1",
+      });
+      expect(markerOf(other.image.alt)).toEqual({
+        ...inPage,
+        docId: "p-2",
+        path: "image",
+        valueId: "m-1",
+      });
+      expect(media.alt).toBe(mediaAlt("A lighthouse"));
     });
 
     it("reads the description from the field the media names it in", () => {

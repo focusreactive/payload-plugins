@@ -104,6 +104,7 @@ export const visualEditingPlugin =
       excludeValues,
       adminBasePath,
       enrichment,
+      excludeFieldNames,
       imageDescriptionField: pluginConfig.imageDescriptionField,
       instantPreview,
       unmarkedCollections: skipCols,

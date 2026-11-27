@@ -29,6 +29,7 @@ export type ReadOfDocument = {
   localeCodesKeyingValues?: readonly string[];
   instantPreview?: boolean;
   imageDescriptionField?: string;
+  excludeFieldNames?: readonly string[];
   unmarkedCollections?: ReadonlySet<string>;
 };
 
@@ -53,6 +54,7 @@ type Marking = {
   keyOf: (steps: readonly KeyStep[]) => string | undefined;
   markRichText: (value: PlainObject, place: Place) => string | undefined;
   imageDescriptionField: string;
+  excludeFieldNames: ReadonlySet<string>;
   unmarkedCollections: ReadonlySet<string>;
 };
 
@@ -219,16 +221,18 @@ const placeOfField = ({ field, ...place }: ValueField): Place => {
     : { segments, steps };
 };
 
-const describeImageAsField = (
-  { imageDescriptionField }: Marking,
-  media: PlainObject,
-  field: VeIdentity
-): void => {
-  const description = media[imageDescriptionField];
+const describesTheImage = (marking: Marking, description: unknown): description is string =>
+  typeof description === "string" &&
+  description.trim() !== "" &&
+  !marking.excludeFieldNames.has(marking.imageDescriptionField) &&
+  !marking.excludeValues.some((match) => match(withoutMarker(description)));
+
+const describeImageAsField = (marking: Marking, media: PlainObject, field: VeIdentity): void => {
+  const description = media[marking.imageDescriptionField];
   const mediaId = idOf(media.id);
-  if (mediaId === null || (description !== null && typeof description !== "string")) return;
-  media[imageDescriptionField] = withMarker(
-    withoutMarker(description ?? ""),
+  if (mediaId === null || !describesTheImage(marking, description)) return;
+  media[marking.imageDescriptionField] = withMarker(
+    withoutMarker(description),
     toStegaPayload({ ...field, valueId: String(mediaId) })
   );
 };
@@ -288,6 +292,7 @@ export const markRead = <Document extends PlainObject>(
     localeCodesKeyingValues = [],
     instantPreview = false,
     imageDescriptionField = DEFAULT_IMAGE_DESCRIPTION_FIELD,
+    excludeFieldNames = [],
     unmarkedCollections = new Set(),
   }: ReadOfDocument
 ): Document => {
@@ -298,6 +303,7 @@ export const markRead = <Document extends PlainObject>(
   const localeKeys = new Set(localeCodesKeyingValues);
   const marking: Marking = {
     identity,
+    excludeFieldNames: new Set(excludeFieldNames),
     excludeValues,
     imageDescriptionField,
     keyOf: instantPreview ? stableKeyOf : NO_KEY,
