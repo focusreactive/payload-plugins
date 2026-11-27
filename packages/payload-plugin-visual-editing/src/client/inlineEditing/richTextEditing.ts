@@ -11,6 +11,7 @@ import type { FieldEdit } from "./editTransport.js";
 import type { PageFields } from "./pageFields.js";
 import type { EditSession, RichTextEditor, RichTextEditorLoader } from "./richTextEditor.js";
 
+import { endpointAnswerOf } from "../../shared/endpointAnswer.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import {
   DATA_VE_LIVE_RICH_TEXT_ATTR,
@@ -26,7 +27,6 @@ import { documentAddressOf, editedFieldAddressOf } from "../../shared/veDocument
 import { readMarkerFromAttrs } from "../overlay/markerExtractor.js";
 import { RICH_TEXT_STATE_TIME_LIMIT_MS } from "./adminEditChannel.js";
 import { textPositionAtPoint } from "./caret.js";
-import { endpointAnswerOf } from "../../shared/endpointAnswer.js";
 import { isPageField } from "./pageFields.js";
 import { editorOf } from "./richTextEditor.js";
 import {

@@ -14,6 +14,7 @@ import type {
 import type { AdminEditChannel, DocumentNews } from "./adminEditChannel.js";
 import type { EditRoutes } from "./editRoutes.js";
 
+import { endpointAnswerOf } from "../../shared/endpointAnswer.js";
 import { CHANGED_ELSEWHERE, isRichTextEdit, SAVE_FAILED } from "../../shared/fieldEdit.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import {
@@ -28,7 +29,6 @@ import { isSameValue } from "../../shared/sameValue.js";
 import { documentAddressOf, editedFieldAddressOf } from "../../shared/veDocument.js";
 
 import { MEDIA_PICK_TIME_LIMIT_MS } from "./adminEditChannel.js";
-import { endpointAnswerOf } from "../../shared/endpointAnswer.js";
 
 export type EditStatus = "failed" | "in-form" | "saved" | "saving" | "unsaved";
 

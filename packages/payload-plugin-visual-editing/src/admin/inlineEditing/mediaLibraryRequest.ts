@@ -1,3 +1,4 @@
+import type { MediaApi } from "../../shared/mediaApi.js";
 import type {
   VeEditedField,
   VeLiveDocument,
@@ -6,7 +7,6 @@ import type {
   VeMediaOptionsRequest,
   VeMediaUploadAnswerMessage,
 } from "../../shared/protocol.js";
-import type { MediaApi } from "../../shared/mediaApi.js";
 import type { OpenDocumentForm } from "./useOpenDocumentForm.js";
 
 import { NOT_EDITABLE, readEditedField } from "../../shared/fieldEdit.js";
