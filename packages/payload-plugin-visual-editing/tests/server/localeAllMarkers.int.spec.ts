@@ -257,7 +257,12 @@ describe("a document read with every locale", () => {
   it("addresses the upload of each locale with the path of its field", () => {
     const page = markEveryLocale({ image: { en: { alt: "A harbour", id: "M" } } });
 
-    expect(page.image.en.alt).toBe("A harbour");
+    expect(markerOf(page.image.en.alt)).toEqual({
+      ...inPageA,
+      locale: "en",
+      path: "image",
+      valueId: "M",
+    });
     expect(page.image.en).toMatchObject({
       [META_KEY]: { ...inPageA, path: "image", terminal: true },
     });

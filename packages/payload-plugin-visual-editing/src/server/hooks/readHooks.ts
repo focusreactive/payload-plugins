@@ -22,6 +22,8 @@ export type ReadHooksOptions = MarkedReadsOptions & {
   schemaCache: SchemaCache;
   excludeValues: readonly ValueExcludePredicate[];
   instantPreview: boolean;
+  imageDescriptionField?: string;
+  unmarkedCollections?: ReadonlySet<string>;
 };
 
 const parentIdOf = (parent: unknown, version: PlainObject): unknown =>
@@ -33,9 +35,11 @@ export const createReadHooks = (options: ReadHooksOptions) => {
   const readOf = (req: PayloadRequest, identity: VeDocument): ReadOfDocument => ({
     excludeValues: options.excludeValues,
     identity,
+    imageDescriptionField: options.imageDescriptionField,
     instantPreview: options.instantPreview,
     localeCodesKeyingValues: localeCodesKeyingValues(req),
     schema: options.schemaCache.get(identity.collectionSlug, req.payload),
+    unmarkedCollections: options.unmarkedCollections,
   });
 
   const collectionAfterOperation: CollectionAfterOperationHook = ({

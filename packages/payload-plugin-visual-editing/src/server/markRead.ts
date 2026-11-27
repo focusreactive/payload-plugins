@@ -18,7 +18,7 @@ import { isPlainObject } from "../shared/plainObject.js";
 import { rootOf } from "../shared/richText/editorNodes.js";
 import { isRichTextNodeKey } from "../shared/richText/nodeKey.js";
 import { fieldReferenceOf, META_KEY, toStegaPayload } from "../shared/shared.js";
-import { withMarker } from "../shared/stegaText.js";
+import { withMarker, withoutMarker } from "../shared/stegaText.js";
 import { fieldAddressOf, idOf } from "../shared/veDocument.js";
 import { markTextLeaves } from "../shared/richText/markTextLeaves.js";
 
@@ -28,6 +28,8 @@ export type ReadOfDocument = {
   excludeValues?: readonly ValueExcludePredicate[];
   localeCodesKeyingValues?: readonly string[];
   instantPreview?: boolean;
+  imageDescriptionField?: string;
+  unmarkedCollections?: ReadonlySet<string>;
 };
 
 type KeyStep = FieldStep | null;
@@ -50,7 +52,11 @@ type Marking = {
   localeKeys: ReadonlySet<string>;
   keyOf: (steps: readonly KeyStep[]) => string | undefined;
   markRichText: (value: PlainObject, place: Place) => string | undefined;
+  imageDescriptionField: string;
+  unmarkedCollections: ReadonlySet<string>;
 };
+
+export const DEFAULT_IMAGE_DESCRIPTION_FIELD = "alt";
 
 const NO_KEY = () => undefined;
 
@@ -213,18 +219,35 @@ const placeOfField = ({ field, ...place }: ValueField): Place => {
     : { segments, steps };
 };
 
+const describeImageAsField = (
+  { imageDescriptionField }: Marking,
+  media: PlainObject,
+  field: VeIdentity
+): void => {
+  const description = media[imageDescriptionField];
+  const mediaId = idOf(media.id);
+  if (mediaId === null || (description !== null && typeof description !== "string")) return;
+  media[imageDescriptionField] = withMarker(
+    withoutMarker(description ?? ""),
+    toStegaPayload({ ...field, valueId: String(mediaId) })
+  );
+};
+
 const referenceField = (marking: Marking, valueField: ValueField): void => {
   const { field, ...place } = valueField;
   const { segments, steps } = placeOfField(valueField);
   for (const value of valuesOfField(valueAtPath(marking.root, place.segments)?.value)) {
     const key =
       field.kind === "richText" ? marking.markRichText(value, place) : marking.keyOf(steps);
-    value[META_KEY] = fieldReferenceOf({
+    const reference = fieldReferenceOf({
       ...marking.identity,
       key,
       locale: field.locale,
       path: pathOf(segments),
     });
+    value[META_KEY] = reference;
+    if (field.uploadCollection !== null && !marking.unmarkedCollections.has(field.uploadCollection))
+      describeImageAsField(marking, value, reference);
   }
 };
 
@@ -264,6 +287,8 @@ export const markRead = <Document extends PlainObject>(
     excludeValues = [],
     localeCodesKeyingValues = [],
     instantPreview = false,
+    imageDescriptionField = DEFAULT_IMAGE_DESCRIPTION_FIELD,
+    unmarkedCollections = new Set(),
   }: ReadOfDocument
 ): Document => {
   const holders: Holders = new Map();
@@ -274,11 +299,13 @@ export const markRead = <Document extends PlainObject>(
   const marking: Marking = {
     identity,
     excludeValues,
+    imageDescriptionField,
     keyOf: instantPreview ? stableKeyOf : NO_KEY,
     localeKeys,
     markRichText: instantPreview && localeKeys.size === 0 ? richTextMarker(identity) : NO_KEY,
     root,
     schema,
+    unmarkedCollections,
   };
   for (const holder of holders.values()) resolveHolder(marking, holder);
   return root;

@@ -6,6 +6,7 @@ import { vercelStegaDecode } from "@vercel/stega";
 import {
   DATA_VE_LOCALE_ATTR,
   DATA_VE_PATH_ATTR,
+  DATA_VE_VALUE_ID_ATTR,
   VE_IDENTITY_ATTRS,
 } from "../../shared/protocol.js";
 import { fieldKeyOfMarker } from "../../shared/fieldKey.js";
@@ -44,6 +45,7 @@ export interface FieldTracker {
   beginEdit(match: FieldMatch, edit: FieldEdit): HTMLElement | null;
   endEdit(match: FieldMatch, text: string): void;
   isIdentifiedByThePage(element: Element): boolean;
+  namesUploadOf(element: Element): boolean;
   dispose(): void;
 }
 
@@ -83,6 +85,12 @@ const isSameNodeKey = (known: FieldMatch | null, match: FieldMatch) =>
 
 const IMAGE_DESCRIPTION_ATTR = "alt";
 
+const IMAGES = "img";
+
+const MARKED = `[${DATA_VE_PATH_ATTR}]`;
+
+const IMAGE_IDENTITY_ATTRS = [...VE_IDENTITY_ATTRS, DATA_VE_VALUE_ID_ATTR];
+
 const isWrittenByThePage = (element: Element, attr: string, original: string): boolean =>
   hasMarker(original) && element.getAttribute(attr) !== withoutMarker(original);
 
@@ -95,7 +103,11 @@ const restoreAttrs = (element: Element, originals: ReadonlyMap<string, string | 
 
 const identityOfDescription = (value: string): Record<string, string | undefined> => {
   const field = fromStegaPayload(payloadIn(value));
-  return field ? identityAttrsOf(field) : {};
+  if (!field) return {};
+  return {
+    ...identityAttrsOf(field),
+    ...(field.valueId !== undefined && { [DATA_VE_VALUE_ID_ATTR]: field.valueId }),
+  };
 };
 
 const textBearingChildrenOf = (element: Element): ChildNode[] =>
@@ -246,6 +258,20 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     return tracked;
   };
 
+  const isIdentifiedByThePage = (element: Element): boolean => {
+    const isWrittenHere = attrOriginals.get(element)?.get(DATA_VE_PATH_ATTR) === null;
+    return element.hasAttribute(DATA_VE_PATH_ATTR) && !isWrittenHere;
+  };
+
+  const isWrappedByThePage = (image: Element): boolean => {
+    const wrapper = image.parentElement?.closest(MARKED) ?? null;
+    return (
+      wrapper !== null &&
+      isIdentifiedByThePage(wrapper) &&
+      wrapper.querySelectorAll(IMAGES).length === 1
+    );
+  };
+
   const identifyImage = (
     element: Element,
     originals: Map<string, string | null>,
@@ -253,8 +279,9 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
   ) => {
     const isIdentifiedHere = originals.get(DATA_VE_PATH_ATTR) === null && !holders.has(element);
     if (!isIdentifiedHere && element.hasAttribute(DATA_VE_PATH_ATTR)) return;
+    if (isWrappedByThePage(element)) return;
     const identity = identityOfDescription(value);
-    for (const attr of VE_IDENTITY_ATTRS) {
+    for (const attr of IMAGE_IDENTITY_ATTRS) {
       const shown = identity[attr];
       if (shown !== undefined) {
         originals.set(attr, null);
@@ -432,10 +459,8 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       holders.set(holder, { match, original: held.original });
       for (const listener of listeners) listener.onFields(holder, [match]);
     },
-    isIdentifiedByThePage(element) {
-      const isWrittenHere = attrOriginals.get(element)?.get(DATA_VE_PATH_ATTR) === null;
-      return element.hasAttribute(DATA_VE_PATH_ATTR) && !isWrittenHere;
-    },
+    isIdentifiedByThePage,
+    namesUploadOf: (element) => attrOriginals.get(element)?.get(DATA_VE_VALUE_ID_ATTR) === null,
     dispose() {
       pipeline.dispose();
       listeners.clear();

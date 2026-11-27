@@ -75,6 +75,7 @@ export type VisualEditingPluginConfig = {
   inlineEditing?: boolean;
   renderHtml?: RenderHtml;
   readWholeDocument?: boolean;
+  imageDescriptionField?: string;
 };
 
 export type { RenderHtml } from "./server/endpoints.js";
@@ -103,7 +104,9 @@ export const visualEditingPlugin =
       excludeValues,
       adminBasePath,
       enrichment,
+      imageDescriptionField: pluginConfig.imageDescriptionField,
       instantPreview,
+      unmarkedCollections: skipCols,
     });
     const stripStega = createStripStegaHook();
     const unsavedRichText = instantPreview ? [createUnsavedRichTextHook(schemaCache)] : [];

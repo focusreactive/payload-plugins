@@ -210,6 +210,46 @@ describe("createFieldTracker", () => {
     expect(logo.getAttribute("data-ve-collection")).toBe("page");
   });
 
+  it("names the media an image of an upload field shows, until it stops", async () => {
+    const photo = document.createElement("img");
+    photo.setAttribute(
+      "alt",
+      markedText("Photo", {
+        collectionSlug: "page",
+        docId: "1",
+        kind: "collection",
+        path: "image",
+        valueId: "9",
+      })
+    );
+    main.append(photo);
+    await flushMutations();
+
+    expect(photo.getAttribute("data-ve-path")).toBe("image");
+    expect(photo.getAttribute("data-ve-value-id")).toBe("9");
+    expect(tracker.namesUploadOf(photo)).toBe(true);
+    expect(tracker.namesUploadOf(image)).toBe(false);
+
+    tracker.dispose();
+
+    expect(photo.hasAttribute("data-ve-value-id")).toBe(false);
+    expect(photo.hasAttribute("data-ve-path")).toBe(false);
+  });
+
+  it("leaves an image in an element the page marked around it to that element", async () => {
+    const figure = document.createElement("figure");
+    figure.setAttribute("data-ve-path", "cover");
+    figure.setAttribute("data-ve-collection", "page");
+    const photo = document.createElement("img");
+    photo.setAttribute("alt", stega("Photo", "alt"));
+    figure.append(photo);
+    main.append(figure);
+    await flushMutations();
+
+    expect(photo.hasAttribute("data-ve-path")).toBe(false);
+    expect(photo.getAttribute("alt")).toBe("Photo");
+  });
+
   it("leaves an image that already names its field as it is", async () => {
     const photo = document.createElement("img");
     photo.setAttribute("data-ve-path", "gallery");

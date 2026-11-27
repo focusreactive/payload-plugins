@@ -232,6 +232,34 @@ describe("replacing an image on the page", () => {
       expect(offersReplacement(described)).toBe(false);
     });
 
+    it("offers to replace an image whose description names its upload field, and saves from the media it showed", async () => {
+      image.remove();
+      image = await render(renderImage("/_vercel/image?url=%2Fmedia%2Fharbour.jpg&w=1080&q=75"));
+      image.setAttribute("alt", stega("A harbour", "image", { valueId: "3" }));
+      await flushMutations();
+
+      expect(offersReplacement(image)).toBe(true);
+      expect(image.getAttribute(DATA_VE_VALUE_ID_ATTR)).toBe("3");
+
+      await useLighthouse();
+
+      expect(image.getAttribute("src")).toBe(`${CMS}/api/media/file/lighthouse.jpg`);
+      expect(requestsTo("/visual-editing/field-edit")).toEqual([
+        { ...IMAGE_FIELD, base: "3", value: "9" },
+      ]);
+    });
+
+    it("offers it for an element the page marked around one image whose description names the field too", async () => {
+      const figure = mark(document.createElement("figure"), "portrait");
+      const portrait = renderImage();
+      portrait.setAttribute("alt", stega("A portrait", "portrait", { valueId: "4" }));
+      figure.append(portrait);
+      await render(figure);
+
+      expect(portrait.hasAttribute(DATA_VE_PATH_ATTR)).toBe(false);
+      expect(offersReplacement(figure)).toBe(true);
+    });
+
     it("offers nothing for a value read in every locale", async () => {
       const localized = mark(renderImage(), "localizedImage");
       localized.setAttribute(DATA_VE_LOCALE_ATTR, "de");

@@ -30,6 +30,7 @@ export type HolderField = {
   holdsValuePerLocale: boolean;
   locale?: string;
   localeSegmentIndexes: readonly number[];
+  uploadCollection: string | null;
 };
 
 type RichTextValue = { holder: PlainObject; property: string };
@@ -133,6 +134,7 @@ export const holderFieldAt = (
   let data: unknown = rootData;
   let holdsValuePerLocale = false;
   let locale: string | undefined;
+  let uploadCollection: string | null = null;
   const localeSegmentIndexes: number[] = [];
 
   for (const [index, segment] of segments.entries()) {
@@ -147,6 +149,7 @@ export const holderFieldAt = (
     }
 
     if (isRowIndex(segment)) {
+      uploadCollection = null;
       if (!Array.isArray(data)) return null;
       data = data[Number(segment)];
       if (isPlainObject(data)) schemaNode = schemaOfRow(schemaNode, data) as SchemaNode;
@@ -157,6 +160,7 @@ export const holderFieldAt = (
     const fieldSchema = ownField(schemaNode, segment);
     if (fieldSchema === undefined) return null;
     holdsValuePerLocale = localeKeys.size > 0 && isLocalizedField(schemaNode, segment);
+    uploadCollection = uploadCollectionOf(schemaNode, segment);
     schemaNode = fieldSchema as SchemaNode;
     data = isPlainObject(data) ? ownField(data, segment) : undefined;
   }
@@ -168,6 +172,7 @@ export const holderFieldAt = (
     locale,
     localeSegmentIndexes,
     textFieldNames: () => textFieldNamesOf(schemaNode),
+    uploadCollection,
   };
 };
 

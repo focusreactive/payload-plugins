@@ -14,6 +14,7 @@ export type VeIdentity = {
   key?: string;
   locale?: string;
   multiline?: true;
+  valueId?: string;
 };
 
 export type MetaInfo = VeIdentity & { terminal?: true };
@@ -58,6 +59,7 @@ export type StegaPayload = [
   rowIdsOrKey?: readonly string[] | string | Absent,
   locale?: string | Absent,
   multiline?: typeof MULTILINE | Absent,
+  valueId?: string | Absent,
 ];
 
 const segmentsOf = (path: string): string[] => path.split(FIELD_PATH_SEPARATOR);
@@ -94,6 +96,7 @@ export const toStegaPayload = ({
   locale,
   multiline,
   path,
+  valueId,
 }: VeIdentity): StegaPayload =>
   withoutAbsentTail([
     DOC_KINDS.indexOf(kind),
@@ -103,6 +106,7 @@ export const toStegaPayload = ({
     key === undefined ? ABSENT : (rowIdsOf(path, key) ?? key),
     locale ?? ABSENT,
     multiline ? MULTILINE : ABSENT,
+    valueId ?? ABSENT,
   ]);
 
 const keyOfPayload = (path: string, rowIdsOrKey: unknown): string | undefined => {
@@ -120,6 +124,7 @@ const identityOfPayload = ([
   rowIdsOrKey,
   locale,
   multiline,
+  valueId,
 ]: readonly unknown[]): unknown => ({
   collectionSlug,
   docId: optionalString(docId),
@@ -128,6 +133,7 @@ const identityOfPayload = ([
   locale,
   multiline: multiline === MULTILINE,
   path,
+  valueId,
 });
 
 export const fromStegaPayload = (payload: unknown): VeIdentity | null => {
@@ -141,5 +147,10 @@ export const fromStegaPayload = (payload: unknown): VeIdentity | null => {
     locale: optionalString(decoded.locale),
     path: decoded.path,
   });
-  return decoded.multiline === true ? { ...identity, multiline: true } : identity;
+  const valueId = optionalString(decoded.valueId);
+  return {
+    ...identity,
+    ...(decoded.multiline === true && { multiline: true }),
+    ...(valueId !== undefined && { valueId }),
+  };
 };

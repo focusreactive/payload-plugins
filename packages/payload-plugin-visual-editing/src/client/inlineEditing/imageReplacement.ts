@@ -77,7 +77,7 @@ export function createImageReplacement({
     const marker = readMarkerFromAttrs(target);
     const answer = marker && pageFields.editableFieldOf(marker, "image");
     if (!answer || !isPageField(answer)) return null;
-    if (!tracker.isIdentifiedByThePage(target)) return null;
+    if (!tracker.isIdentifiedByThePage(target) && !tracker.namesUploadOf(target)) return null;
     if (target.hasAttribute(DATA_VE_LIVE_RICH_TEXT_ATTR) || isInsideRichText(target)) return null;
     const image = onlyImageOf(target);
     if (!image || showsTrackedText(target)) return null;
