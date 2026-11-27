@@ -510,7 +510,28 @@ describe("a target beneath a layer that takes the pointer", () => {
       expect(badgeIsFor()).toBe("hero.image");
     });
 
-    it("takes the one that comes later in the page when the browser finds no point of it that takes the pointer", () => {
+    it("takes the one the browser hits when the other is stacked alike and the browser finds no point of it", () => {
+      paintedFromTheTop(layer, caption, image);
+      start();
+
+      pointerMovesOver(layer);
+
+      expect(badgeIsFor()).toBe("hero.image");
+    });
+
+    it("takes the one that comes later in the page when the browser finds no point of either", () => {
+      image.style.pointerEvents = "none";
+      paintedFromTheTop(layer, caption, image);
+      start();
+
+      pointerMovesOver(layer);
+
+      expect(badgeIsFor()).toBe("hero.caption");
+    });
+
+    it("takes the one stacked on top when the browser finds no point of it", () => {
+      Object.assign(caption.style, { position: "relative", zIndex: "1" });
+      image.before(caption);
       paintedFromTheTop(layer, caption, image);
       start();
 
