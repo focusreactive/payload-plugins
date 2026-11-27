@@ -5,6 +5,7 @@ import type { SessionOptions } from "../client/session.js";
 import type { RenderRichTextHtml, RenderRichTextValue } from "./liveRichTextElements.js";
 
 import { applyAccent } from "../client/accent.js";
+import { hearNothing } from "../client/frameSettings.js";
 import { listenToRenderSources } from "../client/instantPreview/unsavedRender/renderSources.js";
 import { savedShapesWithin } from "../client/overlayScope.js";
 import { listenToSaves } from "../client/saveEvents.js";
@@ -43,8 +44,9 @@ function runWhile(shouldRun: () => boolean, start: () => () => void): RunWhile {
   };
   return {
     sync() {
-      if (shouldRun() && !stopRunning) stopRunning = start();
-      if (!shouldRun()) stop();
+      const runs = shouldRun();
+      if (runs && !stopRunning) stopRunning = start();
+      if (!runs) stop();
     },
     stop,
   };
@@ -77,7 +79,10 @@ export function mountVisualEditing({
       pageStore.read()
     );
   const adminOrigin = () => session().adminOrigin;
-  const stopHearingTheFrame = pageStore.attach(window, adminOrigin, session().isDraft);
+  pageStore.attach(window);
+  const stopHearingTheFrame = session().isDraft
+    ? pageStore.hearItsFrame(window, adminOrigin)
+    : hearNothing;
   const scope: OverlayScope = { locale, savedShapes: savedShapesWithin(null) };
 
   const instantPreview = runWhile(

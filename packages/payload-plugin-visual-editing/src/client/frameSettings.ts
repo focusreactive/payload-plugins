@@ -1,10 +1,10 @@
 import type { VeFrameHelloMessage } from "../shared/protocol.js";
 
 import { frameVisualEditingOf } from "../shared/frameVisualEditing.js";
-import { VE_FRAME_HELLO_TYPE, VE_FRAME_SETTINGS_TYPE } from "../shared/protocol.js";
+import { OPAQUE_ORIGIN, VE_FRAME_HELLO_TYPE, VE_FRAME_SETTINGS_TYPE } from "../shared/protocol.js";
 import { adminOriginOf, hearTheAdmin, isFramedByAdmin } from "./adminWindow.js";
 
-const hearNothing = (): void => undefined;
+export const hearNothing = (): void => undefined;
 
 const frameElementOf = (win: Window): Element | null => {
   try {
@@ -18,8 +18,6 @@ export const isTurnedOffByItsFrame = (win: Window): boolean => {
   const frame = frameElementOf(win);
   return frame !== null && frameVisualEditingOf(frame) === "off";
 };
-
-const OPAQUE_ORIGIN = "null";
 
 export function hearFrameSettings(
   win: Window,

@@ -194,6 +194,16 @@ describe("VisualEditingBridgeProvider — frames asking whether to edit visually
     expect(postToFrame).not.toHaveBeenCalled();
   });
 
+  it("tells the frames already in the admin when it mounts, whatever their origin", () => {
+    const card = frameInTheAdmin();
+    const preview = frameInTheAdmin({ id: LIVE_PREVIEW_FRAME_ID });
+
+    mountBridgeWith(null);
+
+    expect(card.postToFrame).toHaveBeenCalledWith(settings("off"), "*");
+    expect(preview.postToFrame).toHaveBeenCalledWith(settings("on"), "*");
+  });
+
   it("marks its document as the admin while it is mounted", () => {
     mountBridgeWith(null);
     expect(document.documentElement.hasAttribute(DATA_VISUAL_EDITING_ADMIN_ATTR)).toBe(true);

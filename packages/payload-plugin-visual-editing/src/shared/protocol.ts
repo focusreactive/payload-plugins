@@ -93,6 +93,8 @@ export const LIVE_PREVIEW_FRAME_ID = "live-preview-iframe";
 
 export const DATA_VISUAL_EDITING_ADMIN_ATTR = "data-visual-editing-admin";
 
+export const OPAQUE_ORIGIN = "null";
+
 export type FrameVisualEditing = "off" | "on";
 
 export const VE_FRAME_HELLO_TYPE = "ve:frame-hello";

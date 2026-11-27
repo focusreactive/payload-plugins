@@ -21,9 +21,17 @@ let container: HTMLDivElement;
 let root: Root;
 const originalTop = window.top;
 
+let chooseMode: ReturnType<typeof useVisualEditing>["setMode"] = () => undefined;
+
 function Probe() {
-  const { available } = useVisualEditing();
-  return <span data-testid="available">{String(available)}</span>;
+  const { available, mode, setMode } = useVisualEditing();
+  chooseMode = setMode;
+  return (
+    <>
+      <span data-testid="available">{String(available)}</span>
+      <span data-testid="mode">{mode}</span>
+    </>
+  );
 }
 
 function renderProvider(props: {
@@ -50,6 +58,7 @@ function setFramed(framed: boolean) {
 }
 
 const availableText = () => container.querySelector('[data-testid="available"]')?.textContent;
+const modeText = () => container.querySelector('[data-testid="mode"]')?.textContent;
 
 beforeEach(() => {
   container = document.createElement("div");
@@ -112,6 +121,18 @@ describe("VisualEditingProvider — a frame that turns visual editing off", () =
     expect(availableText()).toBe("false");
   });
 
+  it("stays off as the admin answered when drafts turn off and on again", () => {
+    setFramed(true);
+    stubAdminWindow({ postMessage: vi.fn() });
+    renderProvider({ adminOrigin: ADMIN_ORIGIN, available: true, framedOnly: true });
+    act(() => postFromAdmin({ type: VE_FRAME_SETTINGS_TYPE, visualEditing: "off" }));
+
+    renderProvider({ adminOrigin: ADMIN_ORIGIN, available: false, framedOnly: true });
+    renderProvider({ adminOrigin: ADMIN_ORIGIN, available: true, framedOnly: true });
+
+    expect(availableText()).toBe("false");
+  });
+
   it("stays available when the admin answers on", () => {
     setFramed(true);
     stubAdminWindow({ postMessage: vi.fn() });
@@ -120,6 +141,21 @@ describe("VisualEditingProvider — a frame that turns visual editing off", () =
     act(() => postFromAdmin({ type: VE_FRAME_SETTINGS_TYPE, visualEditing: "on" }));
 
     expect(availableText()).toBe("true");
+  });
+});
+
+describe("VisualEditingProvider — drafts turning on", () => {
+  it("keeps the mode the editor chose on a page whose storage is full", () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("full", "QuotaExceededError");
+    });
+    renderProvider({ available: false });
+    act(() => chooseMode("hover"));
+
+    renderProvider({ available: true });
+    vi.restoreAllMocks();
+
+    expect(modeText()).toBe("hover");
   });
 });
 

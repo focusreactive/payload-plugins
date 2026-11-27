@@ -42,7 +42,8 @@ export type PageState = {
 export interface PageStore {
   read(): PageState;
   subscribe(listener: () => void): () => void;
-  attach(win: Window, adminOrigin: () => string, isDraft: boolean): () => void;
+  attach(win: Window): void;
+  hearItsFrame(win: Window, adminOrigin: () => string): () => void;
   setMode(mode: VisualEditingMode): void;
 }
 
@@ -110,8 +111,6 @@ const modeOf = (chosenMode: VisualEditingMode | null, inlineEditing: boolean): V
 export const toggledMode = (mode: VisualEditingMode): VisualEditingMode =>
   mode === "off" ? "always" : "off";
 
-const hearNothing = (): void => undefined;
-
 export function createPageStore(): PageStore {
   const listeners = new Set<() => void>();
   let state = DETACHED_PAGE;
@@ -130,7 +129,7 @@ export function createPageStore(): PageStore {
         listeners.delete(listener);
       };
     },
-    attach(win, adminOrigin, isDraft) {
+    attach(win) {
       attachedWindow = win;
       change({
         chosenMode: readStoredMode(win),
@@ -138,7 +137,8 @@ export function createPageStore(): PageStore {
         isTurnedOffByFrame: isTurnedOffByItsFrame(win),
         pageOrigin: win.location.origin,
       });
-      if (!isDraft) return hearNothing;
+    },
+    hearItsFrame(win, adminOrigin) {
       return hearFrameSettings(win, adminOrigin, (isTurnedOffByFrame) =>
         change({ ...state, isTurnedOffByFrame })
       );

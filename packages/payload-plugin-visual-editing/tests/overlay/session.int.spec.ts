@@ -26,8 +26,6 @@ import {
 
 const originalTop = window.top;
 
-const adminOfThePageOrigin = () => "";
-
 const setFramed = (framed: boolean) =>
   Object.defineProperty(window, "top", {
     configurable: true,
@@ -60,7 +58,7 @@ describe("page store", () => {
     localStorage.setItem(STORAGE_KEY, "hover");
     const store = createPageStore();
 
-    store.attach(window, adminOfThePageOrigin, true);
+    store.attach(window);
 
     expect(store.read()).toEqual({
       isFramed: true,
@@ -75,7 +73,7 @@ describe("page store", () => {
     Object.defineProperty(window, "opener", { configurable: true, value: { closed: false } });
     const store = createPageStore();
 
-    store.attach(window, adminOfThePageOrigin, true);
+    store.attach(window);
     Object.defineProperty(window, "opener", { configurable: true, value: null });
 
     expect(store.read().isFramed).toBe(true);
@@ -89,7 +87,7 @@ describe("page store", () => {
     if (stored !== null) localStorage.setItem(STORAGE_KEY, stored);
     const store = createPageStore();
 
-    store.attach(window, adminOfThePageOrigin, true);
+    store.attach(window);
 
     expect(store.read().chosenMode).toBe(mode);
   });
@@ -98,7 +96,7 @@ describe("page store", () => {
     const store = createPageStore();
     const listener = vi.fn();
     store.subscribe(listener);
-    store.attach(window, adminOfThePageOrigin, true);
+    store.attach(window);
 
     store.setMode("hover");
 
@@ -110,14 +108,14 @@ describe("page store", () => {
   it("reads no chosen mode on a page whose storage is blocked", () => {
     const store = createPageStore();
 
-    expect(() => store.attach(pageWithBlockedStorage(), adminOfThePageOrigin, true)).not.toThrow();
+    expect(() => store.attach(pageWithBlockedStorage())).not.toThrow();
 
     expect(store.read().chosenMode).toBeNull();
   });
 
   it("keeps a chosen mode for the page when its storage is blocked", () => {
     const store = createPageStore();
-    store.attach(pageWithBlockedStorage(), adminOfThePageOrigin, true);
+    store.attach(pageWithBlockedStorage());
 
     expect(() => store.setMode("always")).not.toThrow();
 
@@ -126,7 +124,7 @@ describe("page store", () => {
 
   it("keeps a chosen mode for the page when its storage is full", () => {
     const store = createPageStore();
-    store.attach(window, adminOfThePageOrigin, true);
+    store.attach(window);
     const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new DOMException("full", "QuotaExceededError");
     });
@@ -142,7 +140,7 @@ describe("page store", () => {
     const listener = vi.fn();
     store.subscribe(listener)();
 
-    store.attach(window, adminOfThePageOrigin, true);
+    store.attach(window);
 
     expect(listener).not.toHaveBeenCalled();
   });
@@ -153,7 +151,8 @@ describe("page store in a frame that turns visual editing off", () => {
 
   const attached = () => {
     const store = createPageStore();
-    stops.push(store.attach(window, () => ADMIN_ORIGIN, true));
+    store.attach(window);
+    stops.push(store.hearItsFrame(window, () => ADMIN_ORIGIN));
     return store;
   };
 
@@ -191,20 +190,11 @@ describe("page store in a frame that turns visual editing off", () => {
     expect(attached().read().isTurnedOffByFrame).toBe(false);
   });
 
-  it("asks nothing of its frame on a page read without drafts", () => {
-    const postToAdmin = vi.fn();
-    stubAdminWindow({ postMessage: postToAdmin });
-
-    stops.push(createPageStore().attach(window, () => ADMIN_ORIGIN, false));
-
-    expect(postToAdmin).not.toHaveBeenCalled();
-  });
-
   it("asks nothing of its frame from an opaque origin, such as a sandboxed iframe", () => {
     const postToAdmin = vi.fn();
     stubAdminWindow({ postMessage: postToAdmin });
 
-    stops.push(createPageStore().attach(window, () => "null", true));
+    stops.push(createPageStore().hearItsFrame(window, () => "null"));
 
     expect(postToAdmin).not.toHaveBeenCalled();
   });
@@ -246,7 +236,8 @@ describe("page store in a frame that turns visual editing off", () => {
   it("stops hearing the admin once it is detached", () => {
     stubAdminWindow({ postMessage: vi.fn() });
     const store = createPageStore();
-    store.attach(window, () => ADMIN_ORIGIN, true)();
+    store.attach(window);
+    store.hearItsFrame(window, () => ADMIN_ORIGIN)();
 
     postFromAdmin(settings("off"));
 
@@ -393,7 +384,7 @@ describe("editing on the page", () => {
     localStorage.setItem("visual-editing-inline", "false");
     const store = createPageStore();
 
-    store.attach(window, adminOfThePageOrigin, true);
+    store.attach(window);
 
     expect(
       sessionOf({ available: true, inlineEditing: true }, store.read()).isInlineEditingOn
@@ -403,7 +394,7 @@ describe("editing on the page", () => {
   it("starts on Hover where the site offers it and the editor chose no mode yet", () => {
     const store = createPageStore();
 
-    store.attach(window, adminOfThePageOrigin, true);
+    store.attach(window);
 
     expect(sessionOf({ available: true, inlineEditing: true }, store.read())).toMatchObject({
       isInlineEditingOn: true,
@@ -414,7 +405,7 @@ describe("editing on the page", () => {
   it("starts on Off where the site does not offer it and the editor chose no mode yet", () => {
     const store = createPageStore();
 
-    store.attach(window, adminOfThePageOrigin, true);
+    store.attach(window);
 
     expect(sessionOf({ available: true }, store.read())).toMatchObject({
       enabled: false,
@@ -426,7 +417,7 @@ describe("editing on the page", () => {
     localStorage.setItem(STORAGE_KEY, "off");
     const store = createPageStore();
 
-    store.attach(window, adminOfThePageOrigin, true);
+    store.attach(window);
 
     expect(sessionOf({ available: true, inlineEditing: true }, store.read())).toMatchObject({
       isInlineEditingOn: false,
