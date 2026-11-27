@@ -200,6 +200,7 @@ export type VeMediaOption = VeShownMedia & {
 
 export type VeMediaOptions = {
   collection: string | null;
+  descriptionField: string | null;
   documents: VeMediaOption[];
   hasNextPage: boolean;
 };

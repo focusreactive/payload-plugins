@@ -178,7 +178,7 @@ describe("inline editing", () => {
     path: "@focus-reactive/payload-plugin-visual-editing/admin#InlineEditReceiver",
   };
   const MEDIA_PICK_RECEIVER = {
-    clientProps: { excludeFieldNames: ["tenant"] },
+    clientProps: { excludeFieldNames: ["tenant"], imageDescriptionField: "alt" },
     path: "@focus-reactive/payload-plugin-visual-editing/admin#MediaPickReceiver",
   };
   const RICH_TEXT_EDIT_RECEIVER = {

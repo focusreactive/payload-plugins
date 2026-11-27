@@ -94,6 +94,7 @@ describe("replacing an image on the page", () => {
   let ctx: OverlayCtx;
   let fetchApi: ReturnType<typeof vi.fn>;
   let isSaved: boolean;
+  let listed: object[];
   let optionsStatus: number;
   let optionsRefusal: string | undefined;
   let open: MockInstance<typeof window.open>;
@@ -148,6 +149,7 @@ describe("replacing an image on the page", () => {
     image = mark(renderImage());
     main.append(heading, image);
     isSaved = true;
+    listed = [LIGHTHOUSE];
     optionsStatus = 200;
     optionsRefusal = undefined;
     fetchApi = vi.fn((url: string) => {
@@ -155,7 +157,7 @@ describe("replacing an image on the page", () => {
       const body = isListing
         ? {
             collection: "media",
-            documents: [LIGHTHOUSE],
+            documents: listed,
             hasNextPage: false,
             reason: optionsRefusal,
           }
@@ -262,6 +264,15 @@ describe("replacing an image on the page", () => {
         await useLighthouse();
 
         expect(image.getAttribute("alt")).toBe("A lighthouse");
+      });
+
+      it("shows no description for picked media that has none", async () => {
+        const { alt: _alt, ...undescribed } = LIGHTHOUSE;
+        listed = [undescribed];
+
+        await useLighthouse();
+
+        expect(image.getAttribute("alt")).toBe("");
       });
 
       it("shows its own description again when the save is refused", async () => {

@@ -58,11 +58,17 @@ describe("the media library of a page of its own", () => {
 
     it("answers the collection, its documents and whether more follow", async () => {
       fetchApi.mockReturnValue(
-        answerOf({ collection: "media", documents: [LIGHTHOUSE], hasNextPage: true })
+        answerOf({
+          collection: "media",
+          descriptionField: "alt",
+          documents: [LIGHTHOUSE],
+          hasNextPage: true,
+        })
       );
 
       expect(await library.list(REQUEST)).toEqual({
         collection: "media",
+        descriptionField: "alt",
         documents: [LIGHTHOUSE],
         hasNextPage: true,
       });
@@ -112,7 +118,7 @@ describe("the media library of a page of its own", () => {
     it("posts the file to the collection with the session of the editor", async () => {
       fetchApi.mockReturnValue(answerOf({ doc: LIGHTHOUSE }));
 
-      await library.upload("media", file);
+      await library.upload("media", "alt", file);
 
       const [url, init] = fetchApi.mock.calls[0] as [string, RequestInit];
       expect(url).toBe(`${PAYLOAD_API}/media?depth=0`);
@@ -125,7 +131,15 @@ describe("the media library of a page of its own", () => {
       const { thumbnailUrl, ...created } = LIGHTHOUSE;
       fetchApi.mockReturnValue(answerOf({ doc: { ...created, thumbnailURL: thumbnailUrl } }));
 
-      expect(await library.upload("media", file)).toEqual({ media: LIGHTHOUSE });
+      expect(await library.upload("media", "alt", file)).toEqual({ media: LIGHTHOUSE });
+    });
+
+    it("answers the description of the created document from the field that describes the files", async () => {
+      const { alt, ...created } = LIGHTHOUSE;
+      fetchApi.mockReturnValue(answerOf({ doc: { ...created, caption: alt } }));
+
+      expect(await library.upload("media", "caption", file)).toEqual({ media: LIGHTHOUSE });
+      expect(await library.upload("media", null, file)).toEqual({ media: created });
     });
 
     it("answers the message of the server when it refuses the file", async () => {
@@ -133,17 +147,17 @@ describe("the media library of a page of its own", () => {
         answerOf({ errors: [{ message: "The following field is invalid: alt" }] }, false)
       );
 
-      expect(await library.upload("media", file)).toEqual({
+      expect(await library.upload("media", "alt", file)).toEqual({
         error: "The following field is invalid: alt",
       });
     });
 
     it("answers a message of its own when the server gives none or cannot be reached", async () => {
       fetchApi.mockReturnValueOnce(answerOf(null, false));
-      expect(await library.upload("media", file)).toEqual({ error: UPLOAD_REFUSED });
+      expect(await library.upload("media", "alt", file)).toEqual({ error: UPLOAD_REFUSED });
 
       fetchApi.mockRejectedValueOnce(new Error("offline"));
-      expect(await library.upload("media", file)).toEqual({ error: UPLOAD_REFUSED });
+      expect(await library.upload("media", "alt", file)).toEqual({ error: UPLOAD_REFUSED });
     });
   });
 });

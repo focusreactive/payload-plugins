@@ -8,7 +8,7 @@ import type { MediaPick } from "./mediaPick.js";
 import type { OpenDocumentForm } from "./useOpenDocumentForm.js";
 
 import { NOT_EDITABLE, SAVE_FAILED } from "../../shared/fieldEdit.js";
-import { pickedMediaOf } from "../../shared/mediaOption.js";
+import { DEFAULT_IMAGE_DESCRIPTION_FIELD, pickedMediaOf } from "../../shared/mediaOption.js";
 import { VE_MEDIA_PICK_CANCELLED_TYPE, VE_MEDIA_PICKED_TYPE } from "../../shared/protocol.js";
 import { idOf } from "../../shared/veDocument.js";
 import { chosenMediaOf, fetchPickedMedia, mediaPickOf, pickOfDocument } from "./mediaPick.js";
@@ -55,7 +55,13 @@ function MediaDrawer({ collection, onClosed, onDismissed, onPicked }: MediaDrawe
   );
 }
 
-export function MediaPickReceiver({ excludeFieldNames }: { excludeFieldNames?: string[] }) {
+export function MediaPickReceiver({
+  excludeFieldNames,
+  imageDescriptionField = DEFAULT_IMAGE_DESCRIPTION_FIELD,
+}: {
+  excludeFieldNames?: string[];
+  imageDescriptionField?: string;
+}) {
   const { config } = useConfig();
   const apiUrl = `${config.serverURL}${config.routes.api}`;
   const [asked, setAsked] = useState<AskedPick | null>(null);
@@ -75,7 +81,7 @@ export function MediaPickReceiver({ excludeFieldNames }: { excludeFieldNames?: s
   ) => {
     if (!form.isOpen()) return;
     form.write({ path, value: mediaId });
-    const shown = pickedMediaOf(media);
+    const shown = pickedMediaOf(media, imageDescriptionField);
     if (!shown) {
       tellPickCancelled(form, field);
       return;

@@ -14,7 +14,7 @@ import type { VeRichTextFormats } from "../../shared/richText/formats.js";
 import type { SavedDocument } from "../saveEvents.js";
 
 import { readEditedField, readRichTextEdit, readSaveRefusal } from "../../shared/fieldEdit.js";
-import { pickedMediaOf } from "../../shared/mediaOption.js";
+import { readPickedMediaAnswer } from "../../shared/mediaOption.js";
 import {
   VE_DOCUMENT_SAVED_TYPE,
   VE_FIELD_EDIT_REFUSED_TYPE,
@@ -90,7 +90,7 @@ const NEWS_OF_A_DOCUMENT: ReadonlySet<unknown> = new Set([
 const MEDIA_PICK: Answering<VePickedMedia> = {
   answerType: VE_MEDIA_PICKED_TYPE,
   cancelType: VE_MEDIA_PICK_CANCELLED_TYPE,
-  read: pickedMediaOf,
+  read: readPickedMediaAnswer,
   refusalType: VE_FIELD_EDIT_REFUSED_TYPE,
   takesLateAnswers: true,
   timeLimitMs: MEDIA_PICK_TIME_LIMIT_MS,

@@ -18,7 +18,7 @@ export type MediaListing = VeMediaOptions | typeof FIELD_REFUSED | null;
 
 export interface MediaLibrary {
   list(request: VeMediaOptionsRequest): Promise<MediaListing>;
-  upload(collection: string, file: File): Promise<UploadAnswer>;
+  upload(collection: string, descriptionField: string | null, file: File): Promise<UploadAnswer>;
 }
 
 export const UPLOAD_REFUSED = "The file could not be uploaded";
@@ -32,8 +32,8 @@ const firstErrorOf = (answer: unknown): string | null => {
   return isPlainObject(first) && typeof first.message === "string" ? first.message : null;
 };
 
-const createdMediaOf = (answer: unknown): VeMediaOption | null =>
-  isPlainObject(answer) ? mediaOptionOf(answer.doc, true) : null;
+const createdMediaOf = (answer: unknown, descriptionField: string | null): VeMediaOption | null =>
+  isPlainObject(answer) ? mediaOptionOf(answer.doc, descriptionField) : null;
 
 export function createMediaLibrary(
   getPayloadApi: () => string,
@@ -55,7 +55,7 @@ export function createMediaLibrary(
         return null;
       }
     },
-    async upload(collection, file) {
+    async upload(collection, descriptionField, file) {
       const body = new FormData();
       body.append(UPLOADED_FILE_FIELD, file);
       try {
@@ -64,7 +64,7 @@ export function createMediaLibrary(
           { body, credentials: "include", method: "POST" }
         );
         const answer = await jsonOf(response);
-        const media = response.ok ? createdMediaOf(answer) : null;
+        const media = response.ok ? createdMediaOf(answer, descriptionField) : null;
         return media ? { media } : { error: firstErrorOf(answer) ?? UPLOAD_REFUSED };
       } catch {
         return { error: UPLOAD_REFUSED };

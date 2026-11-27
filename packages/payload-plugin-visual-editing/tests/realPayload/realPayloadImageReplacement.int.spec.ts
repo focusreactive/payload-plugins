@@ -18,7 +18,12 @@ type Row = { id: string; [field: string]: unknown };
 
 const PRIVATE_ALT = "Private";
 
-const NOTHING_LISTED: VeMediaOptions = { collection: null, documents: [], hasNextPage: false };
+const NOTHING_LISTED: VeMediaOptions = {
+  collection: null,
+  descriptionField: null,
+  documents: [],
+  hasNextPage: false,
+};
 
 const LIBRARIAN = { email: "librarian@example.com", password: "librarian-password" };
 
@@ -319,6 +324,7 @@ describe("replacing an image through the endpoints", () => {
 
       expect(status).toBe(200);
       expect(body.collection).toBe("media");
+      expect(body.descriptionField).toBe("alt");
       expect(body.documents).toContainEqual({
         alt: "A harbour",
         filename: "harbour.txt",

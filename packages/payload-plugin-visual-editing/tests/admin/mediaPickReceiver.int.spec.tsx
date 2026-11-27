@@ -206,6 +206,23 @@ describe("MediaPickReceiver", () => {
     );
   });
 
+  it("tells the preview page the description from the field that describes the media", async () => {
+    const { alt, ...undescribed } = LIGHTHOUSE;
+    fetchMedia.mockResolvedValue({
+      json: () => Promise.resolve({ ...undescribed, caption: alt }),
+      ok: true,
+    } as Response);
+    act(() => root.render(<MediaPickReceiver imageDescriptionField="caption" />));
+    postRequest();
+
+    await select({ id: 9 });
+
+    expect(admin.postToPreview).toHaveBeenCalledWith(
+      expect.objectContaining({ alt: "A lighthouse", type: VE_MEDIA_PICKED_TYPE }),
+      PREVIEW_ORIGIN
+    );
+  });
+
   it("writes media chosen on the page into the form without a drawer", async () => {
     postRequest({ data: { ...REQUEST, mediaId: 9 } });
     await act(() => flushMutations());

@@ -56,7 +56,7 @@ export const showMedia = (
   url: string,
   isDescribedByTheField = false
 ): (() => void) => {
-  const description = isDescribedByTheField ? media.alt : undefined;
+  const description = isDescribedByTheField ? (media.alt ?? "") : undefined;
   const putBack = [
     rememberedAttrsOf(image, [
       ...SHOWN_BY_IMAGE,

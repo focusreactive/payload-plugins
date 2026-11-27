@@ -14,6 +14,7 @@ import {
   pathOf,
   valueAtPath,
 } from "../shared/fieldKey.js";
+import { DEFAULT_IMAGE_DESCRIPTION_FIELD } from "../shared/mediaOption.js";
 import { isPlainObject } from "../shared/plainObject.js";
 import { rootOf } from "../shared/richText/editorNodes.js";
 import { isRichTextNodeKey } from "../shared/richText/nodeKey.js";
@@ -57,8 +58,6 @@ type Marking = {
   excludeFieldNames: ReadonlySet<string>;
   unmarkedCollections: ReadonlySet<string>;
 };
-
-export const DEFAULT_IMAGE_DESCRIPTION_FIELD = "alt";
 
 const NO_KEY = () => undefined;
 
