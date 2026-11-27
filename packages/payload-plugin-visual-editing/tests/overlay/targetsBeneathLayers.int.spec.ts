@@ -841,18 +841,20 @@ describe("a target beneath a layer that takes the pointer", () => {
     let title: HTMLElement;
     let drawn: ReturnType<typeof drawnAt>;
     let resized: (() => void)[];
+    let watched: Set<Element>;
 
     beforeEach(() => {
       resized = [];
+      watched = new Set();
       vi.stubGlobal(
         "ResizeObserver",
         class {
           constructor(onResize: () => void) {
             resized.push(onResize);
           }
-          observe = vi.fn();
-          unobserve = vi.fn();
-          disconnect = vi.fn();
+          observe = (element: Element) => watched.add(element);
+          unobserve = (element: Element) => watched.delete(element);
+          disconnect = () => watched.clear();
         }
       );
       title = marked("h1", "hero.title");
@@ -871,6 +873,28 @@ describe("a target beneath a layer that takes the pointer", () => {
       for (const onResize of resized) onResize();
 
       expect(editLabel().parentElement?.style.height).toBe(`${40 + 2 * 2}px`);
+    });
+
+    it("stops watching the very element it watched once the pointer leaves, also when the area of the target changed", () => {
+      const block = document.createElement("div");
+      const line = marked("span", "hero.line");
+      line.style.display = "inline";
+      line.textContent = "Line";
+      block.append(line);
+      main.append(block);
+      drawnAt(block, new DOMRect(0, 200, 400, 40));
+      removeEditTargets();
+      tracker.dispose();
+      start();
+      pointerMovesOver(line, { clientX: 50, clientY: 210 });
+      const watchedWhileOver = [...watched];
+      block.append(document.createElement("img"));
+
+      pointerMovesOver(main, { clientX: 500, clientY: 500 });
+      vi.advanceTimersByTime(CLEAR_GRACE_MS);
+
+      expect(watchedWhileOver).toContain(block);
+      expect([...watched].filter((element) => element === block || element === line)).toEqual([]);
     });
   });
 

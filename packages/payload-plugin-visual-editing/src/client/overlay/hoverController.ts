@@ -90,6 +90,7 @@ export function createHoverController(
   let pendingSwitch: ReturnType<typeof setTimeout> | null = null;
   let nextAfterGrace: HTMLElement | null = null;
   let lastPointOnTarget: Point | null = null;
+  let observedArea: HTMLElement | null = null;
   const resizes =
     typeof ResizeObserver === "undefined"
       ? null
@@ -113,12 +114,14 @@ export function createHoverController(
     lastPointOnTarget = null;
     if (activeTarget) {
       badge.hide();
-      resizes?.unobserve(areaOf(activeTarget));
+      if (observedArea) resizes?.unobserve(observedArea);
+      observedArea = null;
     }
     if (next) {
       const config = registry.get(next);
       if (config) badge.show(next, config, actionOf(next));
-      resizes?.observe(areaOf(next));
+      observedArea = areaOf(next);
+      resizes?.observe(observedArea);
     }
     activeTarget = next;
   };
@@ -221,7 +224,8 @@ export function createHoverController(
       if (activeTarget === target) {
         cancelPendingSwitch();
         badge.hide();
-        resizes?.unobserve(listeners.area);
+        if (observedArea) resizes?.unobserve(observedArea);
+        observedArea = null;
         activeTarget = null;
       }
     },
