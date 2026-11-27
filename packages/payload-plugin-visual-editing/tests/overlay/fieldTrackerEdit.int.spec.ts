@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FieldMatch, FieldTracker } from "../../src/client/overlay/fieldTracker";
 
 import { createFieldTracker } from "../../src/client/overlay/fieldTracker";
+import { withoutMarker } from "../../src/shared/stegaText";
 
 import { markedText } from "../support/markedData";
 import { flushMutations } from "../support/time";
@@ -171,23 +172,32 @@ describe("a field the editor types into", () => {
     expect(listener.onFields).toHaveBeenCalledWith(heading, [match]);
   });
 
-  it("edits a text that sits next to an icon in an element of its own, so a select-all keeps the icon", async () => {
+  it("edits a text that sits next to an icon in its own element, without moving the text", async () => {
     const icon = document.createElement("svg");
     heading.append(icon);
 
     const editedElement = begin();
     await type("Hello world");
-
-    expect(editedElement?.parentElement).toBe(heading);
-    expect(editedElement?.textContent).toBe("Hello world");
-
     tracker.endEdit(match, "Hello world");
     await flushMutations();
 
-    expect(editedElement?.isConnected).toBe(false);
+    expect(editedElement).toBe(heading);
     expect(Array.from(heading.childNodes)).toEqual([match.textNode, icon]);
     expect(match.textNode.data).toBe("Hello world");
     expect(listener.onNodesReleased).not.toHaveBeenCalled();
+  });
+
+  it("puts the text back in its place when the browser took it out during the edit", () => {
+    const icon = document.createElement("svg");
+    heading.append(icon);
+
+    begin();
+    match.textNode.remove();
+    heading.prepend("Hello again");
+    tracker.endEdit(match, "Hello again");
+
+    expect(Array.from(heading.childNodes)).toEqual([match.textNode, icon]);
+    expect(heading.textContent).toBe("Hello again");
   });
 
   it("restores the marker of the latest render when the overlay stops", async () => {
@@ -227,7 +237,7 @@ describe("a field the editor types into", () => {
       line = document.createElement("div");
       tag = document.createElement("span");
       tag.append(document.createElement("img"), stega("SCALE EASILY", "tag"));
-      line.append(stega("WORDPRESS TO SANITY", "line"), " ", tag, "\n");
+      line.append(stega("OUR FIRST RELEASE", "line"), " ", tag, "\n");
       main.append(line);
       tracker = createFieldTracker(main);
       const onFields = vi.fn();
@@ -239,15 +249,15 @@ describe("a field the editor types into", () => {
       const lineText = matchOf("line");
 
       const editedElement = tracker.beginEdit(lineText, { onShownAgain, shownText: () => shown });
-      lineText.textNode.data = "WORDPRESS TO PAYLOAD";
+      lineText.textNode.data = "OUR NEXT RELEASE";
       await flushMutations();
 
       expect(lineText.holder).toBe(line);
-      expect(editedElement?.textContent).toBe("WORDPRESS TO PAYLOAD");
+      expect(editedElement).toBe(line);
 
-      tracker.endEdit(lineText, "WORDPRESS TO PAYLOAD");
+      tracker.endEdit(lineText, "OUR NEXT RELEASE");
 
-      expect(line.textContent).toBe("WORDPRESS TO PAYLOAD SCALE EASILY\n");
+      expect(line.textContent).toBe("OUR NEXT RELEASE SCALE EASILY\n");
       expect(line.firstChild).toBe(lineText.textNode);
     });
 
@@ -257,8 +267,30 @@ describe("a field the editor types into", () => {
       const editedElement = tracker.beginEdit(tagText, { onShownAgain, shownText: () => shown });
 
       expect(tagText.holder).toBe(tag);
-      expect(editedElement?.parentElement).toBe(tag);
-      expect(editedElement?.textContent).toBe("SCALE EASILY");
+      expect(editedElement).toBe(tag);
+      expect(tag.lastChild).toBe(tagText.textNode);
+    });
+
+    it("keeps the whitespace around the text of the line, and splits no node", async () => {
+      tracker.dispose();
+      line.replaceChildren(`\n  ${stega("OUR FIRST RELEASE", "line")}\n  `, tag);
+      tracker = createFieldTracker(main);
+      const onFields = vi.fn();
+      tracker.subscribe({ onFields });
+      [[, matches]] = onFields.mock.calls as [[Element, FieldMatch[]]];
+      const lineText = matchOf("line");
+
+      tracker.beginEdit(lineText, { onShownAgain, shownText: () => shown });
+      tracker.endEdit(lineText, "OUR NEXT RELEASE");
+      await flushMutations();
+
+      expect(Array.from(line.childNodes)).toEqual([lineText.textNode, tag]);
+      expect(line.textContent).toBe("\n  OUR NEXT RELEASE\n  SCALE EASILY");
+
+      tracker.dispose();
+
+      expect(Array.from(line.childNodes)).toEqual([lineText.textNode, tag]);
+      expect(withoutMarker(line.textContent ?? "")).toBe("\n  OUR FIRST RELEASE\n  SCALE EASILY");
     });
 
     it("leaves the other field in place when the page drops the text of the line", () => {

@@ -127,11 +127,21 @@ const LINE_BREAK_TAG = "BR";
 const isLeftByAnEdit = (child: ChildNode): boolean =>
   child instanceof Text || (child instanceof Element && child.tagName === LINE_BREAK_TAG);
 
-const showOnlyEditedText = (editedElement: Element, textNode: Text): void => {
+type TextEdit = FieldEdit & {
+  editedElement: HTMLElement;
+  present: ReadonlySet<ChildNode>;
+  nextSibling: ChildNode | null;
+  before: string;
+  after: string;
+};
+
+const showOnlyEditedText = ({ editedElement, nextSibling, present }: TextEdit, textNode: Text) => {
   for (const child of Array.from(editedElement.childNodes)) {
-    if (child !== textNode && isLeftByAnEdit(child)) child.remove();
+    if (child !== textNode && !present.has(child) && isLeftByAnEdit(child)) child.remove();
   }
-  if (textNode.parentNode !== editedElement) editedElement.prepend(textNode);
+  if (textNode.parentNode === editedElement) return;
+  if (nextSibling?.parentNode === editedElement) nextSibling.before(textNode);
+  else editedElement.append(textNode);
 };
 
 const holderCandidateOf = (textNode: Text): Element | null => {
@@ -150,23 +160,12 @@ const isTheOnlyTextOf = (element: Element, textNode: Text): boolean =>
     (child) => child === textNode || child instanceof Element || isBlankText(child)
   );
 
-const EDITING_HOST_TAG = "span";
+const SURROUNDING_WHITESPACE = /^(\s*).*?(\s*)$/su;
 
-const SURROUNDING_WHITESPACE = /^(\s*)(.*?)(\s*)$/su;
-
-const moveWhitespaceBeside = (textNode: Text): void => {
-  const [, before = "", text = "", after = ""] = SURROUNDING_WHITESPACE.exec(textNode.data) ?? [];
-  if (before) textNode.before(before);
-  if (after) textNode.after(after);
-  if (text !== textNode.data) textNode.data = text;
-};
-
-const editingHostAround = (textNode: Text): HTMLElement => {
-  moveWhitespaceBeside(textNode);
-  const host = textNode.ownerDocument.createElement(EDITING_HOST_TAG);
-  textNode.replaceWith(host);
-  host.append(textNode);
-  return host;
+const whitespaceAround = (textNode: Text, editedElement: Element) => {
+  if (editedElement.childElementCount === 0) return { after: "", before: "" };
+  const [, before = "", after = ""] = SURROUNDING_WHITESPACE.exec(textNode.data) ?? [];
+  return { after, before };
 };
 
 export function createFieldTracker(main: HTMLElement): FieldTracker {
@@ -176,7 +175,7 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
   const sharedHolders = new WeakSet<Element>();
   const ownAttributeWrites = new Map<Element, number>();
   const listeners = new Set<FieldListener>();
-  const edits = new Map<Text, FieldEdit & { editedElement: HTMLElement; isInAHost: boolean }>();
+  const edits = new Map<Text, TextEdit>();
 
   const writeIdentityAttr = (element: Element, attr: string, value: string | null) => {
     if (element.getAttribute(attr) === value) return;
@@ -358,13 +357,13 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     forget(textNode);
   };
 
-  const showEditedTextAgain = (textNode: Text, tracked: TrackedText, edit: FieldEdit) => {
+  const showEditedTextAgain = (textNode: Text, tracked: TrackedText, edit: TextEdit) => {
     tracked.original = textNode.data;
     const holder = tracked.match?.holder;
     if (holder && tracked.match)
       holders.set(holder, { match: tracked.match, original: textNode.data });
     tracked.ownWritesToObserve += 1;
-    textNode.data = edit.shownText();
+    textNode.data = `${edit.before}${edit.shownText()}${edit.after}`;
     edit.onShownAgain();
   };
 
@@ -428,11 +427,15 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     beginEdit(match, edit) {
       const { holder, textNode } = match;
       const isHeld = holder !== undefined && holders.get(holder)?.match === match;
-      const parent = textNode.parentElement;
-      if (!isHeld || !parent || texts.get(textNode)?.match !== match) return null;
-      const isInAHost = parent.childElementCount > 0;
-      const editedElement = isInAHost ? editingHostAround(textNode) : parent;
-      edits.set(textNode, { ...edit, editedElement, isInAHost });
+      const editedElement = textNode.parentElement;
+      if (!isHeld || !editedElement || texts.get(textNode)?.match !== match) return null;
+      edits.set(textNode, {
+        ...edit,
+        ...whitespaceAround(textNode, editedElement),
+        editedElement,
+        nextSibling: textNode.nextSibling,
+        present: new Set(editedElement.childNodes),
+      });
       return editedElement;
     },
     endEdit(match, text) {
@@ -441,8 +444,7 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       const edit = edits.get(textNode);
       edits.delete(textNode);
       if (!edit || !holder || !held || !main.contains(edit.editedElement)) return;
-      showOnlyEditedText(edit.editedElement, textNode);
-      if (edit.isInAHost) edit.editedElement.replaceWith(textNode);
+      showOnlyEditedText(edit, textNode);
       const known = texts.get(textNode);
       const tracked = known ?? {
         match,
@@ -450,9 +452,10 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
         original: held.original,
         ownWritesToObserve: 0,
       };
-      if (textNode.data !== text) {
+      const shown = `${edit.before}${text}${edit.after}`;
+      if (textNode.data !== shown) {
         tracked.ownWritesToObserve += 1;
-        textNode.data = text;
+        textNode.data = shown;
       }
       if (known) return;
       texts.set(textNode, tracked);

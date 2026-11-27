@@ -13,36 +13,48 @@ type DocumentWithCaretFromPoint = Document & {
   caretRangeFromPoint?: (x: number, y: number) => Range | null;
 };
 
-const textNodesIn = (element: Element): Text[] => {
+export const textNodesIn = (element: Element): Text[] => {
   const walker = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
   const textNodes: Text[] = [];
   while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
   return textNodes;
 };
 
-export const caretOffsetIn = (element: Element): number | null => {
+export const caretOffsetIn = (
+  element: Element,
+  texts: readonly Text[] = textNodesIn(element)
+): number | null => {
   const selection = element.ownerDocument.getSelection();
   const focusNode = selection?.focusNode;
   if (!selection || !focusNode || !element.contains(focusNode)) return null;
   const textBeforeCaret = element.ownerDocument.createRange();
   textBeforeCaret.selectNodeContents(element);
   textBeforeCaret.setEnd(focusNode, selection.focusOffset);
-  return textBeforeCaret.toString().length;
+  return texts
+    .filter((textNode) => textBeforeCaret.intersectsNode(textNode))
+    .reduce(
+      (offset, textNode) =>
+        offset + (textNode === focusNode ? selection.focusOffset : textNode.length),
+      0
+    );
 };
 
-export const placeCaret = (element: Element, offset: number): void => {
+export const placeCaret = (
+  element: Element,
+  offset: number,
+  texts: readonly Text[] = textNodesIn(element)
+): void => {
   const selection = element.ownerDocument.getSelection();
   if (!selection) return;
   let remaining = offset;
-  const textNodes = textNodesIn(element);
-  for (const textNode of textNodes) {
+  for (const textNode of texts) {
     if (remaining <= textNode.length) {
       selection.collapse(textNode, remaining);
       return;
     }
     remaining -= textNode.length;
   }
-  const last = textNodes.at(-1);
+  const last = texts.at(-1);
   if (last) selection.collapse(last, last.length);
   else selection.collapse(element, 0);
 };
@@ -109,12 +121,20 @@ export const textPositionAtPoint = (
   return positionIn(texts, textNode, isBeforeTheText ? 0 : textNode.length);
 };
 
-export const placeCaretAtPoint = (element: Element, point: Point): void => {
+export const placeCaretAtPoint = (
+  element: Element,
+  point: Point,
+  texts: readonly Text[] = textNodesIn(element)
+): void => {
   const caret = caretAtPoint(element.ownerDocument, point);
   const selection = element.ownerDocument.getSelection();
-  if (caret && selection && element.contains(caret.offsetNode)) {
+  if (caret && selection && texts.includes(caret.offsetNode as Text)) {
     selection.collapse(caret.offsetNode, caret.offset);
     return;
   }
-  placeCaret(element, element.textContent?.length ?? 0);
+  placeCaret(
+    element,
+    texts.reduce((length, textNode) => length + textNode.length, 0),
+    texts
+  );
 };

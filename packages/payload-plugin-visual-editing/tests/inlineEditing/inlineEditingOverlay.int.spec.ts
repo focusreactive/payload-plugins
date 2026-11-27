@@ -43,6 +43,16 @@ const type = (element: HTMLElement, text: string) => {
   element.dispatchEvent(new Event("input", { bubbles: true }));
 };
 
+const textIn = (element: Element) =>
+  Array.from(element.childNodes).find(
+    (node): node is Text => node instanceof Text && node.data.trim() !== ""
+  ) as Text;
+
+const typeInto = (element: HTMLElement, text: string) => {
+  textIn(element).data = text;
+  element.dispatchEvent(new Event("input", { bubbles: true }));
+};
+
 const press = (element: HTMLElement, key: string, init: KeyboardEventInit = {}) => {
   const event = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key, ...init });
   element.dispatchEvent(event);
@@ -171,35 +181,114 @@ describe("editing text on the page", () => {
       expect(label.getAttribute("contenteditable")).toBe("true");
     });
 
-    it("edits the text of a line and the tag inside it apart, each in its own field", async () => {
-      const line = document.createElement("div");
-      const tag = document.createElement("span");
-      tag.append(document.createElement("img"), stega("SCALE EASILY", "tag"));
-      line.append(`\n  ${stega("WORDPRESS TO SANITY", "line")} `, tag);
-      main.append(line);
-      overlay.dispose();
-      start();
+    describe("in a line that holds other elements", () => {
+      let line: HTMLElement;
+      let tag: HTMLElement;
+      let icon: HTMLImageElement;
 
-      const onTheLine = click(line);
-      const lineHost = line.querySelector<HTMLElement>("[contenteditable]") as HTMLElement;
-      type(lineHost, "WORDPRESS TO PAYLOAD");
-      press(lineHost, "Enter");
-      click(tag);
-      const tagHost = tag.querySelector<HTMLElement>("[contenteditable]") as HTMLElement;
-      type(tagHost, "SCALE FAST");
-      press(tagHost, "Enter");
-      await flushMutations();
+      beforeEach(() => {
+        line = document.createElement("div");
+        tag = document.createElement("span");
+        icon = document.createElement("img");
+        tag.append(icon, stega("SCALE EASILY", "tag"));
+        line.append(`\n  ${stega("OUR FIRST RELEASE", "line")} `, tag);
+        main.append(line);
+        overlay.dispose();
+        start();
+      });
 
-      expect(onTheLine.defaultPrevented).toBe(true);
-      expect(lineHost.parentElement).toBeNull();
-      expect(tagHost.parentElement).toBeNull();
-      expect(line.textContent).toBe("\n  WORDPRESS TO PAYLOAD SCALE FAST");
-      expect(line.querySelector("img")?.parentElement).toBe(tag);
-      expect(sentToEndpoint().map(({ base, key, value }) => [key, base, value])).toEqual([
-        ["line", "WORDPRESS TO SANITY", "WORDPRESS TO PAYLOAD"],
-        ["tag", "SCALE EASILY", "SCALE FAST"],
-      ]);
-      expect(open).not.toHaveBeenCalled();
+      it("edits the text of a line and the tag inside it apart, each in its own field", async () => {
+        const lineText = textIn(line);
+        const tagText = textIn(tag);
+
+        const onTheLine = click(line);
+        typeInto(line, "OUR NEXT RELEASE");
+        press(line, "Enter");
+        click(tag);
+        typeInto(tag, "SCALE FAST");
+        press(tag, "Enter");
+        await flushMutations();
+
+        expect(onTheLine.defaultPrevented).toBe(true);
+        expect(Array.from(line.childNodes)).toEqual([lineText, tag]);
+        expect(Array.from(tag.childNodes)).toEqual([icon, tagText]);
+        expect(line.textContent).toBe("\n  OUR NEXT RELEASE SCALE FAST");
+        expect(sentToEndpoint().map(({ base, key, value }) => [key, base, value])).toEqual([
+          ["line", "OUR FIRST RELEASE", "OUR NEXT RELEASE"],
+          ["tag", "SCALE EASILY", "SCALE FAST"],
+        ]);
+        expect(open).not.toHaveBeenCalled();
+      });
+
+      it("makes the line editable and keeps the elements beside its text out of the edit", () => {
+        click(line);
+
+        expect(line.getAttribute("contenteditable")).toBe("true");
+        expect(tag.getAttribute("contenteditable")).toBe("false");
+
+        press(line, "Escape");
+
+        expect(line.hasAttribute("contenteditable")).toBe(false);
+        expect(tag.hasAttribute("contenteditable")).toBe(false);
+      });
+
+      it("keeps a deletion that would reach into the elements beside the text from happening", () => {
+        click(line);
+        const reach = document.createRange();
+        reach.setStart(textIn(line), 0);
+        reach.setEnd(tag, 1);
+        const event = new InputEvent("beforeinput", {
+          bubbles: true,
+          cancelable: true,
+          inputType: "deleteContentForward",
+        });
+        Object.defineProperty(event, "getTargetRanges", { value: () => [reach] });
+
+        line.dispatchEvent(event);
+
+        expect(event.defaultPrevented).toBe(true);
+      });
+
+      it("lets a deletion within the text happen", () => {
+        click(line);
+        const reach = document.createRange();
+        reach.setStart(textIn(line), 4);
+        reach.setEnd(textIn(line), 5);
+        const event = new InputEvent("beforeinput", {
+          bubbles: true,
+          cancelable: true,
+          inputType: "deleteContentBackward",
+        });
+        Object.defineProperty(event, "getTargetRanges", { value: () => [reach] });
+
+        line.dispatchEvent(event);
+
+        expect(event.defaultPrevented).toBe(false);
+      });
+
+      it("narrows a selection of the whole line to its text", () => {
+        click(line);
+        document.getSelection()?.selectAllChildren(line);
+
+        document.dispatchEvent(new Event("selectionchange"));
+
+        const selection = document.getSelection() as Selection;
+        expect([selection.anchorNode, selection.focusNode]).toEqual([textIn(line), textIn(line)]);
+        expect(selection.toString()).toBe(textIn(line).data);
+      });
+
+      it("brings a caret put beside the elements of the line back into its text", () => {
+        click(line);
+        document.getSelection()?.collapse(line, 2);
+
+        document.dispatchEvent(new Event("selectionchange"));
+
+        const selection = document.getSelection() as Selection;
+        expect([selection.focusNode, selection.focusOffset]).toEqual([
+          textIn(line),
+          textIn(line).length,
+        ]);
+      });
     });
 
     it("keeps the lines of the text as the page broke them until the editor types", () => {

@@ -4,7 +4,7 @@ import type { Point } from "./caret.js";
 import type { FieldEdit } from "./editTransport.js";
 
 import { holdsLineBreak, oneLineOf } from "../../shared/fieldEdit.js";
-import { caretOffsetIn, placeCaret, placeCaretAtPoint } from "./caret.js";
+import { caretOffsetIn, placeCaret, placeCaretAtPoint, textNodesIn } from "./caret.js";
 import { showEditingFrame } from "./editingFrame.js";
 
 export const DATA_VE_EDITING_ATTR = "data-ve-editing";
@@ -24,6 +24,8 @@ export interface TextEditing {
 
 type TypedText = (text: string) => string;
 
+type EditedText = { editedElement: HTMLElement; kept: ReadonlySet<ChildNode> };
+
 type Edit = {
   match: FieldMatch;
   editedElement: HTMLElement;
@@ -32,6 +34,8 @@ type Edit = {
   caret: number;
   saving: FieldEdit<string>;
   restored: ReadonlyMap<string, string | null>;
+  kept: ReadonlySet<ChildNode>;
+  keptAside: ReadonlyMap<Element, string | null>;
   breakLinesAsThePageDid(): void;
   hideFrame(): void;
   breakLinesAsTyped(): void;
@@ -43,6 +47,8 @@ const SPELLCHECK_ATTR = "spellcheck";
 const PLAIN_TEXT_ONLY = "plaintext-only";
 const RICH_TEXT = "true";
 const SPELLCHECK_OFF = "false";
+const NOT_EDITABLE = "false";
+const IN_CAPTURE_PHASE = true;
 const CANCEL_KEY = "Escape";
 const COMMIT_KEY = "Enter";
 const SPACE_KEY = " ";
@@ -83,6 +89,80 @@ const textOfNode = (node: ChildNode): string => {
 
 const textOf = (element: Element): string =>
   Array.from(element.childNodes).map(textOfNode).join("");
+
+const isOwnNode = (kept: ReadonlySet<ChildNode>, node: ChildNode): boolean =>
+  !kept.has(node) &&
+  (node instanceof Text || (node instanceof Element && node.tagName === LINE_BREAK_TAG));
+
+const ownNodesOf = ({ editedElement, kept }: EditedText): ChildNode[] =>
+  Array.from(editedElement.childNodes).filter((node) => isOwnNode(kept, node));
+
+const sharesItsElement = ({ kept }: EditedText): boolean => kept.size > 0;
+
+const textsOf = (edit: EditedText): Text[] =>
+  sharesItsElement(edit)
+    ? ownNodesOf(edit).filter((node): node is Text => node instanceof Text)
+    : textNodesIn(edit.editedElement);
+
+const textOfEdit = (edit: EditedText): string =>
+  sharesItsElement(edit)
+    ? ownNodesOf(edit).map(textOfNode).join("").trim()
+    : textOf(edit.editedElement);
+
+const keptBeside = (element: HTMLElement, textNode: Text): ReadonlySet<ChildNode> =>
+  new Set(
+    element.childElementCount > 0
+      ? Array.from(element.childNodes).filter((node) => node !== textNode)
+      : []
+  );
+
+const keepAside = (kept: ReadonlySet<ChildNode>): ReadonlyMap<Element, string | null> => {
+  const keptAside = new Map<Element, string | null>();
+  for (const node of kept) {
+    if (!(node instanceof Element)) continue;
+    keptAside.set(node, node.getAttribute(EDITABLE_ATTR));
+    node.setAttribute(EDITABLE_ATTR, NOT_EDITABLE);
+  }
+  return keptAside;
+};
+
+const reachesBeyondTheText = (
+  { editedElement, kept }: EditedText,
+  range: AbstractRange
+): boolean => {
+  const reach = editedElement.ownerDocument.createRange();
+  reach.setStart(range.startContainer, range.startOffset);
+  reach.setEnd(range.endContainer, range.endOffset);
+  return Array.from(editedElement.childNodes).some(
+    (node) => !isOwnNode(kept, node) && reach.intersectsNode(node)
+  );
+};
+
+const keepInputInTheText = (edit: EditedText, event: InputEvent): void => {
+  const ranges = event.getTargetRanges?.() ?? [];
+  if (ranges.some((range) => reachesBeyondTheText(edit, range))) event.preventDefault();
+};
+
+const POINT_AFTER_THE_RANGE = 1;
+
+const isInTheText = (edit: EditedText, texts: readonly Text[], range: Range): boolean =>
+  texts.includes(range.startContainer as Text) &&
+  texts.includes(range.endContainer as Text) &&
+  !reachesBeyondTheText(edit, range);
+
+const keepSelectionInTheText = (edit: EditedText): void => {
+  const selection = edit.editedElement.ownerDocument.getSelection();
+  if (!selection || selection.rangeCount === 0) return;
+  const range = selection.getRangeAt(0);
+  const texts = textsOf(edit);
+  const [first] = texts;
+  const last = texts.at(-1);
+  if (!first || !last || !edit.editedElement.contains(range.commonAncestorContainer)) return;
+  if (isInTheText(edit, texts, range)) return;
+  if (!range.collapsed) selection.setBaseAndExtent(first, 0, last, last.length);
+  else if (range.comparePoint(first, 0) === POINT_AFTER_THE_RANGE) selection.collapse(first, 0);
+  else selection.collapse(last, last.length);
+};
 
 const insertText = (doc: Document, text: string): void => {
   if (typeof doc.execCommand === "function") doc.execCommand(INSERT_TEXT_COMMAND, false, text);
@@ -152,6 +232,7 @@ const keepLinesUntilTheFirstChange = (element: HTMLElement, typedText: TypedText
   };
   const typeOnceLinesBreak = (event: InputEvent) => {
     breakLinesAsTyped();
+    if (event.defaultPrevented) return;
     if (event.inputType !== INSERT_TEXT_INPUT || typeof event.data !== "string") return;
     event.preventDefault();
     insertText(element.ownerDocument, typedText(event.data));
@@ -191,6 +272,10 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
     ended.hideFrame();
     ended.breakLinesAsTyped();
     setAttributes(ended.editedElement, ended.restored);
+    for (const [element, editable] of ended.keptAside) {
+      if (editable === null) element.removeAttribute(EDITABLE_ATTR);
+      else element.setAttribute(EDITABLE_ATTR, editable);
+    }
     ended.breakLinesAsThePageDid();
     tracker.endEdit(ended.match, text);
     if (isTakenBack) ended.saving.cancel();
@@ -208,13 +293,14 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
   };
 
   const followTyping = (edit: Edit) => {
-    edit.text = textOf(edit.editedElement);
-    edit.caret = caretOffsetIn(edit.editedElement) ?? edit.caret;
+    edit.text = textOfEdit(edit);
+    edit.caret = caretOffsetIn(edit.editedElement, textsOf(edit)) ?? edit.caret;
     edit.saving.change(edit.text);
   };
 
   const followCaret = (edit: Edit) => {
-    edit.caret = caretOffsetIn(edit.editedElement) ?? edit.caret;
+    if (sharesItsElement(edit)) keepSelectionInTheText(edit);
+    edit.caret = caretOffsetIn(edit.editedElement, textsOf(edit)) ?? edit.caret;
   };
 
   const handleKey = (edit: Edit, isPlainTextOnly: boolean, event: KeyboardEvent) => {
@@ -249,6 +335,9 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
     const onKey = (event: KeyboardEvent) => handleKey(edit, isPlainTextOnly, event);
     const onPaste = (event: ClipboardEvent) => pastePlainText(edit, event);
     const onSelection = () => followCaret(edit);
+    const onBeforeInput = (event: InputEvent) => keepInputInTheText(edit, event);
+    if (sharesItsElement(edit))
+      editedElement.addEventListener(FIRST_INPUT_EVENT, onBeforeInput, IN_CAPTURE_PHASE);
     editedElement.addEventListener("input", onInput);
     editedElement.addEventListener("keydown", onKey);
     editedElement.addEventListener("blur", commit);
@@ -261,6 +350,7 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
       editedElement.removeEventListener("blur", commit);
       editedElement.removeEventListener("paste", onPaste);
       editedElement.removeEventListener(FIRST_INPUT_EVENT, keepOneLine);
+      editedElement.removeEventListener(FIRST_INPUT_EVENT, onBeforeInput, IN_CAPTURE_PHASE);
       doc.removeEventListener("selectionchange", onSelection);
     };
   };
@@ -272,7 +362,7 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
 
       const editedElement = tracker.beginEdit(match, {
         onShownAgain: () => {
-          if (editing) placeCaret(editing.editedElement, editing.caret);
+          if (editing) placeCaret(editing.editedElement, editing.caret, textsOf(editing));
         },
         shownText: () => editing?.text ?? "",
       });
@@ -280,7 +370,8 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
 
       const doc = editedElement.ownerDocument;
       const isPlainTextOnly = takesPlainTextOnly(doc);
-      const text = textOf(editedElement);
+      const kept = keptBeside(editedElement, match.textNode);
+      const text = textOfEdit({ editedElement, kept });
       const edit: Edit = {
         caret: text.length,
         breakLinesAsThePageDid: keepLineBreaking(editedElement),
@@ -288,6 +379,8 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
         editedElement,
         hideFrame: () => undefined,
         initialText: text,
+        kept,
+        keptAside: keepAside(kept),
         match,
         restored: new Map(EDITING_ATTRS.map((name) => [name, editedElement.getAttribute(name)])),
         saving: beginEdit(field, text),
@@ -305,7 +398,7 @@ export function createTextEditing({ beginEdit, tracker }: TextEditingDeps): Text
       edit.hideFrame = showEditingFrame(editedElement);
       editing = edit;
       editedElement.focus();
-      placeCaretAtPoint(editedElement, point);
+      placeCaretAtPoint(editedElement, point, textsOf(edit));
       followCaret(edit);
       return true;
     },
